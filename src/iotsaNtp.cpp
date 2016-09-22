@@ -1,0 +1,197 @@
+#include "WappNtp.h"
+#include "WappConfigFile.h"
+
+#define NTP_INTERVAL  600 // How often to ask for an NTP reading
+#define NTP_MIN_INTERVAL 20 // How often to ask if we have no NTP reading yet
+
+
+const unsigned int NTP_PORT = 123;
+
+unsigned long WappNtpMod::utcTime()
+{
+  return millis() / 1000 + utcTimeAtMillisEpoch;
+}
+
+unsigned long WappNtpMod::localTime()
+{
+  return utcTime() - minutesWestFromUtc*60;
+}
+
+int WappNtpMod::localSeconds()
+{
+  return localTime() % 60;
+}
+
+int WappNtpMod::localMinutes()
+{
+  return localTime() / 60 % 60;
+}
+
+int WappNtpMod::localHours()
+{
+  return localTime() / 3600 % 24;
+}
+
+int WappNtpMod::localHours12()
+{
+  return localTime() / 3600 % 12;
+}
+
+bool WappNtpMod::localIsPM()
+{
+  return localHours() >= 12;
+}
+
+void
+WappNtpMod::handler() {
+  bool anyChanged = false;
+  LED digitalWrite(led, 1);
+  for (uint8_t i=0; i<server.args(); i++){
+    if( server.argName(i) == "ntpServer") {
+      ntpServer = server.arg(i);
+      anyChanged = true;
+    }
+    if( server.argName(i) == "minutesWest") {
+      minutesWestFromUtc = server.arg(i).toInt();
+      anyChanged = true;
+    }
+    if (anyChanged) configSave();
+  }
+  String message = "<html><head><title>NTP Client Settings</title></head><body><h1>NTP Client Settings</h1>";
+  message += "<p>Current UTC time is ";
+  message += String(utcTime());
+  message += ".<br>Current local time is ";
+  message += String(localTime());
+  message += " or ";
+  message += String(localHours());
+  message += ":";
+  message += String(localMinutes());
+  message += ":";
+  message += String(localSeconds());
+  message += ".</p>";
+  message += "<form method='get'>NTP server: <input name='ntpServer' value='";
+  message += ntpServer;
+  message += "'><br>Minutes west from UTC: <input name='minutesWest' value='";
+  message += String(minutesWestFromUtc);
+  message += "'><br><input type='submit'></form>";
+  server.send(200, "text/html", message);
+  LED digitalWrite(led, 0);
+}
+
+void WappNtpMod::setup() {
+  nextNtpRequest = millis() + 1000; // Try after 1 second
+  int ok = udp.begin(NTP_PORT);
+  if (ok) {
+    Serial.println("ntp: udp inited");
+  } else {
+    Serial.println("ntp: udp init failed");
+  }
+  configLoad();
+}
+
+void WappNtpMod::serverSetup() {
+  server.on("/ntpconfig", std::bind(&WappNtpMod::handler, this));
+}
+
+void WappNtpMod::configLoad() {
+  WapConfigFileLoad cf("/data/ntp.cfg");
+  cf.get("ntpServer", ntpServer, "pool.ntp.org");
+  cf.get("minutesWest", minutesWestFromUtc, 0);
+ 
+}
+
+void WappNtpMod::configSave() {
+  WapConfigFileSave cf("/data/ntp.cfg");
+  cf.put("ntpServer", ntpServer);
+  cf.put("minutesWest", minutesWestFromUtc);
+}
+
+void WappNtpMod::loop() {
+  unsigned long now = millis();
+  // Check for clock rollover
+  if (now < lastMillis) {
+      Serial.println("ntp: Clock rollover");
+      nextNtpRequest = now;
+  }
+  lastMillis = now;
+  
+  // Check whether we have to send an NTP request
+  if (now >= nextNtpRequest) {
+    if (utcTimeAtMillisEpoch == 0) {
+      nextNtpRequest = now + NTP_MIN_INTERVAL*1000;
+    } else {
+      nextNtpRequest = now + NTP_INTERVAL*1000;
+    }
+    IPAddress address;
+    const char *host = ntpServer.c_str();
+    if (host == NULL || *host == '\0') return;
+    WiFi.hostByName(host, address);
+    IFDEBUG { Serial.print("ntp: Lookup for "); Serial.print(host); Serial.print(" returned "); Serial.println(address); }
+    memset(ntpPacket, 0, NTP_PACKET_SIZE);
+    // Initialize values needed to form NTP request
+    // (see URL above for details on the packets)
+    ntpPacket[0] = 0b11100011;   // LI, Version, Mode
+    ntpPacket[1] = 0;     // Stratum, or type of clock
+    ntpPacket[2] = 6;     // Polling Interval
+    ntpPacket[3] = 0xEC;  // Peer Clock Precision
+    // 8 bytes of zero for Root Delay & Root Dispersion
+    ntpPacket[12]  = 49;
+    ntpPacket[13]  = 0x4E;
+    ntpPacket[14]  = 49;
+    ntpPacket[15]  = 52;
+  
+    // all NTP fields have been given values, now
+    // you can send a packet requesting a timestamp:
+    if (!udp.beginPacket(address, 123)) { //NTP requests are to port 123
+      Serial.println("ntp: Problem writing UDP packet (beginPacket)");
+    }
+    if (!udp.write(ntpPacket, NTP_PACKET_SIZE)) {
+      Serial.println("ntp: Problem writing UDP packet (write)");
+    }
+    if (!udp.endPacket()) {
+      Serial.println("ntp: Problem writing UDP packet (endPacket)");
+    }
+    IFDEBUG Serial.println("ntp: Sent NTP packet");
+  }
+
+  // And check whether we have received an NTP packet
+  int cb = udp.parsePacket();
+  //int cb; while ((cb=udp.parsePacket()) == 0 && millis() < now+3000);
+  if (cb == NTP_PACKET_SIZE) {
+    // We've received a packet, read the data from it
+    udp.read(ntpPacket, NTP_PACKET_SIZE); // read the packet into the buffer
+
+    //the timestamp starts at byte 40 of the received packet and is four bytes,
+    // or two words, long. First, esxtract the two words:
+
+    unsigned long highWord = word(ntpPacket[40], ntpPacket[41]);
+    unsigned long lowWord = word(ntpPacket[42], ntpPacket[43]);
+    // combine the four bytes (two words) into a long integer
+    // this is NTP time (seconds since Jan 1 1900):
+    unsigned long secsSince1900 = highWord << 16 | lowWord;
+    //Serial.print("Seconds since Jan 1 1900 = " );
+    //Serial.println(secsSince1900);
+
+    // now convert NTP time into everyday time:
+    Serial.print("Unix time = ");
+    // Unix time starts on Jan 1 1970. In seconds, that's 2208988800:
+    const unsigned long seventyYears = 2208988800UL;
+    // subtract seventy years:
+    unsigned long nowUtc = secsSince1900 - seventyYears;
+    utcTimeAtMillisEpoch = nowUtc - (millis() / 1000);
+    IFDEBUG { Serial.print("ntp: Now(utc)="); Serial.print(utcTime()); Serial.print(" now(local)="); Serial.println(localTime()); }
+  }
+}
+
+String WappNtpMod::info() {
+  String message = "<p>Local time is ";
+  message += String(localHours());
+  message += ":";
+  message += String(localMinutes());
+  message += ":";
+  message += String(localSeconds());
+  message += ", timezone is ";
+  message += String(minutesWestFromUtc);
+  message += " minutes west of Greenwich. See <a href=\"/ntpconfig\">/ntpconfig</a> to change time configuration.</p>";
+  return message;
+}
