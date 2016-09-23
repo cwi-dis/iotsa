@@ -1,5 +1,5 @@
-#include "WappNtp.h"
-#include "WappConfigFile.h"
+#include "iotsaNtp.h"
+#include "iotsaConfigFile.h"
 
 #define NTP_INTERVAL  600 // How often to ask for an NTP reading
 #define NTP_MIN_INTERVAL 20 // How often to ask if we have no NTP reading yet
@@ -7,43 +7,43 @@
 
 const unsigned int NTP_PORT = 123;
 
-unsigned long WappNtpMod::utcTime()
+unsigned long IotsaNtpMod::utcTime()
 {
   return millis() / 1000 + utcTimeAtMillisEpoch;
 }
 
-unsigned long WappNtpMod::localTime()
+unsigned long IotsaNtpMod::localTime()
 {
   return utcTime() - minutesWestFromUtc*60;
 }
 
-int WappNtpMod::localSeconds()
+int IotsaNtpMod::localSeconds()
 {
   return localTime() % 60;
 }
 
-int WappNtpMod::localMinutes()
+int IotsaNtpMod::localMinutes()
 {
   return localTime() / 60 % 60;
 }
 
-int WappNtpMod::localHours()
+int IotsaNtpMod::localHours()
 {
   return localTime() / 3600 % 24;
 }
 
-int WappNtpMod::localHours12()
+int IotsaNtpMod::localHours12()
 {
   return localTime() / 3600 % 12;
 }
 
-bool WappNtpMod::localIsPM()
+bool IotsaNtpMod::localIsPM()
 {
   return localHours() >= 12;
 }
 
 void
-WappNtpMod::handler() {
+IotsaNtpMod::handler() {
   bool anyChanged = false;
   LED digitalWrite(led, 1);
   for (uint8_t i=0; i<server.args(); i++){
@@ -78,7 +78,7 @@ WappNtpMod::handler() {
   LED digitalWrite(led, 0);
 }
 
-void WappNtpMod::setup() {
+void IotsaNtpMod::setup() {
   nextNtpRequest = millis() + 1000; // Try after 1 second
   int ok = udp.begin(NTP_PORT);
   if (ok) {
@@ -89,24 +89,24 @@ void WappNtpMod::setup() {
   configLoad();
 }
 
-void WappNtpMod::serverSetup() {
-  server.on("/ntpconfig", std::bind(&WappNtpMod::handler, this));
+void IotsaNtpMod::serverSetup() {
+  server.on("/ntpconfig", std::bind(&IotsaNtpMod::handler, this));
 }
 
-void WappNtpMod::configLoad() {
+void IotsaNtpMod::configLoad() {
   WapConfigFileLoad cf("/data/ntp.cfg");
   cf.get("ntpServer", ntpServer, "pool.ntp.org");
   cf.get("minutesWest", minutesWestFromUtc, 0);
  
 }
 
-void WappNtpMod::configSave() {
+void IotsaNtpMod::configSave() {
   WapConfigFileSave cf("/data/ntp.cfg");
   cf.put("ntpServer", ntpServer);
   cf.put("minutesWest", minutesWestFromUtc);
 }
 
-void WappNtpMod::loop() {
+void IotsaNtpMod::loop() {
   unsigned long now = millis();
   // Check for clock rollover
   if (now < lastMillis) {
@@ -183,7 +183,7 @@ void WappNtpMod::loop() {
   }
 }
 
-String WappNtpMod::info() {
+String IotsaNtpMod::info() {
   String message = "<p>Local time is ";
   message += String(localHours());
   message += ":";

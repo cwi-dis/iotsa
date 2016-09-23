@@ -1,12 +1,12 @@
 #include <ESP.h>
 #include "FS.h"
-#include "WappFiles.h"
+#include "iotsaFiles.h"
 
-void WappFilesMod::setup() {
+void IotsaFilesMod::setup() {
 }
 
 void
-WappFilesMod::listHandler() {
+IotsaFilesMod::listHandler() {
   LED digitalWrite(led, 1);
   String message = "<html><head><title>Files</title></head><body><h1>Files</h1><ul>";
   Dir d = SPIFFS.openDir("/data");
@@ -19,7 +19,7 @@ WappFilesMod::listHandler() {
 }
 
 void
-WappFilesMod::notFoundHandler() {
+IotsaFilesMod::notFoundHandler() {
   LED digitalWrite(led, 1);
   String path = server.uri();
   File dataFile;
@@ -58,7 +58,7 @@ File _uploadFile;
 bool _uploadOK;
 
 void
-WappFilesMod::uploadHandler() {
+IotsaFilesMod::uploadHandler() {
   LED digitalWrite(led, 1);
   HTTPUpload& upload = server.upload();
   _uploadOK = false;
@@ -81,7 +81,7 @@ WappFilesMod::uploadHandler() {
 }
 
 void
-WappFilesMod::uploadOkHandler() {
+IotsaFilesMod::uploadOkHandler() {
   String message;
   if (_uploadOK) {
     server.send(200, "text/plain", "OK");
@@ -90,21 +90,21 @@ WappFilesMod::uploadOkHandler() {
   }
 }
 
-void WappFilesMod::uploadFormHandler() {
+void IotsaFilesMod::uploadFormHandler() {
   String message = "<form method='POST' action='/upload' enctype='multipart/form-data'>Select file to upload:<input type='file' name='blob'><br>Filename:<input name='filename'><br><input type='submit' value='Update'></form>";
   server.send(200, "text/html", message);
 }
-void WappFilesMod::serverSetup() {
-  server.on("/upload", HTTP_POST, std::bind(&WappFilesMod::uploadOkHandler, this), std::bind(&WappFilesMod::uploadHandler, this));
-  server.on("/upload", HTTP_GET, std::bind(&WappFilesMod::uploadFormHandler, this));
-  server.on("/data", std::bind(&WappFilesMod::listHandler, this));
-  server.onNotFound(std::bind(&WappFilesMod::notFoundHandler, this));
+void IotsaFilesMod::serverSetup() {
+  server.on("/upload", HTTP_POST, std::bind(&IotsaFilesMod::uploadOkHandler, this), std::bind(&IotsaFilesMod::uploadHandler, this));
+  server.on("/upload", HTTP_GET, std::bind(&IotsaFilesMod::uploadFormHandler, this));
+  server.on("/data", std::bind(&IotsaFilesMod::listHandler, this));
+  server.onNotFound(std::bind(&IotsaFilesMod::notFoundHandler, this));
 }
 
-String WappFilesMod::info() {
+String IotsaFilesMod::info() {
   return "<p>See <a href=\"/data\">/data</a> for static files, <a href=\"/upload\">/upload</a> for uploading new files.</p>";
 }
 
-void WappFilesMod::loop() {
+void IotsaFilesMod::loop() {
   
 }

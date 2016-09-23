@@ -1,10 +1,10 @@
 #ifndef _WAPPOTA_H_
 #define _WAPPOTA_H_
-#include "Wapp.h"
+#include "iotsa.h"
 
-class WappOtaMod : public WappMod {
+class IotsaOtaMod : public IotsaMod {
 public:
-  WappOtaMod(Wapplication &_app) : WappMod(_app) {}
+  IotsaOtaMod(IotsaApplication &_app) : IotsaMod(_app) {}
 	void setup();
 	void serverSetup();
 	void loop();

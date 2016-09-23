@@ -18,19 +18,19 @@ const int led = 99;
 #endif
 
 
-class WappMod;
+class IotsaMod;
 
-class Wapplication {
-friend class WappMod;
+class IotsaApplication {
+friend class IotsaMod;
 public:
-  Wapplication(ESP8266WebServer &_server, const char *_title)
+  IotsaApplication(ESP8266WebServer &_server, const char *_title)
   : server(_server), 
     firstModule(NULL), 
     firstEarlyModule(NULL), 
     title(_title) 
     {}
-  void addMod(WappMod *mod);
-  void addModEarly(WappMod *mod);
+  void addMod(IotsaMod *mod);
+  void addModEarly(IotsaMod *mod);
   void setup();
   void serverSetup();
   void loop();
@@ -40,15 +40,15 @@ protected:
   void webServerNotFoundHandler();
   void webServerRootHandler();
   ESP8266WebServer &server;
-  WappMod *firstModule;
-  WappMod *firstEarlyModule;
+  IotsaMod *firstModule;
+  IotsaMod *firstEarlyModule;
   String title;
 };
 
-class WappMod {
-friend class Wapplication;
+class IotsaMod {
+friend class IotsaApplication;
 public:
-  WappMod(Wapplication &_app, bool early=false) : app(_app), server(_app.server), nextModule(NULL) {
+  IotsaMod(IotsaApplication &_app, bool early=false) : app(_app), server(_app.server), nextModule(NULL) {
     if (early) {
       app.addModEarly(this);
     } else {
@@ -60,9 +60,9 @@ public:
 	virtual void loop() = 0;
   virtual String info() = 0;
 protected:
-  Wapplication &app;
+  IotsaApplication &app;
   ESP8266WebServer &server;
-  WappMod *nextModule;
+  IotsaMod *nextModule;
 };
 
 extern bool configurationMode;        // True if we have no config, and go into AP mode

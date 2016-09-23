@@ -1,13 +1,13 @@
 #ifndef _WAPPNTP_H_
 #define _WAPPNTP_H_
-#include "Wapp.h"
+#include "iotsa.h"
 #include <WiFiUdp.h>
 
 const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
 
-class WappNtpMod : public WappMod {
+class IotsaNtpMod : public IotsaMod {
 public:
-  WappNtpMod(Wapplication &_app) : WappMod(_app) {}
+  IotsaNtpMod(IotsaApplication &_app) : IotsaMod(_app) {}
   void setup();
   void serverSetup();
   void loop();

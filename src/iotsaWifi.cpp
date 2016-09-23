@@ -1,9 +1,9 @@
 #include <ESP.h>
 #include <ESP8266mDNS.h>
 
-#include "Wapp.h"
-#include "WappConfigFile.h"
-#include "WappWifi.h"
+#include "iotsa.h"
+#include "iotsaConfigFile.h"
+#include "iotsaWifi.h"
 
 #define WIFI_TIMEOUT 20                  // How long to wait for our WiFi network to appear
 
@@ -21,7 +21,7 @@ static void wifiDefaultHostName() {
   hostName += String(ESP.getChipId());
 }
 
-void WappWifiMod::setup() {
+void IotsaWifiMod::setup() {
   configLoad();
   if (ssid.length() && tempConfigurationMode != TMPC_CONFIG) {
     WiFi.mode(WIFI_STA);
@@ -80,7 +80,7 @@ void WappWifiMod::setup() {
 }
 
 void
-WappWifiMod::handler() {
+IotsaWifiMod::handler() {
   LED digitalWrite(led, 1);
   bool anyChanged = false;
   for (uint8_t i=0; i<server.args(); i++){
@@ -120,7 +120,7 @@ WappWifiMod::handler() {
 }
 
 void
-WappWifiMod::handlerConfigmode() {
+IotsaWifiMod::handlerConfigmode() {
   LED digitalWrite(led, 1);
   bool anyChanged = false;
   for (uint8_t i=0; i<server.args(); i++) {
@@ -152,17 +152,17 @@ WappWifiMod::handlerConfigmode() {
   LED digitalWrite(led, 0);
 }
 
-void WappWifiMod::serverSetup() {
-//  server.on("/hello", std::bind(&WappWifiMod::handler, this));
+void IotsaWifiMod::serverSetup() {
+//  server.on("/hello", std::bind(&IotsaWifiMod::handler, this));
   if (!configurationMode) {
-    server.on("/wificonfig", std::bind(&WappWifiMod::handlerConfigmode, this));
+    server.on("/wificonfig", std::bind(&IotsaWifiMod::handlerConfigmode, this));
   } else {
     IFDEBUG Serial.println("Enable config mode");
-    server.on("/wificonfig", std::bind(&WappWifiMod::handler, this));
+    server.on("/wificonfig", std::bind(&IotsaWifiMod::handler, this));
   }
 }
 
-String WappWifiMod::info() {
+String IotsaWifiMod::info() {
   IPAddress x;
   String message = "<p>IP address is ";
   uint32_t ip = WiFi.localIP();
@@ -178,7 +178,7 @@ String WappWifiMod::info() {
   return message;
 }
 
-void WappWifiMod::configLoad() {
+void IotsaWifiMod::configLoad() {
   WapConfigFileLoad cf("/data/wifi.cfg");
   int tcm;
   cf.get("mode", tcm, (int)TMPC_CONFIG);
@@ -190,7 +190,7 @@ void WappWifiMod::configLoad() {
  
 }
 
-void WappWifiMod::configSave() {
+void IotsaWifiMod::configSave() {
   WapConfigFileSave cf("/data/wifi.cfg");
   cf.put("mode", tempConfigurationMode);
   cf.put("ssid", ssid);
@@ -199,7 +199,7 @@ void WappWifiMod::configSave() {
   IFDEBUG Serial.println("Saved wifi.cfg");
 }
 
-void WappWifiMod::loop() {
+void IotsaWifiMod::loop() {
   if (tempConfigurationModeTimeout && millis() > tempConfigurationModeTimeout) {
     IFDEBUG Serial.println("Configuration mode timeout. reboot.");
     tempConfigurationMode = TMPC_NORMAL;

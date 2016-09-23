@@ -10,8 +10,8 @@
 //
 
 #include <ESP.h>
-#include "Wapp.h"
-#include "WappWifi.h"
+#include "iotsa.h"
+#include "iotsaWifi.h"
 
 // CHANGE: Add application includes and declarations here
 
@@ -21,36 +21,36 @@
 #define WITH_FILES  // Enable static files webserver
 
 ESP8266WebServer server(80);
-Wapplication wapplication(server, "APBoot Hello World Server");
-WappWifiMod wappWifi(wapplication);
+IotsaApplication application(server, "APBoot Hello World Server");
+IotsaWifiMod wifiMod(application);
 
 #ifdef WITH_NTP
-#include "WappNtp.h"
-WappNtpMod wappNtp(wapplication);
+#include "iotsaNtp.h"
+IotsaNtpMod ntpMod(application);
 #endif
 
 #ifdef WITH_OTA
-#include "WappOta.h"
-WappOtaMod wappOta(wapplication);
+#include "iotsaOta.h"
+IotsaOtaMod otaMod(application);
 #endif
 
 #ifdef WITH_HELLO
-#include "WappHello.h"
-WappHelloMod wappHello(wapplication);
+#include "iotsaHello.h"
+IotsaHelloMod helloMod(application);
 #endif
 
 #ifdef WITH_FILES
-#include "WappFiles.h"
-WappFilesMod wappFiles(wapplication);
+#include "iotsaFiles.h"
+IotsaFilesMod filesMod(application);
 #endif
 
 void setup(void){
-  wapplication.setup();
-  wapplication.serverSetup();
+  application.setup();
+  application.serverSetup();
   ESP.wdtEnable(WDTO_120MS);
 }
  
 void loop(void){
-  wapplication.loop();
+  application.loop();
 }
 

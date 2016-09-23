@@ -1,13 +1,13 @@
 #include <ESP.h>
-#include "WappHello.h"
+#include "iotsaHello.h"
 
 String greeting;
 
-void WappHelloMod::setup() {
+void IotsaHelloMod::setup() {
 }
 
 void
-WappHelloMod::handler() {
+IotsaHelloMod::handler() {
   LED digitalWrite(led, 1);
   for (uint8_t i=0; i<server.args(); i++){
     if( server.argName(i) == "greeting") {
@@ -22,14 +22,14 @@ WappHelloMod::handler() {
   LED digitalWrite(led, 0);
 }
 
-void WappHelloMod::serverSetup() {
-  server.on("/hello", std::bind(&WappHelloMod::handler, this));
+void IotsaHelloMod::serverSetup() {
+  server.on("/hello", std::bind(&IotsaHelloMod::handler, this));
 }
 
-String WappHelloMod::info() {
+String IotsaHelloMod::info() {
   return "<p>See <a href=\"/hello\">/hello</a> for info.</p>";
 }
 
-void WappHelloMod::loop() {
+void IotsaHelloMod::loop() {
   
 }

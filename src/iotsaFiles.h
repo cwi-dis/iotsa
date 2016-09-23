@@ -1,10 +1,10 @@
 #ifndef _WAPPFILES_H_
 #define _WAPPFILES_H_
-#include "Wapp.h"
+#include "iotsa.h"
 
-class WappFilesMod : public WappMod {
+class IotsaFilesMod : public IotsaMod {
 public:
-  WappFilesMod(Wapplication &_app) : WappMod(_app) {}
+  IotsaFilesMod(IotsaApplication &_app) : IotsaMod(_app) {}
   void setup();
   void serverSetup();
   void loop();

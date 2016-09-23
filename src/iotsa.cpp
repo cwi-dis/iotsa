@@ -1,17 +1,17 @@
 #include <ESP.h>
 #include <FS.h>
 
-#include "Wapp.h"
+#include "iotsa.h"
 
 void
-Wapplication::addMod(WappMod *mod) {
+IotsaApplication::addMod(IotsaMod *mod) {
   mod->nextModule = firstModule;
   firstModule = mod;
   mod->server = server;
 }
 
 void
-Wapplication::addModEarly(WappMod *mod) {
+IotsaApplication::addModEarly(IotsaMod *mod) {
   mod->nextModule = firstEarlyModule;
   firstEarlyModule = mod;
   mod->server = server;
@@ -19,7 +19,7 @@ Wapplication::addModEarly(WappMod *mod) {
 }
 
 void
-Wapplication::setup() {
+IotsaApplication::setup() {
   LED pinMode(led, OUTPUT);
   LED digitalWrite(led, 0);
   IFDEBUG Serial.begin(115200);
@@ -39,7 +39,7 @@ Wapplication::setup() {
     IFDEBUG Serial.println("SPIFFS mounted");
   }
 
-  WappMod *m;
+  IotsaMod *m;
   for (m=firstEarlyModule; m; m=m->nextModule) {
   	m->setup();
   }
@@ -49,8 +49,8 @@ Wapplication::setup() {
 }
 
 void
-Wapplication::serverSetup() {
-  WappMod *m;
+IotsaApplication::serverSetup() {
+  IotsaMod *m;
   for (m=firstEarlyModule; m; m=m->nextModule) {
   	m->serverSetup();
   }
@@ -61,8 +61,8 @@ Wapplication::serverSetup() {
 }
 
 void
-Wapplication::loop() {
-  WappMod *m;
+IotsaApplication::loop() {
+  IotsaMod *m;
   for (m=firstEarlyModule; m; m=m->nextModule) {
   	m->loop();
   }
@@ -73,15 +73,15 @@ Wapplication::loop() {
 }
 
 void
-Wapplication::webServerSetup() {
-  server.onNotFound(std::bind(&Wapplication::webServerNotFoundHandler, this));
-  server.on("/", std::bind(&Wapplication::webServerRootHandler, this));
+IotsaApplication::webServerSetup() {
+  server.onNotFound(std::bind(&IotsaApplication::webServerNotFoundHandler, this));
+  server.on("/", std::bind(&IotsaApplication::webServerRootHandler, this));
   server.begin();
   IFDEBUG Serial.println("HTTP server started");
 }
 
 void
-Wapplication::webServerNotFoundHandler() {
+IotsaApplication::webServerNotFoundHandler() {
  LED digitalWrite(led, 1);
   String message = "File Not Found\n\n";
   message += "URI: ";
@@ -99,10 +99,10 @@ Wapplication::webServerNotFoundHandler() {
 }
 
 void
-Wapplication::webServerRootHandler() {
+IotsaApplication::webServerRootHandler() {
   LED digitalWrite(led, 1);
   String message = "<html><head><title>" + title + "</title></head><body><h1>" + title + "</h1>";
-  WappMod *m;
+  IotsaMod *m;
   for (m=firstModule; m; m=m->nextModule) {
     message += m->info();
   }
@@ -115,7 +115,7 @@ Wapplication::webServerRootHandler() {
 }
 
 void
-Wapplication::webServerLoop() {
+IotsaApplication::webServerLoop() {
   server.handleClient();
 }
 

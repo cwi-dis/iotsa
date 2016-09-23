@@ -1,5 +1,5 @@
-#include "Wapp.h"
-#include "WappConfigFile.h"
+#include "iotsa.h"
+#include "iotsaConfigFile.h"
 
 WapConfigFileLoad::WapConfigFileLoad(String filename) {
   fp = SPIFFS.open(filename, "r");

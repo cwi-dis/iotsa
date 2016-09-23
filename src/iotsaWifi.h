@@ -1,10 +1,10 @@
 #ifndef _IOTSAWIFI_H_
 #define _IOTSAWIFI_H_
-#include "Wapp.h"
+#include "iotsa.h"
 
-class WappWifiMod : public WappMod {
+class IotsaWifiMod : public IotsaMod {
 public:
-  WappWifiMod(Wapplication &_app) : WappMod(_app, true) {}
+  IotsaWifiMod(IotsaApplication &_app) : IotsaMod(_app, true) {}
 	void setup();
 	void serverSetup();
 	void loop();

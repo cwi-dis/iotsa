@@ -1,4 +1,4 @@
-#include "WappOta.h"
+#include "iotsaOta.h"
 
 #include <ArduinoOTA.h>
 
@@ -27,7 +27,7 @@ void otaOnError(int error) {
   ESP.wdtFeed();
 }
 
-void WappOtaMod::setup() {
+void IotsaOtaMod::setup() {
   Serial.println("OTA-update enabled");
   ArduinoOTA.setPort(8266);
   ArduinoOTA.setHostname(hostName.c_str());
@@ -39,14 +39,14 @@ void WappOtaMod::setup() {
   tempConfigurationModeTimeout = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
 }
 
-void WappOtaMod::serverSetup() {
+void IotsaOtaMod::serverSetup() {
 }
 
-void WappOtaMod::loop() {
+void IotsaOtaMod::loop() {
   if (tempConfigurationMode == TMPC_OTA) ArduinoOTA.handle();
 }
 
-String WappOtaMod::info() {
+String IotsaOtaMod::info() {
   String rv;
   if (tempConfigurationMode == TMPC_OTA) {
     rv = "<p>Over the air (OTA) programming is enabled, will timeout in " + String((tempConfigurationModeTimeout - millis())/1000) + " seconds.</p>";
