@@ -11,10 +11,7 @@ public:
   String info();
 private:
   void listHandler();
-  void uploadHandler();
   void notFoundHandler();
-  void uploadOkHandler();
-  void uploadFormHandler();
 };
 
 #endif

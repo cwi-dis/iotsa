@@ -15,6 +15,7 @@
 #define WITH_NTP    // Use network time protocol to synchronize the clock.
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 #define WITH_FILES  // Enable static files webserver
+#define WITH_FILESUPLOAD  // Enable upload of static files for webserver
 
 ESP8266WebServer server(80);
 IotsaApplication application(server, "Iotsa Skeleton Server");
@@ -33,6 +34,11 @@ IotsaOtaMod otaMod(application);
 #ifdef WITH_FILES
 #include "iotsaFiles.h"
 IotsaFilesMod filesMod(application);
+#endif
+
+#ifdef WITH_FILESUPLOAD
+#include "iotsaFilesUpload.h"
+IotsaFilesUploadMod filesUploadMod(application);
 #endif
 
 void setup(void){
