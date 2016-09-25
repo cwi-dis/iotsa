@@ -1,5 +1,5 @@
-#ifndef _WAPPNTP_H_
-#define _WAPPNTP_H_
+#ifndef _IOTSANTP_H_
+#define _IOTSANTP_H_
 #include "iotsa.h"
 #include <WiFiUdp.h>
 

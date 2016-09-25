@@ -1,5 +1,5 @@
-#ifndef _WAPPFILESUPLOAD_H_
-#define _WAPPFILESUPLOAD_H_
+#ifndef _IOTSAFILESUPLOAD_H_
+#define _IOTSAFILESUPLOAD_H_
 #include "iotsa.h"
 
 class IotsaFilesUploadMod : public IotsaMod {

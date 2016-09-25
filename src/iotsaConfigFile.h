@@ -1,5 +1,5 @@
-#ifndef _WAPPCONFIGFILE_H_
-#define _WAPPCONFIGFILE_H_
+#ifndef _IOTSACONFIGFILE_H_
+#define _IOTSACONFIGFILE_H_
 
 #include <FS.h>
 

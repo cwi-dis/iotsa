@@ -1,5 +1,5 @@
-#ifndef _WAPPOTA_H_
-#define _WAPPOTA_H_
+#ifndef _IOTSAOTA_H_
+#define _IOTSAOTA_H_
 #include "iotsa.h"
 
 class IotsaOtaMod : public IotsaMod {

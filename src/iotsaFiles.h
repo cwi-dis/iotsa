@@ -1,5 +1,5 @@
-#ifndef _WAPPFILES_H_
-#define _WAPPFILES_H_
+#ifndef _IOTSAFILES_H_
+#define _IOTSAFILES_H_
 #include "iotsa.h"
 
 class IotsaFilesMod : public IotsaMod {

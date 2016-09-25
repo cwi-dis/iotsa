@@ -1,5 +1,5 @@
-#ifndef _WAPP_H_
-#define _WAPP_H_
+#ifndef _IOTSA_H_
+#define _IOTSA_H_
 
 #include <ESP8266WebServer.h>
 
