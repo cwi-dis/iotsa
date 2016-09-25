@@ -16,6 +16,7 @@
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 #define WITH_FILES  // Enable static files webserver
 #define WITH_FILESUPLOAD  // Enable upload of static files for webserver
+#define WITH_FILESBACKUP  // Enable backup of all files including config files and webserver files
 
 ESP8266WebServer server(80);
 IotsaApplication application(server, "Iotsa Skeleton Server");
@@ -39,6 +40,11 @@ IotsaFilesMod filesMod(application);
 #ifdef WITH_FILESUPLOAD
 #include "iotsaFilesUpload.h"
 IotsaFilesUploadMod filesUploadMod(application);
+#endif
+
+#ifdef WITH_FILESBACKUP
+#include "iotsaFilesBackup.h"
+IotsaFilesBackupMod filesBackupMod(application);
 #endif
 
 void setup(void){
