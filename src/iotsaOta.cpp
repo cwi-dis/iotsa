@@ -28,15 +28,17 @@ void otaOnError(int error) {
 }
 
 void IotsaOtaMod::setup() {
-  Serial.println("OTA-update enabled");
-  ArduinoOTA.setPort(8266);
-  ArduinoOTA.setHostname(hostName.c_str());
-  ArduinoOTA.onStart(otaOnStart);
-  ArduinoOTA.onProgress(otaOnProgress);
-  ArduinoOTA.onEnd(otaOnEnd);
-  ArduinoOTA.onError(otaOnError);
-  ArduinoOTA.begin();
-  tempConfigurationModeTimeout = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
+  if (tempConfigurationMode == TMPC_OTA) {
+	Serial.println("OTA-update enabled");
+	ArduinoOTA.setPort(8266);
+	ArduinoOTA.setHostname(hostName.c_str());
+	ArduinoOTA.onStart(otaOnStart);
+	ArduinoOTA.onProgress(otaOnProgress);
+	ArduinoOTA.onEnd(otaOnEnd);
+	ArduinoOTA.onError(otaOnError);
+	ArduinoOTA.begin();
+	tempConfigurationModeTimeout = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
+  }
 }
 
 void IotsaOtaMod::serverSetup() {

@@ -60,6 +60,10 @@ void IotsaWifiMod::setup() {
   // Connection to WiFi network failed, or we are in temp cofiguration mode. Setup our own network.
   if (tempConfigurationMode) {
     tempConfigurationModeTimeout = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
+  	IFDEBUG Serial.print("tempConfigMode=");
+  	IFDEBUG Serial.print((int)tempConfigurationMode);
+  	IFDEBUG Serial.print(", timeout at ");
+  	IFDEBUG Serial.println(tempConfigurationModeTimeout);
   }
   configurationMode = true;
   String networkName = "config-" + hostName;
@@ -175,6 +179,13 @@ String IotsaWifiMod::info() {
     message += " (no mDNS, so no hostname). ";
   }
   message += "See <a href=\"/wificonfig\">/wificonfig</a> to change network parameters.</p>";
+  if (tempConfigurationMode && tempConfigurationModeTimeout) {
+  	message += "<p>In configuration mode " + String((int)tempConfigurationMode) + ", will timeout in " + String(tempConfigurationModeTimeout-millis()) + "ms.</p>";
+  } else if (tempConfigurationMode) {
+  	message += "<p>Configuration mode " + String((int)tempConfigurationMode) + " enabled after next reboot.</p>";
+  } else if (tempConfigurationModeTimeout) {
+  	message += "<p>Strange, no configuration mode but timeout is " + String(tempConfigurationModeTimeout-millis()) + "ms.</p>";
+  }
   return message;
 }
 
@@ -183,6 +194,7 @@ void IotsaWifiMod::configLoad() {
   int tcm;
   cf.get("mode", tcm, (int)TMPC_CONFIG);
   tempConfigurationMode = (config_mode)tcm;
+  IFDEBUG { Serial.print("xxxjack mode="); Serial.println((int)tempConfigurationMode);}
   cf.get("ssid", ssid, "");
   cf.get("ssidPassword", ssidPassword, "");
   cf.get("hostName", hostName, "");
