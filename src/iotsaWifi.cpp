@@ -1,5 +1,6 @@
 #include <ESP.h>
 #include <ESP8266mDNS.h>
+#include <FS.h>
 
 #include "iotsa.h"
 #include "iotsaConfigFile.h"
@@ -100,7 +101,10 @@ IotsaWifiMod::handler() {
       hostName = server.arg(i);
       anyChanged = true;
     }
-    if (anyChanged) configSave();
+    if (anyChanged) {
+    	tempConfigurationMode = TMPC_NORMAL;
+    	configSave();
+	}
   }
   String message = "<html><head><title>WiFi configuration</title></head><body><h1>WiFi configuration</h1>";
   if (anyChanged) {
@@ -127,13 +131,26 @@ void
 IotsaWifiMod::handlerConfigmode() {
   LED digitalWrite(led, 1);
   bool anyChanged = false;
+  bool factoryreset = false;
+  bool iamsure = false;
   for (uint8_t i=0; i<server.args(); i++) {
     if( server.argName(i) == "config") {
       tempConfigurationMode = config_mode(atoi(server.arg(i).c_str()));
       anyChanged = true;
     }
-    if (anyChanged) configSave();
+    if( server.argName(i) == "factoryreset" && atoi(server.arg(i).c_str()) == 1) factoryreset = true;
+    if( server.argName(i) == "iamsure" && atoi(server.arg(i).c_str()) == 1) iamsure = true;
   }
+  if (factoryreset && iamsure) {
+  	server.send(200, "text/plain", "Formatting SPIFFS and rebooting");
+  	delay(1000);
+  	IFDEBUG Serial.println("Formatting SPIFFS...");
+  	SPIFFS.format();
+  	IFDEBUG Serial.println("Format done, rebooting.");
+  	delay(2000);
+  	ESP.restart();
+  }
+  if (anyChanged) configSave();
   String message = "<html><head><title>WiFi configuration</title></head><body><h1>WiFi configuration</h1>";
   if (anyChanged) {
     if (tempConfigurationMode == TMPC_CONFIG) {
@@ -149,8 +166,9 @@ IotsaWifiMod::handlerConfigmode() {
   }
   message += "<form method='get'><input name='config' type='checkbox' value='1'> Enter configuration mode after next reboot.<br>";
 #ifdef WITH_OTA
-  message += "<form method='get'><input name='config' type='checkbox' value='2'> Enable over-the-air update after next reboot.</br>";
+  message += "<input name='config' type='checkbox' value='2'> Enable over-the-air update after next reboot.</br>";
 #endif
+  message += "<input name='factoryreset' type='checkbox' value='1'> Factory-reset and clear all files. <input name='iamsure' type='checkbox' value='1'> Yes, I am sure.</br>";
   message += "<br><input type='submit'></form></body></html>";
   server.send(200, "text/html", message);
   LED digitalWrite(led, 0);
@@ -190,7 +208,7 @@ String IotsaWifiMod::info() {
 }
 
 void IotsaWifiMod::configLoad() {
-  WapConfigFileLoad cf("/data/wifi.cfg");
+  IotsaConfigFileLoad cf("/config/wifi.cfg");
   int tcm;
   cf.get("mode", tcm, (int)TMPC_CONFIG);
   tempConfigurationMode = (config_mode)tcm;
@@ -203,7 +221,7 @@ void IotsaWifiMod::configLoad() {
 }
 
 void IotsaWifiMod::configSave() {
-  WapConfigFileSave cf("/data/wifi.cfg");
+  IotsaConfigFileSave cf("/config/wifi.cfg");
   cf.put("mode", tempConfigurationMode);
   cf.put("ssid", ssid);
   cf.put("ssidPassword", ssidPassword);

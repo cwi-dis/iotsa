@@ -94,14 +94,14 @@ void IotsaNtpMod::serverSetup() {
 }
 
 void IotsaNtpMod::configLoad() {
-  WapConfigFileLoad cf("/data/ntp.cfg");
+  IotsaConfigFileLoad cf("/config/ntp.cfg");
   cf.get("ntpServer", ntpServer, "pool.ntp.org");
   cf.get("minutesWest", minutesWestFromUtc, 0);
  
 }
 
 void IotsaNtpMod::configSave() {
-  WapConfigFileSave cf("/data/ntp.cfg");
+  IotsaConfigFileSave cf("/config/ntp.cfg");
   cf.put("ntpServer", ntpServer);
   cf.put("minutesWest", minutesWestFromUtc);
 }

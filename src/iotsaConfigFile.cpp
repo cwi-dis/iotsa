@@ -1,26 +1,26 @@
 #include "iotsa.h"
 #include "iotsaConfigFile.h"
 
-WapConfigFileLoad::WapConfigFileLoad(String filename) {
+IotsaConfigFileLoad::IotsaConfigFileLoad(String filename) {
   fp = SPIFFS.open(filename, "r");
 }
 
-WapConfigFileLoad::WapConfigFileLoad(const char *filename) {
+IotsaConfigFileLoad::IotsaConfigFileLoad(const char *filename) {
   fp = SPIFFS.open(filename, "r");
 }
 
-WapConfigFileLoad::~WapConfigFileLoad() {
+IotsaConfigFileLoad::~IotsaConfigFileLoad() {
   fp.close();
 }
 
-void WapConfigFileLoad::get(String name, int &value, int def) {
+void IotsaConfigFileLoad::get(String name, int &value, int def) {
   String sValue;
   String sDef = String(def);
   get(name, sValue, sDef.c_str());
   value = sValue.toInt();
 }
 
-void WapConfigFileLoad::get(String name, String &value, const char *def) {
+void IotsaConfigFileLoad::get(String name, String &value, const char *def) {
   fp.seek(0, SeekSet);
   IFDEBUG Serial.print("cfload: look for ");
   IFDEBUG Serial.println(name);
@@ -39,24 +39,24 @@ void WapConfigFileLoad::get(String name, String &value, const char *def) {
   value = String(def);
 }
 
-WapConfigFileSave::WapConfigFileSave(String filename) {
+IotsaConfigFileSave::IotsaConfigFileSave(String filename) {
   fp = SPIFFS.open(filename, "w");
 }
 
-WapConfigFileSave::WapConfigFileSave(const char *filename) {
+IotsaConfigFileSave::IotsaConfigFileSave(const char *filename) {
   fp = SPIFFS.open(filename, "w");
 }
 
-WapConfigFileSave::~WapConfigFileSave() {
+IotsaConfigFileSave::~IotsaConfigFileSave() {
   fp.close();
 }
 
-void WapConfigFileSave::put(String name, int value) {
+void IotsaConfigFileSave::put(String name, int value) {
   String sValue = String(value);
   put(name, sValue);
 }
 
-void WapConfigFileSave::put(String name, String &value) {
+void IotsaConfigFileSave::put(String name, String &value) {
   fp.print(name);
   fp.print('=');
   fp.print(value);

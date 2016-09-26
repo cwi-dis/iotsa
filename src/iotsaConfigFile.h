@@ -3,22 +3,22 @@
 
 #include <FS.h>
 
-class WapConfigFileLoad {
+class IotsaConfigFileLoad {
 public:
-  WapConfigFileLoad(String filename);
-  WapConfigFileLoad(const char *filename);
-  ~WapConfigFileLoad();
+  IotsaConfigFileLoad(String filename);
+  IotsaConfigFileLoad(const char *filename);
+  ~IotsaConfigFileLoad();
   void get(String name, int &value, int def);
   void get(String name, String &value, const char *def);
 protected:
   File fp;
 };
 
-class WapConfigFileSave {
+class IotsaConfigFileSave {
 public:
-  WapConfigFileSave(String filename);
-  WapConfigFileSave(const char *filename);
-  ~WapConfigFileSave();
+  IotsaConfigFileSave(String filename);
+  IotsaConfigFileSave(const char *filename);
+  ~IotsaConfigFileSave();
   void put(String name, int value);
   void put(String name, String &value);
 protected:
