@@ -1,0 +1,10 @@
+IotsaApplication	KEYWORD1
+IotsaMod	KEYWORD1
+IotsaConfigFileLoad	KEYWORD1
+IotsaFilesMod	KEYWORD1
+IotsaFilesBackupMod	KEYWORD1
+IotsaFilesUploadMod	KEYWORD1
+IotsaNtpMod	KEYWORD1
+IotsaOtaMod	KEYWORD1
+IotsaSimpleMod	KEYWORD1
+IotsaWifiMod	KEYWORD1
