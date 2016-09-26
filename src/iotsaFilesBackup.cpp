@@ -19,11 +19,11 @@ static char buf[512];
 
 static void octal(char *p, int size, unsigned int value)
 {
+	size--;
 	p += size;
 	*p-- = '\0';
-	size--;
 	while (size--) {
-		*p-- = (value & 7);
+		*p-- = '0' + (value & 7);
 		value >>= 3;
 	}
 }
@@ -61,13 +61,14 @@ IotsaFilesBackupMod::handler() {
   	int fileNameLength = fileName.length();
   	int fileSize = d.fileSize();
   	int filePadding = 512 - (fileSize & 511);
+  	if (filePadding == 512) filePadding = 0;
   	IFDEBUG Serial.print("  size=");
   	IFDEBUG Serial.println(fileSize);
   	
   	// Write header
   	memset(buf, '\0', 512);
   	struct tarHeader *tarHeader = (struct tarHeader *)buf;
-  	strncpy(tarHeader->name, fileName.c_str(), 99);
+  	strncpy(tarHeader->name, fileName.c_str()+1, 99);  // Remove leading slash
   	octal(tarHeader->mode, 8, 0777);
   	octal(tarHeader->uid, 8, 0);
   	octal(tarHeader->gid, 8, 0);
@@ -87,8 +88,10 @@ IotsaFilesBackupMod::handler() {
 	}
 	fp.close();
   	// Write padding
-  	memset(buf, '\0', filePadding);
-  	server.sendContent_P(buf, filePadding);
+  	if (filePadding) {
+	  	memset(buf, '\0', filePadding);
+  		server.sendContent_P(buf, filePadding);
+	}
   }
   LED digitalWrite(led, 0);
 }
