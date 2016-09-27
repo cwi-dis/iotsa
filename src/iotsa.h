@@ -27,13 +27,16 @@ public:
   : server(_server), 
     firstModule(NULL), 
     firstEarlyModule(NULL), 
-    title(_title) 
+    title(_title),
+    haveOTA(false)
     {}
   void addMod(IotsaMod *mod);
   void addModEarly(IotsaMod *mod);
   void setup();
   void serverSetup();
   void loop();
+  void enableOta() { haveOTA = true; }
+  bool otaEnabled() { return haveOTA; }
 protected:
   void webServerSetup();
   void webServerLoop();
@@ -43,6 +46,7 @@ protected:
   IotsaMod *firstModule;
   IotsaMod *firstEarlyModule;
   String title;
+  bool haveOTA;
 };
 
 class IotsaMod {

@@ -156,18 +156,16 @@ IotsaWifiMod::handlerConfigmode() {
     if (tempConfigurationMode == TMPC_CONFIG) {
       message += "<p><em>Set configuration mode here, then power-cycle device to activate configuration mode for 2 minutes.</em></p>";
       message += "<p><em>Connect to WiFi network " + hostName + ", device 192.168.4.1 to change settings during that configuration period. </em></p>";
-#ifdef WITH_OTA
-    } else if (tempConfigurationMode == TMPC_OTA) {
+    } else if (app.otaEnabled() && tempConfigurationMode == TMPC_OTA) {
       message += "<p><em>Power-cycle device to activate OTA update mode for 2 minutes.</em></p>";
-#endif
     } else {
       message += "<p><em>Settings saved to EEPROM, device will boot to normal operation.</em></p>";
     }
   }
   message += "<form method='get'><input name='config' type='checkbox' value='1'> Enter configuration mode after next reboot.<br>";
-#ifdef WITH_OTA
-  message += "<input name='config' type='checkbox' value='2'> Enable over-the-air update after next reboot.</br>";
-#endif
+  if (app.otaEnabled()) {
+	  message += "<input name='config' type='checkbox' value='2'> Enable over-the-air update after next reboot.</br>";
+  }
   message += "<input name='factoryreset' type='checkbox' value='1'> Factory-reset and clear all files. <input name='iamsure' type='checkbox' value='1'> Yes, I am sure.</br>";
   message += "<br><input type='submit'></form></body></html>";
   server.send(200, "text/html", message);
@@ -212,7 +210,6 @@ void IotsaWifiMod::configLoad() {
   int tcm;
   cf.get("mode", tcm, (int)TMPC_CONFIG);
   tempConfigurationMode = (config_mode)tcm;
-  IFDEBUG { Serial.print("xxxjack mode="); Serial.println((int)tempConfigurationMode);}
   cf.get("ssid", ssid, "");
   cf.get("ssidPassword", ssidPassword, "");
   cf.get("hostName", hostName, "");

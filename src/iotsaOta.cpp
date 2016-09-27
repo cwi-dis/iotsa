@@ -28,6 +28,7 @@ void otaOnError(int error) {
 }
 
 void IotsaOtaMod::setup() {
+  app.enableOta();
   if (tempConfigurationMode == TMPC_OTA) {
 	Serial.println("OTA-update enabled");
 	ArduinoOTA.setPort(8266);
