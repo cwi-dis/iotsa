@@ -4,7 +4,7 @@
 
 class IotsaFilesBackupMod : public IotsaMod {
 public:
-  IotsaFilesBackupMod(IotsaApplication &_app) : IotsaMod(_app) {}
+  using IotsaMod::IotsaMod;
   void setup();
   void serverSetup();
   void loop();

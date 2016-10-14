@@ -49,25 +49,42 @@ protected:
   bool haveOTA;
 };
 
+class IotsaAuthMod;
+
 class IotsaMod {
 friend class IotsaApplication;
 public:
-  IotsaMod(IotsaApplication &_app, bool early=false) : app(_app), server(_app.server), nextModule(NULL) {
+  IotsaMod(IotsaApplication &_app, IotsaAuthMod *_auth=NULL, bool early=false)
+  : app(_app), 
+  	server(_app.server), 
+  	auth(_auth), 
+  	nextModule(NULL)
+  {
     if (early) {
       app.addModEarly(this);
     } else {
       app.addMod(this);
     }
-    }
-	virtual void setup() = 0;
-	virtual void serverSetup() = 0;
-	virtual void loop() = 0;
+  }
+  virtual void setup() = 0;
+  virtual void serverSetup() = 0;
+  virtual void loop() = 0;
   virtual String info() = 0;
 protected:
+  bool needsAuthentication();
   IotsaApplication &app;
   ESP8266WebServer &server;
+  IotsaAuthMod *auth;
   IotsaMod *nextModule;
 };
+
+class IotsaAuthMod : public IotsaMod {
+public:
+  using IotsaMod::IotsaMod;	// Inherit constructor
+  virtual bool needsAuthentication();
+};
+
+inline bool IotsaMod::needsAuthentication() { return auth ? auth->needsAuthentication() : false; }
 
 extern bool configurationMode;        // True if we have no config, and go into AP mode
 typedef enum { TMPC_NORMAL, TMPC_CONFIG, TMPC_OTA } config_mode;

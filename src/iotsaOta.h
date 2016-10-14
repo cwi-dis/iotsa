@@ -4,11 +4,11 @@
 
 class IotsaOtaMod : public IotsaMod {
 public:
-  IotsaOtaMod(IotsaApplication &_app) : IotsaMod(_app) {}
-	void setup();
-	void serverSetup();
-	void loop();
-	String info();
+  using IotsaMod::IotsaMod;
+  void setup();
+  void serverSetup();
+  void loop();
+  String info();
 };
 
 #endif

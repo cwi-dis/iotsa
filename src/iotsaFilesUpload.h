@@ -4,7 +4,7 @@
 
 class IotsaFilesUploadMod : public IotsaMod {
 public:
-  IotsaFilesUploadMod(IotsaApplication &_app) : IotsaMod(_app) {}
+  using IotsaMod::IotsaMod;
   void setup();
   void serverSetup();
   void loop();

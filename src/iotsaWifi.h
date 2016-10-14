@@ -4,7 +4,7 @@
 
 class IotsaWifiMod : public IotsaMod {
 public:
-  IotsaWifiMod(IotsaApplication &_app) : IotsaMod(_app, true) {}
+  IotsaWifiMod(IotsaApplication &_app, IotsaAuthMod *_auth=NULL) : IotsaMod(_app, _auth, true) {}
 	void setup();
 	void serverSetup();
 	void loop();
