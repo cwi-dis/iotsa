@@ -48,12 +48,14 @@ IotsaNtpMod::handler() {
   LED digitalWrite(led, 1);
   for (uint8_t i=0; i<server.args(); i++){
     if( server.argName(i) == "ntpServer") {
-      ntpServer = server.arg(i);
-      anyChanged = true;
+    	if (needsAuthentication()) return;
+    	ntpServer = server.arg(i);
+    	anyChanged = true;
     }
     if( server.argName(i) == "minutesWest") {
-      minutesWestFromUtc = server.arg(i).toInt();
-      anyChanged = true;
+    	if (needsAuthentication()) return;
+    	minutesWestFromUtc = server.arg(i).toInt();
+    	anyChanged = true;
     }
     if (anyChanged) configSave();
   }

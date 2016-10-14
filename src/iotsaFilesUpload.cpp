@@ -11,6 +11,7 @@ bool _uploadOK;
 
 void
 IotsaFilesUploadMod::uploadHandler() {
+  if (needsAuthentication()) return;
   LED digitalWrite(led, 1);
   HTTPUpload& upload = server.upload();
   _uploadOK = false;
@@ -43,6 +44,7 @@ IotsaFilesUploadMod::uploadOkHandler() {
 }
 
 void IotsaFilesUploadMod::uploadFormHandler() {
+  if (needsAuthentication()) return;
   String message = "<form method='POST' action='/upload' enctype='multipart/form-data'>Select file to upload:<input type='file' name='blob'><br>Filename:<input name='filename'><br><input type='submit' value='Update'></form>";
   server.send(200, "text/html", message);
 }

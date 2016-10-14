@@ -131,17 +131,27 @@ void
 IotsaWifiMod::handlerConfigmode() {
   LED digitalWrite(led, 1);
   bool anyChanged = false;
-  bool factoryreset = false;
+  bool factoryReset = false;
   bool iamsure = false;
   for (uint8_t i=0; i<server.args(); i++) {
     if( server.argName(i) == "config") {
-      tempConfigurationMode = config_mode(atoi(server.arg(i).c_str()));
-      anyChanged = true;
+    	if (needsAuthentication()) return;
+      	tempConfigurationMode = config_mode(atoi(server.arg(i).c_str()));
+      	anyChanged = true;
     }
-    if( server.argName(i) == "factoryreset" && atoi(server.arg(i).c_str()) == 1) factoryreset = true;
-    if( server.argName(i) == "iamsure" && atoi(server.arg(i).c_str()) == 1) iamsure = true;
+    if( server.argName(i) == "factoryreset" && atoi(server.arg(i).c_str()) == 1) {
+    	// Note: factoryReset does NOT require authenticationso users have a way to reclaim
+    	// hardware for which they have lost the username/password. The device will, however,
+    	// be reset to factory settings, so no information can be leaked.
+    	factoryReset = true;
+    	anyChanged = true;
+	}
+    if( server.argName(i) == "iamsure" && atoi(server.arg(i).c_str()) == 1) {
+    	// Note: does not set anyChanged, so only has a function if factoryReset is also set
+    	iamsure = true;
+	}
   }
-  if (factoryreset && iamsure) {
+  if (factoryReset && iamsure) {
   	server.send(200, "text/plain", "Formatting SPIFFS and rebooting");
   	delay(1000);
   	IFDEBUG Serial.println("Formatting SPIFFS...");

@@ -13,18 +13,7 @@
 #include "iotsa.h"
 #include "iotsaWifi.h"
 
-// CHANGE: Add application includes and declarations here
-
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
-
-ESP8266WebServer server(80);
-IotsaApplication application(server, "Iotsa Hello World Server");
-IotsaWifiMod wifiMod(application);
-
-#ifdef WITH_OTA
-#include "iotsaOta.h"
-IotsaOtaMod otaMod(application);
-#endif
 
 //
 // Authentication class. Requires username/password to match before allowing changing of
@@ -114,20 +103,29 @@ void IotsaHelloMod::loop() {
   // Nothing to do in the loop, for this module
 }
 
-// Instantiate the authentication module
-IotsaStaticAuthMod myAuthenticator(application);
+//
+// Instantiate all the objects we need.
+//
+ESP8266WebServer server(80);  // The web server
+IotsaApplication application(server, "Iotsa Hello World Server"); // The application framework
+IotsaStaticAuthMod myAuthenticator(application);  // Our authenticator module
+IotsaWifiMod wifiMod(application, &myAuthenticator);  // The network configuration module (authenticated)
 
-// Instantiate the Hello module, and install it in the framework
-IotsaHelloMod helloMod(application, &myAuthenticator);
+#ifdef WITH_OTA
+#include "iotsaOta.h"
+IotsaOtaMod otaMod(application, &myAuthenticator);  // The over-the-air updater module (authenticated)
+#endif
 
-// Standard setup() method, hands off most work to the application framework
+IotsaHelloMod helloMod(application, &myAuthenticator); // Our hello module (authenticated)
+
+// Standard setup() method, hands off everything to the application framework
 void setup(void){
   application.setup();
   application.serverSetup();
   ESP.wdtEnable(WDTO_120MS);
 }
  
-// Standard loop() routine, hands off most work to the application framework
+// Standard loop() routine, hands off everything to the application framework
 void loop(void){
   application.loop();
 }

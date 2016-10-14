@@ -44,6 +44,7 @@ void IotsaFilesBackupMod::setup() {
 
 void
 IotsaFilesBackupMod::handler() {
+  if (needsAuthentication()) return;
   LED digitalWrite(led, 1);
   IFDEBUG Serial.println("Creating backup");
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);

@@ -7,6 +7,7 @@ void IotsaFilesMod::setup() {
 
 void
 IotsaFilesMod::listHandler() {
+  if (needsAuthentication()) return;
   LED digitalWrite(led, 1);
   String message = "<html><head><title>Files</title></head><body><h1>Files</h1><ul>";
   Dir d = SPIFFS.openDir("/data");
@@ -23,21 +24,25 @@ IotsaFilesMod::notFoundHandler() {
   LED digitalWrite(led, 1);
   String path = server.uri();
   File dataFile;
-  if (SPIFFS.exists(path) && (dataFile = SPIFFS.open(path, "r"))) {
-    String dataType = "text/plain";
-    if(path.endsWith(".html")) dataType = "text/html";
-    else if(path.endsWith(".css")) dataType = "text/css";
-    else if(path.endsWith(".js")) dataType = "application/javascript";
-    else if(path.endsWith(".png")) dataType = "image/png";
-    else if(path.endsWith(".gif")) dataType = "image/gif";
-    else if(path.endsWith(".jpg")) dataType = "image/jpeg";
-    else if(path.endsWith(".ico")) dataType = "image/x-icon";
-    else if(path.endsWith(".xml")) dataType = "text/xml";
-    else if(path.endsWith(".pdf")) dataType = "application/pdf";
-    else if(path.endsWith(".zip")) dataType = "application/zip";
-    server.streamFile(dataFile, dataType);
-    dataFile.close();
-    return;
+  if (SPIFFS.exists(path)) {
+  	if (needsAuthentication()) return;
+  	
+    if (dataFile = SPIFFS.open(path, "r")) {
+		String dataType = "text/plain";
+		if(path.endsWith(".html")) dataType = "text/html";
+		else if(path.endsWith(".css")) dataType = "text/css";
+		else if(path.endsWith(".js")) dataType = "application/javascript";
+		else if(path.endsWith(".png")) dataType = "image/png";
+		else if(path.endsWith(".gif")) dataType = "image/gif";
+		else if(path.endsWith(".jpg")) dataType = "image/jpeg";
+		else if(path.endsWith(".ico")) dataType = "image/x-icon";
+		else if(path.endsWith(".xml")) dataType = "text/xml";
+		else if(path.endsWith(".pdf")) dataType = "application/pdf";
+		else if(path.endsWith(".zip")) dataType = "application/zip";
+		server.streamFile(dataFile, dataType);
+		dataFile.close();
+		return;
+	}
   }
   String message = "File Not Found\n\n";
   message += "URI: ";
