@@ -10,8 +10,9 @@ IotsaNothingMod::handler() {
     	argument = server.arg(i);
     	anyChanged = true;
     }
-    if (anyChanged) configSave();
   }
+  if (anyChanged) configSave();
+
   String message = "<html><head><title>Boilerplate module</title></head><body><h1>Boilerplate module</h1>";
   message += "<form method='get'>Argument: <input name='argument' value='";
   message += argument;
