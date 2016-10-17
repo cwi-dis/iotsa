@@ -10,6 +10,7 @@ public:
   ~IotsaConfigFileLoad();
   void get(String name, int &value, int def);
   void get(String name, String &value, const char *def);
+  void get(String name, String &value, const String &def);
 protected:
   File fp;
 };

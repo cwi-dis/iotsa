@@ -16,7 +16,6 @@ protected:
   void handler();
   String username;
   String password;
-  bool defaultPassword;
 };
 
 #endif

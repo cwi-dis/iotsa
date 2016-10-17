@@ -16,8 +16,12 @@ IotsaConfigFileLoad::~IotsaConfigFileLoad() {
 void IotsaConfigFileLoad::get(String name, int &value, int def) {
   String sValue;
   String sDef = String(def);
-  get(name, sValue, sDef.c_str());
+  get(name, sValue, sDef);
   value = sValue.toInt();
+}
+
+void IotsaConfigFileLoad::get(String name, String &value, const String &def) {
+  get(name, value, def.c_str());
 }
 
 void IotsaConfigFileLoad::get(String name, String &value, const char *def) {

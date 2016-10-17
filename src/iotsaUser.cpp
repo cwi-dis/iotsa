@@ -1,7 +1,7 @@
 #include "iotsaUser.h"
 #include "iotsaConfigFile.h"
 
-#define PASSWORD_DEBUGGING	// Enables admin1/admin1 to always log in
+#undef PASSWORD_DEBUGGING	// Enables admin1/admin1 to always log in
 
 String &defaultPassword() {
   static String dftPwd;
@@ -29,9 +29,12 @@ IotsaUserMod::handler() {
   LED digitalWrite(led, 1);
   for (uint8_t i=0; i<server.args(); i++){
     if( server.argName(i) == "username") {
-    	if (needsAuthentication()) return;
-    	username = server.arg(i);
-    	anyChanged = true;
+    	String un = server.arg(i);
+    	if (un != username) {
+			if (needsAuthentication()) return;
+			username = un;
+	    	anyChanged = true;
+		}
     }
     if( server.argName(i) == "old") {
     	// password authentication is checked later.
@@ -43,20 +46,18 @@ IotsaUserMod::handler() {
     	passwordChanged = true;
     }
     if( server.argName(i) == "again") {
-    	pw1 = server.arg(i);
+    	pw2 = server.arg(i);
     	passwordChanged = true;
     }
   }
-  if (passwordChanged && pw1 == pw2) {
-  	if (password == pwold && password != pw1) {
-    	if (needsAuthentication()) return;
+  if (passwordChanged) {
+  	if (pwold != password || pw1 != pw2) {
+  		// Old password incorrect or passwords don't match
+  		anyChanged = false;
+  	} else {
 		password = pw1;
 		anyChanged = true;
-	} else {
-		anyChanged = false;
-		passwordChanged = false;
 	}
-
   }
   if (anyChanged) configSave();
   String message = "<html><head><title>Edit users and passwords</title></head><body><h1>Edit users and passwords</h1>";
@@ -64,13 +65,15 @@ IotsaUserMod::handler() {
   	message += "<p><em>Passwords do not match, not changed.</em></p>";
   } else if (passwordChanged) {
   	message += "<p><em>Password has been changed.</em></p>";
+  	message += "old=" + pwold + ", new=" + pw1 + ", new2=" + pw2;
 }
   	
   message += "<form method='get'>Username: <input name='username' value='";
   message += username;
   message += "'>";
-  if (password) {
+  if (password != "") {
   	message += "<br>Old Password: <input type='password' name='old' value=''";
+  	message += "empty1";
   	message += "'>";
   } else if (configurationMode == TMPC_CONFIG) {
   	message += "<br>Password not set, default is '";
@@ -80,9 +83,9 @@ IotsaUserMod::handler() {
   	message += "<br>Password not set, reboot in configuration mode to see default password.";
   }
   message += "<br>New Password: <input type='password' name='password' value='";
-  message += password;
+  message += "empty2";
   message += "'><br>Repeat New Password: <input type='password' name='again' value='";
-  message += password;
+  message += "empty3";
   message += "'><br><input type='submit'></form>";
   server.send(200, "text/html", message);
   LED digitalWrite(led, 0);
@@ -98,8 +101,8 @@ void IotsaUserMod::serverSetup() {
 
 void IotsaUserMod::configLoad() {
   IotsaConfigFileLoad cf("/config/users.cfg");
-  cf.get("argument", username, "");
- 
+  cf.get("user0", username, username);
+  cf.get("password0", password, password);
 }
 
 void IotsaUserMod::configSave() {
