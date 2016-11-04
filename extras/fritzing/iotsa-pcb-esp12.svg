@@ -1,0 +1,1902 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 14.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 43363)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Layer_1" xmlns:svg="http://www.w3.org/2000/svg"
+	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="207.765px"
+	 height="105.594px" viewBox="0 0 207.765 105.594" enable-background="new 0 0 207.765 105.594" xml:space="preserve">
+<g id="Silkscreen">
+	<g>
+		<g transform="translate(17.603,0)">
+			<g id="board">
+				
+					<rect id="boardoutline" x="0.288" y="0.288" fill="#FFFFFF" fill-opacity="0.5" stroke="#111111" stroke-width="0.576" width="189.586" height="105.019"/>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(17.603,0)">
+			<g id="silkscreen0">
+				<rect x="0.288" y="0.288" fill="none" stroke="#000000" stroke-width="0.576" width="189.586" height="105.019"/>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(72.7157,27.1881)">
+			<g id="silkscreen">
+				<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="5.76" x2="30.24" y2="5.76"/>
+				<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="30.24" y1="5.76" x2="30.24" y2="18.72"/>
+				<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="30.24" y1="18.72" x2="1.44" y2="18.72"/>
+				<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="18.72" x2="1.44" y2="5.76"/>
+				<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="5.76" x2="30.24" y2="5.76"/>
+				<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="30.24" y1="5.76" x2="30.24" y2="10.08"/>
+				<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="30.24" y1="10.08" x2="1.44" y2="10.08"/>
+				<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="10.08" x2="1.44" y2="5.76"/>
+				<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="10.8" y1="5.76" x2="10.8" y2="10.08"/>
+				<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="20.88" y1="5.76" x2="20.88" y2="10.08"/>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(0,70.435)">
+			<g transform="matrix(0,-1,1,0,0,0)">
+				<g id="silkscreen_1_">
+					<g transform="matrix(1, 0, 0, 1, 0.737, 3)">
+						<g id="esp-12f">
+							<g>
+								
+									<rect x="-8.815" y="11.339" transform="matrix(-2.547107e-06 -1 1 -2.547107e-06 -8.8154 59.2159)" fill="none" stroke="#000000" stroke-width="0.2" width="68.031" height="45.354"/>
+							</g>
+							<g transform="matrix(1, 0, 0, 1, 2.523, 0)">
+								<g>
+									<polygon points="43.301,15.289 42.081,15.289 42.081,3.269 36.961,3.269 36.961,10.969 28.617,10.969 28.617,3.269 
+										23.357,3.269 23.357,10.969 15.077,10.969 15.077,3.269 9.961,3.269 9.961,15.286 8.741,15.286 8.741,3.269 3.696,3.269 
+										3.696,15.289 2.049,15.289 2.049,2.049 16.297,2.049 16.297,9.749 22.137,9.749 22.137,2.049 29.837,2.049 29.837,9.749 
+										35.741,9.749 35.741,2.049 43.301,2.049 									"/>
+								</g>
+								<g>
+									
+										<rect x="1.075" y="25.76" transform="matrix(-2.547107e-06 -1 1 -2.547107e-06 -20.1851 65.5357)" fill="none" stroke="#000000" stroke-width="0.2" width="43.2" height="34.2"/>
+								</g>
+								<g transform="matrix(1, 0, 0, 1, 14.2041, 44)">
+									<text transform="matrix(1 0 0 1 6.713867e-04 4.882812e-04)" font-family="'DroidSans'" font-size="4">ESP-8266</text>
+								</g>
+							</g>
+						</g>
+					</g>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(17.603,0)">
+			<g id="silkscreen_2_">
+				<rect x="0.288" y="0.288" fill="none" stroke="#000000" stroke-width="0.576" width="189.586" height="105.019"/>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(22.4578,12.6124)">
+			<g transform="matrix(0,-1,1,0,0,0)">
+				<g id="silkscreen_3_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="44.64"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="44.64" x2="8.64" y2="44.64"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="44.64" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.96" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(40.2654,78.8518)">
+			<g transform="matrix(0,1,-1,0,0,0)">
+				<g id="silkscreen_4_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="20.136" y1="6.389" x2="20.136" y2="12.058"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="5.965" y1="0.72" x2="18.011" y2="0.72"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="5.965" y1="17.728" x2="18.011" y2="17.728"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="3.129" y1="6.389" x2="3.129" y2="12.058"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="11.633" y1="7.807" x2="11.633" y2="10.641"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="13.051" y1="9.224" x2="10.217" y2="9.224"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(47.3284,102.119)">
+			<g transform="matrix(0,-1,1,0,0,0)">
+				<g id="silkscreen_5_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="20.137" y1="6.39" x2="20.137" y2="12.059"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="5.964" y1="0.72" x2="18.012" y2="0.72"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="5.964" y1="17.728" x2="18.012" y2="17.728"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="3.129" y1="6.39" x2="3.129" y2="12.059"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="11.633" y1="7.807" x2="11.633" y2="10.642"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="13.051" y1="9.224" x2="10.217" y2="9.224"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(70.6469,12.6124)">
+			<g transform="matrix(0,-1,1,0,0,0)">
+				<g id="silkscreen_6_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.96" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(75.3989,65.2318)">
+			<g id="silkscreen_7_">
+				<line fill="none" stroke="#F0F0F0" stroke-width="0.576" stroke-linecap="round" x1="25.8" y1="6.12" x2="19.847" y2="6.12"/>
+				<line fill="none" stroke="#F0F0F0" stroke-width="0.576" stroke-linecap="round" x1="25.8" y1="36.451" x2="25.8" y2="21.426"/>
+				<line fill="none" stroke="#F0F0F0" stroke-width="0.576" stroke-linecap="round" x1="25.8" y1="6.12" x2="25.8" y2="8.104"/>
+				<line fill="none" stroke="#F0F0F0" stroke-width="0.576" stroke-linecap="round" x1="0.288" y1="36.451" x2="0.288" y2="6.12"/>
+				<line fill="none" stroke="#F0F0F0" stroke-width="0.576" stroke-linecap="round" x1="0.288" y1="6.12" x2="6.241" y2="6.12"/>
+				
+					<line fill="none" stroke="#F0F0F0" stroke-width="0.576" stroke-linecap="round" x1="0.288" y1="36.451" x2="25.8" y2="36.451"/>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(77.0589,17.7629)">
+			<g transform="matrix(1,0,0,1,0,0)">
+				<g id="silkscreen_8_">
+					<path id="path3669" fill="none" stroke="#FFFFFF" stroke-width="0.576" stroke-linecap="round" d="M2.812,1.797
+						c2.072-1.917,5.271-1.916,7.341,0.005"/>
+					<path id="path3669-0" fill="none" stroke="#FFFFFF" stroke-width="0.576" stroke-linecap="round" d="M10.147,9.003
+						c-2.071,1.917-5.271,1.916-7.341-0.005"/>
+					<path id="path2828" fill="none" stroke="#FFFFFF" stroke-width="0.576" stroke-linecap="round" d="M8.28,0.72v1.8"/>
+					<path id="path3602" fill="none" stroke="#FFFFFF" stroke-width="0.576" stroke-linecap="round" d="M8.28,10.08v-1.8"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(78.4757,50.3614)">
+			<g id="silkscreen_9_">
+				<path id="path3669_1_" fill="none" stroke="#FFFFFF" stroke-width="0.576" stroke-linecap="round" d="M2.813,1.797
+					c2.071-1.917,5.271-1.916,7.341,0.005"/>
+				<path id="path3669-0_1_" fill="none" stroke="#FFFFFF" stroke-width="0.576" stroke-linecap="round" d="M10.148,9.004
+					c-2.072,1.917-5.271,1.914-7.341-0.006"/>
+				<path id="path2828_1_" fill="none" stroke="#FFFFFF" stroke-width="0.576" stroke-linecap="round" d="M8.28,0.72v1.8"/>
+				<path id="path3602_1_" fill="none" stroke="#FFFFFF" stroke-width="0.576" stroke-linecap="round" d="M8.28,10.08v-1.8"/>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(191.618,89.2045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_10_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.96" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(184.418,89.2045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_11_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.96" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(177.218,89.2045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_12_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.961" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(170.018,89.2045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_13_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.96" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(162.818,89.2045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_14_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.96" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(191.618,67.6045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_15_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.96" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(184.418,67.6045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_16_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.959" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(177.218,67.6045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_17_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.961" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(170.018,67.6045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_18_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.96" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(162.818,67.6045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_19_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.96" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(191.618,46.0045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_20_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.958" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(184.418,46.0045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_21_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.959" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(177.218,46.0045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_22_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.961" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(170.018,46.0045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_23_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.639" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.639" y1="23.04" x2="8.639" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.639" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.96" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(162.818,46.0045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_24_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.439" y1="1.44" x2="1.439" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.439" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.439" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.439" y1="3.96" x2="3.96" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(155.618,89.2045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_25_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.958" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(155.618,67.6045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_26_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.958" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(155.618,46.0045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_27_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.958" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(148.418,67.6045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_28_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.959" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(148.418,89.2045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_29_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.959" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(141.218,89.2045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_30_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.638" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.638" y1="23.04" x2="8.638" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.638" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.961" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(134.018,89.2045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_31_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.438" y1="1.44" x2="1.438" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.438" y1="23.04" x2="8.639" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.639" y1="23.04" x2="8.639" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.639" y1="1.44" x2="1.438" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.438" y1="3.96" x2="3.96" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(141.218,67.6045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_32_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.638" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.638" y1="23.04" x2="8.638" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.638" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.961" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(134.018,67.6045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_33_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.438" y1="1.44" x2="1.438" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.438" y1="23.04" x2="8.639" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.639" y1="23.04" x2="8.639" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.639" y1="1.44" x2="1.438" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.438" y1="3.96" x2="3.96" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(126.818,89.2045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_34_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.439" y1="1.44" x2="1.439" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.439" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.439" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.439" y1="3.96" x2="3.96" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(126.818,67.6045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_35_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.439" y1="1.44" x2="1.439" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.439" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.439" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.439" y1="3.96" x2="3.96" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(148.418,46.0045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_36_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.959" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(141.218,46.0045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_37_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="23.04" x2="8.638" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.638" y1="23.04" x2="8.638" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.638" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.96" x2="3.961" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(134.018,46.0045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_38_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.438" y1="1.44" x2="1.438" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.438" y1="23.04" x2="8.639" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.639" y1="23.04" x2="8.639" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.639" y1="1.44" x2="1.438" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.438" y1="3.96" x2="3.96" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(126.818,46.0045)">
+			<g transform="matrix(-1,0,0,-1,0,0)">
+				<g id="silkscreen_39_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.439" y1="1.44" x2="1.439" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.439" y1="23.04" x2="8.64" y2="23.04"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="23.04" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.439" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.439" y1="3.96" x2="3.96" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(191.618,89.9245)">
+			<g transform="matrix(0,1,-1,0,0,0)">
+				<g id="silkscreen_40_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="73.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="73.44" x2="8.64" y2="73.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="73.44" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.958" x2="3.96" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(191.618,3.52448)">
+			<g transform="matrix(0,1,-1,0,0,0)">
+				<g id="silkscreen_41_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="73.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="73.44" x2="8.64" y2="73.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="73.44" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.958" x2="3.96" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(191.618,10.7245)">
+			<g transform="matrix(0,1,-1,0,0,0)">
+				<g id="silkscreen_42_">
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="1.44" x2="1.44" y2="73.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.44" y1="73.44" x2="8.64" y2="73.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="73.44" x2="8.64" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.64" y1="1.44" x2="1.44" y2="1.44"/>
+					<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.44" y1="3.958" x2="3.96" y2="1.44"/>
+				</g>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(105.938,21.5245)">
+			<g id="silkscreen_43_">
+				<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.441" y1="1.44" x2="1.441" y2="51.84"/>
+				<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="1.441" y1="51.84" x2="8.642" y2="51.84"/>
+				<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.642" y1="51.84" x2="8.642" y2="1.44"/>
+				<line fill="none" stroke="#FFFFFF" stroke-width="0.72" x1="8.642" y1="1.44" x2="1.441" y2="1.44"/>
+				<line fill="none" stroke="#FFFFFF" stroke-width="0.36" x1="1.441" y1="3.96" x2="3.96" y2="1.44"/>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(94.8957,38.185)">
+			<g id="silkscreen_44_">
+				
+					<text id="label" xmlns:xml="http://www.w3.org/XML/1998/namespace" transform="matrix(1 0 0 1 1.6401 3.5523)" enable-background="new    " font-family="'OCRA'" font-size="3.9467">adc</text>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(92.3621,46.2396)">
+			<g id="silkscreen_45_">
+				
+					<text id="label_1_" xmlns:xml="http://www.w3.org/XML/1998/namespace" transform="matrix(1 0 0 1 2.1869 3.5524)" enable-background="new    " font-family="'OCRA'" font-size="3.9467">io16</text>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(92.5517,53.3325)">
+			<g id="silkscreen_46_">
+				
+					<text id="label_2_" xmlns:xml="http://www.w3.org/XML/1998/namespace" transform="matrix(1 0 0 1 2.1868 3.5523)" enable-background="new    " font-family="'OCRA'" font-size="3.9467">io14</text>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(93.0845,66.3991)">
+			<g id="silkscreen_47_">
+				
+					<text id="label_3_" xmlns:xml="http://www.w3.org/XML/1998/namespace" transform="matrix(1 0 0 1 2.1867 3.5521)" enable-background="new    " font-family="'OCRA'" font-size="3.9467">io13</text>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(92.1245,59.9991)">
+			<g id="silkscreen_48_">
+				
+					<text id="label_4_" xmlns:xml="http://www.w3.org/XML/1998/namespace" transform="matrix(1 0 0 1 2.1867 3.5517)" enable-background="new    " font-family="'OCRA'" font-size="3.9467">io12</text>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(94.7917,23.9991)">
+			<g id="silkscreen_49_">
+				
+					<text id="label_5_" xmlns:xml="http://www.w3.org/XML/1998/namespace" transform="matrix(1 0 0 1 1.6401 3.5517)" enable-background="new    " font-family="'OCRA'" font-size="3.9467">io4</text>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g transform="translate(95.0589,31.0162)">
+			<g id="silkscreen_50_">
+				
+					<text id="label_6_" xmlns:xml="http://www.w3.org/XML/1998/namespace" transform="matrix(1 0 0 1 1.64 3.5522)" enable-background="new    " font-family="'OCRA'" font-size="3.9467">io5</text>
+			</g>
+		</g>
+	</g>
+</g>
+<g id="Copper">
+	<g transform="translate(191.618,90.2908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row11">
+				<circle id="row11a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.963" r="2.088"/>
+				<circle id="row11b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row11c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(184.418,90.2908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row12">
+				<circle id="row12a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="5.963" r="2.088"/>
+				<circle id="row12b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="13.162" r="2.088"/>
+				<circle id="row12c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(177.218,90.2908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row13">
+				<circle id="row13a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.963" r="2.088"/>
+				<circle id="row13b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row13c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(170.018,90.2908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row14">
+				<circle id="row14a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.963" r="2.088"/>
+				<circle id="row14b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row14c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(162.818,90.2908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row15">
+				<circle id="row15a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="5.963" r="2.088"/>
+				<circle id="row15b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="13.162" r="2.088"/>
+				<circle id="row15c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(191.618,68.6908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row16">
+				<circle id="row16a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.961" r="2.088"/>
+				<circle id="row16b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.161" r="2.088"/>
+				<circle id="row16c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(184.418,68.6908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row17">
+				<circle id="row17a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="5.961" r="2.088"/>
+				<circle id="row17b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="13.161" r="2.088"/>
+				<circle id="row17c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(177.218,68.6908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row18">
+				<circle id="row18a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.961" r="2.088"/>
+				<circle id="row18b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.161" r="2.088"/>
+				<circle id="row18c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(170.018,68.6908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row19">
+				<circle id="row19a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.961" r="2.088"/>
+				<circle id="row19b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.161" r="2.088"/>
+				<circle id="row19c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(162.818,68.6908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row10">
+				<circle id="row10a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="5.961" r="2.088"/>
+				<circle id="row10b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="13.161" r="2.088"/>
+				<circle id="row10c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(191.618,47.0908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row20">
+				<circle id="row20a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.962" r="2.088"/>
+				<circle id="row20b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row20c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.361" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(184.418,47.0908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row21">
+				<circle id="row21a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="5.962" r="2.088"/>
+				<circle id="row21b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="13.162" r="2.088"/>
+				<circle id="row21c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="20.361" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(177.218,47.0908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row22">
+				<circle id="row22a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.962" r="2.088"/>
+				<circle id="row22b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row22d" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.361" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(170.018,47.0908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row23">
+				<circle id="row23a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.962" r="2.088"/>
+				<circle id="row23b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row23c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.361" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(162.818,47.0908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row24">
+				<circle id="row24a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="5.962" r="2.088"/>
+				<circle id="row24b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="13.162" r="2.088"/>
+				<circle id="row24c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="20.361" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(155.618,90.2908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row25">
+				<circle id="row25a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.963" r="2.088"/>
+				<circle id="row25b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row25c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(155.618,68.6908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row26">
+				<circle id="row26a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.961" r="2.088"/>
+				<circle id="row26b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.161" r="2.088"/>
+				<circle id="row26c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(155.618,47.0908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row27">
+				<circle id="row27a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.962" r="2.088"/>
+				<circle id="row27b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row27c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.361" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(148.418,68.6908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row28">
+				<circle id="row28a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="5.961" r="2.088"/>
+				<circle id="row28b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="13.161" r="2.088"/>
+				<circle id="row28c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(148.418,90.2908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row29">
+				<circle id="row29a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="5.963" r="2.088"/>
+				<circle id="row29b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="13.162" r="2.088"/>
+				<circle id="row29c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(141.218,90.2908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row30">
+				<circle id="row30a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.963" r="2.088"/>
+				<circle id="row30b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row30c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(134.018,90.2908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row31">
+				<circle id="row31a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.963" r="2.088"/>
+				<circle id="row31b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row31c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(141.218,68.6908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row32">
+				<circle id="row32a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.961" r="2.088"/>
+				<circle id="row32b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.161" r="2.088"/>
+				<circle id="row32c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(134.018,68.6908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row33">
+				<circle id="row33a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.961" r="2.088"/>
+				<circle id="row33b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.161" r="2.088"/>
+				<circle id="row33c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(126.818,90.2908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row34">
+				<circle id="row34a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="5.963" r="2.088"/>
+				<circle id="row34b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="13.162" r="2.088"/>
+				<circle id="row34c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(126.818,68.6908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row35">
+				<circle id="row35a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="5.961" r="2.088"/>
+				<circle id="row35b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="13.161" r="2.088"/>
+				<circle id="row35c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(148.418,47.0908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row36">
+				<circle id="row36a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="5.962" r="2.088"/>
+				<circle id="row36b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="13.162" r="2.088"/>
+				<circle id="row36c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="20.361" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(141.218,47.0908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row37">
+				<circle id="row37a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.962" r="2.088"/>
+				<circle id="row37b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row37c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.361" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(134.018,47.0908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row38">
+				<circle id="row38a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.962" r="2.088"/>
+				<circle id="row38b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row38c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.361" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(126.818,47.0908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row39">
+				<circle id="row39a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="5.962" r="2.088"/>
+				<circle id="row39b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="13.162" r="2.088"/>
+				<circle id="row39c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="20.361" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(191.618,91.0108)">
+		<g transform="matrix(0,1,-1,0,0,0)">
+			<g id="gnd">
+				<circle id="gnd0" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.118" cy="4.292" r="2.088"/>
+				<circle id="gnd1" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.118" cy="11.491" r="2.088"/>
+				<circle id="gnd2" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.118" cy="18.692" r="2.088"/>
+				<circle id="gnd3" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.118" cy="25.891" r="2.088"/>
+				<circle id="gnd4" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.118" cy="33.092" r="2.088"/>
+				<circle id="gnd5" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.118" cy="40.292" r="2.088"/>
+				<circle id="gnd6" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.118" cy="47.491" r="2.088"/>
+				<circle id="gnd7" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.118" cy="54.692" r="2.088"/>
+				<circle id="gnd8" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.118" cy="61.891" r="2.088"/>
+				<circle id="gnd9" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.118" cy="69.092" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(191.618,4.61077)">
+		<g transform="matrix(0,1,-1,0,0,0)">
+			<g id="power3v">
+				<circle id="power3v0" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.119" cy="4.292" r="2.088"/>
+				<circle id="power3v1" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.119" cy="11.491" r="2.088"/>
+				<circle id="power3v2" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.119" cy="18.692" r="2.088"/>
+				<circle id="power3v3" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.119" cy="25.891" r="2.088"/>
+				<circle id="power3v4" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.119" cy="33.092" r="2.088"/>
+				<circle id="power3v5" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.119" cy="40.292" r="2.088"/>
+				<circle id="power3v6" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.119" cy="47.491" r="2.088"/>
+				<circle id="power3v7" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.119" cy="54.692" r="2.088"/>
+				<circle id="power3v8" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.119" cy="61.891" r="2.088"/>
+				<circle id="power3v9" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.119" cy="69.092" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(191.618,11.8108)">
+		<g transform="matrix(0,1,-1,0,0,0)">
+			<g id="power5v">
+				<circle id="power5v0" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.118" cy="4.292" r="2.088"/>
+				<circle id="power5v1" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.118" cy="11.491" r="2.088"/>
+				<circle id="power5v2" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.118" cy="18.692" r="2.088"/>
+				<circle id="power5v3" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.118" cy="25.891" r="2.088"/>
+				<circle id="power5v4" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.118" cy="33.092" r="2.088"/>
+				<circle id="power5v5" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.118" cy="40.292" r="2.088"/>
+				<circle id="power5v6" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.118" cy="47.491" r="2.088"/>
+				<circle id="power5v7" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.118" cy="54.692" r="2.088"/>
+				<circle id="power5v8" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.118" cy="61.891" r="2.088"/>
+				<circle id="power5v9" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.118" cy="69.092" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(105.938,22.6108)">
+		<g id="esppins">
+			<circle id="io4" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="5.789" cy="4.119" r="2.088"/>
+			<circle id="io5" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="5.789" cy="11.318" r="2.088"/>
+			<circle id="adc" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="5.789" cy="18.518" r="2.088"/>
+			<circle id="io16" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="5.789" cy="25.718" r="2.088"/>
+			<circle id="io14" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="5.789" cy="32.918" r="2.088"/>
+			<circle id="io12" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="5.789" cy="40.119" r="2.088"/>
+			<circle id="io13" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="5.789" cy="47.318" r="2.088"/>
+		</g>
+	</g>
+	<g transform="translate(195.693,3.94053)">
+		<g id="copper1_55_">
+			<circle id="nonconn0" cx="5.467" cy="3.797" r="3.118"/>
+		</g>
+	</g>
+	<g transform="translate(195.693,94.6492)">
+		<g id="copper1_56_">
+			<circle id="nonconn0_1_" cx="5.467" cy="3.795" r="3.118"/>
+		</g>
+	</g>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="127.559" y1="8.729" x2="124.693" y2="8.729"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="134.758" y1="8.729" x2="131.894" y2="8.729"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="141.959" y1="8.729" x2="139.094" y2="8.729"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="149.158" y1="8.729" x2="146.295" y2="8.729"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="156.357" y1="15.929" x2="153.494" y2="15.929"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="156.357" y1="8.729" x2="153.494" y2="8.729"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="163.559" y1="8.729" x2="160.693" y2="8.729"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="170.758" y1="8.729" x2="167.894" y2="8.729"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="177.959" y1="8.729" x2="175.094" y2="8.729"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="185.158" y1="8.729" x2="182.295" y2="8.729"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="185.158" y1="15.929" x2="182.295" y2="15.929"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="185.158" y1="95.129" x2="182.295" y2="95.129"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="175.094" y1="15.929" x2="177.959" y2="15.929"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="175.094" y1="95.129" x2="177.959" y2="95.129"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="167.894" y1="15.929" x2="170.758" y2="15.929"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="160.693" y1="15.929" x2="163.559" y2="15.929"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="167.894" y1="95.129" x2="170.758" y2="95.129"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="160.693" y1="95.129" x2="163.559" y2="95.129"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="153.494" y1="95.129" x2="156.357" y2="95.129"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="146.295" y1="95.129" x2="149.158" y2="95.129"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="139.094" y1="95.129" x2="141.959" y2="95.129"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="131.894" y1="95.129" x2="134.758" y2="95.129"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="124.693" y1="95.129" x2="127.559" y2="95.129"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="146.295" y1="15.929" x2="149.158" y2="15.929"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="139.094" y1="15.929" x2="141.959" y2="15.929"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="131.894" y1="15.929" x2="134.758" y2="15.929"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="124.693" y1="15.929" x2="127.559" y2="15.929"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="122.525" y1="82.16" x2="122.525" y2="79.297"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="122.525" y1="74.961" x2="122.525" y2="72.098"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="129.727" y1="74.961" x2="129.727" y2="72.098"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="129.727" y1="82.16" x2="129.727" y2="79.297"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="136.926" y1="74.961" x2="136.926" y2="72.098"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="136.926" y1="82.16" x2="136.926" y2="79.297"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="144.127" y1="82.16" x2="144.127" y2="79.297"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="151.326" y1="82.16" x2="151.326" y2="79.297"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="158.525" y1="82.16" x2="158.525" y2="79.297"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="144.127" y1="74.961" x2="144.127" y2="72.098"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="151.326" y1="74.961" x2="151.326" y2="72.098"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="158.525" y1="74.961" x2="158.525" y2="72.098"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="165.727" y1="74.961" x2="165.727" y2="72.098"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="165.727" y1="82.16" x2="165.727" y2="79.297"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="172.926" y1="74.961" x2="172.926" y2="72.098"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="172.926" y1="82.16" x2="172.926" y2="79.297"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="180.127" y1="74.961" x2="180.127" y2="72.098"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="180.127" y1="82.16" x2="180.127" y2="79.297"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="187.326" y1="74.961" x2="187.326" y2="72.098"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="187.326" y1="82.16" x2="187.326" y2="79.297"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="187.326" y1="60.562" x2="187.326" y2="57.697"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="180.127" y1="60.562" x2="180.127" y2="57.697"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="172.926" y1="60.562" x2="172.926" y2="57.697"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="165.727" y1="60.562" x2="165.727" y2="57.697"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="158.525" y1="60.562" x2="158.525" y2="57.697"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="151.326" y1="60.562" x2="151.326" y2="57.697"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="144.127" y1="60.562" x2="144.127" y2="57.697"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="136.926" y1="60.562" x2="136.926" y2="57.697"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="129.727" y1="60.562" x2="129.727" y2="57.697"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="122.525" y1="60.562" x2="122.525" y2="57.697"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="122.525" y1="53.361" x2="122.525" y2="50.497"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="129.727" y1="53.361" x2="129.727" y2="50.497"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="136.926" y1="53.361" x2="136.926" y2="50.497"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="144.127" y1="53.361" x2="144.127" y2="50.497"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="151.326" y1="53.361" x2="151.326" y2="50.497"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="158.525" y1="53.361" x2="158.525" y2="50.497"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="165.727" y1="53.361" x2="165.727" y2="50.497"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="172.926" y1="53.361" x2="172.926" y2="50.497"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="180.127" y1="53.361" x2="180.127" y2="50.497"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="187.326" y1="53.361" x2="187.326" y2="50.497"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="187.326" y1="38.961" x2="187.326" y2="36.097"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="180.127" y1="38.961" x2="180.127" y2="36.097"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="172.926" y1="38.961" x2="172.926" y2="36.097"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="165.727" y1="38.961" x2="165.727" y2="36.097"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="158.525" y1="38.961" x2="158.525" y2="36.097"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="151.326" y1="38.961" x2="151.326" y2="36.097"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="144.127" y1="38.961" x2="144.127" y2="36.097"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="136.926" y1="38.961" x2="136.926" y2="36.097"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="129.727" y1="38.961" x2="129.727" y2="36.097"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="122.525" y1="38.961" x2="122.525" y2="36.097"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="122.525" y1="31.761" x2="122.525" y2="28.897"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="129.727" y1="31.761" x2="129.727" y2="28.897"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="136.926" y1="31.761" x2="136.926" y2="28.897"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="144.127" y1="31.761" x2="144.127" y2="28.897"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="151.326" y1="31.761" x2="151.326" y2="28.897"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="158.525" y1="31.761" x2="158.525" y2="28.897"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="165.727" y1="31.761" x2="165.727" y2="28.897"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="172.926" y1="31.761" x2="172.926" y2="28.897"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="180.127" y1="31.761" x2="180.127" y2="28.897"/>
+	
+		<line fill="none" stroke="#F2C600" stroke-width="1.728" stroke-linecap="round" x1="187.326" y1="31.761" x2="187.326" y2="28.897"/>
+</g>
+<g>
+	<g id="breadboard">
+		<g>
+			<polygon fill="#8C8C8C" points="36.879,103.593 36.879,95.318 39.039,95.318 39.039,103.593 			"/>
+			<polygon fill="#8C8C8C" points="22.478,88.123 22.478,79.849 24.637,79.849 24.637,88.123 			"/>
+			<polygon fill="#8C8C8C" points="36.879,88.124 36.879,79.848 39.039,79.848 39.039,88.124 			"/>
+			<polygon fill="#8C8C8C" points="22.479,103.594 22.479,95.318 24.639,95.318 24.639,103.594 			"/>
+			<rect x="22.065" y="82.895" width="17.653" height="17.655"/>
+			<path fill="#999999" d="M39.718,99.109c0,0.793-0.646,1.439-1.44,1.439H23.504c-0.792,0-1.439-0.646-1.439-1.439V84.334
+				c0-0.792,0.646-1.439,1.439-1.439h14.775c0.795,0,1.438,0.647,1.438,1.439L39.718,99.109L39.718,99.109z"/>
+			<circle cx="24.636" cy="85.466" r="1.529"/>
+			<circle cx="37.189" cy="85.493" r="1.529"/>
+			<circle cx="37.163" cy="98.046" r="1.529"/>
+			<circle cx="24.61" cy="98.018" r="1.529"/>
+			<circle fill="#3F3F3F" cx="30.891" cy="91.721" r="5.148"/>
+			
+				<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="-170.9566" y1="1382.5234" x2="-160.6607" y2="1382.5234" gradientTransform="matrix(1 0 0 1 273.1401 -1290.8027)">
+				<stop  offset="0" style="stop-color:#333333"/>
+				<stop  offset="1" style="stop-color:#3C3C3C"/>
+			</linearGradient>
+			<circle fill="url(#SVGID_1_)" cx="30.891" cy="91.721" r="5.148"/>
+			<circle opacity="0.6" enable-background="new    " cx="30.981" cy="92.333" r="4.53"/>
+			<circle fill="#735348" cx="30.897" cy="91.752" r="4.415"/>
+			<path opacity="0.5" fill="#FFFFFF" enable-background="new    " d="M24.438,85.386c0.03-0.071,0.085-0.127,0.164-0.141
+				l-0.151-0.964c-0.058,0.01-0.119,0.002-0.175,0.02l-0.001-0.005c-0.356,0.11-0.623,0.376-0.759,0.715L24.438,85.386z"/>
+			<path opacity="0.5" fill="#FFFFFF" enable-background="new    " d="M36.99,85.412c0.029-0.073,0.085-0.129,0.164-0.142
+				l-0.148-0.964c-0.059,0.011-0.119,0.002-0.176,0.019l-0.002-0.005c-0.355,0.109-0.623,0.375-0.759,0.715L36.99,85.412z"/>
+			<path opacity="0.5" fill="#FFFFFF" enable-background="new    " d="M36.966,97.965c0.029-0.073,0.083-0.129,0.163-0.142
+				l-0.148-0.962c-0.06,0.011-0.12,0.001-0.178,0.019l-0.002-0.008c-0.355,0.109-0.622,0.375-0.758,0.716L36.966,97.965z"/>
+			<path opacity="0.5" fill="#FFFFFF" enable-background="new    " d="M24.412,97.938c0.03-0.073,0.085-0.127,0.165-0.141
+				l-0.151-0.964c-0.059,0.013-0.119,0.002-0.176,0.02l-0.001-0.005c-0.356,0.108-0.623,0.375-0.76,0.714L24.412,97.938z"/>
+			<path opacity="0.6" fill="#FFFFFF" enable-background="new    " d="M32.477,87.637c-0.342-0.133-0.701-0.229-1.082-0.272
+				c-0.948-0.105-1.855,0.104-2.63,0.535l-0.097,0.25c0.866-0.463,1.875-0.678,2.924-0.56c0.323,0.037,0.637,0.109,0.938,0.204
+				L32.477,87.637z"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g id="breadboard_1_">
+		<g>
+			<polygon fill="#8C8C8C" points="67.879,103.661 67.879,95.387 70.039,95.387 70.039,103.661 			"/>
+			<polygon fill="#8C8C8C" points="53.478,88.191 53.478,79.917 55.637,79.917 55.637,88.191 			"/>
+			<polygon fill="#8C8C8C" points="67.879,88.192 67.879,79.916 70.039,79.916 70.039,88.192 			"/>
+			<polygon fill="#8C8C8C" points="53.479,103.662 53.479,95.387 55.639,95.387 55.639,103.662 			"/>
+			<rect x="53.065" y="82.963" width="17.653" height="17.655"/>
+			<path fill="#999999" d="M70.718,99.178c0,0.793-0.646,1.439-1.44,1.439H54.504c-0.792,0-1.439-0.646-1.439-1.439V84.402
+				c0-0.792,0.646-1.439,1.439-1.439h14.775c0.795,0,1.438,0.647,1.438,1.439L70.718,99.178L70.718,99.178z"/>
+			<circle cx="55.636" cy="85.534" r="1.529"/>
+			<circle cx="68.189" cy="85.562" r="1.529"/>
+			<circle cx="68.163" cy="98.114" r="1.529"/>
+			<circle cx="55.61" cy="98.086" r="1.529"/>
+			<circle fill="#3F3F3F" cx="61.891" cy="91.79" r="5.148"/>
+			
+				<linearGradient id="SVGID_2_" gradientUnits="userSpaceOnUse" x1="-139.9566" y1="1382.5918" x2="-129.6607" y2="1382.5918" gradientTransform="matrix(1 0 0 1 273.1401 -1290.8027)">
+				<stop  offset="0" style="stop-color:#333333"/>
+				<stop  offset="1" style="stop-color:#3C3C3C"/>
+			</linearGradient>
+			<circle fill="url(#SVGID_2_)" cx="61.891" cy="91.79" r="5.148"/>
+			<circle opacity="0.6" enable-background="new    " cx="61.981" cy="92.401" r="4.53"/>
+			<circle fill="#735348" cx="61.897" cy="91.82" r="4.415"/>
+			<path opacity="0.5" fill="#FFFFFF" enable-background="new    " d="M55.438,85.454c0.03-0.071,0.085-0.127,0.164-0.141
+				l-0.151-0.964c-0.058,0.01-0.119,0.002-0.175,0.02l-0.001-0.005c-0.356,0.11-0.623,0.376-0.759,0.715L55.438,85.454z"/>
+			<path opacity="0.5" fill="#FFFFFF" enable-background="new    " d="M67.99,85.48c0.029-0.073,0.085-0.129,0.164-0.142
+				l-0.148-0.964c-0.059,0.011-0.119,0.002-0.176,0.019l-0.002-0.005c-0.355,0.109-0.623,0.375-0.759,0.715L67.99,85.48z"/>
+			<path opacity="0.5" fill="#FFFFFF" enable-background="new    " d="M67.966,98.033c0.029-0.073,0.083-0.129,0.163-0.142
+				L67.98,96.93c-0.06,0.011-0.12,0.001-0.178,0.019l-0.002-0.008c-0.355,0.109-0.622,0.375-0.758,0.716L67.966,98.033z"/>
+			<path opacity="0.5" fill="#FFFFFF" enable-background="new    " d="M55.412,98.007c0.03-0.073,0.085-0.127,0.165-0.141
+				l-0.151-0.964c-0.059,0.013-0.119,0.002-0.176,0.02l-0.001-0.005c-0.356,0.108-0.623,0.375-0.76,0.714L55.412,98.007z"/>
+			<path opacity="0.6" fill="#FFFFFF" enable-background="new    " d="M63.477,87.705c-0.342-0.133-0.701-0.229-1.082-0.272
+				c-0.948-0.105-1.855,0.104-2.63,0.535l-0.097,0.25c0.866-0.463,1.875-0.678,2.924-0.56c0.323,0.037,0.637,0.109,0.938,0.204
+				L63.477,87.705z"/>
+		</g>
+	</g>
+</g>
+<g transform="translate(0.737, 0)">
+	<g>
+		<g id="esp-12">
+			<g transform="translate(20.523,0)">
+				<g>
+					<g>
+						<g>
+							<path d="M4.284,21.35H-18.96V66.7H4.283c0-0.47,0.381-0.852,0.852-0.852c0.47,0,0.85,0.382,0.85,0.852h3.968
+								c0-0.47,0.381-0.852,0.852-0.852c0.47,0,0.85,0.382,0.85,0.852h3.968c0-0.47,0.381-0.852,0.852-0.852
+								c0.47,0,0.85,0.382,0.85,0.852h3.968c0-0.47,0.381-0.852,0.853-0.852c0.471,0,0.851,0.382,0.851,0.852h3.968
+								c0-0.47,0.383-0.852,0.852-0.852c0.472,0,0.848,0.382,0.848,0.852h3.968c0-0.47,0.384-0.852,0.853-0.852
+								s0.846,0.382,0.846,0.852h3.966c0-0.47,0.383-0.852,0.852-0.852c0.471,0,0.852,0.382,0.852,0.852h3.973
+								c0-0.47,0.381-0.852,0.85-0.852s0.846,0.382,0.846,0.852h3.402v-7.683c-0.047,0.009-0.09,0.026-0.141,0.026
+								c-0.473,0-0.854-0.381-0.854-0.851c0-0.471,0.381-0.854,0.854-0.854c0.051,0,0.094,0.021,0.141,0.029v-4.023
+								c-0.047,0.01-0.09,0.027-0.141,0.027c-0.473,0-0.854-0.381-0.854-0.85c0-0.472,0.381-0.854,0.854-0.854
+								c0.051,0,0.094,0.021,0.141,0.029v-4.024c-0.047,0.011-0.09,0.028-0.141,0.028c-0.473,0-0.854-0.381-0.854-0.85
+								c0-0.472,0.381-0.854,0.854-0.854c0.051,0,0.094,0.021,0.141,0.029v-4.025c-0.047,0.011-0.09,0.029-0.141,0.029
+								c-0.473,0-0.854-0.381-0.854-0.85c0-0.473,0.381-0.854,0.854-0.854c0.051,0,0.094,0.021,0.141,0.029v-4.025
+								c-0.047,0.011-0.09,0.029-0.141,0.029c-0.473,0-0.854-0.381-0.854-0.851c0-0.472,0.381-0.854,0.854-0.854
+								c0.051,0,0.094,0.021,0.141,0.029V30.66c-0.047,0.009-0.09,0.029-0.141,0.029c-0.473,0-0.854-0.381-0.854-0.853
+								s0.381-0.853,0.854-0.853c0.051,0,0.094,0.021,0.141,0.028v-7.68h-3.404c-0.002,0.469-0.381,0.847-0.85,0.847
+								s-0.846-0.379-0.852-0.847h-3.971c-0.002,0.469-0.381,0.847-0.852,0.847c-0.469,0-0.85-0.379-0.852-0.847h-3.97
+								c-0.002,0.469-0.381,0.847-0.85,0.847c-0.473,0-0.85-0.379-0.853-0.847h-3.972c-0.002,0.469-0.381,0.847-0.85,0.847
+								c-0.471,0-0.849-0.379-0.852-0.847h-3.971c-0.002,0.469-0.382,0.847-0.851,0.847c-0.47,0-0.848-0.379-0.851-0.847h-3.97
+								c-0.002,0.469-0.381,0.847-0.85,0.847c-0.469,0-0.848-0.379-0.851-0.847H11.64c-0.002,0.469-0.381,0.847-0.851,0.847
+								c-0.468,0-0.847-0.379-0.85-0.847h-3.97c-0.002,0.469-0.381,0.847-0.851,0.847C4.657,22.201,4.286,21.818,4.284,21.35z
+								 M45.667,63.865c0,0.47-0.381,0.851-0.85,0.851c-0.471,0-0.852-0.381-0.852-0.851s0.383-0.851,0.852-0.851
+								S45.667,63.396,45.667,63.865z M39.997,63.865c0,0.47-0.381,0.851-0.85,0.851c-0.473,0-0.854-0.381-0.854-0.851
+								s0.385-0.851,0.854-0.851S39.997,63.396,39.997,63.865z M34.329,63.865c0,0.47-0.381,0.851-0.852,0.851
+								s-0.853-0.381-0.853-0.851s0.382-0.851,0.853-0.851C33.946,63.015,34.329,63.396,34.329,63.865z M28.66,63.865
+								c0,0.47-0.381,0.851-0.851,0.851c-0.474,0-0.854-0.381-0.854-0.851s0.381-0.851,0.854-0.851
+								C28.28,63.015,28.66,63.396,28.66,63.865z M22.991,63.865c0,0.47-0.381,0.851-0.85,0.851c-0.473,0-0.854-0.381-0.854-0.851
+								s0.381-0.851,0.854-0.851C22.61,63.015,22.991,63.396,22.991,63.865z M17.322,63.865c0,0.47-0.381,0.851-0.85,0.851
+								c-0.47,0-0.852-0.381-0.852-0.851s0.381-0.851,0.852-0.851C16.942,63.015,17.322,63.396,17.322,63.865z M11.653,63.865
+								c0,0.47-0.381,0.851-0.85,0.851c-0.47,0-0.852-0.381-0.852-0.851s0.381-0.851,0.852-0.851
+								C11.273,63.015,11.653,63.396,11.653,63.865z M5.984,63.865c0,0.47-0.381,0.851-0.85,0.851c-0.47,0-0.852-0.381-0.852-0.851
+								s0.381-0.851,0.852-0.851C5.604,63.015,5.984,63.396,5.984,63.865z M45.667,24.18c0,0.472-0.381,0.852-0.852,0.852
+								c-0.469,0-0.854-0.381-0.854-0.852s0.385-0.853,0.854-0.853C45.286,23.329,45.667,23.711,45.667,24.18z M39.997,24.18
+								c0,0.472-0.381,0.852-0.85,0.852c-0.473,0-0.855-0.381-0.855-0.852s0.383-0.853,0.855-0.853
+								C39.616,23.329,39.997,23.711,39.997,24.18z M34.329,24.18c0,0.472-0.381,0.852-0.852,0.852s-0.853-0.381-0.853-0.852
+								s0.382-0.853,0.853-0.853C33.946,23.329,34.329,23.711,34.329,24.18z M28.66,24.18c0,0.472-0.381,0.852-0.851,0.852
+								c-0.474,0-0.854-0.381-0.854-0.852s0.381-0.853,0.854-0.853C28.278,23.33,28.66,23.711,28.66,24.18z M22.991,24.18
+								c0,0.472-0.381,0.852-0.852,0.852c-0.472,0-0.852-0.381-0.852-0.852s0.381-0.853,0.852-0.853
+								C22.608,23.33,22.991,23.711,22.991,24.18z M17.322,24.18c0,0.472-0.381,0.852-0.851,0.852c-0.471,0-0.851-0.381-0.851-0.852
+								s0.381-0.853,0.851-0.853C16.941,23.329,17.322,23.711,17.322,24.18z M11.653,24.18c0,0.472-0.381,0.852-0.85,0.852
+								c-0.471,0-0.852-0.381-0.852-0.852s0.381-0.853,0.852-0.853C11.272,23.33,11.653,23.711,11.653,24.18z M5.984,24.18
+								c0,0.472-0.381,0.852-0.85,0.852c-0.47,0-0.852-0.381-0.852-0.852s0.381-0.853,0.852-0.853
+								C5.604,23.33,5.984,23.711,5.984,24.18z"/>
+						</g>
+						<g>
+							<g>
+								<path id="esp12-reset-pin" fill="#9A916C" d="M3.475,66.7h0.808c0-0.47,0.381-0.852,0.852-0.852
+									c0.47,0,0.85,0.382,0.85,0.852h0.808v-4.479H3.477V66.7H3.475z M5.984,63.865c0,0.47-0.381,0.851-0.85,0.851
+									c-0.47,0-0.852-0.381-0.852-0.851s0.381-0.851,0.852-0.851C5.604,63.015,5.984,63.396,5.984,63.865z"/>
+								<path fill="#9A916C" d="M9.144,66.7h0.808c0-0.47,0.381-0.852,0.852-0.852c0.47,0,0.85,0.382,0.85,0.852h0.808v-4.479H9.146
+									V66.7H9.144z M11.653,63.865c0,0.47-0.381,0.851-0.85,0.851c-0.47,0-0.852-0.381-0.852-0.851s0.381-0.851,0.852-0.851
+									C11.273,63.015,11.653,63.396,11.653,63.865z"/>
+								<path fill="#9A916C" d="M14.813,66.7h0.808c0-0.47,0.381-0.852,0.852-0.852c0.47,0,0.85,0.382,0.85,0.852h0.808v-4.479
+									h-3.316V66.7H14.813z M17.322,63.865c0,0.47-0.381,0.851-0.85,0.851c-0.47,0-0.852-0.381-0.852-0.851
+									s0.381-0.851,0.852-0.851C16.942,63.015,17.322,63.396,17.322,63.865z"/>
+								<path fill="#9A916C" d="M20.483,66.7h0.808c0-0.47,0.381-0.852,0.853-0.852c0.471,0,0.851,0.382,0.851,0.852h0.81v-4.479
+									h-3.318V66.7H20.483z M22.991,63.865c0,0.47-0.381,0.851-0.85,0.851c-0.473,0-0.854-0.381-0.854-0.851
+									s0.381-0.851,0.854-0.851C22.61,63.015,22.991,63.396,22.991,63.865z"/>
+								<path fill="#9A916C" d="M26.151,66.7h0.809c0-0.47,0.383-0.852,0.852-0.852c0.472,0,0.853,0.382,0.853,0.852h0.812v-4.479
+									h-3.317V66.7H26.151z M28.66,63.865c0,0.47-0.381,0.851-0.851,0.851c-0.474,0-0.854-0.381-0.854-0.851
+									s0.381-0.851,0.854-0.851C28.28,63.015,28.66,63.396,28.66,63.865z"/>
+								<path fill="#9A916C" d="M31.82,66.7h0.808c0-0.47,0.383-0.852,0.852-0.852c0.471,0,0.85,0.382,0.85,0.852h0.81v-4.479H31.82
+									V66.7z M34.329,63.865c0,0.47-0.381,0.851-0.852,0.851s-0.853-0.381-0.853-0.851s0.382-0.851,0.853-0.851
+									C33.946,63.015,34.329,63.396,34.329,63.865z"/>
+								<path fill="#9A916C" d="M37.489,66.7h0.807c0-0.47,0.383-0.852,0.852-0.852c0.471,0,0.852,0.382,0.852,0.852h0.812v-4.479
+									h-3.322V66.7L37.489,66.7z M39.997,63.865c0,0.47-0.381,0.851-0.85,0.851c-0.473,0-0.854-0.381-0.854-0.851
+									s0.385-0.851,0.854-0.851S39.997,63.396,39.997,63.865z"/>
+								<path fill="#9A916C" d="M43.157,66.7h0.811c0-0.47,0.381-0.852,0.85-0.852c0.471,0,0.852,0.382,0.852,0.852h0.811v-4.479
+									h-3.32L43.157,66.7L43.157,66.7z M45.667,63.865c0,0.47-0.381,0.851-0.85,0.851c-0.471,0-0.852-0.381-0.852-0.851
+									s0.383-0.851,0.852-0.851S45.667,63.396,45.667,63.865z"/>
+							</g>
+							<g>
+								<path fill="#9A916C" d="M47.426,59.854h1.646v-0.838c-0.051,0.009-0.094,0.026-0.145,0.026
+									c-0.471,0-0.852-0.381-0.852-0.851c0-0.472,0.381-0.854,0.852-0.854c0.051,0,0.094,0.021,0.145,0.029v-0.837h-1.646V59.854z
+									"/>
+								<path fill="#9A916C" d="M47.426,54.185h1.646v-0.837c-0.051,0.009-0.094,0.026-0.145,0.026c-0.471,0-0.852-0.381-0.852-0.85
+									c0-0.472,0.381-0.854,0.852-0.854c0.051,0,0.094,0.021,0.145,0.029v-0.837h-1.646V54.185z"/>
+								<path fill="#9A916C" d="M47.426,48.517h1.646v-0.838c-0.051,0.01-0.094,0.027-0.145,0.027c-0.471,0-0.852-0.381-0.852-0.85
+									c0-0.472,0.381-0.854,0.852-0.854c0.051,0,0.094,0.021,0.145,0.029V45.2h-1.646V48.517z"/>
+								<path fill="#9A916C" d="M47.426,42.848h1.646v-0.84c-0.051,0.011-0.094,0.029-0.145,0.029c-0.471,0-0.852-0.381-0.852-0.85
+									c0-0.473,0.381-0.854,0.852-0.854c0.051,0,0.094,0.021,0.145,0.029v-0.837h-1.646V42.848z"/>
+								<path fill="#9A916C" d="M47.426,37.179h1.646V36.34c-0.051,0.011-0.094,0.029-0.145,0.029c-0.471,0-0.852-0.381-0.852-0.85
+									c0-0.473,0.381-0.854,0.852-0.854c0.051,0,0.094,0.021,0.145,0.029v-0.837h-1.646V37.179z"/>
+								<path fill="#9A916C" d="M47.426,31.51h1.646v-0.837c-0.051,0.011-0.094,0.029-0.145,0.029c-0.471,0-0.852-0.381-0.852-0.852
+									c0-0.473,0.381-0.854,0.852-0.854c0.051,0,0.094,0.021,0.145,0.029v-0.837h-1.646V31.51z"/>
+							</g>
+							<g>
+								<path fill="#9A916C" d="M44.815,22.197c-0.469,0-0.854-0.381-0.854-0.854h-0.809v4.479h3.316v-4.479h-0.811
+									C45.667,21.816,45.286,22.197,44.815,22.197z M45.667,24.18c0,0.472-0.381,0.852-0.852,0.852
+									c-0.469,0-0.854-0.381-0.854-0.852s0.385-0.853,0.854-0.853C45.286,23.329,45.667,23.711,45.667,24.18z"/>
+								<path fill="#9A916C" d="M39.147,22.197c-0.473,0-0.855-0.381-0.855-0.854h-0.809v4.479H40.8v-4.479h-0.809
+									C39.997,21.816,39.616,22.197,39.147,22.197z M39.997,24.18c0,0.472-0.381,0.852-0.85,0.852
+									c-0.473,0-0.855-0.381-0.855-0.852s0.383-0.853,0.855-0.853C39.616,23.329,39.997,23.711,39.997,24.18z"/>
+								<path fill="#9A916C" d="M33.478,22.197c-0.471,0-0.852-0.381-0.852-0.854H31.82v4.479h3.317v-4.479h-0.812
+									C34.329,21.816,33.948,22.197,33.478,22.197z M34.329,24.18c0,0.472-0.381,0.852-0.852,0.852s-0.853-0.381-0.853-0.852
+									s0.382-0.853,0.853-0.853C33.946,23.329,34.329,23.711,34.329,24.18z"/>
+								<path fill="#9A916C" d="M27.809,22.197c-0.472,0-0.852-0.381-0.852-0.854h-0.809v4.479h3.316v-4.479H28.66
+									C28.66,21.816,28.279,22.197,27.809,22.197z M28.66,24.18c0,0.472-0.381,0.852-0.851,0.852
+									c-0.474,0-0.854-0.381-0.854-0.852s0.381-0.853,0.854-0.853C28.278,23.33,28.66,23.711,28.66,24.18z"/>
+								<path fill="#9A916C" d="M22.139,22.197c-0.471,0-0.851-0.381-0.851-0.854h-0.808v4.479h3.316v-4.479h-0.808
+									C22.991,21.816,22.61,22.197,22.139,22.197z M22.991,24.18c0,0.472-0.381,0.852-0.852,0.852
+									c-0.472,0-0.852-0.381-0.852-0.852s0.381-0.853,0.852-0.853C22.608,23.33,22.991,23.711,22.991,24.18z"/>
+								<path fill="#9A916C" d="M16.471,22.197c-0.471,0-0.851-0.381-0.851-0.854h-0.808v4.479h3.316v-4.479H17.32
+									C17.322,21.816,16.941,22.197,16.471,22.197z M17.322,24.18c0,0.472-0.381,0.852-0.851,0.852
+									c-0.471,0-0.851-0.381-0.851-0.852s0.381-0.853,0.851-0.853C16.941,23.329,17.322,23.711,17.322,24.18z"/>
+								<path fill="#9A916C" d="M10.803,22.197c-0.471,0-0.852-0.381-0.852-0.854H9.143v4.479h3.316v-4.479h-0.808
+									C11.653,21.816,11.272,22.197,10.803,22.197z M11.653,24.18c0,0.472-0.381,0.852-0.85,0.852
+									c-0.471,0-0.852-0.381-0.852-0.852s0.381-0.853,0.852-0.853C11.272,23.33,11.653,23.711,11.653,24.18z"/>
+								<path fill="#9A916C" d="M5.133,22.197c-0.471,0-0.852-0.381-0.852-0.854H3.474v4.479H6.79v-4.479H5.982
+									C5.984,21.816,5.603,22.197,5.133,22.197z M5.984,24.18c0,0.472-0.381,0.852-0.85,0.852c-0.47,0-0.852-0.381-0.852-0.852
+									s0.381-0.853,0.852-0.853C5.604,23.33,5.984,23.711,5.984,24.18z"/>
+							</g>
+						</g>
+						<g>
+							<polygon fill="#9A916C" points="-3.671,23.399 -3.671,24.619 -15.691,24.619 -15.691,29.739 -7.992,29.739 -7.992,38.083 
+								-15.691,38.083 -15.691,43.343 -7.992,43.343 -7.992,51.623 -15.691,51.623 -15.691,56.739 -3.674,56.739 -3.674,57.959 
+								-15.691,57.959 -15.691,63.003 -3.671,63.003 -3.671,64.651 -16.911,64.651 -16.911,50.403 -9.211,50.403 -9.211,44.563 
+								-16.911,44.563 -16.911,36.863 -9.211,36.863 -9.211,30.959 -16.911,30.959 -16.911,23.399 							"/>
+						</g>
+						<g>
+							<g>
+								<polygon fill="#FFFFFF" points="0.908,29.621 -1.993,29.621 -1.993,26.461 -2.21,26.461 -2.21,29.856 1.125,29.856 
+									1.125,26.461 0.908,26.461 								"/>
+								<polygon fill="#FFFFFF" points="-2.21,25.664 -1.993,25.664 -1.993,22.504 0.908,22.504 0.908,25.664 1.125,25.664 
+									1.125,22.269 -2.21,22.269 								"/>
+							</g>
+							<rect x="-1.743" y="26.989" fill="#9A916C" width="2.399" height="2.398"/>
+							<rect x="-1.743" y="22.739" fill="#9A916C" width="2.399" height="2.396"/>
+							<path fill="#CDCCCC" d="M-0.542,23.63c-0.312,0-0.566-0.254-0.566-0.563h-0.434v6h0.434c0-0.313,0.254-0.567,0.566-0.567
+								c0.313,0,0.567,0.254,0.567,0.567h0.433v-6H0.025C0.025,23.376-0.229,23.63-0.542,23.63z"/>
+							<rect x="-1.542" y="24.063" fill="#3D55A5" width="2" height="4"/>
+						</g>
+						<g opacity="0.5">
+							<g>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="41.939" cy="23" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="36.34" cy="23" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="30.64" cy="23" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="24.94" cy="23" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="19.34" cy="23" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="13.64" cy="23" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="7.94" cy="23" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="2.24" cy="23" r="0.55"/>
+							</g>
+							<g>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="41.939" cy="65" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="36.34" cy="65" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="30.64" cy="65.1" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="24.94" cy="65" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="19.34" cy="65" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="13.64" cy="65" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="7.94" cy="65.1" r="0.55"/>
+							</g>
+							<g>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="-0.81" cy="65.05" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="-0.81" cy="63.35" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="-0.81" cy="61.65" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="-0.81" cy="59.95" r="0.55"/>
+							</g>
+							<g>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="0.89" cy="65.05" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="0.89" cy="63.35" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="0.89" cy="61.65" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="0.89" cy="59.95" r="0.55"/>
+							</g>
+							<g>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="-0.81" cy="55.05" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="-0.81" cy="53.35" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="-0.81" cy="51.65" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="-0.81" cy="49.95" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="-0.81" cy="48.25" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="-0.81" cy="46.55" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="-0.81" cy="44.85" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="-0.81" cy="43.15" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="-0.81" cy="41.45" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="-0.81" cy="39.75" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="-0.81" cy="38.05" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="-0.81" cy="36.35" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="-0.81" cy="34.65" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="-0.81" cy="32.95" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="-0.81" cy="31.25" r="0.55"/>
+							</g>
+							<g>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="0.89" cy="55.05" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="0.89" cy="53.35" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="0.89" cy="51.65" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="0.89" cy="49.95" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="0.89" cy="48.25" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="0.89" cy="46.55" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="0.89" cy="44.85" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="0.89" cy="43.15" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="0.89" cy="41.45" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="0.89" cy="39.75" r="0.55"/>
+								<circle fill="#333333" stroke="#9A916C" stroke-width="0.2" stroke-linecap="round" cx="0.89" cy="38.05" r="0.55"/>
+							</g>
+						</g>
+						<g>
+							<rect x="2.3" y="26.925" fill="#999999" width="43.199" height="34.2"/>
+							<g>
+								<polygon fill="#CCCCCC" points="2.931,27.425 44.999,27.425 44.999,60.625 44.868,60.625 45.778,61.346 45.999,61.125 
+									45.999,26.925 45.499,26.425 2.3,26.425 2.021,26.704 								"/>
+								<polygon fill="#666666" points="2.8,60.625 2.8,27.425 2.931,27.425 2.021,26.704 1.8,26.925 1.8,61.125 2.3,61.625 
+									45.499,61.625 45.778,61.346 44.868,60.625 								"/>
+							</g>
+							<g transform="translate(27,24.5) rotate(90,5.5,5.5)">
+								<g>
+									<g>
+										<path fill="#FFFFFF" d="M4.2,26.96c0,3.038,2.462,5.5,5.5,5.5s5.5-2.462,5.5-5.5s-2.462-5.5-5.5-5.5S4.2,23.922,4.2,26.96
+											z M14.565,26.96c0,2.687-2.182,4.864-4.865,4.864c-2.688,0-4.865-2.178-4.865-4.864c0-2.688,2.181-4.865,4.865-4.865
+											S14.565,24.273,14.565,26.96z"/>
+										<path fill="#FFFFFF" d="M12.598,24.939c-0.052,0.072-0.093,0.154-0.109,0.22c-0.027,0.088-0.031,0.097-0.053,0.102
+											c-0.232-0.049-0.614-0.11-1.358-0.2c-0.46-0.031-0.86-0.089-1.354-0.1c-0.146,0-0.372,0.001-0.588,0.05
+											c-0.09,0.014-0.24,0.049-0.364,0.102c-0.074,0.023-0.214,0.094-0.315,0.126c-0.069,0.015-0.13,0.051-0.214,0.01
+											c-0.007-0.006-0.024-0.019-0.039-0.03c-0.024-0.017-0.062-0.064-0.127-0.152c-0.048-0.065-0.105-0.107-0.147-0.107
+											c-0.028,0-0.065,0.028-0.143,0.11c-0.04,0.042-0.045,0.055-0.082,0.076c-0.038,0.014-0.052,0.026-0.084,0.026
+											c-0.055,0.002-0.109,0.056-0.146,0.1c-0.009,0.01-0.02,0.045-0.022,0.076c-0.003,0.018-0.005,0.038-0.005,0.059
+											c-0.001,0.143,0.069,0.319,0.186,0.405c0.072,0.058,0.301,0.06,0.394,0.03c0.06-0.028,0.132-0.118,0.146-0.149
+											c0.035-0.055,0.014-0.074,0.107-0.093c0.061,0,0.099,0.013,0.158,0.053c0.02,0.014,0.177,0.094,0.248,0.127
+											c0.02,0.009,0.05,0.021,0.065,0.025c0.022,0.005,0.048,0.016,0.062,0.022c0.029,0.017,0.251,0.016,0.33-0.001
+											c0.071-0.016,0.37-0.018,0.423-0.004c0.019,0.007,0.102,0.014,0.186,0.017c0.083,0.004,0.192,0.013,0.241,0.021
+											c0.113,0.019,0.188,0.019,0.287,0c0.044-0.008,0.112-0.017,0.15-0.02c0.258-0.021,0.557-0.067,0.827-0.06
+											c0.156-0.005,0.58-0.01,0.944-0.011l0.661-0.002l0.003-0.055c0.001-0.03,0.003-0.233,0.003-0.45v-0.396l-0.028-0.022
+											c-0.014-0.013-0.04-0.029-0.056-0.035c-0.027-0.009-0.034-0.008-0.067,0.007C12.674,24.837,12.651,24.861,12.598,24.939z"
+											/>
+										<path fill="#FFFFFF" d="M12.599,27.202c-0.522,0.081-1.001,0.138-1.799,0.232c-1.083,0.172-2.732,0.554-4.14,0.855v0.321
+											v0.321c1.571,0.352,2.561,0.636,4.044,0.905c0.814,0.127,1.459,0.229,1.952,0.309l0.175,0.2l0.012-1.395l-0.648,0.002
+											c-0.364,0.001-0.788,0.005-0.944,0.01c-0.109-0.003-0.226,0.003-0.34,0.013v-0.743c0.052,0.004,0.104,0.008,0.158,0.011
+											c0.636,0.077,1.126,0.15,1.357,0.199c0.022-0.004,0.027-0.013,0.055-0.101c0.02-0.067,0.061-0.148,0.109-0.22
+											c0.052-0.077,0.076-0.101,0.119-0.122c0.032-0.017,0.04-0.017,0.066-0.008c0.017,0.006,0.043,0.021,0.058,0.034
+											l0.018,0.015l0.011-1.133C12.777,27.017,12.71,27.103,12.599,27.202z M8.447,28.421c0.103-0.032,0.241-0.103,0.314-0.126
+											c0.124-0.052,0.275-0.088,0.365-0.103c0.213-0.05,0.438-0.05,0.585-0.05c0.16,0.003,0.312,0.012,0.454,0.023v0.89
+											c-0.056,0.003-0.112-0.001-0.183-0.013c-0.05-0.009-0.157-0.018-0.241-0.021s-0.167-0.011-0.188-0.016
+											c-0.052-0.015-0.35-0.012-0.422,0.003c-0.076,0.017-0.297,0.018-0.33,0.001c-0.013-0.006-0.04-0.016-0.058-0.022
+											c-0.019-0.005-0.049-0.017-0.067-0.025c-0.069-0.033-0.229-0.113-0.246-0.126c-0.062-0.04-0.1-0.054-0.157-0.054
+											c-0.098,0.019-0.076,0.038-0.113,0.092c-0.015,0.032-0.086,0.122-0.146,0.15c-0.094,0.029-0.318,0.027-0.392-0.029
+											c-0.116-0.087-0.187-0.263-0.186-0.405c0-0.021,0.002-0.04,0.005-0.06c0.005-0.03,0.016-0.065,0.021-0.075
+											c0.036-0.046,0.091-0.099,0.146-0.101c0.03,0,0.045-0.012,0.085-0.025c0.039-0.023,0.045-0.035,0.084-0.077
+											c0.076-0.081,0.111-0.11,0.142-0.11c0.041,0,0.103,0.042,0.146,0.107c0.063,0.088,0.104,0.135,0.127,0.152
+											c0.015,0.011,0.032,0.024,0.039,0.029C8.317,28.472,8.378,28.435,8.447,28.421z"/>
+										<circle fill="#FFFFFF" cx="12.611" cy="26.446" r="0.195"/>
+										<path fill="#FFFFFF" d="M6.683,24.987h0.255c0-0.21,0.17-0.381,0.381-0.381v-0.254
+											C6.967,24.353,6.683,24.637,6.683,24.987z"/>
+										<path fill="#FFFFFF" d="M6.26,24.987h0.257c0-0.443,0.357-0.804,0.805-0.804V23.93C6.733,23.93,6.26,24.403,6.26,24.987z"
+											/>
+										<path fill="#FFFFFF" d="M5.837,24.987h0.254c0-0.677,0.549-1.227,1.228-1.227v-0.254
+											C6.5,23.506,5.837,24.169,5.837,24.987z"/>
+									</g>
+								</g>
+							</g>
+							<g transform="translate(27,25.5) rotate(90,0,11)">
+								<g>
+									<g>
+										<path fill="#FFFFFF" d="M-7.8-0.643v16.906c0,2.318,1.86,4.197,4.158,4.197h2.685c2.296,0,4.157-1.879,4.157-4.197V-0.643
+											c0-2.316-1.861-4.195-4.158-4.195h-2.684C-5.939-4.839-7.8-2.96-7.8-0.643z M0.205,12.915v0.922l-3.674,1.041l3.674,1.041
+											v0.89l-5.314,1.385v-1.127l3.409-0.751l-3.409-0.985v-0.955l3.499-0.987l-3.498-0.794v-1.041L0.205,12.915z
+											 M-5.241,10.398c0-0.353,0.293-0.638,0.655-0.638s0.655,0.286,0.655,0.638c0,0.354-0.293,0.642-0.655,0.642
+											S-5.241,10.751-5.241,10.398z M-3.436,10.93V9.857h3.641v1.073H-3.436z M-1.009-3.942c1.873,0,3.391,1.578,3.391,3.523
+											v10.6c0-1.945-1.518-3.099-3.391-3.099H-3.58c-1.873,0-3.391-1.577-3.391-3.522v-3.979c0-1.945,1.518-3.523,3.391-3.523
+											H-1.009z M-4.587-1.731c0.361,0,0.653,0.33,0.653,0.738s-0.292,0.738-0.653,0.738S-5.24-0.585-5.24-0.993
+											C-5.241-1.399-4.948-1.731-4.587-1.731z M-5.098,5.016v-4.49h1.076v3.177h1.072V0.726h1.079v2.978h2.075v1.312H-5.098
+											L-5.098,5.016z M-3.429-0.366v-1.24h3.634v1.24H-3.429z"/>
+									</g>
+								</g>
+							</g>
+							<g>
+								<g>
+									<path fill="#FFFFFF" stroke="#FFFFFF" stroke-width="0.2" stroke-miterlimit="10" d="M7.019,43.86l-0.421-1.938H6.585
+										c0.019,0.271,0.027,0.478,0.027,0.614v1.324H6.383v-2.213h0.374l0.375,1.805h0.009l0.378-1.805h0.382v2.213H7.67v-1.344
+										c0-0.104,0.008-0.303,0.021-0.595H7.679L7.25,43.86H7.019z M9.084,43.89c-0.537,0-0.806-0.384-0.806-1.146
+										c0-0.757,0.27-1.136,0.809-1.136c0.259,0,0.456,0.099,0.595,0.296c0.138,0.197,0.207,0.479,0.207,0.843
+										s-0.07,0.646-0.209,0.843C9.54,43.792,9.342,43.89,9.084,43.89z M9.084,43.643c0.175,0,0.303-0.072,0.384-0.222
+										c0.081-0.146,0.121-0.371,0.121-0.674c0-0.306-0.041-0.53-0.124-0.675c-0.081-0.146-0.208-0.216-0.379-0.216
+										c-0.34,0-0.51,0.297-0.51,0.891C8.577,43.346,8.746,43.643,9.084,43.643z M10.293,43.86v-2.213h0.519
+										c0.319,0,0.568,0.096,0.747,0.285c0.178,0.188,0.267,0.457,0.267,0.8c0,0.36-0.092,0.644-0.277,0.837
+										c-0.185,0.19-0.45,0.291-0.799,0.291H10.293z M10.577,41.888v1.729h0.146c0.537,0,0.805-0.292,0.805-0.876
+										c0-0.569-0.249-0.854-0.746-0.854L10.577,41.888L10.577,41.888z M13.63,43.86h-1.273v-2.213h1.273v0.248h-0.992v0.685
+										h0.934v0.245h-0.934v0.787h0.992V43.86L13.63,43.86z M14.317,43.86v-2.213H14.6v1.962h0.961v0.251H14.317z"/>
+									<path fill="#FFFFFF" stroke="#FFFFFF" stroke-width="0.2" stroke-miterlimit="10" d="M7.723,45.147h0.301l-0.74,2.213
+										H7.001l-0.736-2.213h0.297l0.445,1.399c0.042,0.128,0.087,0.299,0.134,0.507c0.03-0.146,0.078-0.315,0.141-0.517
+										L7.723,45.147z M9.755,47.36H8.48v-2.213h1.273v0.248H8.761v0.685h0.934v0.245H8.761v0.787h0.992L9.755,47.36L9.755,47.36z
+										 M11.742,47.36h-0.325l-0.878-1.832h-0.012c0.018,0.279,0.027,0.489,0.027,0.632v1.2h-0.262v-2.213h0.323l0.875,1.818
+										h0.009c-0.014-0.306-0.021-0.51-0.021-0.607v-1.211h0.263L11.742,47.36L11.742,47.36z M12.231,47.36v-2.213h0.518
+										c0.32,0,0.569,0.096,0.747,0.285c0.178,0.188,0.268,0.457,0.268,0.8c0,0.36-0.093,0.644-0.277,0.837
+										c-0.184,0.19-0.451,0.291-0.799,0.291H12.231z M12.515,45.388v1.729h0.146c0.537,0,0.806-0.292,0.806-0.876
+										c0-0.569-0.249-0.854-0.746-0.854L12.515,45.388L12.515,45.388z M14.897,47.39c-0.537,0-0.805-0.384-0.805-1.146
+										c0-0.757,0.271-1.136,0.809-1.136c0.258,0,0.455,0.099,0.594,0.296c0.137,0.197,0.207,0.479,0.207,0.843
+										s-0.07,0.646-0.209,0.843C15.352,47.292,15.155,47.39,14.897,47.39z M14.897,47.143c0.176,0,0.303-0.072,0.385-0.222
+										c0.08-0.146,0.121-0.371,0.121-0.674c0-0.306-0.041-0.53-0.123-0.675c-0.082-0.146-0.209-0.216-0.379-0.216
+										c-0.341,0-0.511,0.297-0.511,0.891C14.391,46.846,14.56,47.143,14.897,47.143z M16.467,46.446v0.914h-0.283v-2.213h0.541
+										c0.523,0,0.787,0.209,0.787,0.628c0,0.29-0.146,0.483-0.438,0.594l0.602,0.991h-0.331l-0.53-0.914H16.467z M16.467,46.207
+										h0.248c0.173,0,0.3-0.033,0.382-0.1c0.082-0.067,0.122-0.174,0.122-0.318c0-0.143-0.04-0.244-0.121-0.308
+										c-0.08-0.062-0.21-0.098-0.391-0.098h-0.24V46.207z"/>
+								</g>
+								<g>
+									<path fill="#FFFFFF" stroke="#FFFFFF" stroke-width="0.2" stroke-miterlimit="10" d="M23.643,43.86H22.37v-2.213h1.273
+										v0.248h-0.994v0.685h0.937v0.245h-0.937v0.787h0.994V43.86z M24.221,43.786v-0.271c0.213,0.088,0.422,0.131,0.627,0.131
+										c0.354,0,0.529-0.121,0.529-0.363c0-0.104-0.035-0.188-0.105-0.242c-0.069-0.055-0.215-0.123-0.434-0.201
+										c-0.21-0.07-0.359-0.158-0.451-0.264c-0.093-0.104-0.138-0.235-0.138-0.399c0-0.175,0.063-0.312,0.194-0.409
+										c0.13-0.103,0.308-0.148,0.533-0.148c0.229,0,0.438,0.04,0.629,0.118l-0.098,0.248c-0.193-0.078-0.377-0.117-0.546-0.117
+										c-0.297,0-0.44,0.104-0.44,0.315c0,0.104,0.033,0.187,0.099,0.246c0.065,0.062,0.203,0.131,0.41,0.2
+										c0.248,0.089,0.413,0.184,0.497,0.274c0.082,0.095,0.125,0.216,0.125,0.363c0,0.19-0.07,0.347-0.211,0.456
+										c-0.139,0.107-0.338,0.166-0.596,0.166C24.581,43.89,24.372,43.855,24.221,43.786z M26.524,42.999v0.861h-0.28v-2.213h0.61
+										c0.52,0,0.774,0.216,0.774,0.646c0,0.225-0.065,0.396-0.209,0.521c-0.14,0.123-0.343,0.187-0.606,0.187L26.524,42.999
+										L26.524,42.999z M26.524,42.76h0.258c0.199,0,0.343-0.033,0.43-0.104c0.086-0.073,0.131-0.188,0.131-0.342
+										c0-0.281-0.172-0.423-0.514-0.423h-0.305V42.76z M29.102,42.688c0.312,0.161,0.468,0.356,0.468,0.595
+										c0,0.183-0.063,0.33-0.19,0.439c-0.128,0.108-0.296,0.167-0.505,0.167c-0.218,0-0.388-0.055-0.51-0.155
+										c-0.122-0.104-0.183-0.251-0.183-0.438c0-0.26,0.142-0.458,0.426-0.595c-0.236-0.146-0.355-0.334-0.355-0.56
+										c0-0.162,0.061-0.292,0.178-0.39c0.116-0.096,0.27-0.144,0.444-0.144c0.188,0,0.337,0.048,0.451,0.145
+										c0.114,0.099,0.173,0.229,0.173,0.393C29.499,42.378,29.367,42.558,29.102,42.688z M28.836,42.805
+										c-0.256,0.12-0.385,0.284-0.385,0.49c0,0.242,0.142,0.363,0.418,0.363c0.138,0,0.244-0.033,0.319-0.101
+										c0.074-0.064,0.109-0.157,0.109-0.274c0-0.091-0.029-0.172-0.097-0.242c-0.062-0.066-0.171-0.143-0.323-0.217
+										L28.836,42.805z M28.879,42.577c0.233-0.104,0.353-0.244,0.353-0.421c0-0.104-0.029-0.181-0.096-0.233
+										c-0.062-0.054-0.15-0.08-0.264-0.08c-0.105,0-0.189,0.026-0.255,0.08c-0.062,0.057-0.095,0.134-0.095,0.233
+										c0,0.091,0.021,0.168,0.074,0.229C28.647,42.45,28.741,42.512,28.879,42.577z M31.533,43.86h-1.379v-0.236l0.53-0.576
+										c0.192-0.215,0.324-0.375,0.389-0.479c0.062-0.105,0.094-0.227,0.094-0.354c0-0.11-0.031-0.201-0.097-0.27
+										c-0.063-0.066-0.15-0.102-0.259-0.102c-0.162,0-0.322,0.067-0.482,0.206l-0.152-0.181c0.192-0.174,0.405-0.261,0.639-0.261
+										c0.195,0,0.353,0.054,0.466,0.161c0.11,0.104,0.17,0.25,0.17,0.431c0,0.12-0.03,0.243-0.091,0.37
+										c-0.062,0.126-0.205,0.312-0.439,0.565l-0.426,0.45v0.017h1.042L31.533,43.86L31.533,43.86z M33.345,41.644v0.231
+										c-0.072-0.021-0.154-0.036-0.252-0.036c-0.227,0-0.396,0.071-0.51,0.215c-0.111,0.145-0.176,0.366-0.186,0.679h0.019
+										c0.097-0.172,0.25-0.258,0.464-0.258c0.197,0,0.354,0.061,0.465,0.181c0.109,0.12,0.166,0.284,0.166,0.492
+										c0,0.229-0.062,0.41-0.184,0.544c-0.121,0.133-0.285,0.198-0.49,0.198c-0.219,0-0.395-0.086-0.524-0.258
+										c-0.129-0.17-0.193-0.407-0.193-0.722c0-0.865,0.32-1.299,0.967-1.299C33.189,41.615,33.275,41.625,33.345,41.644z
+										 M33.243,43.147c0-0.146-0.033-0.263-0.104-0.339c-0.066-0.077-0.168-0.117-0.295-0.117c-0.131,0-0.237,0.041-0.323,0.123
+										c-0.088,0.082-0.131,0.175-0.131,0.276c0,0.153,0.041,0.285,0.123,0.397c0.082,0.11,0.188,0.167,0.319,0.167
+										c0.129,0,0.23-0.045,0.303-0.134C33.208,43.438,33.243,43.31,33.243,43.147z M35.313,41.644v0.231
+										c-0.072-0.021-0.156-0.036-0.252-0.036c-0.23,0-0.396,0.071-0.512,0.215c-0.111,0.145-0.178,0.366-0.188,0.679h0.021
+										c0.098-0.172,0.25-0.258,0.465-0.258c0.193,0,0.352,0.061,0.463,0.181c0.107,0.12,0.168,0.284,0.168,0.492
+										c0,0.229-0.062,0.41-0.188,0.544c-0.119,0.133-0.279,0.198-0.484,0.198c-0.225,0-0.396-0.086-0.527-0.258
+										c-0.129-0.17-0.195-0.407-0.195-0.722c0-0.865,0.322-1.299,0.968-1.299C35.157,41.615,35.243,41.625,35.313,41.644z
+										 M35.212,43.147c0-0.146-0.031-0.263-0.104-0.339c-0.068-0.077-0.168-0.117-0.295-0.117c-0.129,0-0.234,0.041-0.322,0.123
+										c-0.086,0.082-0.131,0.175-0.131,0.276c0,0.153,0.041,0.285,0.123,0.397c0.082,0.11,0.188,0.167,0.32,0.167
+										c0.129,0,0.229-0.045,0.301-0.134C35.176,43.438,35.212,43.31,35.212,43.147z M36.626,43.86l-0.42-1.938h-0.014
+										c0.02,0.271,0.027,0.478,0.027,0.614v1.324h-0.23v-2.213h0.375l0.375,1.805h0.01l0.379-1.805h0.383v2.213h-0.229v-1.344
+										c0-0.104,0.006-0.303,0.021-0.595h-0.016l-0.43,1.938H36.626z M38.723,43.89c-0.537,0-0.809-0.384-0.809-1.146
+										c0-0.757,0.271-1.136,0.811-1.136c0.26,0,0.457,0.099,0.596,0.296s0.207,0.479,0.207,0.843s-0.068,0.646-0.209,0.843
+										C39.178,43.792,38.979,43.89,38.723,43.89z M38.723,43.643c0.174,0,0.303-0.072,0.383-0.222
+										c0.082-0.146,0.121-0.371,0.121-0.674c0-0.306-0.041-0.53-0.123-0.675c-0.082-0.146-0.207-0.216-0.379-0.216
+										c-0.34,0-0.512,0.297-0.512,0.891C38.216,43.346,38.385,43.643,38.723,43.643z M39.964,43.86v-2.213h0.52
+										c0.32,0,0.568,0.096,0.746,0.285c0.182,0.188,0.27,0.457,0.27,0.8c0,0.36-0.092,0.644-0.273,0.837
+										c-0.188,0.19-0.451,0.291-0.803,0.291H39.964z M40.247,41.888v1.729h0.146c0.537,0,0.805-0.292,0.805-0.876
+										c0-0.569-0.248-0.854-0.746-0.854L40.247,41.888L40.247,41.888z"/>
+									<path fill="#FFFFFF" stroke="#FFFFFF" stroke-width="0.2" stroke-miterlimit="10" d="M23.759,47.36l-0.219-0.688h-0.743
+										l-0.222,0.688H22.29l0.73-2.226h0.295l0.734,2.226H23.759z M23.462,46.425l-0.201-0.642
+										c-0.039-0.125-0.07-0.239-0.095-0.342c-0.021,0.1-0.043,0.188-0.067,0.272l-0.22,0.707L23.462,46.425L23.462,46.425z
+										 M25.692,47.36h-1.174v-0.188l0.442-0.027v-1.778l-0.442-0.03v-0.187h1.174v0.187l-0.444,0.03v1.778l0.444,0.027V47.36z
+										 M26.547,46.656v-0.254h0.997v0.254H26.547z M29.124,47.36h-0.281v-1.965h-0.635v-0.248h1.547v0.248h-0.631V47.36z
+										 M31.647,47.36h-0.282v-1.032h-0.888v1.032h-0.283v-2.213h0.283v0.933h0.888v-0.933h0.282V47.36z M33.445,47.36H32.27
+										v-0.188l0.444-0.027v-1.778l-0.444-0.03v-0.187h1.174v0.187l-0.445,0.03v1.778l0.445,0.027V47.36z M35.52,47.36h-0.326
+										l-0.878-1.832h-0.012c0.02,0.279,0.023,0.489,0.023,0.632v1.2h-0.26v-2.213h0.32l0.875,1.818h0.012
+										c-0.016-0.306-0.021-0.51-0.021-0.607v-1.211h0.268V47.36L35.52,47.36z M37.618,47.36h-0.32L36.616,46.3l-0.211,0.176
+										v0.885h-0.281v-2.213h0.281v1.104l0.184-0.254l0.688-0.853h0.316l-0.789,0.964L37.618,47.36z M39.346,47.36h-1.273v-2.213
+										h1.273v0.248h-0.992v0.685h0.936v0.245h-0.936v0.787h0.992V47.36L39.346,47.36z M40.245,46.446v0.914h-0.283v-2.213h0.541
+										c0.523,0,0.787,0.209,0.787,0.628c0,0.29-0.146,0.483-0.438,0.594l0.6,0.991h-0.33l-0.529-0.914H40.245z M40.245,46.207
+										h0.248c0.172,0,0.299-0.033,0.381-0.1c0.082-0.067,0.123-0.174,0.123-0.318c0-0.143-0.041-0.244-0.121-0.308
+										c-0.08-0.062-0.211-0.098-0.391-0.098h-0.24V46.207z"/>
+									<path fill="#FFFFFF" stroke="#FFFFFF" stroke-width="0.2" stroke-miterlimit="10" d="M23.455,50.86h-1.174v-0.188
+										l0.446-0.027v-1.778l-0.446-0.03v-0.187h1.174v0.187l-0.442,0.03v1.778l0.442,0.027V50.86z M24.092,50.786v-0.271
+										c0.213,0.088,0.422,0.131,0.625,0.131c0.354,0,0.529-0.121,0.529-0.363c0-0.104-0.035-0.188-0.105-0.242
+										c-0.068-0.055-0.215-0.123-0.434-0.201c-0.21-0.07-0.359-0.158-0.449-0.264c-0.094-0.104-0.14-0.235-0.14-0.399
+										c0-0.175,0.065-0.312,0.194-0.409c0.129-0.103,0.308-0.148,0.533-0.148c0.229,0,0.438,0.04,0.631,0.118l-0.102,0.248
+										c-0.191-0.078-0.376-0.117-0.545-0.117c-0.295,0-0.439,0.104-0.439,0.315c0,0.104,0.03,0.187,0.1,0.246
+										c0.064,0.062,0.201,0.131,0.408,0.2c0.248,0.089,0.414,0.184,0.498,0.274c0.082,0.095,0.125,0.216,0.125,0.363
+										c0,0.19-0.069,0.347-0.211,0.456c-0.143,0.107-0.338,0.166-0.598,0.166C24.451,50.89,24.242,50.855,24.092,50.786z
+										 M26.621,50.86L26.2,48.922h-0.012c0.018,0.271,0.022,0.478,0.022,0.614v1.324h-0.229v-2.213h0.373l0.377,1.805h0.01
+										l0.378-1.805h0.382v2.213h-0.229v-1.344c0-0.104,0.008-0.303,0.021-0.595H27.28l-0.43,1.938H26.621z"/>
+									<path fill="#FFFFFF" stroke="#FFFFFF" stroke-width="0.2" stroke-miterlimit="10" d="M32.059,50.86H30.68v-0.236
+										l0.527-0.576c0.197-0.215,0.326-0.375,0.391-0.479c0.062-0.105,0.097-0.227,0.097-0.354c0-0.11-0.032-0.201-0.099-0.27
+										c-0.062-0.066-0.148-0.102-0.262-0.102c-0.16,0-0.32,0.067-0.48,0.206l-0.151-0.181c0.192-0.174,0.405-0.261,0.639-0.261
+										c0.196,0,0.354,0.054,0.468,0.161c0.108,0.104,0.168,0.25,0.168,0.431c0,0.12-0.028,0.243-0.088,0.37
+										c-0.062,0.126-0.207,0.312-0.44,0.565l-0.427,0.45v0.017h1.043L32.059,50.86L32.059,50.86z M33.152,50.404
+										c0.154,0,0.229,0.084,0.229,0.252c0,0.167-0.074,0.251-0.229,0.251c-0.152,0-0.23-0.084-0.23-0.251
+										C32.923,50.488,32.999,50.404,33.152,50.404z M35.71,50.364h-0.32v0.496h-0.27v-0.496h-1.021v-0.241l1.005-1.487h0.285
+										v1.479h0.32V50.364z M35.12,50.112v-0.539c0-0.177,0.008-0.396,0.021-0.653h-0.016c-0.033,0.104-0.08,0.193-0.135,0.272
+										l-0.623,0.92H35.12z M36.96,49.691H37.6v1.086c-0.195,0.074-0.408,0.112-0.637,0.112c-0.266,0-0.471-0.104-0.619-0.305
+										c-0.146-0.201-0.225-0.479-0.225-0.838c0-0.354,0.082-0.632,0.246-0.833c0.162-0.202,0.389-0.303,0.674-0.303
+										c0.193,0,0.369,0.044,0.523,0.131l-0.107,0.245c-0.146-0.085-0.289-0.127-0.424-0.127c-0.195,0-0.346,0.078-0.453,0.232
+										c-0.105,0.155-0.162,0.375-0.162,0.653c0,0.594,0.199,0.892,0.598,0.892c0.1,0,0.199-0.017,0.309-0.045v-0.656h-0.359
+										L36.96,49.691L36.96,49.691z M39.538,50.86h-0.283v-1.032h-0.887v1.032h-0.283v-2.213h0.283v0.933h0.887v-0.933h0.283
+										V50.86z M41.399,50.86h-1.305v-0.189l0.996-1.266h-0.947v-0.207h1.229v0.221l-0.979,1.234h1.006V50.86L41.399,50.86z"/>
+									<path fill="#FFFFFF" stroke="#FFFFFF" stroke-width="0.2" stroke-miterlimit="10" d="M22.686,53.499v0.861h-0.28v-2.213
+										h0.61c0.52,0,0.776,0.216,0.776,0.646c0,0.225-0.067,0.396-0.21,0.521c-0.141,0.123-0.343,0.187-0.607,0.187L22.686,53.499
+										L22.686,53.499z M22.686,53.26h0.259c0.198,0,0.343-0.033,0.429-0.104c0.087-0.073,0.13-0.188,0.13-0.342
+										c0-0.281-0.171-0.423-0.512-0.423h-0.306V53.26z M25.598,54.36l-0.22-0.688h-0.741l-0.224,0.688h-0.287l0.731-2.226h0.295
+										l0.734,2.226H25.598z M25.3,53.425l-0.201-0.642c-0.039-0.125-0.068-0.239-0.096-0.342c-0.02,0.1-0.043,0.188-0.068,0.272
+										l-0.217,0.707L25.3,53.425L25.3,53.425z"/>
+									<path fill="#FFFFFF" stroke="#FFFFFF" stroke-width="0.2" stroke-miterlimit="10" d="M30.854,53.381h-0.586v-0.227h0.586
+										v-0.589h0.227v0.589h0.586v0.227h-0.586v0.583h-0.227V53.381z M33.597,54.36h-1.379v-0.236l0.528-0.576
+										c0.197-0.215,0.326-0.375,0.391-0.479c0.062-0.105,0.094-0.227,0.094-0.354c0-0.11-0.029-0.201-0.096-0.27
+										c-0.062-0.066-0.15-0.102-0.262-0.102c-0.16,0-0.321,0.067-0.479,0.206l-0.152-0.181c0.191-0.174,0.405-0.261,0.639-0.261
+										c0.195,0,0.354,0.054,0.467,0.161c0.109,0.104,0.17,0.25,0.17,0.431c0,0.12-0.031,0.243-0.094,0.37
+										c-0.061,0.126-0.207,0.312-0.438,0.565l-0.424,0.45v0.017h1.042L33.597,54.36L33.597,54.36z M34.177,54.271v-0.265
+										c0.146,0.101,0.324,0.146,0.544,0.146c0.338,0,0.508-0.158,0.508-0.479c0-0.297-0.174-0.441-0.521-0.441
+										c-0.09,0-0.205,0.014-0.35,0.04l-0.134-0.087l0.082-1.041h1.044v0.251h-0.809l-0.061,0.635
+										c0.107-0.021,0.215-0.03,0.316-0.03c0.211,0,0.383,0.061,0.514,0.173c0.133,0.115,0.195,0.273,0.195,0.479
+										c0,0.232-0.07,0.419-0.209,0.547c-0.141,0.129-0.336,0.192-0.59,0.192C34.487,54.39,34.31,54.35,34.177,54.271z
+										 M37.21,54.138h-0.012c-0.113,0.17-0.275,0.254-0.486,0.254c-0.201,0-0.361-0.074-0.479-0.229
+										c-0.115-0.147-0.174-0.361-0.174-0.632c0-0.272,0.059-0.484,0.174-0.637c0.117-0.151,0.273-0.229,0.479-0.229
+										c0.207,0,0.369,0.081,0.486,0.242h0.02c-0.014-0.13-0.02-0.212-0.02-0.245v-0.66h0.275v2.359h-0.225L37.21,54.138z
+										 M37.198,53.595v-0.062c0-0.229-0.035-0.394-0.104-0.489c-0.07-0.098-0.184-0.146-0.334-0.146
+										c-0.273,0-0.412,0.213-0.412,0.639c0,0.418,0.141,0.627,0.414,0.627c0.152,0,0.266-0.045,0.33-0.134
+										C37.159,53.938,37.194,53.794,37.198,53.595z M37.995,52.147h0.666c0.277,0,0.479,0.044,0.604,0.133
+										c0.125,0.088,0.188,0.229,0.188,0.427c0,0.13-0.039,0.237-0.119,0.323c-0.078,0.085-0.186,0.138-0.316,0.154v0.017
+										c0.334,0.054,0.502,0.227,0.502,0.518c0,0.199-0.064,0.356-0.193,0.475c-0.129,0.114-0.305,0.171-0.525,0.171h-0.799V52.15
+										L37.995,52.147L37.995,52.147z M38.278,53.322v0.799h0.465c0.314,0,0.471-0.138,0.471-0.415
+										c0-0.256-0.16-0.384-0.488-0.384H38.278z M38.278,53.086h0.43c0.158,0,0.273-0.025,0.348-0.083
+										c0.07-0.056,0.105-0.146,0.105-0.271c0-0.121-0.039-0.208-0.115-0.265c-0.076-0.053-0.197-0.076-0.365-0.076h-0.398
+										L38.278,53.086L38.278,53.086z M41.208,54.36v-1.07c0-0.146-0.014-0.25-0.041-0.307c-0.023-0.062-0.068-0.087-0.133-0.087
+										c-0.088,0-0.15,0.042-0.189,0.126c-0.041,0.084-0.062,0.224-0.062,0.421v0.917h-0.244v-1.07
+										c0-0.263-0.061-0.394-0.188-0.394c-0.084,0-0.146,0.039-0.184,0.119s-0.055,0.238-0.055,0.479v0.865h-0.244v-1.662h0.191
+										l0.041,0.225h0.016c0.066-0.17,0.168-0.255,0.303-0.255c0.166,0,0.273,0.092,0.322,0.275h0.01
+										c0.076-0.188,0.189-0.275,0.332-0.275c0.129,0,0.225,0.047,0.281,0.143c0.057,0.095,0.088,0.249,0.088,0.469v1.081H41.208z
+										"/>
+									<path fill="#FFFFFF" stroke="#FFFFFF" stroke-width="0.2" stroke-miterlimit="10" d="M23.196,56.688
+										c0.312,0.161,0.468,0.356,0.468,0.595c0,0.183-0.062,0.33-0.188,0.439c-0.129,0.108-0.297,0.167-0.506,0.167
+										c-0.219,0-0.389-0.055-0.511-0.155c-0.122-0.104-0.183-0.251-0.183-0.438c0-0.26,0.142-0.458,0.427-0.595
+										c-0.236-0.146-0.354-0.334-0.354-0.56c0-0.162,0.061-0.292,0.176-0.39c0.117-0.096,0.269-0.144,0.445-0.144
+										c0.188,0,0.338,0.048,0.45,0.145c0.115,0.099,0.175,0.229,0.175,0.393C23.592,56.378,23.461,56.558,23.196,56.688z
+										 M22.93,56.805c-0.258,0.12-0.387,0.284-0.387,0.49c0,0.242,0.141,0.363,0.418,0.363c0.139,0,0.244-0.033,0.319-0.101
+										c0.073-0.064,0.112-0.157,0.112-0.274c0-0.091-0.033-0.172-0.099-0.242c-0.062-0.066-0.171-0.143-0.321-0.217L22.93,56.805
+										z M22.973,56.577c0.231-0.104,0.352-0.244,0.352-0.421c0-0.104-0.031-0.181-0.096-0.233c-0.063-0.054-0.15-0.08-0.264-0.08
+										c-0.105,0-0.191,0.026-0.256,0.08c-0.062,0.057-0.095,0.134-0.095,0.233c0,0.091,0.024,0.168,0.075,0.229
+										C22.741,56.45,22.835,56.512,22.973,56.577z M24.749,57.89c-0.23,0-0.404-0.101-0.523-0.294s-0.181-0.479-0.181-0.849
+										c0-0.759,0.234-1.139,0.704-1.139c0.234,0,0.411,0.098,0.53,0.293c0.12,0.193,0.18,0.478,0.18,0.846
+										C25.459,57.511,25.221,57.89,24.749,57.89z M24.749,57.656c0.148,0,0.257-0.071,0.327-0.213
+										c0.069-0.146,0.104-0.373,0.104-0.692c0-0.315-0.035-0.548-0.104-0.688c-0.07-0.146-0.179-0.214-0.327-0.214
+										c-0.146,0-0.254,0.067-0.32,0.211c-0.065,0.142-0.104,0.371-0.104,0.688c0,0.32,0.033,0.552,0.104,0.693
+										C24.495,57.585,24.602,57.656,24.749,57.656z M27.223,57.86h-1.379v-0.236l0.528-0.576
+										c0.196-0.215,0.326-0.375,0.392-0.479c0.062-0.105,0.094-0.227,0.094-0.354c0-0.11-0.03-0.201-0.098-0.27
+										c-0.062-0.066-0.147-0.102-0.261-0.102c-0.161,0-0.319,0.067-0.479,0.206l-0.152-0.181
+										c0.191-0.174,0.404-0.261,0.639-0.261c0.196,0,0.354,0.054,0.467,0.161c0.109,0.104,0.17,0.25,0.17,0.431
+										c0,0.12-0.029,0.243-0.093,0.37c-0.06,0.126-0.202,0.312-0.438,0.565l-0.427,0.45v0.021h1.041L27.223,57.86L27.223,57.86z
+										 M28.317,57.404c0.154,0,0.229,0.084,0.229,0.252c0,0.167-0.074,0.251-0.229,0.251c-0.152,0-0.229-0.084-0.229-0.251
+										C28.089,57.488,28.165,57.404,28.317,57.404z M30.319,57.86h-0.27v-1.382c0-0.123,0.006-0.31,0.014-0.549
+										c-0.039,0.045-0.104,0.103-0.187,0.172l-0.223,0.185l-0.146-0.188l0.579-0.451h0.229L30.319,57.86L30.319,57.86z
+										 M32.102,57.86h-0.271v-1.382c0-0.123,0.004-0.31,0.015-0.549c-0.039,0.045-0.103,0.103-0.186,0.172l-0.221,0.185
+										l-0.146-0.188l0.579-0.451h0.229V57.86z M33.251,57.65h-0.018l-0.059,0.21h-0.199v-2.355h0.271v0.569
+										c0,0.082-0.004,0.194-0.012,0.342h0.012c0.107-0.165,0.271-0.248,0.486-0.248c0.203,0,0.361,0.075,0.479,0.229
+										c0.115,0.146,0.175,0.357,0.175,0.632c0,0.271-0.06,0.48-0.177,0.637c-0.111,0.151-0.271,0.229-0.477,0.229
+										C33.53,57.89,33.368,57.81,33.251,57.65z M33.251,57.026c0,0.229,0.035,0.393,0.105,0.488
+										c0.068,0.099,0.182,0.146,0.336,0.146c0.271,0,0.412-0.213,0.412-0.639c0-0.418-0.143-0.627-0.416-0.627
+										c-0.156,0-0.271,0.048-0.336,0.143C33.286,56.633,33.251,56.796,33.251,57.026z M36.057,55.647l-0.949,2.213h-0.271
+										l0.949-2.213H36.057z M38.007,56.198v0.171L37.71,56.41c0.066,0.086,0.1,0.193,0.1,0.322c0,0.163-0.055,0.292-0.16,0.389
+										s-0.258,0.146-0.447,0.146c-0.057,0-0.102-0.003-0.131-0.012c-0.102,0.06-0.152,0.124-0.152,0.202
+										c0,0.084,0.082,0.127,0.244,0.127h0.283c0.176,0,0.311,0.039,0.402,0.116c0.092,0.078,0.141,0.188,0.141,0.333
+										c0,0.381-0.285,0.571-0.855,0.571c-0.221,0-0.389-0.041-0.502-0.122c-0.111-0.081-0.172-0.195-0.172-0.343
+										c0-0.217,0.121-0.353,0.363-0.407c-0.098-0.049-0.146-0.125-0.146-0.233c0-0.113,0.064-0.21,0.199-0.29
+										c-0.09-0.038-0.16-0.1-0.213-0.186c-0.051-0.087-0.076-0.185-0.076-0.282c0-0.186,0.055-0.325,0.16-0.425
+										c0.109-0.104,0.264-0.149,0.461-0.149c0.086,0,0.162,0.01,0.229,0.03H38.007z M37.35,57.833h-0.285
+										c-0.229,0-0.348,0.103-0.348,0.3c0,0.179,0.137,0.268,0.408,0.268c0.398,0,0.6-0.113,0.6-0.339
+										c0-0.092-0.023-0.147-0.074-0.183C37.6,57.848,37.499,57.833,37.35,57.833z M37.202,57.076
+										c0.227,0,0.336-0.116,0.336-0.348c0-0.241-0.111-0.362-0.34-0.362c-0.227,0-0.34,0.122-0.34,0.366
+										C36.858,56.962,36.973,57.076,37.202,57.076z M39.622,55.647l-0.949,2.213h-0.27l0.949-2.213H39.622z M41.21,57.86v-1.07
+										c0-0.263-0.117-0.394-0.357-0.394c-0.312,0-0.465,0.199-0.465,0.603v0.861H40.11v-1.662h0.223l0.041,0.225h0.016
+										c0.104-0.17,0.271-0.255,0.51-0.255c0.395,0,0.59,0.202,0.59,0.607v1.085H41.21z"/>
+								</g>
+							</g>
+							<g transform="translate(6.5,27) rotate(90,6.5475,4.5915)">
+								<g>
+									<g>
+										<path fill="#FFFFFF" d="M26.824,10.151h-1.403V8.747V6.585h-1.403v3.566c-0.001,0.776,0.628,1.404,1.403,1.404H33.2
+											v-1.404h-3.993V7.343h-1.241v2.808H26.824z"/>
+										<path fill="#FFFFFF" d="M30.51,0.175L30.51,0.175c0.729,0.552,1.207,1.419,1.207,2.405c0,1.67-1.354,3.025-3.021,3.025
+											S25.67,4.251,25.67,2.58c0-0.985,0.479-1.853,1.209-2.404v-1.715c-1.583,0.699-2.688,2.278-2.688,4.119
+											c0,2.49,2.018,4.507,4.508,4.507c2.488,0,4.507-2.018,4.507-4.507c0-1.842-1.105-3.42-2.688-4.12L30.51,0.175L30.51,0.175
+											z"/>
+										<path fill="#FFFFFF" d="M27.386,2.612c0-0.403,0.188-0.759,0.476-0.999V0.009c-1.106,0.354-1.913,1.379-1.913,2.603
+											c0,1.515,1.229,2.744,2.744,2.744c1.515,0,2.745-1.229,2.745-2.744c0-1.224-0.811-2.248-1.913-2.602v1.604h-0.001
+											c0.287,0.24,0.474,0.596,0.474,0.998c0,0.72-0.584,1.305-1.306,1.305C27.972,3.917,27.386,3.333,27.386,2.612z"/>
+									</g>
+								</g>
+							</g>
+						</g>
+					</g>
+				</g>
+			</g>
+		</g>
+	</g>
+</g>
+<g transform="matrix(1, 0, 0, 1, 7.2, 10.0715)">
+	<g>
+		<g>
+			<g>
+				<rect x="69.366" y="48.663" fill="#232323" width="23.733" height="32.97"/>
+				<rect x="69.94" y="49.095" fill="#494949" width="1.646" height="31.936"/>
+				<rect x="71.588" y="49.095" fill="#3D3D3D" fill-opacity="0.3" width="5.369" height="31.936"/>
+				<rect x="90.963" y="49.095" width="1.619" height="32.972"/>
+				<rect x="85.185" y="49.095" fill="#0F0F0F" fill-opacity="0.4" width="5.828" height="32.972"/>
+			</g>
+			<rect x="69.366" y="48.663" opacity="0.2" enable-background="new    " width="23.733" height="0.592"/>
+		</g>
+		
+			<line opacity="0.5" fill="none" stroke="#000000" stroke-width="0.25" stroke-miterlimit="10" enable-background="new    " x1="93.1" y1="51.473" x2="69.366" y2="51.473"/>
+		<g>
+			<rect x="69.393" y="78.137" opacity="0.25" enable-background="new    " width="23.729" height="1.287"/>
+			<path opacity="0.25" stroke="#565656" stroke-width="0.25" stroke-miterlimit="10" enable-background="new    " d="
+				M73.691,79.142h15.081V65.845c0-4.166-3.376-7.541-7.541-7.541c-4.164,0-7.541,3.375-7.541,7.541L73.691,79.142L73.691,79.142z"
+				/>
+		</g>
+		<g>
+			<path fill="#232323" d="M73.691,79.142h15.081V65.845c0-4.166-3.376-7.541-7.541-7.541c-4.164,0-7.541,3.375-7.541,7.541
+				L73.691,79.142L73.691,79.142z"/>
+			<rect x="68.476" y="78.414" fill="#232323" width="25.512" height="7.688"/>
+		</g>
+		<rect x="78.376" y="46.962" fill="#6D6D6D" width="5.713" height="1.701"/>
+		<rect x="75.622" y="47.688" fill="#494949" width="11.222" height="0.975"/>
+		<g>
+			<g enable-background="new    ">
+				<g>
+					<g>
+						<path fill="#1A1A1A" d="M73.905,96.107c-1.868-0.939-3.024-2.232-3.024-3.663c0-2.862,4.645-5.188,10.378-5.188
+							c5.731,0,10.376,2.326,10.376,5.188c0,0.163-0.018,0.323-0.046,0.481c-0.313,2.723-4.829,4.887-10.358,4.887
+							c-5.732,0-10.377-2.326-10.377-5.188v-0.192C70.853,93.867,72.02,95.167,73.905,96.107 M70.88,92.417v-0.188
+							c0-2.866,4.645-5.188,10.377-5.188s10.377,2.321,10.377,5.188v0.188c0-2.866-4.646-5.188-10.377-5.188
+							C75.525,87.228,70.88,89.551,70.88,92.417 M94.01,86.068H68.504V98.82h25.507L94.01,86.068"/>
+						<path d="M83.462,87.765v4.679c0,0.249-0.162,0.478-0.438,0.661c-0.288,0.34-0.958,0.576-1.74,0.576
+							c-0.693,0-1.303-0.189-1.629-0.475c-0.379-0.199-0.611-0.468-0.611-0.766v-4.678c-4.241,0.5-7.397,2.402-7.397,4.678
+							c0,2.656,4.302,4.807,9.611,4.807c5.311,0,9.611-2.148,9.611-4.807C90.87,90.168,87.709,88.263,83.462,87.765"/>
+						<path fill="#808080" d="M81.258,87.638c-0.763,0-1.504,0.045-2.215,0.129v4.678c0-0.607,0.989-1.104,2.215-1.104
+							c1.215,0,2.204,0.495,2.204,1.104v-4.68C82.755,87.681,82.016,87.638,81.258,87.638"/>
+						<path fill="#333333" d="M81.258,87.638c0.758,0,1.496,0.045,2.204,0.127c4.247,0.498,7.406,2.402,7.406,4.68
+							c0,2.654-4.302,4.806-9.61,4.806c-5.312,0-9.612-2.149-9.612-4.806c0-2.274,3.156-4.178,7.397-4.678
+							C79.754,87.683,80.496,87.638,81.258,87.638 M81.258,87.255c-5.733,0-10.378,2.326-10.378,5.188
+							c0,1.431,1.155,2.724,3.024,3.662c1.876,0.935,4.466,1.513,7.325,1.513c5.732,0,10.377-2.322,10.377-5.188v0.192
+							c0,0.103-0.007,0.202-0.02,0.304c0.028-0.158,0.046-0.32,0.046-0.482C91.634,89.581,86.99,87.255,81.258,87.255"/>
+						<path fill="#B3B3B3" d="M81.258,91.342c-1.226,0-2.215,0.494-2.215,1.104c0,0.297,0.232,0.564,0.611,0.765
+							c-0.159-0.139-0.252-0.301-0.252-0.473c0-0.521,0.847-0.939,1.881-0.939c1.044,0,1.892,0.418,1.892,0.939
+							c0,0.132-0.055,0.257-0.15,0.37c0.275-0.187,0.438-0.413,0.438-0.662C83.462,91.836,82.473,91.342,81.258,91.342"/>
+						<path fill="#CCCCCC" d="M81.284,91.796c-1.034,0-1.881,0.418-1.881,0.939c0,0.172,0.093,0.334,0.252,0.473
+							c0.326,0.283,0.937,0.474,1.629,0.474c0.782,0,1.453-0.235,1.74-0.574c0.097-0.113,0.15-0.238,0.15-0.37
+							C83.175,92.214,82.329,91.796,81.284,91.796"/>
+						<path fill="#4D4D4D" d="M81.258,87.039c-5.733,0-10.378,2.321-10.378,5.188v0.188c0-2.867,4.645-5.188,10.378-5.188
+							c5.731,0,10.376,2.321,10.376,5.188v-0.188C91.634,89.361,86.99,87.039,81.258,87.039"/>
+						<path d="M91.608,92.431c0,2.863-4.646,5.188-10.377,5.188c-2.858,0-5.448-0.578-7.325-1.512
+							c-1.886-0.939-3.052-2.24-3.052-3.676v0.191c0,2.861,4.645,5.188,10.377,5.188c5.529,0,10.045-2.164,10.358-4.885
+							c0.013-0.102,0.02-0.201,0.02-0.304L91.608,92.431"/>
+					</g>
+				</g>
+			</g>
+		</g>
+		<rect x="68.89" y="79.142" fill="#494949" width="1.05" height="6.264"/>
+		<rect x="92.575" y="79.142" width="1.051" height="6.264"/>
+	</g>
+</g>
+<g>
+	<g id="breadboard_2_">
+		<polygon fill="#404040" points="24.846,5.197 23.283,6.76 23.283,10.832 24.846,12.396 28.919,12.396 30.483,10.832 30.483,6.76 
+			28.919,5.197 		"/>
+		<rect id="connector0pin" x="25.487" y="7.401" fill="none" width="2.791" height="2.792"/>
+		<g id="connector0terminal">
+		</g>
+		<rect x="25.734" y="7.648" fill="#8D8C8C" width="2.298" height="2.298"/>
+		<rect x="26.292" y="8.206" fill="#8C8663" width="1.183" height="1.183"/>
+		<polygon fill="#B8AF82" points="25.734,7.648 26.292,8.206 27.474,8.206 28.032,7.648 		"/>
+		<polygon fill="#80795B" points="27.474,9.387 27.474,8.206 28.032,7.648 28.032,9.946 		"/>
+		<polygon fill="#5E5B43" points="26.292,9.387 27.474,9.387 28.032,9.946 25.734,9.946 		"/>
+		<polygon fill="#9A916C" points="25.734,7.648 26.292,8.206 26.292,9.387 25.734,9.946 		"/>
+		<polygon fill="#404040" points="32.046,5.197 30.483,6.76 30.483,10.832 32.046,12.396 36.119,12.396 37.683,10.832 37.683,6.76 
+			36.119,5.197 		"/>
+		<rect id="connector1pin" x="32.687" y="7.401" fill="none" width="2.791" height="2.792"/>
+		<g id="connector1terminal">
+		</g>
+		<rect x="32.935" y="7.648" fill="#8D8C8C" width="2.298" height="2.298"/>
+		<rect x="33.492" y="8.206" fill="#8C8663" width="1.183" height="1.183"/>
+		<polygon fill="#B8AF82" points="32.935,7.648 33.492,8.206 34.674,8.206 35.232,7.648 		"/>
+		<polygon fill="#80795B" points="34.674,9.387 34.674,8.206 35.232,7.648 35.232,9.946 		"/>
+		<polygon fill="#5E5B43" points="33.492,9.387 34.674,9.387 35.232,9.946 32.935,9.946 		"/>
+		<polygon fill="#9A916C" points="32.935,7.648 33.492,8.206 33.492,9.387 32.935,9.946 		"/>
+		<polygon fill="#404040" points="39.246,5.197 37.683,6.76 37.683,10.832 39.246,12.396 43.318,12.396 44.883,10.832 44.883,6.76 
+			43.318,5.197 		"/>
+		<rect id="connector2pin" x="39.888" y="7.401" fill="none" width="2.791" height="2.792"/>
+		<g id="connector2terminal">
+		</g>
+		<rect x="40.134" y="7.648" fill="#8D8C8C" width="2.299" height="2.298"/>
+		<rect x="40.692" y="8.206" fill="#8C8663" width="1.183" height="1.183"/>
+		<polygon fill="#B8AF82" points="40.134,7.648 40.692,8.206 41.874,8.206 42.433,7.648 		"/>
+		<polygon fill="#80795B" points="41.874,9.387 41.874,8.206 42.433,7.648 42.433,9.946 		"/>
+		<polygon fill="#5E5B43" points="40.692,9.387 41.874,9.387 42.433,9.946 40.134,9.946 		"/>
+		<polygon fill="#9A916C" points="40.134,7.648 40.692,8.206 40.692,9.387 40.134,9.946 		"/>
+		<polygon fill="#404040" points="46.446,5.197 44.883,6.76 44.883,10.832 46.446,12.396 50.519,12.396 52.083,10.832 52.083,6.76 
+			50.519,5.197 		"/>
+		<rect id="connector3pin" x="47.087" y="7.401" fill="none" width="2.792" height="2.792"/>
+		<g id="connector3terminal">
+		</g>
+		<rect x="47.334" y="7.648" fill="#8D8C8C" width="2.299" height="2.298"/>
+		<rect x="47.893" y="8.206" fill="#8C8663" width="1.182" height="1.183"/>
+		<polygon fill="#B8AF82" points="47.334,7.648 47.893,8.206 49.073,8.206 49.633,7.648 		"/>
+		<polygon fill="#80795B" points="49.073,9.387 49.073,8.206 49.633,7.648 49.633,9.946 		"/>
+		<polygon fill="#5E5B43" points="47.893,9.387 49.073,9.387 49.633,9.946 47.334,9.946 		"/>
+		<polygon fill="#9A916C" points="47.334,7.648 47.893,8.206 47.893,9.387 47.334,9.946 		"/>
+		<polygon fill="#404040" points="53.646,5.197 52.083,6.76 52.083,10.832 53.646,12.396 57.719,12.396 59.283,10.832 59.283,6.76 
+			57.719,5.197 		"/>
+		<rect id="connector4pin" x="54.287" y="7.401" fill="none" width="2.792" height="2.792"/>
+		<g id="connector4terminal">
+		</g>
+		<rect x="54.534" y="7.648" fill="#8D8C8C" width="2.299" height="2.298"/>
+		<rect x="55.093" y="8.206" fill="#8C8663" width="1.182" height="1.183"/>
+		<polygon fill="#B8AF82" points="54.534,7.648 55.093,8.206 56.273,8.206 56.833,7.648 		"/>
+		<polygon fill="#80795B" points="56.273,9.387 56.273,8.206 56.833,7.648 56.833,9.946 		"/>
+		<polygon fill="#5E5B43" points="55.093,9.387 56.273,9.387 56.833,9.946 54.534,9.946 		"/>
+		<polygon fill="#9A916C" points="54.534,7.648 55.093,8.206 55.093,9.387 54.534,9.946 		"/>
+		<polygon fill="#404040" points="60.846,5.197 59.283,6.76 59.283,10.832 60.846,12.396 64.919,12.396 66.483,10.832 66.483,6.76 
+			64.919,5.197 		"/>
+		<rect id="connector5pin" x="61.487" y="7.401" fill="none" width="2.791" height="2.792"/>
+		<g id="connector5terminal">
+		</g>
+		<rect x="61.734" y="7.648" fill="#8D8C8C" width="2.298" height="2.298"/>
+		<rect x="62.292" y="8.206" fill="#8C8663" width="1.183" height="1.183"/>
+		<polygon fill="#B8AF82" points="61.734,7.648 62.292,8.206 63.474,8.206 64.032,7.648 		"/>
+		<polygon fill="#80795B" points="63.474,9.387 63.474,8.206 64.032,7.648 64.032,9.946 		"/>
+		<polygon fill="#5E5B43" points="62.292,9.387 63.474,9.387 64.032,9.946 61.734,9.946 		"/>
+		<polygon fill="#9A916C" points="61.734,7.648 62.292,8.206 62.292,9.387 61.734,9.946 		"/>
+	</g>
+</g>
+<g>
+	<polygon fill="#404040" points="73.846,5.197 72.283,6.76 72.283,10.832 73.846,12.396 77.919,12.396 79.483,10.832 79.483,6.76 
+		77.919,5.197 	"/>
+	<rect id="connector0pin_1_" x="74.487" y="7.401" fill="none" width="2.791" height="2.792"/>
+	<rect x="74.734" y="7.648" fill="#8D8C8C" width="2.298" height="2.298"/>
+	<rect x="75.292" y="8.206" fill="#8C8663" width="1.183" height="1.183"/>
+	<polygon fill="#B8AF82" points="74.734,7.648 75.292,8.206 76.474,8.206 77.032,7.648 	"/>
+	<polygon fill="#80795B" points="76.474,9.387 76.474,8.206 77.032,7.648 77.032,9.946 	"/>
+	<polygon fill="#5E5B43" points="75.292,9.387 76.474,9.387 77.032,9.946 74.734,9.946 	"/>
+	<polygon fill="#9A916C" points="74.734,7.648 75.292,8.206 75.292,9.387 74.734,9.946 	"/>
+	<polygon fill="#404040" points="81.046,5.197 79.483,6.76 79.483,10.832 81.046,12.396 85.119,12.396 86.683,10.832 86.683,6.76 
+		85.119,5.197 	"/>
+	<rect id="connector1pin_1_" x="81.687" y="7.401" fill="none" width="2.791" height="2.792"/>
+	<rect x="81.935" y="7.648" fill="#8D8C8C" width="2.298" height="2.298"/>
+	<rect x="82.492" y="8.206" fill="#8C8663" width="1.183" height="1.183"/>
+	<polygon fill="#B8AF82" points="81.935,7.648 82.492,8.206 83.674,8.206 84.232,7.648 	"/>
+	<polygon fill="#80795B" points="83.674,9.387 83.674,8.206 84.232,7.648 84.232,9.946 	"/>
+	<polygon fill="#5E5B43" points="82.492,9.387 83.674,9.387 84.232,9.946 81.935,9.946 	"/>
+	<polygon fill="#9A916C" points="81.935,7.648 82.492,8.206 82.492,9.387 81.935,9.946 	"/>
+	<polygon fill="#404040" points="88.246,5.197 86.683,6.76 86.683,10.832 88.246,12.396 92.318,12.396 93.883,10.832 93.883,6.76 
+		92.318,5.197 	"/>
+	<rect id="connector2pin_1_" x="88.888" y="7.401" fill="none" width="2.791" height="2.792"/>
+	<rect x="89.134" y="7.648" fill="#8D8C8C" width="2.299" height="2.298"/>
+	<rect x="89.692" y="8.206" fill="#8C8663" width="1.183" height="1.183"/>
+	<polygon fill="#B8AF82" points="89.134,7.648 89.692,8.206 90.874,8.206 91.433,7.648 	"/>
+	<polygon fill="#80795B" points="90.874,9.387 90.874,8.206 91.433,7.648 91.433,9.946 	"/>
+	<polygon fill="#5E5B43" points="89.692,9.387 90.874,9.387 91.433,9.946 89.134,9.946 	"/>
+	<polygon fill="#9A916C" points="89.134,7.648 89.692,8.206 89.692,9.387 89.134,9.946 	"/>
+</g>
+</svg>
