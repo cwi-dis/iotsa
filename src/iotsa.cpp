@@ -24,7 +24,9 @@ IotsaApplication::setup() {
   LED digitalWrite(led, 0);
   IFDEBUG Serial.begin(115200);
   IFDEBUG Serial.println("Serial opened");
+  IFDEBUG Serial.print("Opening SPIFFS (may take long)...");
   bool ok = SPIFFS.begin();
+  IFDEBUG Serial.println(" done.");
   if (!ok) {
     IFDEBUG Serial.println("SPIFFS.begin() failed, formatting");
     ok = SPIFFS.format();
