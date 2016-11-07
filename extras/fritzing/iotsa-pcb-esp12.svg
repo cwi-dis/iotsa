@@ -667,77 +667,50 @@
 <g id="Copper">
 	<g transform="translate(191.618,90.2908)">
 		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row11">
-				<circle id="row11a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.963" r="2.088"/>
-				<circle id="row11b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
-				<circle id="row11c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
+			<g id="row29">
+				<circle id="row29a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.963" r="2.088"/>
+				<circle id="row29b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row29c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
 			</g>
 		</g>
 	</g>
 	<g transform="translate(184.418,90.2908)">
 		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row12">
-				<circle id="row12a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="5.963" r="2.088"/>
-				<circle id="row12b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="13.162" r="2.088"/>
-				<circle id="row12c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="20.362" r="2.088"/>
+			<g id="row28">
+				<circle id="row28a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="5.963" r="2.088"/>
+				<circle id="row28b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="13.162" r="2.088"/>
+				<circle id="row28c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="20.362" r="2.088"/>
 			</g>
 		</g>
 	</g>
 	<g transform="translate(177.218,90.2908)">
 		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row13">
-				<circle id="row13a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.963" r="2.088"/>
-				<circle id="row13b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
-				<circle id="row13c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
+			<g id="row27">
+				<circle id="row27a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.963" r="2.088"/>
+				<circle id="row27b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row27c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
 			</g>
 		</g>
 	</g>
 	<g transform="translate(170.018,90.2908)">
 		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row14">
-				<circle id="row14a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.963" r="2.088"/>
-				<circle id="row14b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
-				<circle id="row14c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
+			<g id="row26">
+				<circle id="row26a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.963" r="2.088"/>
+				<circle id="row26b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row26c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
 			</g>
 		</g>
 	</g>
 	<g transform="translate(162.818,90.2908)">
 		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row15">
-				<circle id="row15a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="5.963" r="2.088"/>
-				<circle id="row15b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="13.162" r="2.088"/>
-				<circle id="row15c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="20.362" r="2.088"/>
+			<g id="row25">
+				<circle id="row25a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="5.963" r="2.088"/>
+				<circle id="row25b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="13.162" r="2.088"/>
+				<circle id="row25c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="20.362" r="2.088"/>
 			</g>
 		</g>
 	</g>
 	<g transform="translate(191.618,68.6908)">
-		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row16">
-				<circle id="row16a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.961" r="2.088"/>
-				<circle id="row16b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.161" r="2.088"/>
-				<circle id="row16c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
-			</g>
-		</g>
-	</g>
-	<g transform="translate(184.418,68.6908)">
-		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row17">
-				<circle id="row17a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="5.961" r="2.088"/>
-				<circle id="row17b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="13.161" r="2.088"/>
-				<circle id="row17c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="20.362" r="2.088"/>
-			</g>
-		</g>
-	</g>
-	<g transform="translate(177.218,68.6908)">
-		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row18">
-				<circle id="row18a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.961" r="2.088"/>
-				<circle id="row18b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.161" r="2.088"/>
-				<circle id="row18c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
-			</g>
-		</g>
-	</g>
-	<g transform="translate(170.018,68.6908)">
 		<g transform="matrix(-1,0,0,-1,0,0)">
 			<g id="row19">
 				<circle id="row19a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.961" r="2.088"/>
@@ -746,7 +719,178 @@
 			</g>
 		</g>
 	</g>
+	<g transform="translate(184.418,68.6908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row18">
+				<circle id="row18a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="5.961" r="2.088"/>
+				<circle id="row18b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="13.161" r="2.088"/>
+				<circle id="row18c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(177.218,68.6908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row17">
+				<circle id="row17a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.961" r="2.088"/>
+				<circle id="row17b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.161" r="2.088"/>
+				<circle id="row17c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(170.018,68.6908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row16">
+				<circle id="row16a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.961" r="2.088"/>
+				<circle id="row16b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.161" r="2.088"/>
+				<circle id="row16c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
 	<g transform="translate(162.818,68.6908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row15">
+				<circle id="row15a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="5.961" r="2.088"/>
+				<circle id="row15b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="13.161" r="2.088"/>
+				<circle id="row15c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(191.618,47.0908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row29">
+				<circle id="row29a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.962" r="2.088"/>
+				<circle id="row29b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row29c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.361" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(184.418,47.0908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row28">
+				<circle id="row28a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="5.962" r="2.088"/>
+				<circle id="row28b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="13.162" r="2.088"/>
+				<circle id="row28c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="20.361" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(177.218,47.0908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row27">
+				<circle id="row27a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.962" r="2.088"/>
+				<circle id="row27b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row27d" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.361" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(170.018,47.0908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row26">
+				<circle id="row26a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.962" r="2.088"/>
+				<circle id="row26b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row26c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.361" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(162.818,47.0908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row25">
+				<circle id="row25a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="5.962" r="2.088"/>
+				<circle id="row25b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="13.162" r="2.088"/>
+				<circle id="row25c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="20.361" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(155.618,90.2908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row24">
+				<circle id="row24a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.963" r="2.088"/>
+				<circle id="row24b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row24c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(155.618,68.6908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row14">
+				<circle id="row14a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.961" r="2.088"/>
+				<circle id="row14b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.161" r="2.088"/>
+				<circle id="row14c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(155.618,47.0908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row04">
+				<circle id="row04a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.962" r="2.088"/>
+				<circle id="row04b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row04c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.361" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(148.418,68.6908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row13">
+				<circle id="row13a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="5.961" r="2.088"/>
+				<circle id="row13b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="13.161" r="2.088"/>
+				<circle id="row13c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(148.418,90.2908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row23">
+				<circle id="row23a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="5.963" r="2.088"/>
+				<circle id="row23b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="13.162" r="2.088"/>
+				<circle id="row23c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(141.218,90.2908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row22">
+				<circle id="row22a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.963" r="2.088"/>
+				<circle id="row22b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row22c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(134.018,90.2908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row21">
+				<circle id="row21a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.963" r="2.088"/>
+				<circle id="row21b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row21c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(141.218,68.6908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row12">
+				<circle id="row12a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.961" r="2.088"/>
+				<circle id="row12b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.161" r="2.088"/>
+				<circle id="row12c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(134.018,68.6908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row11">
+				<circle id="row11a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.961" r="2.088"/>
+				<circle id="row11b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.161" r="2.088"/>
+				<circle id="row11c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(126.818,90.2908)">
+		<g transform="matrix(-1,0,0,-1,0,0)">
+			<g id="row20">
+				<circle id="row20a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="5.963" r="2.088"/>
+				<circle id="row20b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="13.162" r="2.088"/>
+				<circle id="row20c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="20.362" r="2.088"/>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(126.818,68.6908)">
 		<g transform="matrix(-1,0,0,-1,0,0)">
 			<g id="row10">
 				<circle id="row10a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="5.961" r="2.088"/>
@@ -755,183 +899,39 @@
 			</g>
 		</g>
 	</g>
-	<g transform="translate(191.618,47.0908)">
-		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row20">
-				<circle id="row20a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.962" r="2.088"/>
-				<circle id="row20b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
-				<circle id="row20c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.361" r="2.088"/>
-			</g>
-		</g>
-	</g>
-	<g transform="translate(184.418,47.0908)">
-		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row21">
-				<circle id="row21a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="5.962" r="2.088"/>
-				<circle id="row21b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="13.162" r="2.088"/>
-				<circle id="row21c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="20.361" r="2.088"/>
-			</g>
-		</g>
-	</g>
-	<g transform="translate(177.218,47.0908)">
-		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row22">
-				<circle id="row22a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.962" r="2.088"/>
-				<circle id="row22b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
-				<circle id="row22d" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.361" r="2.088"/>
-			</g>
-		</g>
-	</g>
-	<g transform="translate(170.018,47.0908)">
-		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row23">
-				<circle id="row23a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.962" r="2.088"/>
-				<circle id="row23b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
-				<circle id="row23c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.361" r="2.088"/>
-			</g>
-		</g>
-	</g>
-	<g transform="translate(162.818,47.0908)">
-		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row24">
-				<circle id="row24a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="5.962" r="2.088"/>
-				<circle id="row24b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="13.162" r="2.088"/>
-				<circle id="row24c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="20.361" r="2.088"/>
-			</g>
-		</g>
-	</g>
-	<g transform="translate(155.618,90.2908)">
-		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row25">
-				<circle id="row25a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.963" r="2.088"/>
-				<circle id="row25b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
-				<circle id="row25c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
-			</g>
-		</g>
-	</g>
-	<g transform="translate(155.618,68.6908)">
-		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row26">
-				<circle id="row26a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.961" r="2.088"/>
-				<circle id="row26b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.161" r="2.088"/>
-				<circle id="row26c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
-			</g>
-		</g>
-	</g>
-	<g transform="translate(155.618,47.0908)">
-		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row27">
-				<circle id="row27a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.962" r="2.088"/>
-				<circle id="row27b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
-				<circle id="row27c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.361" r="2.088"/>
-			</g>
-		</g>
-	</g>
-	<g transform="translate(148.418,68.6908)">
-		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row28">
-				<circle id="row28a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="5.961" r="2.088"/>
-				<circle id="row28b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="13.161" r="2.088"/>
-				<circle id="row28c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="20.362" r="2.088"/>
-			</g>
-		</g>
-	</g>
-	<g transform="translate(148.418,90.2908)">
-		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row29">
-				<circle id="row29a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="5.963" r="2.088"/>
-				<circle id="row29b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="13.162" r="2.088"/>
-				<circle id="row29c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="20.362" r="2.088"/>
-			</g>
-		</g>
-	</g>
-	<g transform="translate(141.218,90.2908)">
-		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row30">
-				<circle id="row30a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.963" r="2.088"/>
-				<circle id="row30b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
-				<circle id="row30c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
-			</g>
-		</g>
-	</g>
-	<g transform="translate(134.018,90.2908)">
-		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row31">
-				<circle id="row31a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.963" r="2.088"/>
-				<circle id="row31b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
-				<circle id="row31c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
-			</g>
-		</g>
-	</g>
-	<g transform="translate(141.218,68.6908)">
-		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row32">
-				<circle id="row32a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.961" r="2.088"/>
-				<circle id="row32b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.161" r="2.088"/>
-				<circle id="row32c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
-			</g>
-		</g>
-	</g>
-	<g transform="translate(134.018,68.6908)">
-		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row33">
-				<circle id="row33a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.961" r="2.088"/>
-				<circle id="row33b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.161" r="2.088"/>
-				<circle id="row33c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.362" r="2.088"/>
-			</g>
-		</g>
-	</g>
-	<g transform="translate(126.818,90.2908)">
-		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row34">
-				<circle id="row34a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="5.963" r="2.088"/>
-				<circle id="row34b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="13.162" r="2.088"/>
-				<circle id="row34c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="20.362" r="2.088"/>
-			</g>
-		</g>
-	</g>
-	<g transform="translate(126.818,68.6908)">
-		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row35">
-				<circle id="row35a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="5.961" r="2.088"/>
-				<circle id="row35b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="13.161" r="2.088"/>
-				<circle id="row35c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="20.362" r="2.088"/>
-			</g>
-		</g>
-	</g>
 	<g transform="translate(148.418,47.0908)">
 		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row36">
-				<circle id="row36a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="5.962" r="2.088"/>
-				<circle id="row36b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="13.162" r="2.088"/>
-				<circle id="row36c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="20.361" r="2.088"/>
+			<g id="row03">
+				<circle id="row03a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="5.962" r="2.088"/>
+				<circle id="row03b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="13.162" r="2.088"/>
+				<circle id="row03c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.291" cy="20.361" r="2.088"/>
 			</g>
 		</g>
 	</g>
 	<g transform="translate(141.218,47.0908)">
 		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row37">
-				<circle id="row37a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.962" r="2.088"/>
-				<circle id="row37b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
-				<circle id="row37c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.361" r="2.088"/>
+			<g id="row02">
+				<circle id="row02a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.962" r="2.088"/>
+				<circle id="row02b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row02c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.361" r="2.088"/>
 			</g>
 		</g>
 	</g>
 	<g transform="translate(134.018,47.0908)">
 		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row38">
-				<circle id="row38a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.962" r="2.088"/>
-				<circle id="row38b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
-				<circle id="row38c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.361" r="2.088"/>
+			<g id="row01">
+				<circle id="row01a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="5.962" r="2.088"/>
+				<circle id="row01b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="13.162" r="2.088"/>
+				<circle id="row01c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.292" cy="20.361" r="2.088"/>
 			</g>
 		</g>
 	</g>
 	<g transform="translate(126.818,47.0908)">
 		<g transform="matrix(-1,0,0,-1,0,0)">
-			<g id="row39">
-				<circle id="row39a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="5.962" r="2.088"/>
-				<circle id="row39b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="13.162" r="2.088"/>
-				<circle id="row39c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="20.361" r="2.088"/>
+			<g id="row00">
+				<circle id="row00a" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="5.962" r="2.088"/>
+				<circle id="row00b" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="13.162" r="2.088"/>
+				<circle id="row00c" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.293" cy="20.361" r="2.088"/>
 			</g>
 		</g>
 	</g>
@@ -951,9 +951,9 @@
 			</g>
 		</g>
 	</g>
-	<g transform="translate(191.618,4.61077)">
+	<g id="power3v" transform="translate(191.618,4.61077)">
 		<g transform="matrix(0,1,-1,0,0,0)">
-			<g id="power3v">
+			<g>
 				<circle id="power3v0" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.119" cy="4.292" r="2.088"/>
 				<circle id="power3v1" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.119" cy="11.491" r="2.088"/>
 				<circle id="power3v2" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.119" cy="18.692" r="2.088"/>
@@ -967,9 +967,9 @@
 			</g>
 		</g>
 	</g>
-	<g transform="translate(191.618,11.8108)">
+	<g id="power5v" transform="translate(191.618,11.8108)">
 		<g transform="matrix(0,1,-1,0,0,0)">
-			<g id="power5v">
+			<g>
 				<circle id="power5v0" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.118" cy="4.292" r="2.088"/>
 				<circle id="power5v1" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.118" cy="11.491" r="2.088"/>
 				<circle id="power5v2" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="4.118" cy="18.692" r="2.088"/>
@@ -983,8 +983,8 @@
 			</g>
 		</g>
 	</g>
-	<g transform="translate(105.938,22.6108)">
-		<g id="esppins">
+	<g id="esppins" transform="translate(105.938,22.6108)">
+		<g>
 			<circle id="io4" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="5.789" cy="4.119" r="2.088"/>
 			<circle id="io5" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="5.789" cy="11.318" r="2.088"/>
 			<circle id="adc" fill="none" stroke="#FFBF00" stroke-width="1.44" cx="5.789" cy="18.518" r="2.088"/>
