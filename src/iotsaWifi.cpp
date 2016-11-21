@@ -186,8 +186,8 @@ IotsaWifiMod::handlerNormalMode() {
   if (anyChanged) configSave();
   String message = "<html><head><title>WiFi configuration</title></head><body><h1>WiFi configuration</h1>";
   if (nextConfigurationMode == TMPC_CONFIG) {
-  	message += "<p><em>Power-cycle device within " + String((nextConfigurationModeTimeout-millis())/1000) + "seconds to activate configuration mode for " + String(rebootConfigTimeout) + " seconds.</em></p>";
-  	message += "<p><em>Connect to WiFi network " + hostName + ", device 192.168.4.1 to change settings during that configuration period. </em></p>";
+  	message += "<p><em>Power-cycle device within " + String((nextConfigurationModeTimeout-millis())/1000) + " seconds to activate configuration mode for " + String(rebootConfigTimeout) + " seconds.</em></p>";
+  	message += "<p><em>Connect to WiFi network config-" + hostName + ", device 192.168.4.1 to change settings during that configuration period. </em></p>";
   } else if (nextConfigurationMode == TMPC_OTA) {
   	message += "<p><em>Power-cycle device within " + String((nextConfigurationModeTimeout-millis())/1000) + "seconds to activate OTA mode for " + String(rebootConfigTimeout) + " seconds.</em></p>";
   } else if (nextConfigurationMode == TMPC_RESET) {
@@ -228,7 +228,7 @@ String IotsaWifiMod::info() {
   if (tempConfigurationMode && tempConfigurationModeTimeout) {
   	message += "<p>In configuration mode " + String((int)tempConfigurationMode) + ", will timeout in " + String((tempConfigurationModeTimeout-millis())/1000) + " seconds.</p>";
   } else if (nextConfigurationMode) {
-  	message += "<p>Configuration mode " + String((int)tempConfigurationMode) + " requested, enable by rebooting within " + String((nextConfigurationModeTimeout-millis())/1000) + " seconds.</p>";
+  	message += "<p>Configuration mode " + String((int)nextConfigurationMode) + " requested, enable by rebooting within " + String((nextConfigurationModeTimeout-millis())/1000) + " seconds.</p>";
   } else if (tempConfigurationModeTimeout) {
   	message += "<p>Strange, no configuration mode but timeout is " + String(tempConfigurationModeTimeout-millis()) + "ms.</p>";
   }
