@@ -12,8 +12,8 @@ public:
 private:
   void configLoad();
   void configSave();
-  void handler();
-  void handlerConfigmode();
+  void handlerNormalMode();
+  void handlerConfigMode();
 
   String ssid;
   String ssidPassword;

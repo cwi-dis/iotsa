@@ -87,9 +87,11 @@ public:
 inline bool IotsaMod::needsAuthentication() { return auth ? auth->needsAuthentication() : false; }
 
 extern bool configurationMode;        // True if we have no config, and go into AP mode
-typedef enum { TMPC_NORMAL, TMPC_CONFIG, TMPC_OTA } config_mode;
-extern config_mode  tempConfigurationMode;    // True if we go into AP mode for a limited time
-extern unsigned long tempConfigurationModeTimeout;  // When we reboot out of temp configuration mode
+typedef enum { TMPC_NORMAL, TMPC_CONFIG, TMPC_OTA, TMPC_RESET } config_mode;
+extern config_mode  tempConfigurationMode;    // Current configuration mode (i.e. after a power cycle)
+extern unsigned long tempConfigurationModeTimeout;  // When we reboot out of current configuration mode
+extern config_mode  nextConfigurationMode;    // Next configuration mode (i.e. before a power cycle)
+extern unsigned long nextConfigurationModeTimeout;  // When we abort nextConfigurationMode and revert to normal operation
 extern String hostName;
 
 #endif

@@ -53,6 +53,8 @@ String IotsaOtaMod::info() {
   String rv;
   if (tempConfigurationMode == TMPC_OTA) {
     rv = "<p>Over the air (OTA) programming is enabled, will timeout in " + String((tempConfigurationModeTimeout - millis())/1000) + " seconds.</p>";
+  } else if (nextConfigurationMode == TMPC_OTA) {
+  	rv = "<p>Over the air (OTA) programming has been requested. Power cycle within " + String((nextConfigurationModeTimeout - millis())/1000) + " seconds to enable.</p>";
   } else {
     rv = "<p>Over the air (OTA) programming possible, visit <a href=\"/wificonfig\">/wificonfig</a> to enable.</p>";
   }
