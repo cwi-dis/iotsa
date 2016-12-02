@@ -50,7 +50,7 @@ IotsaFilesBackupMod::handler() {
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
   server.send(200, "application/x-tar");
   
-  Dir d = SPIFFS.openDir("/data");
+  Dir d = SPIFFS.openDir("/");
   while (d.next()) {
   	// Get header information
   	const String& fileName = d.fileName();
