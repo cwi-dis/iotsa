@@ -19,15 +19,33 @@ IotsaFilesMod::listHandler() {
   LED digitalWrite(led, 0);
 }
 
+bool
+IotsaFilesMod::accessAllowed(String& path)
+{
+  return path.startsWith("/data/");
+}
+
 void
 IotsaFilesMod::notFoundHandler() {
   LED digitalWrite(led, 1);
+  String message = "File Not Found\n\n";
   String path = server.uri();
   File dataFile;
-  if (SPIFFS.exists(path)) {
-  	if (needsAuthentication()) return;
+  if (!accessAllowed(path)) {
+  	// Path doesn't refer to a file that may be accessed
+  	message = "Access Not Allowed\n\n";
+  } else if (!SPIFFS.exists(path)) {
+  	// Path may be accessed, but doesn't exist
+  	message = "File Does Not Exist\n\n";
+  } else {
+   	if (needsAuthentication()) {
+   		// Path may be accessed, and exists, but authentication is needed.
+   		// Note we return, needsAuthentication() has filled in headers and such.
+   		return;
+   	}
   	
     if (dataFile = SPIFFS.open(path, "r")) {
+    	// Everything is fine. Guess data type, and stream data back
 		String dataType = "text/plain";
 		if(path.endsWith(".html")) dataType = "text/html";
 		else if(path.endsWith(".css")) dataType = "text/css";
@@ -39,12 +57,16 @@ IotsaFilesMod::notFoundHandler() {
 		else if(path.endsWith(".xml")) dataType = "text/xml";
 		else if(path.endsWith(".pdf")) dataType = "application/pdf";
 		else if(path.endsWith(".zip")) dataType = "application/zip";
+		else if(path.endsWith(".bin")) dataType = "application/octet-stream";
 		server.streamFile(dataFile, dataType);
 		dataFile.close();
 		return;
+	} else {
+		// File exists but cannot be opened. Should not happen.
+		message = "Cannot Open File\n\n";
 	}
   }
-  String message = "File Not Found\n\n";
+  // We get here in case of errors. Provide some more details.
   message += "URI: ";
   message += path;
   message += "\nMethod: ";

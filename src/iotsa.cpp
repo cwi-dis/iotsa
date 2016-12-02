@@ -53,9 +53,14 @@ IotsaApplication::setup() {
 void
 IotsaApplication::serverSetup() {
   IotsaMod *m;
+
   for (m=firstEarlyModule; m; m=m->nextModule) {
   	m->serverSetup();
   }
+
+  server.onNotFound(std::bind(&IotsaApplication::webServerNotFoundHandler, this));
+  server.on("/", std::bind(&IotsaApplication::webServerRootHandler, this));
+
   for (m=firstModule; m; m=m->nextModule) {
   	m->serverSetup();
   }
@@ -76,8 +81,6 @@ IotsaApplication::loop() {
 
 void
 IotsaApplication::webServerSetup() {
-  server.onNotFound(std::bind(&IotsaApplication::webServerNotFoundHandler, this));
-  server.on("/", std::bind(&IotsaApplication::webServerRootHandler, this));
   server.begin();
   IFDEBUG Serial.println("HTTP server started");
 }
