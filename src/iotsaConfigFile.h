@@ -21,7 +21,7 @@ public:
   IotsaConfigFileSave(const char *filename);
   ~IotsaConfigFileSave();
   void put(String name, int value);
-  void put(String name, String &value);
+  void put(String name, const String &value);
 protected:
   File fp;
 };
