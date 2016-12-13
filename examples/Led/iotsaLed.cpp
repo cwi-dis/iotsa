@@ -33,6 +33,7 @@ void IotsaLedMod::loop() {
   	strip.show();
   	isOn = true;
   	nextChangeTime = millis() + onDuration;
+   remainingCount--;
   }
 }
 

@@ -75,7 +75,7 @@ IotsaLedControlMod::handler() {
   
   String message = "<html><head><title>Led Server</title></head><body><h1>Led Server</h1>";
   message += "<form method='get'>";
-  message += "Color (hex rrggbb): <input type='text' name='color'><br>";
+  message += "Color (hex rrggbb): <input type='text' name='rgb'><br>";
   message += "On time (ms): <input type='text' name='onDuration'><br>";
   message += "Off time (ms): <input type='text' name='offDuration'><br>";
   message += "Repeat count: <input type='text' name='count'><br>";
