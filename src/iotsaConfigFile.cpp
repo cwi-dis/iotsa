@@ -60,7 +60,7 @@ void IotsaConfigFileSave::put(String name, int value) {
   put(name, sValue);
 }
 
-void IotsaConfigFileSave::put(String name, String &value) {
+void IotsaConfigFileSave::put(String name, const String &value) {
   fp.print(name);
   fp.print('=');
   fp.print(value);
