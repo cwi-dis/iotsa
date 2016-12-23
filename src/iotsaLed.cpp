@@ -14,7 +14,11 @@ void IotsaLedMod::setup() {
 }
 
 void IotsaLedMod::loop() {
-  if (nextChangeTime == 0 || millis() < nextChangeTime) return;
+  //Serial.println("led in");
+  if (nextChangeTime == 0 || millis() < nextChangeTime) {
+	//Serial.println("led early out");
+  	return;
+  }
   // We need to change the LED.
   if (isOn) {
   	// Need to turn it off
@@ -24,6 +28,7 @@ void IotsaLedMod::loop() {
   	if (remainingCount <= 0) {
   		// We are done with the pattern.
   		nextChangeTime = 0;
+		//Serial.println("led done");
   		return;
 	}
 	nextChangeTime = millis() + offDuration;
@@ -35,6 +40,7 @@ void IotsaLedMod::loop() {
   	nextChangeTime = millis() + onDuration;
    remainingCount--;
   }
+  //Serial.println("led return");
 }
 
 void IotsaLedMod::serverSetup() {
