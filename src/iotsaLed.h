@@ -11,6 +11,7 @@ public:
   void loop();
   String info();
   void set(uint32_t _rgb, int _onDuration, int _offDuration, int _count);
+  void showStatus();
 protected:
   Adafruit_NeoPixel strip;
   uint32_t rgb;
@@ -19,6 +20,7 @@ protected:
   int onDuration;
   int offDuration;
   bool isOn;
+  bool showingStatus;
 };
 
 #endif

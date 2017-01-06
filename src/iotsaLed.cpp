@@ -1,4 +1,13 @@
 #include "iotsaLed.h"
+#include <ESP8266WiFi.h>
+
+// Helper function: get color to show current status of module.
+uint32_t _getStatusColor() {
+  if (configurationMode || tempConfigurationMode == TMPC_CONFIG) return 0x3f003f;	// Pink: configuration mode
+  if (tempConfigurationMode == TMPC_OTA) return 0x003f3f;	// Magenta: OTA mode
+  if (!WiFi.isConnected()) return 0x3f1f00; // Orange: not connected to WiFi
+  return 0x3f3f3f; // White: all ok.
+}
 
 IotsaLedMod::IotsaLedMod(IotsaApplication &_app, int pin, neoPixelType t)
 :	IotsaMod(_app),
@@ -33,12 +42,15 @@ void IotsaLedMod::loop() {
 	}
 	nextChangeTime = millis() + offDuration;
   } else {
+  	if (showingStatus) {
+  		rgb = _getStatusColor();
+	}
   	// Turn it on, set next change time
   	strip.setPixelColor(0, rgb);
   	strip.show();
   	isOn = true;
   	nextChangeTime = millis() + onDuration;
-   remainingCount--;
+    if (!showingStatus) remainingCount--;
   }
   //Serial.println("led return");
 }
@@ -52,10 +64,20 @@ String IotsaLedMod::info() {
 }
 
 void IotsaLedMod::set(uint32_t _rgb, int _onDuration, int _offDuration, int _count) {
+  showingStatus = false;
   rgb = _rgb;
   onDuration = _onDuration;
   offDuration = _offDuration;
   remainingCount = _count;
   isOn = false;
+  nextChangeTime = millis();
+}
+
+void IotsaLedMod::showStatus() {
+  showingStatus = true;
+  onDuration = 10;
+  offDuration = 4990;
+  isOn = false;
+  remainingCount = 0x7fff;
   nextChangeTime = millis();
 }
