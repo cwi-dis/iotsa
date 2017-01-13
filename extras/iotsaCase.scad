@@ -1,3 +1,12 @@
+//
+// This is the iotsa board itself, including the important connectors and
+// holes. You can define here if you have shortened the board, which will
+// not only change the board itself, but also the box we are going to create around it.
+//
+numberOfRowsRemoved = 0;
+extraMMRemoved = 0; // 0 if nothing removed, 2.2 if any rows removed.
+numberOfMMRemoved = extraMMRemoved + (numberOfRowsRemoved*2.54);
+
 module iotsaBoard() {
     module esp12() {
         union() {
@@ -21,9 +30,13 @@ module iotsaBoard() {
     union() {
         // The board
         difference() {
-            cube([63,43,1.8]);
+            cube([63-numberOfMMRemoved,43,1.8]);
             translate([2, 2, -0.1]) cylinder(2, d=2, center=false, $fn=12);
             translate([2, 41, -0.1]) cylinder(2, d=2, center=false, $fn=12);
+            translate([36.5, 2, -0.1]) cylinder(2, d=2, center=false, $fn=12);
+            translate([36.5, 41, -0.1]) cylinder(2, d=2, center=false, $fn=12);
+            translate([60.5, 2, -0.1]) cylinder(2, d=2, center=false, $fn=12);
+            translate([60.5, 41, -0.1]) cylinder(2, d=2, center=false, $fn=12);
         }
         // The components
         translate([-5, 13.5, 1.8]) esp12();
