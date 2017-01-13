@@ -7,6 +7,9 @@ numberOfRowsRemoved = 0;
 extraMMRemoved = 0; // 0 if nothing removed, 2.2 if any rows removed.
 numberOfMMRemoved = extraMMRemoved + (numberOfRowsRemoved*2.54);
 
+boardThickness = 1.8; // The thickness of the PCB board
+regulatorAngle = 35; // 0, or higher if you've bent the regulator over backwards.
+
 module iotsaBoard() {
     module esp12() {
         union() {
@@ -15,7 +18,8 @@ module iotsaBoard() {
         }
     }
     module regulator() {
-        translate([0, 0, 2])
+        rotate([-regulatorAngle, 0, 0])
+        translate([0, 0, 5])
         union() {
             translate([0, 4.5, 0]) cube([10.2, 1.3, 15]);
             translate([0, 0, 0]) cube([10.2, 4.5, 8.5]);
@@ -27,6 +31,7 @@ module iotsaBoard() {
             translate([4.5, -1, 7]) rotate([-90, 0, 0]) cylinder(14, d=6);
         }
     }
+    translate([0, 0, -1.8])
     union() {
         // The board
         difference() {
@@ -45,4 +50,52 @@ module iotsaBoard() {
     }
 }
 
-iotsaBoard();
+//
+// Box parameters. We are going to compute the size from the parameters.
+//
+iotsaComponentHeight = 20;  // Make sure this is high enough
+iotsaSolderingHeight = 3;   // How far the soldering extends below the board.
+boxThickness = 3;
+boxBottomThickness = boxThickness;
+boxFrontThickness = boxThickness;   // This is where the power connector is
+boxLeftThickness = boxThickness;
+boxRightThickness = boxThickness;
+boxBackThickness = boxThickness;
+boxTopThickness = boxThickness;
+
+module box() {
+    innerXSize = (63-numberOfMMRemoved) + 5; // Add 5 for how far the esp12 antenna extends
+    innerYSize = 43;
+    innerZSize = boardThickness + iotsaComponentHeight + iotsaSolderingHeight;
+    
+    outerXSize = innerXSize + boxLeftThickness + boxRightThickness;
+    outerYSize = innerYSize + boxFrontThickness + boxBackThickness;
+    outerZSize = innerZSize + boxBottomThickness + boxTopThickness;
+    
+    strutThickness = 2;
+    module basicBox() {
+         difference() {
+            cube([outerXSize, outerYSize, outerZSize-boxTopThickness]);
+            translate([boxLeftThickness, boxFrontThickness, boxBottomThickness])
+                cube([innerXSize, innerYSize, innerZSize+1]);
+        }
+    }
+    module frontHoles() {
+        // Holes in the front. X and Z relative to iotsa frontleft corner, Y should be 2*frontThickness.
+        translate([22, 0, 0]) cube([9, 2*boxFrontThickness, 11]);
+    }
+    union() {
+        difference() {
+            translate([-5-boxLeftThickness, -boxFrontThickness, -(boardThickness+iotsaSolderingHeight+boxBottomThickness)])
+                union() {
+                    basicBox();
+                    cube([outerXSize, boxFrontThickness+strutThickness, boxBottomThickness+iotsaSolderingHeight]);
+                    translate([0, innerYSize, 0])
+                        cube([outerXSize, boxFrontThickness+strutThickness, boxBottomThickness+iotsaSolderingHeight]);
+                }
+                translate([0, -boxFrontThickness, 0]) frontHoles();
+            }
+        % iotsaBoard();
+    }
+}
+box();
