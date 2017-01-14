@@ -10,6 +10,8 @@ numberOfMMRemoved = extraMMRemoved + (numberOfRowsRemoved*2.54);
 boardThickness = 1.8; // The thickness of the PCB board
 regulatorAngle = 35; // 0, or higher if you've bent the regulator over backwards.
 
+esp12AntennaStickout = 5; // How many mm the esp12 antenna sticks out of the iotsa board
+
 module iotsaBoard() {
     module esp12() {
         union() {
@@ -44,7 +46,7 @@ module iotsaBoard() {
             translate([60.5, 41, -0.1]) cylinder(2, d=2, center=false, $fn=12);
         }
         // The components
-        translate([-5, 13.5, 1.8]) esp12();
+        translate([-esp12AntennaStickout, 13.5, 1.8]) esp12();
         translate([20, 15, 1.8]) regulator();
         translate([22, -3, 1.8]) powerjack();
     }
@@ -53,9 +55,9 @@ module iotsaBoard() {
 //
 // Box parameters. We are going to compute the size from the parameters.
 //
-iotsaComponentHeight = 20;  // Make sure this is high enough
+iotsaComponentHeight = 14;  // Make sure this is high enough
 iotsaSolderingHeight = 3;   // How far the soldering extends below the board.
-boxThickness = 3;
+boxThickness = 1.5;
 boxBottomThickness = boxThickness;
 boxFrontThickness = boxThickness;   // This is where the power connector is
 boxLeftThickness = boxThickness;
@@ -66,7 +68,7 @@ boxTopThickness = boxThickness;
 leeWay = 0.3;   // gap we want between board and box (on all sides, individually)
 
 module box() {
-    innerXSize = (63-numberOfMMRemoved) + 5 + 2*leeWay; // Add 5 for how far the esp12 antenna extends
+    innerXSize = (63-numberOfMMRemoved) + esp12AntennaStickout + 2*leeWay;
     innerYSize = 43 + 2*leeWay;
     innerZSize = boardThickness + iotsaComponentHeight + iotsaSolderingHeight + 2*leeWay;
     
@@ -89,33 +91,45 @@ module box() {
         // Holes in the front. X and Z relative to iotsa frontleft corner, Y should be 2*frontThickness.
         translate([22-leeWay, 0, 0-leeWay]) cube([9+2*leeWay, 2*boxFrontThickness, 11+2*leeWay]);
     }
+    module rightHoles() {
+    }
+    module bottomHoles() {
+        // Holes in the bottom. X and Y are relative to inner box frontleft corner, Z should be 2*bottomThickness
+        translate([3, 3+strutThickness, 0]) cylinder(2*boxBottomThickness, d=3, $fn=12);
+        translate([innerXSize-3, 3+strutThickness, 0]) cylinder(2*boxBottomThickness, d=3, $fn=12);
+        translate([3, innerYSize-(3+strutThickness), 0]) cylinder(2*boxBottomThickness, d=3, $fn=12);
+        translate([innerXSize-3, innerYSize-(3+strutThickness), 0]) cylinder(2*boxBottomThickness, d=3, $fn=12);
+    }
+    
     union() {
         difference() {
-            translate([-5-boxLeftThickness-leeWay, -boxFrontThickness-leeWay, -(boardThickness+iotsaSolderingHeight+boxBottomThickness+leeWay)])
+            translate([-esp12AntennaStickout-boxLeftThickness-leeWay, -boxFrontThickness-leeWay, -(boardThickness+iotsaSolderingHeight+boxBottomThickness+leeWay)])
                 union() {
                     // The box itself, with the cutouts for the lid
                     difference() {
                         basicBox();
                         // Front cutout
-                        translate([boxLeftThickness, -boxFrontThickness, outerZSize-boxTopThickness-boxBottomThickness]) 
+                        translate([boxLeftThickness, -0.5*boxFrontThickness, outerZSize-boxTopThickness-boxBottomThickness]) 
                             cube([innerXSize, 2*boxFrontThickness, 2*boxTopThickness]);
                         // back cutout
                         translate([boxLeftThickness, innerYSize+boxFrontThickness-0.5*leeWay, outerZSize-boxTopThickness-boxBottomThickness]) 
                             cube([innerXSize, 0.5*boxBackThickness+leeWay, 0.5*boxTopThickness]);
                         // left retainer hole
-                        # translate([boxLeftThickness,-0.5*boxFrontThickness, outerZSize-boxTopThickness-boxBottomThickness-retainerLength]) 
+                        translate([boxLeftThickness,-0.5*boxFrontThickness, outerZSize-boxTopThickness-boxBottomThickness-retainerLength]) 
                             cube([retainerWidth, 2*boxFrontThickness, retainerWidth]); 
                         // right retainer hole
-                        # translate([outerXSize-boxRightThickness-retainerWidth, -0.5*boxFrontThickness, outerZSize-boxTopThickness-boxBottomThickness-retainerLength]) 
+                        translate([outerXSize-boxRightThickness-retainerWidth, -0.5*boxFrontThickness, outerZSize-boxTopThickness-boxBottomThickness-retainerLength]) 
                             cube([retainerWidth, 2*boxFrontThickness, retainerWidth]); 
                     }
                     // The front support for the iotsa board
                     cube([outerXSize, boxFrontThickness+strutThickness, boxBottomThickness+iotsaSolderingHeight]);
                     // The back support for the outsa board
-                    translate([0, innerYSize, 0])
-                        cube([outerXSize, boxFrontThickness+strutThickness, boxBottomThickness+iotsaSolderingHeight]);
+                    translate([0, innerYSize+boxFrontThickness-strutThickness, 0])
+                        cube([outerXSize, boxBackThickness+strutThickness, boxBottomThickness+iotsaSolderingHeight]);
                 }
                 translate([0, -1.5*boxFrontThickness-leeWay, 0]) frontHoles();
+                * translate() rightHoles();
+                translate([-esp12AntennaStickout, -leeWay, -(boardThickness+iotsaSolderingHeight+1.5*boxBottomThickness+leeWay)]) bottomHoles();
             }
         % iotsaBoard();
     }
