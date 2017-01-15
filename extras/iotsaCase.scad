@@ -3,6 +3,8 @@
 // holes. You can define here if you have shortened the board, which will
 // not only change the board itself, but also the box we are going to create around it.
 //
+iotsaBoardXSize = 63.5;   // one dimension of the unmodified board
+iotsaBoardYSize = 43.5;   // the other dimension of the board
 numberOfRowsRemoved = 0;
 extraMMRemoved = 0; // 0 if nothing removed, 2.2 if any rows removed.
 numberOfMMRemoved = extraMMRemoved + (numberOfRowsRemoved*2.54);
@@ -37,7 +39,7 @@ module iotsaBoard() {
     union() {
         // The board
         difference() {
-            cube([63-numberOfMMRemoved,43,1.8]);
+            cube([iotsaBoardXSize-numberOfMMRemoved,iotsaBoardYSize,1.8]);
             translate([2, 2, -0.1]) cylinder(2, d=2, center=false, $fn=12);
             translate([2, 41, -0.1]) cylinder(2, d=2, center=false, $fn=12);
             translate([36.5, 2, -0.1]) cylinder(2, d=2, center=false, $fn=12);
@@ -68,8 +70,8 @@ boxTopThickness = boxThickness;
 leeWay = 0.3;   // gap we want between board and box (on all sides, individually)
 
 module box() {
-    innerXSize = (63-numberOfMMRemoved) + esp12AntennaStickout + 2*leeWay;
-    innerYSize = 43 + 2*leeWay;
+    innerXSize = (iotsaBoardXSize-numberOfMMRemoved) + esp12AntennaStickout + 2*leeWay;
+    innerYSize = iotsaBoardYSize + 2*leeWay;
     innerZSize = boardThickness + iotsaComponentHeight + iotsaSolderingHeight + 2*leeWay;
     
     outerXSize = innerXSize + boxLeftThickness + boxRightThickness;
@@ -99,6 +101,7 @@ module box() {
         translate([innerXSize-3, 3+strutThickness, 0]) cylinder(2*boxBottomThickness, d=3, $fn=12);
         translate([3, innerYSize-(3+strutThickness), 0]) cylinder(2*boxBottomThickness, d=3, $fn=12);
         translate([innerXSize-3, innerYSize-(3+strutThickness), 0]) cylinder(2*boxBottomThickness, d=3, $fn=12);
+        translate([innerXSize/2, innerYSize/2, 0]) cylinder(2*boxBottomThickness, d=6, $fn=12);
     }
     
     union() {
@@ -112,14 +115,22 @@ module box() {
                         translate([boxLeftThickness, -0.5*boxFrontThickness, outerZSize-boxTopThickness-boxBottomThickness]) 
                             cube([innerXSize, 2*boxFrontThickness, 2*boxTopThickness]);
                         // back cutout
-                        translate([boxLeftThickness, innerYSize+boxFrontThickness-0.5*leeWay, outerZSize-boxTopThickness-boxBottomThickness]) 
+                        * translate([boxLeftThickness, innerYSize+boxFrontThickness-0.5*leeWay, outerZSize-boxTopThickness-boxBottomThickness]) 
                             cube([innerXSize, 0.5*boxBackThickness+leeWay, 0.5*boxTopThickness]);
-                        // left retainer hole
+
+                        // front left retainer hole
                         translate([boxLeftThickness,-0.5*boxFrontThickness, outerZSize-boxTopThickness-boxBottomThickness-retainerLength]) 
                             cube([retainerWidth, 2*boxFrontThickness, retainerWidth]); 
-                        // right retainer hole
+                        // front right retainer hole
                         translate([outerXSize-boxRightThickness-retainerWidth, -0.5*boxFrontThickness, outerZSize-boxTopThickness-boxBottomThickness-retainerLength]) 
                             cube([retainerWidth, 2*boxFrontThickness, retainerWidth]); 
+
+                        // back left retainer hole
+                        translate([boxLeftThickness,innerYSize+boxFrontThickness-0.5*boxBackThickness, outerZSize-boxTopThickness-boxBottomThickness-retainerLength]) 
+                            cube([retainerWidth, 2*boxBackThickness, retainerWidth]); 
+                        // back right retainer hole
+                        translate([outerXSize-boxRightThickness-retainerWidth, innerYSize+boxFrontThickness-0.5*boxBackThickness, outerZSize-boxTopThickness-boxBottomThickness-retainerLength]) 
+                            cube([retainerWidth, 2*boxBackThickness, retainerWidth]); 
                     }
                     // The front support for the iotsa board
                     cube([outerXSize, boxFrontThickness+strutThickness, boxBottomThickness+iotsaSolderingHeight]);
