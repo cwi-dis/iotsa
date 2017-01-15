@@ -185,7 +185,7 @@ module lid() {
             translate([innerXSize-0.5*retainerWidth, innerYSize+boxFrontThickness-0.25*retainerWidth, -retainerLength+0.5*retainerWidth]) sphere(d=retainerWidth, $fn=12);
             
             // The board locking rod
-            translate([31-retainerWidth, innerYSize+boxFrontThickness-retainerWidth, -iotsaComponentHeight]) cube([retainerWidth, retainerWidth, iotsaComponentHeight+boxTopThickness]);
+            translate([41-retainerWidth, innerYSize+boxFrontThickness-retainerWidth, -iotsaComponentHeight]) cube([retainerWidth, retainerWidth, iotsaComponentHeight+boxTopThickness]);
         }
 }
 
