@@ -6,7 +6,7 @@
 #include "iotsaConfigFile.h"
 #include "iotsaWifi.h"
 
-#define WIFI_TIMEOUT 20                  // How long to wait for our WiFi network to appear
+#define WIFI_TIMEOUT 60                  // How long to wait for our WiFi network to appear
 
 //
 // Global variables, because other modules need them too.
@@ -16,8 +16,10 @@ bool configurationMode;        // True if we have no config, and go into AP mode
 int rebootConfigTimeout;		// Timeout (in seconds) for rebooting in configuration mode
 config_mode  tempConfigurationMode;    // Current configuration mode (i.e. after a power cycle)
 unsigned long tempConfigurationModeTimeout;  // When we reboot out of current configuration mode
+int tempConfigurationModeReason;
 config_mode  nextConfigurationMode;    // Next configuration mode (i.e. before a power cycle)
 unsigned long nextConfigurationModeTimeout;  // When we abort nextConfigurationMode and revert to normal operation
+
 
 
 static void wifiDefaultHostName() {
@@ -29,6 +31,7 @@ void IotsaWifiMod::setup() {
   // Load configuration parameters, and clear any temporary configuration mode (if requested)
   tempConfigurationMode = nextConfigurationMode = TMPC_NORMAL;
   tempConfigurationModeTimeout = nextConfigurationModeTimeout = 0;
+  tempConfigurationModeReason = 0;
   configLoad();
   if (tempConfigurationMode) {
   	IFDEBUG Serial.println("tmpConfigMode, re-saving wifi.cfg without it");
@@ -66,7 +69,9 @@ void IotsaWifiMod::setup() {
       IFDEBUG Serial.println(WiFi.localIP());
       IFDEBUG Serial.print("Hostname ");
       IFDEBUG Serial.println(hostName);
-  
+      
+      WiFi.setAutoReconnect(true);
+
       if (MDNS.begin(hostName.c_str())) {
         MDNS.addService("http", "tcp", 80);
         IFDEBUG Serial.println("MDNS responder started");
@@ -74,9 +79,12 @@ void IotsaWifiMod::setup() {
       }
       return;
     }
-    IFDEBUG Serial.print("Cannot join ");
-    IFDEBUG Serial.println(ssid);
     tempConfigurationMode = TMPC_CONFIG;
+    tempConfigurationModeReason = WiFi.status();
+    IFDEBUG Serial.print("Cannot join ");
+    IFDEBUG Serial.print(ssid);
+    IFDEBUG Serial.print("status=");
+    IFDEBUG Serial.println(tempConfigurationModeReason);
   }
   
   // Connection to WiFi network failed, or we are in (temp) cofiguration mode. Setup our own network.
@@ -225,8 +233,8 @@ String IotsaWifiMod::info() {
     message += " (no mDNS, so no hostname). ";
   }
   message += "See <a href=\"/wificonfig\">/wificonfig</a> to change network parameters.</p>";
-  if (tempConfigurationMode && tempConfigurationModeTimeout) {
-  	message += "<p>In configuration mode " + String((int)tempConfigurationMode) + ", will timeout in " + String((tempConfigurationModeTimeout-millis())/1000) + " seconds.</p>";
+  if (tempConfigurationMode) {
+  	message += "<p>In configuration mode " + String((int)tempConfigurationMode) + "(reason: " + String(tempConfigurationModeReason) + "), will timeout in " + String((tempConfigurationModeTimeout-millis())/1000) + " seconds.</p>";
   } else if (nextConfigurationMode) {
   	message += "<p>Configuration mode " + String((int)nextConfigurationMode) + " requested, enable by rebooting within " + String((nextConfigurationModeTimeout-millis())/1000) + " seconds.</p>";
   } else if (tempConfigurationModeTimeout) {
@@ -272,5 +280,23 @@ void IotsaWifiMod::loop() {
     configSave();
   }
   if (haveMDNS) MDNS.update();
-
+  if (tempConfigurationMode == TMPC_NORMAL && !configurationMode) {
+  	// Should be in normal mode, check that we have WiFi
+  	static int disconnectedCount = 0;
+  	if (WiFi.status() == WL_CONNECTED) {
+  		if (disconnectedCount) {
+  			IFDEBUG Serial.println("Wifi reconnected");
+  		}
+  		disconnectedCount = 0;
+	} else {
+		if (disconnectedCount) {
+			IFDEBUG Serial.println("Wifi connection lost");
+		}
+		disconnectedCount++;
+		if (disconnectedCount > 32000) {
+			IFDEBUG Serial.println("Wifi connection lost too long. Reboot.");
+			ESP.restart();
+		}
+	}
+  }
 }
