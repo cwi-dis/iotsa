@@ -26,7 +26,6 @@ IotsaUserMod::handler() {
   String pwold, pw1, pw2;
   bool passwordChanged = false;
   
-  LED digitalWrite(led, 1);
   for (uint8_t i=0; i<server.args(); i++){
     if( server.argName(i) == "username") {
     	String un = server.arg(i);
@@ -88,7 +87,6 @@ IotsaUserMod::handler() {
   message += "empty3";
   message += "'><br><input type='submit'></form>";
   server.send(200, "text/html", message);
-  LED digitalWrite(led, 0);
 }
 
 void IotsaUserMod::setup() {

@@ -48,7 +48,6 @@ void
 IotsaHelloMod::handler() {
   // Handles the page that is specific to the Hello module, greets the user and
   // optionally stores a new name to greet the next time.
-  LED digitalWrite(led, 1);
   for (uint8_t i=0; i<server.args(); i++){
     if( server.argName(i) == "greeting") {
       if (needsAuthentication()) {
@@ -62,7 +61,6 @@ IotsaHelloMod::handler() {
   message += greeting;
   message += "'></form></body></html>";
   server.send(200, "text/html", message);
-  LED digitalWrite(led, 0);
 }
 
 void IotsaHelloMod::serverSetup() {

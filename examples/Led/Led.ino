@@ -47,7 +47,6 @@ void
 IotsaLedControlMod::handler() {
   // Handles the page that is specific to the Led module, greets the user and
   // optionally stores a new name to greet the next time.
-  LED digitalWrite(led, 1);
   bool anyChanged = false;
   uint32_t _rgb = 0xffffff;
   int _count = 1;
@@ -81,7 +80,6 @@ IotsaLedControlMod::handler() {
   message += "Repeat count: <input type='text' name='count'><br>";
   message += "<input type='submit'></form></body></html>";
   server.send(200, "text/html", message);
-  LED digitalWrite(led, 0);
 }
 
 void IotsaLedControlMod::serverSetup() {

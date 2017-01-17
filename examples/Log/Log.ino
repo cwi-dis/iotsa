@@ -57,7 +57,6 @@ void
 helloHandler() {
   // Handles the page that is specific to the Hello module, greets the user and
   // optionally stores a new name to greet the next time.
-  LED digitalWrite(led, 1);
   for (uint8_t i=0; i<server.args(); i++){
     if( server.argName(i) == "greeting") {
       greeting = server.arg(i);
@@ -71,7 +70,6 @@ helloHandler() {
   server.send(200, "text/html", message);
   Serial.print("Logging Hello: handler called, greeting=");
   Serial.println(greeting);
-  LED digitalWrite(led, 0);
 }
 
 // Instantiate the Hello module, and install it in the framework

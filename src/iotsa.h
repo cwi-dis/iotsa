@@ -8,14 +8,6 @@
 //
 #define IFDEBUG if(1)
 #define CONFIGURATION_MODE_TIMEOUT  120  // How long to go to temp configuration mode at reboot
-#define WITH_LED      // Define to turn on/off LED to show activity
-#ifdef WITH_LED
-const int led = 15;
-#define LED if(1)
-#else
-const int led = 99;
-#define LED if(0)
-#endif
 
 
 class IotsaMod;

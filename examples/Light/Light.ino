@@ -90,7 +90,6 @@ void
 IotsaLightMod::handler() {
   // Handles the page that is specific to the Light module, greets the user and
   // optionally stores a new name to greet the next time.
-  LED digitalWrite(led, 1);
   String message = "{\"light\":";
   message += String(light);
   message += ",\"minLight\":";
@@ -101,7 +100,6 @@ IotsaLightMod::handler() {
   message += String(lightLevel);
   message += "}\n";
   server.send(200, "application/json", message);
-  LED digitalWrite(led, 0);
 }
 
 void IotsaLightMod::serverSetup() {

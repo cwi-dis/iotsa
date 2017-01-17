@@ -20,8 +20,6 @@ IotsaApplication::addModEarly(IotsaMod *mod) {
 
 void
 IotsaApplication::setup() {
-  LED pinMode(led, OUTPUT);
-  LED digitalWrite(led, 0);
   IFDEBUG Serial.begin(115200);
   IFDEBUG Serial.println("Serial opened");
   IFDEBUG Serial.print("Opening SPIFFS (may take long)...");
@@ -87,7 +85,6 @@ IotsaApplication::webServerSetup() {
 
 void
 IotsaApplication::webServerNotFoundHandler() {
- LED digitalWrite(led, 1);
   String message = "File Not Found\n\n";
   message += "URI: ";
   message += server.uri();
@@ -100,12 +97,10 @@ IotsaApplication::webServerNotFoundHandler() {
     message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
   }
   server.send(404, "text/plain", message);
-  LED digitalWrite(led, 0);
 }
 
 void
 IotsaApplication::webServerRootHandler() {
-  LED digitalWrite(led, 1);
   String message = "<html><head><title>" + title + "</title></head><body><h1>" + title + "</h1>";
   IotsaMod *m;
   for (m=firstModule; m; m=m->nextModule) {
@@ -116,7 +111,6 @@ IotsaApplication::webServerRootHandler() {
   }
   message += "</body></html>";
   server.send(200, "text/html", message);
-  LED digitalWrite(led, 0);
 }
 
 void

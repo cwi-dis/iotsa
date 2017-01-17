@@ -45,7 +45,6 @@ void IotsaFilesBackupMod::setup() {
 void
 IotsaFilesBackupMod::handler() {
   if (needsAuthentication()) return;
-  LED digitalWrite(led, 1);
   IFDEBUG Serial.println("Creating backup");
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
   server.send(200, "application/x-tar");
@@ -94,7 +93,6 @@ IotsaFilesBackupMod::handler() {
   		server.sendContent_P(buf, filePadding);
 	}
   }
-  LED digitalWrite(led, 0);
 }
 
 void IotsaFilesBackupMod::serverSetup() {

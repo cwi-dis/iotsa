@@ -115,7 +115,6 @@ void IotsaWifiMod::setup() {
 
 void
 IotsaWifiMod::handlerConfigMode() {
-  LED digitalWrite(led, 1);
   bool anyChanged = false;
   for (uint8_t i=0; i<server.args(); i++){
     if( server.argName(i) == "ssid") {
@@ -154,7 +153,6 @@ IotsaWifiMod::handlerConfigMode() {
   message += "'><br><input type='submit'></form>";
   message += "</body></html>";
   server.send(200, "text/html", message);
-  LED digitalWrite(led, 0);
   if (anyChanged) {
     IFDEBUG Serial.print("Restart in 2 seconds");
     delay(2000);
@@ -164,7 +162,6 @@ IotsaWifiMod::handlerConfigMode() {
 
 void
 IotsaWifiMod::handlerNormalMode() {
-  LED digitalWrite(led, 1);
   bool anyChanged = false;
   bool factoryReset = false;
   bool iamsure = false;
@@ -208,7 +205,6 @@ IotsaWifiMod::handlerNormalMode() {
   message += "<input name='factoryreset' type='checkbox' value='1'> Factory-reset and clear all files. <input name='iamsure' type='checkbox' value='1'> Yes, I am sure.</br>";
   message += "<br><input type='submit'></form></body></html>";
   server.send(200, "text/html", message);
-  LED digitalWrite(led, 0);
 }
 
 void IotsaWifiMod::serverSetup() {

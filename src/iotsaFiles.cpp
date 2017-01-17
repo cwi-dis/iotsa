@@ -8,7 +8,6 @@ void IotsaFilesMod::setup() {
 void
 IotsaFilesMod::listHandler() {
   if (needsAuthentication()) return;
-  LED digitalWrite(led, 1);
   String message = "<html><head><title>Files</title></head><body><h1>Files</h1><ul>";
   Dir d = SPIFFS.openDir("/data");
   while (d.next()) {
@@ -16,7 +15,6 @@ IotsaFilesMod::listHandler() {
   }
   message += "</ul></body></html>";
   server.send(200, "text/html", message);
-  LED digitalWrite(led, 0);
 }
 
 bool
@@ -27,7 +25,6 @@ IotsaFilesMod::accessAllowed(String& path)
 
 void
 IotsaFilesMod::notFoundHandler() {
-  LED digitalWrite(led, 1);
   String message = "File Not Found\n\n";
   String path = server.uri();
   File dataFile;
@@ -78,7 +75,6 @@ IotsaFilesMod::notFoundHandler() {
     message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
   }
   server.send(404, "text/plain", message);
-  LED digitalWrite(led, 0);
 }
 
 void IotsaFilesMod::serverSetup() {

@@ -68,7 +68,6 @@ void
 IotsaTemperatureMod::handler() {
   // Handles the page that is specific to the Temperature module, greets the user and
   // optionally stores a new name to greet the next time.
-  LED digitalWrite(led, 1);
   _update();
   String message = "{\"temperature\":";
   message += String(temperature);
@@ -76,7 +75,6 @@ IotsaTemperatureMod::handler() {
   message += String(humidity);
   message += "}\n";
   server.send(200, "application/json", message);
-  LED digitalWrite(led, 0);
 }
 
 void IotsaTemperatureMod::serverSetup() {

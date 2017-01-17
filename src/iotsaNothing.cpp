@@ -3,7 +3,6 @@
 void
 IotsaNothingMod::handler() {
   bool anyChanged = false;
-  LED digitalWrite(led, 1);
   for (uint8_t i=0; i<server.args(); i++){
     if( server.argName(i) == "argument") {
     	if (needsAuthentication()) return;
@@ -18,7 +17,6 @@ IotsaNothingMod::handler() {
   message += argument;
   message += "'><br><input type='submit'></form>";
   server.send(200, "text/html", message);
-  LED digitalWrite(led, 0);
 }
 
 void IotsaNothingMod::setup() {

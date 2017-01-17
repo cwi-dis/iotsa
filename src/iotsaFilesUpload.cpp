@@ -12,7 +12,6 @@ bool _uploadOK;
 void
 IotsaFilesUploadMod::uploadHandler() {
   if (needsAuthentication()) return;
-  LED digitalWrite(led, 1);
   HTTPUpload& upload = server.upload();
   _uploadOK = false;
   if(upload.status == UPLOAD_FILE_START){
@@ -30,7 +29,6 @@ IotsaFilesUploadMod::uploadHandler() {
     }
     //DBG_OUTPUT_PORT.print("Upload: END, Size: "); DBG_OUTPUT_PORT.println(upload.totalSize);
   }
-  LED digitalWrite(led, 0);
 }
 
 void
