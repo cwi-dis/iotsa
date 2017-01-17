@@ -3,6 +3,10 @@
 
 #include "iotsa.h"
 
+// Initialize IotsaSerial (a define) to refer to the normal Serial.
+// Will be overridden if the iotsaLogger module is included.
+Print *iotsaOverrideSerial = &Serial;
+
 void
 IotsaApplication::addMod(IotsaMod *mod) {
   mod->nextModule = firstModule;
@@ -21,22 +25,22 @@ IotsaApplication::addModEarly(IotsaMod *mod) {
 void
 IotsaApplication::setup() {
   IFDEBUG Serial.begin(115200);
-  IFDEBUG Serial.println("Serial opened");
-  IFDEBUG Serial.print("Opening SPIFFS (may take long)...");
+  IFDEBUG IotsaSerial.println("Serial opened");
+  IFDEBUG IotsaSerial.print("Opening SPIFFS (may take long)...");
   bool ok = SPIFFS.begin();
-  IFDEBUG Serial.println(" done.");
+  IFDEBUG IotsaSerial.println(" done.");
   if (!ok) {
-    IFDEBUG Serial.println("SPIFFS.begin() failed, formatting");
+    IFDEBUG IotsaSerial.println("SPIFFS.begin() failed, formatting");
     ok = SPIFFS.format();
     if (!ok) {
-      IFDEBUG Serial.println("SPIFFS.format() failed");
+      IFDEBUG IotsaSerial.println("SPIFFS.format() failed");
     }
     ok = SPIFFS.begin();
     if (!ok) {
-      IFDEBUG Serial.println("SPIFFS.begin() after format failed");
+      IFDEBUG IotsaSerial.println("SPIFFS.begin() after format failed");
     }
   } else {
-    IFDEBUG Serial.println("SPIFFS mounted");
+    IFDEBUG IotsaSerial.println("SPIFFS mounted");
   }
 
   IotsaMod *m;
@@ -80,7 +84,7 @@ IotsaApplication::loop() {
 void
 IotsaApplication::webServerSetup() {
   server.begin();
-  IFDEBUG Serial.println("HTTP server started");
+  IFDEBUG IotsaSerial.println("HTTP server started");
 }
 
 void

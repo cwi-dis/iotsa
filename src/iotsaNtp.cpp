@@ -82,9 +82,9 @@ void IotsaNtpMod::setup() {
   nextNtpRequest = millis() + 1000; // Try after 1 second
   int ok = udp.begin(NTP_PORT);
   if (ok) {
-    Serial.println("ntp: udp inited");
+    IotsaSerial.println("ntp: udp inited");
   } else {
-    Serial.println("ntp: udp init failed");
+    IotsaSerial.println("ntp: udp init failed");
   }
   configLoad();
 }
@@ -110,7 +110,7 @@ void IotsaNtpMod::loop() {
   unsigned long now = millis();
   // Check for clock rollover
   if (now < lastMillis) {
-      Serial.println("ntp: Clock rollover");
+      IotsaSerial.println("ntp: Clock rollover");
       nextNtpRequest = now;
   }
   lastMillis = now;
@@ -126,7 +126,7 @@ void IotsaNtpMod::loop() {
     const char *host = ntpServer.c_str();
     if (host == NULL || *host == '\0') return;
     WiFi.hostByName(host, address);
-    IFDEBUG { Serial.print("ntp: Lookup for "); Serial.print(host); Serial.print(" returned "); Serial.println(address); }
+    IFDEBUG { IotsaSerial.print("ntp: Lookup for "); IotsaSerial.print(host); IotsaSerial.print(" returned "); IotsaSerial.println(address); }
     memset(ntpPacket, 0, NTP_PACKET_SIZE);
     // Initialize values needed to form NTP request
     // (see URL above for details on the packets)
@@ -143,15 +143,15 @@ void IotsaNtpMod::loop() {
     // all NTP fields have been given values, now
     // you can send a packet requesting a timestamp:
     if (!udp.beginPacket(address, 123)) { //NTP requests are to port 123
-      Serial.println("ntp: Problem writing UDP packet (beginPacket)");
+      IotsaSerial.println("ntp: Problem writing UDP packet (beginPacket)");
     }
     if (!udp.write(ntpPacket, NTP_PACKET_SIZE)) {
-      Serial.println("ntp: Problem writing UDP packet (write)");
+      IotsaSerial.println("ntp: Problem writing UDP packet (write)");
     }
     if (!udp.endPacket()) {
-      Serial.println("ntp: Problem writing UDP packet (endPacket)");
+      IotsaSerial.println("ntp: Problem writing UDP packet (endPacket)");
     }
-    IFDEBUG Serial.println("ntp: Sent NTP packet");
+    IFDEBUG IotsaSerial.println("ntp: Sent NTP packet");
   }
 
   // And check whether we have received an NTP packet
@@ -169,17 +169,17 @@ void IotsaNtpMod::loop() {
     // combine the four bytes (two words) into a long integer
     // this is NTP time (seconds since Jan 1 1900):
     unsigned long secsSince1900 = highWord << 16 | lowWord;
-    //Serial.print("Seconds since Jan 1 1900 = " );
-    //Serial.println(secsSince1900);
+    //IotsaSerial.print("Seconds since Jan 1 1900 = " );
+    //IotsaSerial.println(secsSince1900);
 
     // now convert NTP time into everyday time:
-    Serial.print("Unix time = ");
+    IotsaSerial.print("Unix time = ");
     // Unix time starts on Jan 1 1970. In seconds, that's 2208988800:
     const unsigned long seventyYears = 2208988800UL;
     // subtract seventy years:
     unsigned long nowUtc = secsSince1900 - seventyYears;
     utcTimeAtMillisEpoch = nowUtc - (millis() / 1000);
-    IFDEBUG { Serial.print("ntp: Now(utc)="); Serial.print(utcTime()); Serial.print(" now(local)="); Serial.println(localTime()); }
+    IFDEBUG { IotsaSerial.print("ntp: Now(utc)="); IotsaSerial.print(utcTime()); IotsaSerial.print(" now(local)="); IotsaSerial.println(localTime()); }
   }
 }
 

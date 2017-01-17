@@ -3,34 +3,34 @@
 #include <ArduinoOTA.h>
 
 void otaOnStart() {
-  IFDEBUG Serial.println("ota: download started");
+  IFDEBUG IotsaSerial.println("ota: download started");
   tempConfigurationModeTimeout = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
   ESP.wdtFeed();
 }
 
 void otaOnProgress(unsigned int progress, unsigned int total) {
-  IFDEBUG Serial.print("ota: got data ");
-  IFDEBUG Serial.print(progress*100/total);
-  IFDEBUG Serial.println("%");
+  IFDEBUG IotsaSerial.print("ota: got data ");
+  IFDEBUG IotsaSerial.print(progress*100/total);
+  IFDEBUG IotsaSerial.println("%");
   tempConfigurationModeTimeout = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
   ESP.wdtFeed();
 }
 
 void otaOnEnd() {
-  IFDEBUG Serial.println("ota: download finished");
+  IFDEBUG IotsaSerial.println("ota: download finished");
   tempConfigurationModeTimeout = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
   ESP.wdtFeed();
 }
 
 void otaOnError(int error) {
-  IFDEBUG { Serial.print("ota: error: "); Serial.println(error); }
+  IFDEBUG { IotsaSerial.print("ota: error: "); IotsaSerial.println(error); }
   ESP.wdtFeed();
 }
 
 void IotsaOtaMod::setup() {
   app.enableOta();
   if (tempConfigurationMode == TMPC_OTA) {
-	Serial.println("OTA-update enabled");
+	IotsaSerial.println("OTA-update enabled");
 	ArduinoOTA.setPort(8266);
 	ArduinoOTA.setHostname(hostName.c_str());
 	ArduinoOTA.onStart(otaOnStart);

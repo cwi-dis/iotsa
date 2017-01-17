@@ -34,16 +34,16 @@ void IotsaWifiMod::setup() {
   tempConfigurationModeReason = 0;
   configLoad();
   if (tempConfigurationMode) {
-  	IFDEBUG Serial.println("tmpConfigMode, re-saving wifi.cfg without it");
+  	IFDEBUG IotsaSerial.println("tmpConfigMode, re-saving wifi.cfg without it");
   	configSave();
   }
   // If factory reset is requested format the Flash and reboot
   if (tempConfigurationMode == TMPC_RESET) {
-  	IFDEBUG Serial.println("Factory-reset requested");
+  	IFDEBUG IotsaSerial.println("Factory-reset requested");
   	delay(1000);
-  	IFDEBUG Serial.println("Formatting SPIFFS...");
+  	IFDEBUG IotsaSerial.println("Formatting SPIFFS...");
   	SPIFFS.format();
-  	IFDEBUG Serial.println("Format done, rebooting.");
+  	IFDEBUG IotsaSerial.println("Format done, rebooting.");
   	delay(2000);
   	ESP.restart();
   }
@@ -51,63 +51,63 @@ void IotsaWifiMod::setup() {
   if (ssid.length() && tempConfigurationMode != TMPC_CONFIG) {
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid.c_str(), ssidPassword.c_str());
-    IFDEBUG Serial.println("");
+    IFDEBUG IotsaSerial.println("");
   
     // Wait for connection
     int count = WIFI_TIMEOUT;
     while (WiFi.status() != WL_CONNECTED && count > 0) {
       delay(1000);
-      IFDEBUG Serial.print(".");
+      IFDEBUG IotsaSerial.print(".");
       count--;
     }
     if (count) {
       // Connection to WiFi network succeeded.
-      IFDEBUG Serial.println("");
-      IFDEBUG Serial.print("Connected to ");
-      IFDEBUG Serial.println(ssid);
-      IFDEBUG Serial.print("IP address: ");
-      IFDEBUG Serial.println(WiFi.localIP());
-      IFDEBUG Serial.print("Hostname ");
-      IFDEBUG Serial.println(hostName);
+      IFDEBUG IotsaSerial.println("");
+      IFDEBUG IotsaSerial.print("Connected to ");
+      IFDEBUG IotsaSerial.println(ssid);
+      IFDEBUG IotsaSerial.print("IP address: ");
+      IFDEBUG IotsaSerial.println(WiFi.localIP());
+      IFDEBUG IotsaSerial.print("Hostname ");
+      IFDEBUG IotsaSerial.println(hostName);
       
       WiFi.setAutoReconnect(true);
 
       if (MDNS.begin(hostName.c_str())) {
         MDNS.addService("http", "tcp", 80);
-        IFDEBUG Serial.println("MDNS responder started");
+        IFDEBUG IotsaSerial.println("MDNS responder started");
         haveMDNS = true;
       }
       return;
     }
     tempConfigurationMode = TMPC_CONFIG;
     tempConfigurationModeReason = WiFi.status();
-    IFDEBUG Serial.print("Cannot join ");
-    IFDEBUG Serial.print(ssid);
-    IFDEBUG Serial.print("status=");
-    IFDEBUG Serial.println(tempConfigurationModeReason);
+    IFDEBUG IotsaSerial.print("Cannot join ");
+    IFDEBUG IotsaSerial.print(ssid);
+    IFDEBUG IotsaSerial.print("status=");
+    IFDEBUG IotsaSerial.println(tempConfigurationModeReason);
   }
   
   // Connection to WiFi network failed, or we are in (temp) cofiguration mode. Setup our own network.
   if (tempConfigurationMode) {
     tempConfigurationModeTimeout = millis() + 1000*rebootConfigTimeout;
-  	IFDEBUG Serial.print("tempConfigMode=");
-  	IFDEBUG Serial.print((int)tempConfigurationMode);
-  	IFDEBUG Serial.print(", timeout at ");
-  	IFDEBUG Serial.println(tempConfigurationModeTimeout);
+  	IFDEBUG IotsaSerial.print("tempConfigMode=");
+  	IFDEBUG IotsaSerial.print((int)tempConfigurationMode);
+  	IFDEBUG IotsaSerial.print(", timeout at ");
+  	IFDEBUG IotsaSerial.println(tempConfigurationModeTimeout);
   }
   configurationMode = true;
   String networkName = "config-" + hostName;
   WiFi.mode(WIFI_AP);
   WiFi.softAP(networkName.c_str());
-  IFDEBUG Serial.print("\nCreating softAP for network ");
-  IFDEBUG Serial.println(networkName);
-  IFDEBUG Serial.print("IP address: ");
-  IFDEBUG Serial.println(WiFi.softAPIP());
+  IFDEBUG IotsaSerial.print("\nCreating softAP for network ");
+  IFDEBUG IotsaSerial.println(networkName);
+  IFDEBUG IotsaSerial.print("IP address: ");
+  IFDEBUG IotsaSerial.println(WiFi.softAPIP());
 #if 0
   // Despite reports to the contrary it seems mDNS isn't working in softAP mode
   if (MDNS.begin(hostName.c_str())) {
     MDNS.addService("http", "tcp", 80);
-    IFDEBUG Serial.println("MDNS responder started");
+    IFDEBUG IotsaSerial.println("MDNS responder started");
     haveMDNS = true;
   }
 #endif
@@ -154,7 +154,7 @@ IotsaWifiMod::handlerConfigMode() {
   message += "</body></html>";
   server.send(200, "text/html", message);
   if (anyChanged) {
-    IFDEBUG Serial.print("Restart in 2 seconds");
+    IFDEBUG IotsaSerial.print("Restart in 2 seconds");
     delay(2000);
     ESP.restart();
   }
@@ -259,18 +259,18 @@ void IotsaWifiMod::configSave() {
   cf.put("ssidPassword", ssidPassword);
   cf.put("hostName", hostName);
   cf.put("rebootTimeout", rebootConfigTimeout);
-  IFDEBUG Serial.println("Saved wifi.cfg");
+  IFDEBUG IotsaSerial.println("Saved wifi.cfg");
 }
 
 void IotsaWifiMod::loop() {
   if (tempConfigurationModeTimeout && millis() > tempConfigurationModeTimeout) {
-    IFDEBUG Serial.println("Configuration mode timeout. reboot.");
+    IFDEBUG IotsaSerial.println("Configuration mode timeout. reboot.");
     tempConfigurationMode = TMPC_NORMAL;
     tempConfigurationModeTimeout = 0;
     ESP.restart();
   }
   if (nextConfigurationModeTimeout && millis() > nextConfigurationModeTimeout) {
-    IFDEBUG Serial.println("Next configuration mode timeout. Clearing.");
+    IFDEBUG IotsaSerial.println("Next configuration mode timeout. Clearing.");
     nextConfigurationMode = TMPC_NORMAL;
     nextConfigurationModeTimeout = 0;
     configSave();
@@ -281,16 +281,16 @@ void IotsaWifiMod::loop() {
   	static int disconnectedCount = 0;
   	if (WiFi.status() == WL_CONNECTED) {
   		if (disconnectedCount) {
-  			IFDEBUG Serial.println("Wifi reconnected");
+  			IFDEBUG IotsaSerial.println("Wifi reconnected");
   		}
   		disconnectedCount = 0;
 	} else {
 		if (disconnectedCount) {
-			IFDEBUG Serial.println("Wifi connection lost");
+			IFDEBUG IotsaSerial.println("Wifi connection lost");
 		}
 		disconnectedCount++;
 		if (disconnectedCount > 32000) {
-			IFDEBUG Serial.println("Wifi connection lost too long. Reboot.");
+			IFDEBUG IotsaSerial.println("Wifi connection lost too long. Reboot.");
 			ESP.restart();
 		}
 	}

@@ -45,7 +45,7 @@ void IotsaFilesBackupMod::setup() {
 void
 IotsaFilesBackupMod::handler() {
   if (needsAuthentication()) return;
-  IFDEBUG Serial.println("Creating backup");
+  IFDEBUG IotsaSerial.println("Creating backup");
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
   server.send(200, "application/x-tar");
   
@@ -53,8 +53,8 @@ IotsaFilesBackupMod::handler() {
   while (d.next()) {
   	// Get header information
   	const String& fileName = d.fileName();
-  	IFDEBUG Serial.print("File ");
-  	IFDEBUG Serial.println(fileName);
+  	IFDEBUG IotsaSerial.print("File ");
+  	IFDEBUG IotsaSerial.println(fileName);
   	File fp = SPIFFS.open(fileName, "r");
   	if (!fp) continue;
   	//fileName = fileName.substring(1);
@@ -62,8 +62,8 @@ IotsaFilesBackupMod::handler() {
   	int fileSize = d.fileSize();
   	int filePadding = 512 - (fileSize & 511);
   	if (filePadding == 512) filePadding = 0;
-  	IFDEBUG Serial.print("  size=");
-  	IFDEBUG Serial.println(fileSize);
+  	IFDEBUG IotsaSerial.print("  size=");
+  	IFDEBUG IotsaSerial.println(fileSize);
   	
   	// Write header
   	memset(buf, '\0', 512);

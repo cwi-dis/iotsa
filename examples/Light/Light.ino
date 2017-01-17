@@ -71,14 +71,14 @@ void IotsaLightMod::_update() {
     float newLightLevel = (float)(light-minLight)/(maxLight-minLight);
     lightLevel = ((DECAY-1)*lightLevel+newLightLevel)/DECAY;
   }
-  Serial.print("light ");
-  Serial.print(light);
-  Serial.print(" min ");
-  Serial.print(minLight);
-  Serial.print(" max ");
-  Serial.print(maxLight);
-  Serial.print(" level ");
-  Serial.println(lightLevel);
+  IotsaSerial.print("light ");
+  IotsaSerial.print(light);
+  IotsaSerial.print(" min ");
+  IotsaSerial.print(minLight);
+  IotsaSerial.print(" max ");
+  IotsaSerial.print(maxLight);
+  IotsaSerial.print(" level ");
+  IotsaSerial.println(lightLevel);
 }
 
 // Implementation of the Light module

@@ -16,6 +16,4 @@ protected:
   String argument;
 };
 
-extern Print *iotsaOverrideSerial;
-#define Serial (*iotsaOverrideSerial)
 #endif

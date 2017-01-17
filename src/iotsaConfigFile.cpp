@@ -26,15 +26,15 @@ void IotsaConfigFileLoad::get(String name, String &value, const String &def) {
 
 void IotsaConfigFileLoad::get(String name, String &value, const char *def) {
   fp.seek(0, SeekSet);
-  IFDEBUG Serial.print("cfload: look for ");
-  IFDEBUG Serial.println(name);
+  IFDEBUG IotsaSerial.print("cfload: look for ");
+  IFDEBUG IotsaSerial.println(name);
   while (fp.available()) {
     String configName = fp.readStringUntil('=');
     String configValue = fp.readStringUntil('\n');
-    IFDEBUG Serial.print("cfload: found name ");
-    IFDEBUG Serial.println(configName);
-    IFDEBUG Serial.print("cfload: found value ");
-    IFDEBUG Serial.println(configValue);
+    IFDEBUG IotsaSerial.print("cfload: found name ");
+    IFDEBUG IotsaSerial.println(configName);
+    IFDEBUG IotsaSerial.print("cfload: found value ");
+    IFDEBUG IotsaSerial.println(configValue);
     if (configName == name) {
       value = configValue;
       return;

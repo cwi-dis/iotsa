@@ -3,7 +3,6 @@
 // Define this before including iotsaLogger
 
 Print *iotsaOriginalSerial = &Serial;
-Print *iotsaOverrideSerial = &Serial;
 
 #include "iotsaLogger.h"
 #include "iotsaConfigFile.h"

@@ -48,8 +48,8 @@ String helloInfo() {
   	rv += "\" that is currently greeted.";
   }
   rv += "</p>";
-  Serial.print("Logging Hello: info called, greeting=");
-  Serial.println(greeting);
+  IotsaSerial.print("Logging Hello: info called, greeting=");
+  IotsaSerial.println(greeting);
   return rv;
 }
 
@@ -68,8 +68,8 @@ helloHandler() {
   message += greeting;
   message += "'></form></body></html>";
   server.send(200, "text/html", message);
-  Serial.print("Logging Hello: handler called, greeting=");
-  Serial.println(greeting);
+  IotsaSerial.print("Logging Hello: handler called, greeting=");
+  IotsaSerial.println(greeting);
 }
 
 // Instantiate the Hello module, and install it in the framework
@@ -77,12 +77,12 @@ IotsaSimpleMod helloMod(application, "/hello", helloHandler, helloInfo);
 
 // Standard setup() method, hands off most work to the application framework
 void setup(void){
-  Serial.println("Logging Hello: setup called");
+  IotsaSerial.println("Logging Hello: setup called");
   application.setup();
   application.serverSetup();
   // Add your setup code here.
   ESP.wdtEnable(WDTO_120MS);
-  Serial.println("Logging Hello: setup returning");
+  IotsaSerial.println("Logging Hello: setup returning");
 }
  
 // Standard loop() routine, hands off most work to the application framework
