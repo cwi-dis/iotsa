@@ -77,8 +77,8 @@ IotsaSimpleMod helloMod(application, "/hello", helloHandler, helloInfo);
 
 // Standard setup() method, hands off most work to the application framework
 void setup(void){
-  IotsaSerial.println("Logging Hello: setup called");
   application.setup();
+  IotsaSerial.println("Logging Hello: setup called");
   application.serverSetup();
   // Add your setup code here.
   ESP.wdtEnable(WDTO_120MS);
