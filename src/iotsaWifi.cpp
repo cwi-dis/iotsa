@@ -6,7 +6,7 @@
 #include "iotsaConfigFile.h"
 #include "iotsaWifi.h"
 
-#define WIFI_TIMEOUT 60                  // How long to wait for our WiFi network to appear
+#define WIFI_TIMEOUT 30                  // How long to wait for our WiFi network to appear
 
 //
 // Global variables, because other modules need them too.

@@ -4,7 +4,7 @@
 
 class IotsaLoggerMod : public IotsaMod {
 public:
-  using IotsaMod::IotsaMod;
+  IotsaLoggerMod(IotsaApplication &_app, IotsaAuthMod *_auth=NULL);
   void setup();
   void serverSetup();
   void loop();
@@ -14,11 +14,6 @@ protected:
   void configSave();
   void handler();
   String argument;
-};
-
-class IotsaLogPrinter : public Print {
-public:
-  virtual size_t write(uint8_t ch);
 };
 
 extern Print *iotsaOverrideSerial;
