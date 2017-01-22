@@ -125,7 +125,11 @@ void IotsaNtpMod::loop() {
     IPAddress address;
     const char *host = ntpServer.c_str();
     if (host == NULL || *host == '\0') return;
-    WiFi.hostByName(host, address);
+    if (!WiFi.hostByName(host, address)) {
+	  IotsaSerial.println("npt: Lookup for "); IotsaSerial.print(host); IotsaSerial.println(" failed.");
+	  nextNtpRequest = now + NTP_MIN_INTERVAL*1000;
+	  return;
+	}		
     IFDEBUG { IotsaSerial.print("ntp: Lookup for "); IotsaSerial.print(host); IotsaSerial.print(" returned "); IotsaSerial.println(address); }
     memset(ntpPacket, 0, NTP_PACKET_SIZE);
     // Initialize values needed to form NTP request
@@ -144,12 +148,18 @@ void IotsaNtpMod::loop() {
     // you can send a packet requesting a timestamp:
     if (!udp.beginPacket(address, 123)) { //NTP requests are to port 123
       IotsaSerial.println("ntp: Problem writing UDP packet (beginPacket)");
+	  nextNtpRequest = now + NTP_MIN_INTERVAL*1000;
+	  return;
     }
     if (!udp.write(ntpPacket, NTP_PACKET_SIZE)) {
       IotsaSerial.println("ntp: Problem writing UDP packet (write)");
+	  nextNtpRequest = now + NTP_MIN_INTERVAL*1000;
+	  return;
     }
     if (!udp.endPacket()) {
       IotsaSerial.println("ntp: Problem writing UDP packet (endPacket)");
+	  nextNtpRequest = now + NTP_MIN_INTERVAL*1000;
+	  return;
     }
     IFDEBUG IotsaSerial.println("ntp: Sent NTP packet");
   }
