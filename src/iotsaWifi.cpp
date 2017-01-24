@@ -285,7 +285,7 @@ void IotsaWifiMod::loop() {
   		}
   		disconnectedCount = 0;
 	} else {
-		if (disconnectedCount) {
+		if (disconnectedCount == 0) {
 			IFDEBUG IotsaSerial.println("Wifi connection lost");
 		}
 		disconnectedCount++;
