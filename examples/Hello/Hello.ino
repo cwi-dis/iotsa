@@ -27,6 +27,9 @@ IotsaWifiMod wifiMod(application);
 IotsaOtaMod otaMod(application);
 #endif
 
+uint32_t bootTime;
+uint32_t lastMessageTime;
+
 //
 // Hello "name" module. Greets visitors to the /hello page, and allows
 // them to change the name by which they are greeted.
@@ -45,6 +48,7 @@ String helloInfo() {
   	rv += "\" that is currently greeted.";
   }
   rv += "</p>";
+  rv += "<p>Last power cycle " + String(millis()/1000) + "s, last boot time " + String((millis()-bootTime)/1000) + "s.</p>";
   return rv;
 }
 
@@ -80,4 +84,9 @@ void setup(void){
 void loop(void){
   application.loop();
   // Add your loop code here.
+  if (millis() > lastMessageTime + 600000) {
+    IotsaSerial.print("Uptime (minutes): ");
+    IotsaSerial.println(millis()-lastMessageTime / 60000);
+    lastMessageTime = millis();
+  }
 }
