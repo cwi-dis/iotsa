@@ -142,6 +142,9 @@ IotsaWifiMod::handlerConfigMode() {
   if (anyChanged) {
     message += "<p>Settings saved to EEPROM. <em>Rebooting device to activate new settings.</em></p>";
   }
+  if (!haveMDNS) {
+  	message += "<p>(Cannot enable OTA downloads in config mode because mDNS is required)</p>";
+  }
   message += "<form method='get'>Network: <input name='ssid' value='";
   message += ssid;
   message += "'><br>Password: <input name='ssidPassword' value='";
@@ -220,6 +223,9 @@ String IotsaWifiMod::info() {
   IPAddress x;
   String message = "<p>IP address is ";
   uint32_t ip = WiFi.localIP();
+  if (ip == 0) {
+  	ip = WiFi.softAPIP();
+  }
   message += String(ip&0xff) + "." + String((ip>>8)&0xff) + "." + String((ip>>16)&0xff) + "." + String((ip>>24)&0xff);
   if (haveMDNS) {
     message += ", hostname is ";
