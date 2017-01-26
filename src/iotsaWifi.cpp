@@ -23,8 +23,8 @@ unsigned long nextConfigurationModeTimeout;  // When we abort nextConfigurationM
 
 
 static void wifiDefaultHostName() {
-  hostName = "esp8266-";
-  hostName += String(ESP.getChipId());
+  hostName = "iotsa";
+  hostName += String(ESP.getChipId(), HEX);
 }
 
 void IotsaWifiMod::setup() {
