@@ -9,6 +9,7 @@ public:
   IotsaConfigFileLoad(const char *filename);
   ~IotsaConfigFileLoad();
   void get(String name, int &value, int def);
+  void get(String name, float &value, float def);
   void get(String name, String &value, const char *def);
   void get(String name, String &value, const String &def);
 protected:
@@ -21,6 +22,7 @@ public:
   IotsaConfigFileSave(const char *filename);
   ~IotsaConfigFileSave();
   void put(String name, int value);
+  void put(String name, float value);
   void put(String name, const String &value);
 protected:
   File fp;

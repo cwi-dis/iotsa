@@ -20,6 +20,13 @@ void IotsaConfigFileLoad::get(String name, int &value, int def) {
   value = sValue.toInt();
 }
 
+void IotsaConfigFileLoad::get(String name, float &value, float def) {
+  String sValue;
+  String sDef = String(def);
+  get(name, sValue, sDef);
+  value = sValue.toFloat();
+}
+
 void IotsaConfigFileLoad::get(String name, String &value, const String &def) {
   get(name, value, def.c_str());
 }
@@ -56,6 +63,11 @@ IotsaConfigFileSave::~IotsaConfigFileSave() {
 }
 
 void IotsaConfigFileSave::put(String name, int value) {
+  String sValue = String(value);
+  put(name, sValue);
+}
+
+void IotsaConfigFileSave::put(String name, float value) {
   String sValue = String(value);
   put(name, sValue);
 }
