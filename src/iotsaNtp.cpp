@@ -126,7 +126,7 @@ void IotsaNtpMod::loop() {
     const char *host = ntpServer.c_str();
     if (host == NULL || *host == '\0') return;
     if (!WiFi.hostByName(host, address)) {
-	  IotsaSerial.println("npt: Lookup for "); IotsaSerial.print(host); IotsaSerial.println(" failed.");
+	  IotsaSerial.print("ntp: Lookup for "); IotsaSerial.print(host); IotsaSerial.println(" failed.");
 	  nextNtpRequest = now + NTP_MIN_INTERVAL*1000;
 	  return;
 	}		
