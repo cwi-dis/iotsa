@@ -1,13 +1,39 @@
 #include "iotsaSimpleIO.h"
 #include "iotsaConfigFile.h"
+
+GPIOPort digital[] = {
+  GPIOPort("io4", 4),
+  GPIOPort("io5", 5),
+  GPIOPort("io12", 12),
+  GPIOPort("io13", 13),
+  GPIOPort("io14", 14),
+  GPIOPort("io16", 16),
+};
+#define nDigital (sizeof(digital)/sizeof(digital[0]))
+
 void
 IotsaSimpleIOMod::handler() {
   bool anyChanged = false;
-  for (uint8_t i=0; i<server.args(); i++){
+  for (uint8_t i=0; i<server.args(); i++) {
+    
+    for (int pi=0; pi<nDigital; pi++) {
+      GPIOPort &p = digital[pi];
+      if (server.argName(i) == p.name + "mode") {
+        String sVal = server.arg(i);
+        if (val != p.mode) {
+          p.mode = val;
+          anyChanged = true;
+        }
+      } else
+      if (server.argName(i) == p.name + "value") {
+        int val = server.arg(i);
+      }
+    }
     if( server.argName(i) == "argument") {
     	if (needsAuthentication()) return;
     	argument = server.arg(i);
     	anyChanged = true;
+      c
     }
   }
   if (anyChanged) configSave();

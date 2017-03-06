@@ -86,7 +86,7 @@ void loop(void){
   // Add your loop code here.
   if (millis() > lastMessageTime + 600000) {
     IotsaSerial.print("Uptime (minutes): ");
-    IotsaSerial.println((millis()-lastMessageTime) / 60000);
+    IotsaSerial.println((millis()-bootTime) / 60000);
     lastMessageTime = millis();
   }
 }
