@@ -1,3 +1,27 @@
+# iotsa - Internet of Things server architecture
+
+This library contains a framework to easily create esp8266-based web servers. At the moment the servers can be partially REST-compatible, more support for this will be added later.
+
+PCB design for a small board with an ESP-12 and room for additional hardware is included, see below.
+
+## general design philosophy
+
+_to be provided_
+
+## available modules
+
+_to be provided_
+
+## sample programs
+
+_to be provided_
+
+## more projects using iotsa
+
+_to be provided_
+
+## hardware
+
 Folder extras/fritzing contains design (circuit and PCB, and partial breadboard layout)
 for a PCB based on an ESP-12 that makes a nice iotsa hardware platform.
 
