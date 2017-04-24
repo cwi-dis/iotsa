@@ -6,6 +6,29 @@ PCB design for a small board with an ESP-12 and room for additional hardware is 
 
 ## general design philosophy
 
+Unlike most Arduino libraries and frameworks Iotsa does expose some of its C++ interfaces, but for simple applications you do not have to worry about this.
+
+Iotsa has two main types of objects:
+
+* `IotsaApplication`, of which there is only one, which is the web server and the container for the plugin modules.
+* `IotsaMod` which is a plugin module and of which there can be many. Each plugin module provides a web interface (usually with a HTML form to allow control over it) plus some functionality. The `IotsaMod` class is subclassed to provide specific functionality. 
+
+  One subclass that is always used is the `IotsaWifiMod`, which provides the functionality to connect to a specific Wifi network (after the user has provided the name and password). 
+  
+  One that is often used is `IotsaSimpleMod` which allows you to write two functions to implement your own functionality (your reason for actually using Iotsa).
+
+### Do-nothing application
+
+You create a global variable `app` of type `IotsaApplication` to hold the basic implementation of your service framework, plus the `ESP8266WebServer` object on which the application will serve. You also create one `IotsaWifiMod` and link it to the application so the end user can configure the WiFi network to join and such.
+
+In your `setup()` function you call `app.setup()` and `app.serverSetup()` which will initialize the Iotsa framework.
+
+In your `loop()` function you call `app.loop()`. This will take care of handling requests and every thing else that is needed to make the framework work.
+
+You have now created a Iotsa server that does absolutely nothing. The _Skeleton_ example does exactly this (if you turn the various `#define` into `#undef`).
+
+### Hello world application
+
 _to be provided_
 
 ## available modules
