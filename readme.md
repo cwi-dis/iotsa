@@ -4,7 +4,15 @@ This library contains a framework to easily create esp8266-based web servers tha
 
 PCB design for a small board with an ESP-12 and room for additional hardware is included, see below.
 
-## general design philosophy
+## Installation and use
+
+Download the zipfile (via <https://github.com/cwi-dis/iotsa>) and install into Arduino IDE with _Sketch_ -> _Include Library_ -> _Add .ZIP Library..._ . 
+
+Build the _Hello_ example and flash it onto an ESP-12 or similar board.
+
+On reboot, the board will first initialize the SPIFFS flash filesystem (if needed) and then create a WiFi network with a name similar to _config-iotsa1234_. Connect a device to that network and visit <http://192.168.4.1>. Configure your device name, WiFi name and password, and after reboot the iotsa board should connect to your network and be visible as <http://yourdevicename.local>.
+
+## General design philosophy
 
 Unlike most Arduino libraries and frameworks Iotsa does expose some of its C++ interfaces, but for simple applications you do not have to worry about this.
 
@@ -245,7 +253,12 @@ Accessing URL `/users` allows changing the password, and if the password has nev
 
 ## more projects using iotsa
 
-_to be provided_
+Here are some projects that use iotsa, and that also be used as further examples (_Note that as of this writing not all projects may be publicly accessible yet_):
+
+* [iotsaDisplayServer](http://github.com/cwi-dis/iotsaDisplayServer): Drives an LCD display, such as an i2c 4x40 character module. Support for a buzzer (to attract user attention) and buttons (programmable to trigger actions by accessing programmable URLs) is included.
+* [iotsaMotorServer](http://github.com/cwi-dis/iotsaMotorServer): Drives one or more stepper motors. Schematics and 3D models are included for a device to lift an object (such as a plant in a pot) to a height that can be changed through the web.
+* [iotsaNeoClock](http://github.com/cwi-dis/iotsaNeoClock): A clock comprised of 60 NeoPixel LEDs. Shows the time, but can also show programmable patterns (as alerts) and temporal information (such as expected rainfall for the coming hour). Schematics and building instructions included.
+* [iotsaDoorOpener](http://github.com/cwi-dis/iotsaDoorOpener): Operates a solenoid to open a door. On web access, or when an RFID tag (such as a keychain fob or a mifare contactless transport card) is presented. RFID cards are programmable (over the net, or using a special "learn" card). A web request can be sent to a programmable URL when a card is presented.
 
 ## hardware
 
