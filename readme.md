@@ -1,6 +1,6 @@
 # iotsa - Internet of Things server architecture
 
-This library contains a framework to easily create esp8266-based web servers. At the moment the servers can be partially REST-compatible, more support for this will be added later.
+This library contains a framework to easily create esp8266-based web servers that can interface to all sorts of sensors and actuators. At the moment the servers can be partially REST-compatible, more support for this will be added later.
 
 PCB design for a small board with an ESP-12 and room for additional hardware is included, see below.
 
@@ -137,6 +137,28 @@ IotsaAuthMod(IotsaApplication &_app, IotsaAuthMod *_auth=NULL, bool early=false)
 
 The optional `early` argument signifies that the module should be initialized early, this is generally used only by the WiFi module.
 
+### iotsaWifi.h
+
+Handles WiFi configuration, factory reset and (if enabled) over-the-air programming.
+This is technically a module, but unlike other modules it is not really optional. This module also opens and/or initializes the SPIFFS filesystem (for historical reasons).
+
+If the iotsa server is operating in normal (production) mode a user can access URL `/wificonfig` to request configuration mode, factory reset or ota-programming mode. The user must then turn power off and on again within 2 minutes to switch the iotsa server to its new mode, for another 2 minutes. If nothing happens during this period the server reboots and reverts to normal mode.
+
+The intention of requiring a power cycle is that any "dangerous" operation requires both network access (to request the operation) and physical access (to turn power on and off).
+
+On a factory reset all configuration information (literally: _all_) is forgotten and the iotsa device is completely new again.
+
+In ota-programming mode the device functions normally, but can also be reprogrammed using the Arduino IDE and its OTA facilities.
+
+In configuration mode the device does not connect to a WiFi network, but in stead creates its own network (as a base station) with a name starting with "_config-_". The user can now connect a device to this network and visit `http://192.168.4.1/wificonfig`. Here it is possible to change the normal (production) WiFi network to connect to and the password.
+
+If a device is new (it has no WiFi network name) it will enter configuration mode automatically. If a device cannot find its configured WiFi network it will enter configuration mode for 2 minutes and then reboot.
+
+### iotsaSimple.h
+
+Allows implementing a module using two simple C functions. See the _hello_ section above for details.
+
+
 ### iotsaConfigFile.h
 
 Two classes to save and load configuration variables to a file (on the SPIFFS file system in the flash memory chip). `IotsaConfigFileLoad` is used to load configuration values and `IotsaConfigFileSave` to store them. 
@@ -200,22 +222,26 @@ bool localIsPM();			// AM/PM indicator
 
 ```
 ### iotsaOta.h
-### iotsaSimple.h
+
+Allows Over-the-air reprogramming of a iotsa server. After ota-programming has been enabled the device will show up (for 2 minutes) in the Arduino IDE, menu _Tools_ -> _Port_, under the _Network Ports_ section. Select it, and press the checkmark on your sketch to upload.
+
 ### iotsaUser.h
-### iotsaWifi.h
 
+An authentication module (_IotsaAuthMod_) that stores a single username and password. Other modules can then specify they are only accessible after the user authenticates with this username/password combination.
 
+Accessing URL `/users` allows changing the password, and if the password has never been set the default password is shown whenever the device is booted in configuration mode.
+ 
 ## sample programs
 - [Skeleton](examples/Skeleton/Skeleton.ino) is a good starting point for your own applications.
-- [Hello](examples/Hello/Hello.ino) is the simplest "Hello World" server.
+- [Hello](examples/Hello/Hello.ino) is the simplest "Hello, user" server.
 - [HelloCpp](examples/HelloCpp/HelloCpp.ino) is the same, but implemented using C++ class declarations.
 - [Light](examples/Light/Light.ino) measures ambient light level with an LDR connected to the analog input.
 - [Temperature](examples/Temperature/Temperature.ino) measures temperature with a slightly more complicated sensor, a DHT21.
 - [Led](examples/Led/Led.ino) controls the color of a NeoPixel LED, and can set up repeating patterns. Uses _iotsaLed_ module.
-- [HelloUser](examples/HelloUser/HelloUser.ino)
-- [HelloPasswd](examples/HelloPasswd/HelloPasswd.ino)
-- [Log](examples/Log/Log.ino)
 - [SimpleIO](examples/SimpleIO/SimpleIO.ino) server that allows web access to analog and digital pins. Also shows how to use the _iotsaConfigFile_ classes.
+- [HelloPasswd](examples/HelloPasswd/HelloPasswd.ino) The same "Hello" server, but now using a _IotsaAuthMod_ for access control (you need to provide username "admin" and password "admin" to change the greeting name).
+- [HelloUser](examples/HelloUser/HelloUser.ino) Another "Hello" server that needs authentication, but this time using _IotsaUserMod_ so the password can be changed.
+- [Log](examples/Log/Log.ino) Example of using the _iotsaLogger_ module.
 
 ## more projects using iotsa
 
