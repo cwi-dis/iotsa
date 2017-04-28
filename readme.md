@@ -6,7 +6,7 @@ PCB design for a small board with an ESP-12 and room for additional hardware is 
 
 ## Installation and use
 
-Download the zipfile (via <https://github.com/cwi-dis/iotsa>) and install into Arduino IDE with _Sketch_ -> _Include Library_ -> _Add .ZIP Library..._ . 
+Download the zipfile (via <https://github.com/cwi-dis/iotsa>) and install into Arduino IDE with _Sketch_ -> _Include Library_ -> _Add .ZIP Library..._ . (If you downloaded the zipfile through github you may 
 
 Build the _Hello_ example and flash it onto an ESP-12 or similar board.
 
