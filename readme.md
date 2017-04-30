@@ -2,7 +2,7 @@
 
 This library contains a framework to easily create esp8266-based web servers that can interface to all sorts of sensors and actuators. At the moment the servers can be partially REST-compatible, more support for this will be added later.
 
-PCB design for a small board with an ESP-12 and room for additional hardware is included, see below.
+PCB design for a small board with an ESP-12 and room for additional hardware is included, see the _hardware_ section below. A 3D-printable case (which can be customized to the size you need, and with extra holes for wires or switches or LEDs or whatever) is included too.
 
 ## Installation and use
 
@@ -11,6 +11,8 @@ Download the zipfile (via <https://github.com/cwi-dis/iotsa>) and install into A
 Build the _Hello_ example and flash it onto an ESP-12 or similar board.
 
 On reboot, the board will first initialize the SPIFFS flash filesystem (if needed) and then create a WiFi network with a name similar to _config-iotsa1234_. Connect a device to that network and visit <http://192.168.4.1>. Configure your device name, WiFi name and password, and after reboot the iotsa board should connect to your network and be visible as <http://yourdevicename.local>.
+
+If you have enabled over-the-air programming _to be provided_.
 
 ## General design philosophy
 
@@ -262,18 +264,18 @@ Here are some projects that use iotsa, and that also be used as further examples
 
 ## hardware
 
-Folder extras/fritzing contains design (circuit and PCB, and partial breadboard layout)
-for a PCB based on an ESP-12 that makes a nice iotsa hardware platform.
+Folder _extras/fritzing_ contains design (circuit and PCB, and partial breadboard layout)
+for a PCB based on an ESP-12 that makes a nice iotsa hardware platform. You need the open source [Fritzing](http://fritzing.org/home/) tool to open these files.
 
-It has the ESP-12, a 3.3v regulator (so it can be powered with a standard 5v power
+The iotsa board has the ESP-12, a 3.3v regulator (so it can be powered with a standard 5v-16v power
 supply) and a free section with enough space for a DIP IC (up to DIP-20) and/or
 a few discrete components. All easily usable GPIO pins are also available.
-There's also room for an FTDI header and reset/program buttons.
+There's also room for an FTDI header (so you can reprogram the board if you have bricked it with over-the-air programming) and _reset_ and _program_ buttons.
 
 The v3 board is about 6.35x4.35cm in size, with the ESP-12 antenna sticking out
 0.5cm.
 
-Extras also has a file iotsaCase.scad that contains the OpenSCAD source code to
+Extras also has a file [extras/iotsaCase.scad](extras/iotsaCase.scad) that contains the OpenSCAD source code to
 3D-print your own box to fit a iotsa board. Examine the source, there are various
 ways to adjust the design (to add extra holes, or determine thickness of
 the box, or make the box fit a iotsa board with some of the experimental area rows
