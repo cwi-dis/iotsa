@@ -267,6 +267,7 @@ Here are some projects that use iotsa, and that also be used as further examples
 * [iotsaMotorServer](http://github.com/cwi-dis/iotsaMotorServer): Drives one or more stepper motors. Schematics and 3D models are included for a device to lift an object (such as a plant in a pot) to a height that can be changed through the web.
 * [iotsaNeoClock](http://github.com/cwi-dis/iotsaNeoClock): A clock comprised of 60 NeoPixel LEDs. Shows the time, but can also show programmable patterns (as alerts) and temporal information (such as expected rainfall for the coming hour). Schematics and building instructions included.
 * [iotsaDoorOpener](http://github.com/cwi-dis/iotsaDoorOpener): Operates a solenoid to open a door. On web access, or when an RFID tag (such as a keychain fob or a mifare contactless transport card) is presented. RFID cards are programmable (over the net, or using a special "learn" card). A web request can be sent to a programmable URL when a card is presented.
+* [iotsaSmartMeter](http://github.com/cwi-dis/iotsaSmartMeter): Reads electricity and gas usage of a dutch Smart Meter through the standardised P1 port and makes the data available on the net.
 
 ## hardware
 
