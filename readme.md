@@ -6,13 +6,19 @@ PCB design for a small board with an ESP-12 and room for additional hardware is 
 
 ## Installation and use
 
-Download the zipfile (via <https://github.com/cwi-dis/iotsa>) and install into Arduino IDE with _Sketch_ -> _Include Library_ -> _Add .ZIP Library..._ . (If you downloaded the zipfile through github you may 
+Download the zipfile (via <https://github.com/cwi-dis/iotsa>) and install into Arduino IDE with _Sketch_ -> _Include Library_ -> _Add .ZIP Library..._ . (If you downloaded the zipfile through github you may have to rename the directory because it may be called something like _iotsa___master_).
 
 Build the _Hello_ example and flash it onto an ESP-12 or similar board.
 
 On reboot, the board will first initialize the SPIFFS flash filesystem (if needed) and then create a WiFi network with a name similar to _config-iotsa1234_. Connect a device to that network and visit <http://192.168.4.1>. Configure your device name, WiFi name and password, and after reboot the iotsa board should connect to your network and be visible as <http://yourdevicename.local>.
 
-If you have enabled over-the-air programming _to be provided_.
+When the device is running normally you can visit <http://yourdevicename.local/wificonfig> and request the device to go back into configuration mode, or to do a factory reset. After requesting this you have 2 minutes to power cycle the device to make it go into configuration mode again (see previous paragraph) or do a complete factory reset. When in configuration mode you have two minutes to change the configuration (device name, WiFi name, password) before the device reverts to normal operation. The idea behind this sequence (_request configuration mode_, then _power cycle_, then _change parameters_) is that you need both network acccess and physical access before you can do a disruptive operation on the device.
+
+If you have enabled over-the-air programming <http://yourdevicename.local/wificonfig> will also allow you to request the device to go into programmable mode. Again, you have two minutes to power cycle and then two minutes to reprogram:
+
+* In _Tools_ -> _Port_ -> _Network Port_ select your device.
+	* Sometimes ota-programmable devices are slow to appear. Restarting Arduino IDE may help, running a tool like _iStumbler_ may help.
+* Use the normal _Upload_ command to flash your new program.
 
 ## General design philosophy
 
