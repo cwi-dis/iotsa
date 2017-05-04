@@ -1,11 +1,12 @@
 # iotsa - Internet of Things server architecture
 
-This library contains a framework to easily create esp8266-based web servers that can interface to all sorts of sensors and actuators. At the moment the servers can be partially REST-compatible, more support for this will be added later.
+This library contains a framework to easily create esp8266-based web servers that can interface to all sorts of sensors and actuators. At the moment the servers can be partially REST-compatible, more support for this will be added later, including
+seamless integration with the [Igor home automation server](https://github.com/cwi-dis/igor). 
 
 PCB design for a small board with an ESP-12 and room for additional hardware is included, see the _hardware_ section below. A 3D-printable case (which can be customized to the size you need, and with extra holes for wires or switches or LEDs or whatever) is included too.
 
 Home page is <https://github.com/cwi-dis/iotsa>. 
-This software is licensed under the [MIT license](LICENSE.txt) by the   CWI DIS group, <http://www.dis.cwi.nl>.
+This software is licensed under the [MIT license](LICENSE.txt) by the CWI DIS group, <http://www.dis.cwi.nl>.
 
 ## Installation and use
 
