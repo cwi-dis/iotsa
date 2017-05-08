@@ -286,8 +286,12 @@ There's also room for an FTDI header (so you can reprogram the board if you have
 The v3 board is about 6.35x4.35cm in size, with the ESP-12 antenna sticking out
 0.5cm.
 
+### Case
+
 Extras also has a file [extras/iotsaCase.scad](extras/iotsaCase.scad) that contains the OpenSCAD source code to
 3D-print your own box to fit a iotsa board. Examine the source, there are various
 ways to adjust the design (to add extra holes, or determine thickness of
 the box, or make the box fit a iotsa board with some of the experimental area rows
 removed.
+
+The 3D-printable case for a iotsa board is also available at Thingyverse: <http://www.thingiverse.com/thing:2303793>.

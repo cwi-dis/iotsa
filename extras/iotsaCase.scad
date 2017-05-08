@@ -1,18 +1,45 @@
-//
-// This is the iotsa board itself, including the important connectors and
-// holes. You can define here if you have shortened the board, which will
+//he important connectors and
+// holes. You can define here if you have shorte
+// This is the iotsa board itself, including tned the board, which will
 // not only change the board itself, but also the box we are going to create around it.
 //
-numberOfRowsRemoved = 0;
-extraMMRemoved = 0; // 0 if nothing removed, 2.2 if any rows removed.
+// How many experiment rows of the PCB have been cut
+numberOfRowsRemoved = 0; // [1:10]
+extraMMRemoved = 0; // [0:no rows removed,2.2:rows removed]
+// ignore computed values:
 numberOfMMRemoved = extraMMRemoved + (numberOfRowsRemoved*2.54);
-iotsaBoardXSize = 63.5 - numberOfMMRemoved;   // one dimension of the unmodified board
-iotsaBoardYSize = 43.5;   // the other dimension of the board
 
-boardThickness = 1.8; // The thickness of the PCB board
-regulatorAngle = 35; // 0, or higher if you've bent the regulator over backwards.
+//
+// Box parameters. We are going to compute the size from the parameters.
+//
+// How thick should the box walls be
+boxThickness = 1.5;
+// gap we want between board and box (on all sides, individually) and around connector
+leeWay = 0.3;   
+// Height (above PCB) of tallest component
+iotsaComponentHeight = 14;
+// How far the soldering extends below the board.
+iotsaSolderingHeight = 3;
+// ignore the computed variables
+boxBottomThickness = boxThickness;
+boxFrontThickness = boxThickness;
+boxLeftThickness = boxThickness;
+boxRightThickness = boxThickness;
+boxBackThickness = boxThickness;
+boxTopThickness = boxThickness;
 
-esp12AntennaStickout = 5; // How many mm the esp12 antenna sticks out of the iotsa board
+// ignore computed values:
+iotsaBoardXSize = 63.5 - numberOfMMRemoved;
+// ignore computed values:
+iotsaBoardYSize = 43.5;
+
+// ignore standard board values:
+boardThickness = 1.8;
+// ignore standard board values:
+regulatorAngle = 35;
+// ignore standard board values:
+esp12AntennaStickout = 5;
+
 
 module iotsaBoard() {
     module esp12() {
@@ -54,20 +81,6 @@ module iotsaBoard() {
     }
 }
 
-//
-// Box parameters. We are going to compute the size from the parameters.
-//
-iotsaComponentHeight = 14;  // Make sure this is high enough
-iotsaSolderingHeight = 3;   // How far the soldering extends below the board.
-boxThickness = 1.5;
-boxBottomThickness = boxThickness;
-boxFrontThickness = boxThickness;   // This is where the power connector is
-boxLeftThickness = boxThickness;
-boxRightThickness = boxThickness;
-boxBackThickness = boxThickness;
-boxTopThickness = boxThickness;
-
-leeWay = 0.3;   // gap we want between board and box (on all sides, individually) and around connector
 
 // Computed parameters
 innerXSize = iotsaBoardXSize + esp12AntennaStickout + 2*leeWay;
@@ -169,23 +182,23 @@ module lid() {
             // The lid itself
             cube([innerXSize, innerYSize+boxFrontThickness, boxTopThickness]);
             // The left front retainer rod
-            translate([0, boxFrontThickness, -retainerLength]) cube([retainerWidth, retainerWidth, retainerLength+boxTopThickness]);
+            translate([0, boxFrontThickness+leeWay, -retainerLength]) cube([retainerWidth, retainerWidth, retainerLength+boxTopThickness]);
             translate([0.5*retainerWidth, 0.75*retainerWidth, -retainerLength+0.5*retainerWidth]) sphere(d=retainerWidth, $fn=12);
 
             // The right front retainer rod
-            translate([innerXSize-retainerWidth, boxFrontThickness, -retainerLength]) cube([retainerWidth, retainerWidth, retainerLength+boxTopThickness]);
+            translate([innerXSize-retainerWidth, boxFrontThickness+leeWay, -retainerLength]) cube([retainerWidth, retainerWidth, retainerLength+boxTopThickness]);
             translate([innerXSize-0.5*retainerWidth, 0.75*retainerWidth, -retainerLength+0.5*retainerWidth]) sphere(d=retainerWidth, $fn=12);
 
             // The left back retainer rod
-            translate([0, innerYSize+boxFrontThickness-retainerWidth, -retainerLength]) cube([retainerWidth, retainerWidth, retainerLength+boxTopThickness]);
+            translate([0, innerYSize+boxFrontThickness-retainerWidth-leeWay, -retainerLength]) cube([retainerWidth, retainerWidth, retainerLength+boxTopThickness]);
             translate([0.5*retainerWidth, innerYSize+boxFrontThickness-0.25*retainerWidth, -retainerLength+0.5*retainerWidth]) sphere(d=retainerWidth, $fn=12);
 
             // The right back retainer rod
-            translate([innerXSize-retainerWidth, innerYSize+boxFrontThickness+-retainerWidth, -retainerLength]) cube([retainerWidth, retainerWidth, retainerLength+boxTopThickness]);
+            translate([innerXSize-retainerWidth, innerYSize+boxFrontThickness-retainerWidth-leeWay, -retainerLength]) cube([retainerWidth, retainerWidth, retainerLength+boxTopThickness]);
             translate([innerXSize-0.5*retainerWidth, innerYSize+boxFrontThickness-0.25*retainerWidth, -retainerLength+0.5*retainerWidth]) sphere(d=retainerWidth, $fn=12);
             
             // The board locking rod
-            translate([41-retainerWidth, innerYSize+boxFrontThickness-retainerWidth, -iotsaComponentHeight]) cube([retainerWidth, retainerWidth, iotsaComponentHeight+boxTopThickness]);
+            translate([36-retainerWidth, innerYSize+boxFrontThickness-retainerWidth-leeWay, -iotsaComponentHeight]) cube([2*retainerWidth, retainerWidth, iotsaComponentHeight+boxTopThickness]);
         }
 }
 
