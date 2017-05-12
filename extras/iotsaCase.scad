@@ -146,7 +146,9 @@ module box() {
     }
     module rightHoles() {
         // Holes on the right. Y and Z are relative to iotsa frontright cornet, X should be 2* rightThickness
-        * translate([0, 16, 0]) cube([2*boxRightThickness, 9+2*leeWay, 11+2*leeWay]);
+        
+        // Hole for NeoPixel
+        translate([0, 18, 2]) cube([2*boxRightThickness, 5+2*leeWay, 5+2*leeWay]);
     }
     module bottomHoles() {
         // Holes in the bottom. X and Y are relative to inner box frontleft corner, Z should be 2*bottomThickness
@@ -157,7 +159,7 @@ module box() {
         translate([innerXSize-3, innerYSize-(3+strutThickness), 0]) cylinder(2*boxBottomThickness, d=3, $fn=12);
         
         // center hole for wires
-        translate([innerXSize/2, innerYSize/2, 0]) cylinder(2*boxBottomThickness, d=6, $fn=12);
+        * translate([innerXSize/2, innerYSize/2, 0]) cylinder(2*boxBottomThickness, d=6, $fn=12);
     }
     
     union() {

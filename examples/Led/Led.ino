@@ -31,7 +31,8 @@ IotsaOtaMod otaMod(application);
 // LED module. 
 //
 
-#define NEOPIXEL_PIN 4
+//#define NEOPIXEL_PIN 4  // "Normal" pin for NeoPixel
+#define NEOPIXEL_PIN 15  // pulled-down during boot, can be used for NeoPixel afterwards
 
 class IotsaLedControlMod : public IotsaLedMod {
 public:
