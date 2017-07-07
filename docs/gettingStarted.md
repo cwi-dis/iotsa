@@ -3,7 +3,7 @@
 Congratulations with your new iotsa WiFi web server,
 ready for you to start building strange and wondrous Internet of Things devices!
 
-![image of iotsa board with NeoPixel](images/iotsaboard.JPG)
+![image of iotsa board with NeoPixel](images/iotsaBoard.JPG)
 
 Maybe your board has the NeoPixel multicolor LED, maybe not. Maybe your board is in a case, maybe not. Maybe your board has the headers, maybe not.
 
@@ -51,7 +51,7 @@ iotsa board have an experimentation area (10 vertical rows with each row consist
 * io12
 * io13
 
-![image of uppopulated iotsa board](images/iotsaboardEmpty.JPG)
+![image of uppopulated iotsa board](images/iotsaBoardEmpty.JPG)
 
 But before you construct hardware on the iotsa board it may be better to try your design out by using a solderless breadboard and using jumper wires to connect your components to your iotsa. For this it is easiest if your iotsa board has headers, so you may want to solder these on.
 
