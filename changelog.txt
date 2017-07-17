@@ -1,0 +1,8 @@
+iotsa 1.0.1 - 17-Jul-2017
+
+- Added IotsaMod::htmlEncode() method to help escaping strings embedded in the HTML.
+- Documentation updates
+
+iotsa 1.0 - April 2017
+
+- Initial github release.
