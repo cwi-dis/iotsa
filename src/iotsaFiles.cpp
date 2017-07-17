@@ -11,7 +11,7 @@ IotsaFilesMod::listHandler() {
   String message = "<html><head><title>Files</title></head><body><h1>Files</h1><ul>";
   Dir d = SPIFFS.openDir("/data");
   while (d.next()) {
-      message += "<li><a href=\"" + d.fileName() + "\">" + d.fileName() + "</a> (" + String(d.fileSize()) + " bytes)</li>";
+      message += "<li><a href=\"" + htmlEncode(d.fileName()) + "\">" + htmlEncode(d.fileName()) + "</a> (" + String(d.fileSize()) + " bytes)</li>";
   }
   message += "</ul></body></html>";
   server.send(200, "text/html", message);

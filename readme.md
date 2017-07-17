@@ -133,6 +133,14 @@ IotsaHelloMod helloMod(application);
 
 Iotsa will now take care of calling your classes `IotsaHelloMod ::setup()`, `IotsaHelloMod ::serverSetup()` and `IotsaHelloMod ::loop()` methods at the right time without you needing to add any code to the normal `setup()` and `loop()` functions. Which means that this implementation of _Hello_ can be combined with as many other modules as you want, just by adding that 1-line declaration.
 
+### HTML encoding
+
+Strings that are interpolated into the HTML returned from the `info()` or `handler()` function must be ampersand-encoded. There is a static method in `IotsaMod` to do this for you:
+
+```
+String IotsaMod::htmlEncode(String data);
+```
+
 ### Next steps
 
 The [Hello](examples/Hello/Hello.ino) and [HelloCpp](examples/HelloCpp/HelloCpp.ino) examples shows how to do basic interaction with the user (through a browser form, and through information on the how page). To use this to create an interface to some bit of sensor hardware simply add the usual code to your `setup()` and `loop()` functions, and store the sensor value that you read in your `loop()` in a global variable. Pick up the value of this variable in your handler or info function and format it in HTML. [Light](examples/Light/Light.ino) is an example program of this type.

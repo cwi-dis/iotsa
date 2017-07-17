@@ -71,7 +71,7 @@ IotsaNtpMod::handler() {
   message += String(localSeconds());
   message += ".</p>";
   message += "<form method='get'>NTP server: <input name='ntpServer' value='";
-  message += ntpServer;
+  message += htmlEncode(ntpServer);
   message += "'><br>Minutes west from UTC: <input name='minutesWest' value='";
   message += String(minutesWestFromUtc);
   message += "'><br><input type='submit'></form>";

@@ -122,3 +122,22 @@ IotsaApplication::webServerLoop() {
   server.handleClient();
 }
 
+
+String IotsaMod::htmlEncode(String data) {
+  const char *p = data.c_str();
+  String rv = "";
+  while(p && *p) {
+    char escapeChar = *p++;
+    switch(escapeChar) {
+      case '&': rv += "&amp;"; break;
+      case '<': rv += "&lt;"; break;
+      case '>': rv += "&gt;"; break;
+      case '"': rv += "&quot;"; break;
+      case '\'': rv += "&#x27;"; break;
+      case '/': rv += "&#x2F;"; break;
+      default: rv += escapeChar; break;
+    }
+  }
+  return rv;
+}
+

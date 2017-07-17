@@ -44,7 +44,7 @@ String helloInfo() {
   	rv += "and to set the name to be greeted by.";
   } else {
   	rv += "or to change the name \"";
-  	rv += greeting;
+  	rv += IotsaMod::htmlEncode(greeting);
   	rv += "\" that is currently greeted.";
   }
   rv += "</p>";
@@ -63,9 +63,9 @@ helloHandler() {
     }
   }
   String message = "<html><head><title>Hello Server</title></head><body><h1>Hello Server</h1>";
-  message += "<p>Hello, " + greeting + "!</p>";
+  message += "<p>Hello, " + IotsaMod::htmlEncode(greeting) + "!</p>";
   message += "<form method='get'>Greeting: <input name='greeting' value='";
-  message += greeting;
+  message += IotsaMod::htmlEncode(greeting);
   message += "'></form></body></html>";
   server.send(200, "text/html", message);
   IotsaSerial.print("Logging Hello: handler called, greeting=");

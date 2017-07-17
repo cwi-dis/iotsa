@@ -14,7 +14,7 @@ IotsaNothingMod::handler() {
 
   String message = "<html><head><title>Boilerplate module</title></head><body><h1>Boilerplate module</h1>";
   message += "<form method='get'>Argument: <input name='argument' value='";
-  message += argument;
+  message += htmlEncode(argument);
   message += "'><br><input type='submit'></form>";
   server.send(200, "text/html", message);
 }

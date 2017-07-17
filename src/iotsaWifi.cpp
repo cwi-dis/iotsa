@@ -146,11 +146,11 @@ IotsaWifiMod::handlerConfigMode() {
   	message += "<p>(Cannot enable OTA downloads in config mode because mDNS is required)</p>";
   }
   message += "<form method='get'>Network: <input name='ssid' value='";
-  message += ssid;
+  message += htmlEncode(ssid);
   message += "'><br>Password: <input name='ssidPassword' value='";
-  message += ssidPassword;
+  message += htmlEncode(ssidPassword);
   message += "'><br>Hostname: <input name='hostName' value='";
-  message += hostName;
+  message += htmlEncode(hostName);
   message += "'><br>Configuration mode timeout: <input name='rebootTimeout' value='";
   message += String(rebootConfigTimeout);
   message += "'><br><input type='submit'></form>";
@@ -195,7 +195,7 @@ IotsaWifiMod::handlerNormalMode() {
   String message = "<html><head><title>WiFi configuration</title></head><body><h1>WiFi configuration</h1>";
   if (nextConfigurationMode == TMPC_CONFIG) {
   	message += "<p><em>Power-cycle device within " + String((nextConfigurationModeTimeout-millis())/1000) + " seconds to activate configuration mode for " + String(rebootConfigTimeout) + " seconds.</em></p>";
-  	message += "<p><em>Connect to WiFi network config-" + hostName + ", device 192.168.4.1 to change settings during that configuration period. </em></p>";
+  	message += "<p><em>Connect to WiFi network config-" + htmlEncode(hostName) + ", device 192.168.4.1 to change settings during that configuration period. </em></p>";
   } else if (nextConfigurationMode == TMPC_OTA) {
   	message += "<p><em>Power-cycle device within " + String((nextConfigurationModeTimeout-millis())/1000) + "seconds to activate OTA mode for " + String(rebootConfigTimeout) + " seconds.</em></p>";
   } else if (nextConfigurationMode == TMPC_RESET) {
@@ -229,7 +229,7 @@ String IotsaWifiMod::info() {
   message += String(ip&0xff) + "." + String((ip>>8)&0xff) + "." + String((ip>>16)&0xff) + "." + String((ip>>24)&0xff);
   if (haveMDNS) {
     message += ", hostname is ";
-    message += hostName;
+    message += htmlEncode(hostName);
     message += ".local. ";
   } else {
     message += " (no mDNS, so no hostname). ";

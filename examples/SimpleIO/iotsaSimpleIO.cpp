@@ -40,7 +40,7 @@ IotsaSimpleIOMod::handler() {
 
   String message = "<html><head><title>Simple GPIO module</title></head><body><h1>Simple GPIO</h1>";
   message += "<form method='get'>Argument: <input name='argument' value='";
-  message += argument;
+  message += htmlEncode(argument);
   message += "'><br><input type='submit'></form>";
   server.send(200, "text/html", message);
 }

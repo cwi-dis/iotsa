@@ -64,11 +64,10 @@ IotsaUserMod::handler() {
   	message += "<p><em>Passwords do not match, not changed.</em></p>";
   } else if (passwordChanged) {
   	message += "<p><em>Password has been changed.</em></p>";
-  	message += "old=" + pwold + ", new=" + pw1 + ", new2=" + pw2;
 }
   	
   message += "<form method='get'>Username: <input name='username' value='";
-  message += username;
+  message += htmlEncode(username);
   message += "'>";
   if (password != "") {
   	message += "<br>Old Password: <input type='password' name='old' value=''";
@@ -117,7 +116,7 @@ String IotsaUserMod::info() {
   message += " See <a href=\"/users\">/users</a> to change.";
   if (configurationMode && password == "") {
   	message += "<br>Username and password are the defaults: ";
-  	message += username;
+  	message += htmlEncode(username);
   	message += "and ";
   	String &dfp = defaultPassword();
   	message += dfp;

@@ -58,7 +58,7 @@ IotsaHelloMod::handler() {
   }
   String message = "<html><head><title>Hello Server</title></head><body><h1>Hello Server</h1>";
   message += "<form method='get'>Greeting: <input name='greeting' value='";
-  message += greeting;
+  message += htmlEncode(greeting);
   message += "'></form></body></html>";
   server.send(200, "text/html", message);
 }
@@ -75,7 +75,7 @@ String IotsaHelloMod::info() {
   	rv += "and to set the name to be greeted by.";
   } else {
   	rv += "or to change the name ";
-  	rv += greeting;
+  	rv += htmlEncode(greeting);
   	rv += " that is currently greeted.";
   }
   rv += "</p>";

@@ -66,6 +66,9 @@ public:
   virtual void serverSetup() = 0;
   virtual void loop() = 0;
   virtual String info() = 0;
+
+  static String htmlEncode(String data); // Helper - convert strings to HTML-safe representation
+
 protected:
   bool needsAuthentication();
   IotsaApplication &app;
