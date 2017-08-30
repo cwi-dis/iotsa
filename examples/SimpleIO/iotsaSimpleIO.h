@@ -12,9 +12,11 @@ public:
     changed(false)
   {}
   void update();
-  void setMode(int _mode) {
+  bool setMode(int _mode) {
+    if (mode == _mode) return false;
     mode = _mode;
     pinMode(pin, mode);
+    return true;
   };
   void setValue(bool _value) {
     value = _value;
@@ -25,8 +27,12 @@ public:
     if (mode == OUTPUT) return value;
     return digitalRead(pin);
   };
-protected:
+  int getMode() {
+    return mode;
+  }
   String name;
+
+protected:
   int pin;
   int mode;
   bool value;
@@ -36,7 +42,7 @@ protected:
 class AnalogInput : public GPIOPort {
 public:
   AnalogInput(const char *name, int _pin) : GPIOPort(name, _pin) {}
-  void setMode(int _mode) {}
+  bool setMode(int _mode) { return false; }
   void setValue(bool _value) {}
   int getValue() {
     return analogRead(pin);

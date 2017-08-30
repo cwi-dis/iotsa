@@ -13,7 +13,7 @@ struct pinModeNames pinModeNames[] = {
 };
 #define nPinModeNames (sizeof(pinModeNames)/sizeof(pinModeNames[0]))
 
-static int name2mode(String &name) {
+static int name2mode(const String &name) {
   for(int i=0; i<nPinModeNames; i++) {
     if (name == pinModeNames[i].modeName) return pinModeNames[i].mode;
   }
@@ -34,42 +34,50 @@ GPIOPort digital[] = {
   GPIOPort("io13", 13),
   GPIOPort("io14", 14),
   GPIOPort("io16", 16),
-  AnalogPort("a0", A0),
+  AnalogInput("a0", A0),
 };
 #define nDigital (sizeof(digital)/sizeof(digital[0]))
 
 void
 IotsaSimpleIOMod::handler() {
+  // First check configuration changes
   bool anyChanged = false;
-  for (uint8_t i=0; i<server.args(); i++) {
-    
-    for (int pi=0; pi<nDigital; pi++) {
-      GPIOPort &p = digital[pi];
-      if (server.argName(i) == p.name + "mode") {
-        String sVal = server.arg(i);
-        int val = name2mode(sVal);
-        if (val != p.mode) {
-          p.mode = val;
-          anyChanged = true;
-        }
-      } else
-      if (server.argName(i) == p.name + "value") {
-        int val = server.arg(i);
-      }
-    }
-    if( server.argName(i) == "argument") {
-    	if (needsAuthentication()) return;
-    	argument = server.arg(i);
-    	anyChanged = true;
-      c
+  for (int pi=0; pi<nDigital; pi++) {
+    GPIOPort &p = digital[pi];
+    String argName = p.name + "mode";
+    if (server.hasArg(argName)) {
+      int mode = name2mode(server.arg(argName));
+      if (p.setMode(mode))
+        anyChanged = true;
     }
   }
   if (anyChanged) configSave();
 
+  // Now set values
+  for (int pi=0; pi<nDigital; pi++) {
+    GPIOPort &p = digital[pi];
+    String argName = p.name + "value";
+    if (server.hasArg(argName)) {
+      int value = name2mode(server.arg(argName));
+      p.setValue(value);
+    }
+  }
+
+  // See if we want json
+  if (server.arg("json") != "") {
+    String json = "{}";
+    server.send(200, "application/json", json);
+    return;
+  }
   String message = "<html><head><title>Simple GPIO module</title></head><body><h1>Simple GPIO</h1>";
   message += "<form method='get'>Argument: <input name='argument' value='";
-  message += htmlEncode(argument);
-  message += "'><br><input type='submit'></form>";
+  for (GPIOPort *p=digital; p < &digital[nDigital]; p++) {
+    message += "<b>" + p->name + "</b>";
+    message += "Mode:<input name='" + p->name + "mode' value='" + mode2name(p->getMode()) + "'>";
+    message += "Value:<input name='" + p->name + "value' value='" + String(p->getValue()) + "'>";
+    message += "<br>";
+  }
+  message += "<input type='submit'></form>";
   server.send(200, "text/html", message);
 }
 
