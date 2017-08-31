@@ -67,6 +67,7 @@ protected:
   void configLoad();
   void configSave();
   void handler();
+  void apiHandler();
   String argument;
 };
 

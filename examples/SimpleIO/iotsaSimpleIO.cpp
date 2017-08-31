@@ -10,6 +10,7 @@ struct pinModeNames pinModeNames[] = {
   {INPUT, "input"},
   {INPUT_PULLUP, "input_pullup"},
   {OUTPUT, "output"},
+  {-1, "unused"},
 };
 #define nPinModeNames (sizeof(pinModeNames)/sizeof(pinModeNames[0]))
 
@@ -63,19 +64,23 @@ IotsaSimpleIOMod::handler() {
       p->setValue(value);
     }
   }
-
-  // See if we want json
-  if (server.arg("json") != "") {
-    String json = "{}";
-    server.send(200, "application/json", json);
-    return;
-  }
-  String message = "<html><head><title>Simple GPIO module</title></head><body><h1>Simple GPIO</h1>";
+  String message = "<html><head><title>Simple GPIO module</title></head><body><h1>GPIO Configuration</h1>";
   message += "<form method='get'><table><tr><th>Pin</th><th>Mode</th><th>Value</th></tr>";
   for (GPIOPort **pp=ports; pp < &ports[nPorts]; pp++) {
     GPIOPort *p = *pp;
     message += "<tr><td>" + p->name + "</td>";
+#if 1
+    int thisMode = p->getMode();
+    message += "<td><select name='" + p->name + "mode'>";
+    for(int i=0; i<nPinModeNames; i++) {
+      message += "<option value='" + pinModeNames[i].modeName + "'";
+      if (pinModeNames[i].mode == thisMode) message += " selected";
+      message += ">"+pinModeNames[i].modeName+"</option>";
+    }
+    message += "</select></td>";
+#else
     message += "<td><input name='" + p->name + "mode' value='" + mode2name(p->getMode()) + "'></td>";
+#endif
     message += "<td><input name='" + p->name + "value' value='" + String(p->getValue()) + "'></td>";
     message += "</tr>";
   }
@@ -83,29 +88,63 @@ IotsaSimpleIOMod::handler() {
   server.send(200, "text/html", message);
 }
 
+void
+IotsaSimpleIOMod::apiHandler() {
+  // Now set values
+  for (int pi=0; pi<nPorts; pi++) {
+    GPIOPort *p = ports[pi];
+    String argName = p->name;
+    if (server.hasArg(argName)) {
+      int value = server.arg(argName).toInt();
+      p->setValue(value);
+    }
+  }
+
+  // See if we want json
+  String json = "{\"timestamp\":" + String(millis());
+  for (int pi=0; pi<nPorts; pi++) {
+    GPIOPort *p = ports[pi];
+    if (p->getMode() == INPUT || p->getMode() == INPUT_PULLUP) {
+      json += ",\"" + p->name + "\":" + String(p->getValue());
+    }
+  }
+  json += "}";
+  server.send(200, "application/json", json);
+}
+
 void IotsaSimpleIOMod::setup() {
   configLoad();
 }
 
 void IotsaSimpleIOMod::serverSetup() {
-  server.on("/io", std::bind(&IotsaSimpleIOMod::handler, this));
+  server.on("/ioconfig", std::bind(&IotsaSimpleIOMod::handler, this));
+  server.on("/api", std::bind(&IotsaSimpleIOMod::apiHandler, this));
 }
 
 void IotsaSimpleIOMod::configLoad() {
   IotsaConfigFileLoad cf("/config/SimpleIO.cfg");
-  cf.get("argument", argument, "");
- 
+  for (int pi=0; pi<nPorts; pi++) {
+    GPIOPort *p = ports[pi];
+    int mode;
+    cf.get(p->name+"mode", mode, INPUT);
+    p->setMode(mode);
+  }
 }
 
 void IotsaSimpleIOMod::configSave() {
   IotsaConfigFileSave cf("/config/SimpleIO.cfg");
-  cf.put("argument", argument);
+  for (int pi=0; pi<nPorts; pi++) {
+    GPIOPort *p = ports[pi];
+    int mode;
+    cf.put(p->name+"mode", p->getMode());
+  }
 }
 
 void IotsaSimpleIOMod::loop() {
 }
 
 String IotsaSimpleIOMod::info() {
-  String message = "<p>Built with Simple IO module. See <a href=\"/io\">/io</a> to examine GPIO pins and/or change them.</p>";
+  String message = "<p>Built with Simple IO module. See <a href=\"/ioconfig\">/ioconfig</a> to examine GPIO pin configuration and values, ";
+  message += "<a href=\"/api\">/api</a> for JSON access to values.</p>";
   return message;
 }
