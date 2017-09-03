@@ -10,4 +10,4 @@ IotsaOtaMod	KEYWORD1
 IotsaSimpleMod	KEYWORD1
 IotsaWifiMod	KEYWORD1
 IotsaLedMod	KEYWORD1
-IotsaLoggerMod KEYWORD1
+IotsaLoggerMod	KEYWORD1
