@@ -77,6 +77,13 @@ void IotsaWifiMod::setup() {
         IFDEBUG IotsaSerial.println("MDNS responder started");
         haveMDNS = true;
       }
+	  if (tempConfigurationMode) {
+		tempConfigurationModeTimeout = millis() + 1000*rebootConfigTimeout;
+		IFDEBUG IotsaSerial.print("tempConfigMode=");
+		IFDEBUG IotsaSerial.print((int)tempConfigurationMode);
+		IFDEBUG IotsaSerial.print(", timeout at ");
+		IFDEBUG IotsaSerial.println(tempConfigurationModeTimeout);
+	  }
       return;
     }
     tempConfigurationMode = TMPC_CONFIG;

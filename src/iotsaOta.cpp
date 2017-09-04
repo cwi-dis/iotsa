@@ -4,7 +4,6 @@
 
 void otaOnStart() {
   IFDEBUG IotsaSerial.println("ota: download started");
-  tempConfigurationModeTimeout = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
   ESP.wdtFeed();
 }
 
@@ -12,13 +11,14 @@ void otaOnProgress(unsigned int progress, unsigned int total) {
   IFDEBUG IotsaSerial.print("ota: got data ");
   IFDEBUG IotsaSerial.print(progress*100/total);
   IFDEBUG IotsaSerial.println("%");
-  tempConfigurationModeTimeout = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
+  if (millis() > tempConfigurationModeTimeout - 1000*CONFIGURATION_MODE_TIMEOUT) {
+	  tempConfigurationModeTimeout = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
+  }
   ESP.wdtFeed();
 }
 
 void otaOnEnd() {
   IFDEBUG IotsaSerial.println("ota: download finished");
-  tempConfigurationModeTimeout = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
   ESP.wdtFeed();
 }
 
@@ -38,7 +38,6 @@ void IotsaOtaMod::setup() {
 	ArduinoOTA.onEnd(otaOnEnd);
 	ArduinoOTA.onError(otaOnError);
 	ArduinoOTA.begin();
-	tempConfigurationModeTimeout = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
   }
 }
 
