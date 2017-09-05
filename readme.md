@@ -21,7 +21,11 @@ When the device is running normally you can visit <http://yourdevicename.local/w
 If you have enabled over-the-air programming <http://yourdevicename.local/wificonfig> will also allow you to request the device to go into programmable mode. Again, you have two minutes to power cycle and then two minutes to reprogram:
 
 * In _Tools_ -> _Port_ -> _Network Port_ select your device.
-	* Sometimes ota-programmable devices are slow to appear. Restarting Arduino IDE may help, running a tool like _iStumbler_ may help.
+	* Sometimes ota-programmable devices are slow to appear because of mDNS issues. On a Mac, run the following command in a _Terminal_ window to speed up discovery:
+	
+	```
+	dns-sd -B _services._dns-sd._udp.
+	```
 * Use the normal _Upload_ command to flash your new program.
 
 ## General design philosophy

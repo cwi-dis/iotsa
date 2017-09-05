@@ -34,7 +34,11 @@ To download your new program to the device:
 * On the **WiFi configuration** page, select the _Enable over-the-air update after next reboot_ option and press _Submit_.
 * Now you need to either press the _Reset_ button on the iotsa, or remove power, wait a few seconds and reconnect power. You should do this within 2 minutes (if you are too late you simply start at the top of this list again).
 * In the Arduino IDE, with menu _Tools_ -> _Port_ -> _Network Port_ select your device.
-	* Sometimes over-the-air devices are slow to appear. Restarting Arduino IDE may help, running a tool like _iStumbler_ may help.
+	* Sometimes ota-programmable devices are slow to appear because of mDNS issues. On a Mac, run the following command in a _Terminal_ window to speed up discovery:
+	
+	```
+	dns-sd -B _services._dns-sd._udp.
+	```
 * Use the normal _Upload_ command to flash your new program.
 
 The iotsa should now reboot and run your code. If your code is based on the iotsa software it will include the over-the-air programming functionality and you can reprogram the iotsa whenever you want (and see the _Troubleshooting_ section below in case of problems).
