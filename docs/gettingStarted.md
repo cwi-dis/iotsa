@@ -39,6 +39,11 @@ To download your new program to the device:
 	```
 	dns-sd -B _services._dns-sd._udp.
 	```
+	or, on Linux,
+	
+	```
+	avahi-browse _services._dns-sd._udp
+	```
 * Use the normal _Upload_ command to flash your new program.
 
 The iotsa should now reboot and run your code. If your code is based on the iotsa software it will include the over-the-air programming functionality and you can reprogram the iotsa whenever you want (and see the _Troubleshooting_ section below in case of problems).

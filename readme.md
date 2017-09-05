@@ -26,6 +26,12 @@ If you have enabled over-the-air programming <http://yourdevicename.local/wifico
 	```
 	dns-sd -B _services._dns-sd._udp.
 	```
+	
+	or, on Linux,
+	
+	```
+	avahi-browse _services._dns-sd._udp
+	```
 * Use the normal _Upload_ command to flash your new program.
 
 ## General design philosophy
