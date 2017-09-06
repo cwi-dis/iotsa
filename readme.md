@@ -301,6 +301,8 @@ supply) and a free section with enough space for a DIP IC (up to DIP-20) and/or
 a few discrete components. All easily usable GPIO pins are also available.
 There's also room for an FTDI header (so you can reprogram the board if you have bricked it with over-the-air programming) and _reset_ and _program_ buttons.
 
+The resistors are all pullups and pulldowns, so their values are not very critical. With one exception: if you use an ESP-12S module R3 (the program button pulldown) must be around 3K3, a 10K resistor will not work with the ESP-12S (as was found experimentally, since 10K works just fine with an ESP-12F).
+
 The v3 board is about 6.35x4.35cm in size, with the ESP-12 antenna sticking out
 0.5cm.
 
