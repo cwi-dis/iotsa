@@ -1,8 +1,13 @@
 #ifndef _IOTSA_H_
 #define _IOTSA_H_
 
+#ifdef ESP32
+#include <ESP32WebServer.h>
+typedef ESP32WebServer WebServer;
+#else
 #include <ESP8266WebServer.h>
-
+typedef ESP8266WebServer WebServer;
+#endif
 //
 // Global defines, changes some behaviour in the whole library
 //
@@ -19,7 +24,7 @@ class IotsaMod;
 class IotsaApplication {
 friend class IotsaMod;
 public:
-  IotsaApplication(ESP8266WebServer &_server, const char *_title)
+  IotsaApplication(WebServer &_server, const char *_title)
   : server(_server), 
     firstModule(NULL), 
     firstEarlyModule(NULL), 
@@ -38,7 +43,7 @@ protected:
   void webServerLoop();
   void webServerNotFoundHandler();
   void webServerRootHandler();
-  ESP8266WebServer &server;
+  WebServer &server;
   IotsaMod *firstModule;
   IotsaMod *firstEarlyModule;
   String title;
@@ -72,7 +77,7 @@ public:
 protected:
   bool needsAuthentication();
   IotsaApplication &app;
-  ESP8266WebServer &server;
+  WebServer &server;
   IotsaAuthMod *auth;
   IotsaMod *nextModule;
 };

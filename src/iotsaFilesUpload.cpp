@@ -1,5 +1,8 @@
 #include <ESP.h>
 #include "FS.h"
+#ifdef ESP32
+#include <SPIFFS.h>
+#endif
 #include "iotsaFilesUpload.h"
 
 void IotsaFilesUploadMod::setup() {

@@ -1,5 +1,8 @@
 #include <ESP.h>
 #include "FS.h"
+#ifdef ESP32
+#include <SPIFFS.h>
+#endif
 #include "iotsaFiles.h"
 
 void IotsaFilesMod::setup() {
@@ -8,6 +11,9 @@ void IotsaFilesMod::setup() {
 void
 IotsaFilesMod::listHandler() {
   if (needsAuthentication()) return;
+#ifdef ESP32
+  server.send(404, "text/plain", "404 Not Found: cannot list files on esp32 yet");
+#else
   String message = "<html><head><title>Files</title></head><body><h1>Files</h1><ul>";
   Dir d = SPIFFS.openDir("/data");
   while (d.next()) {
@@ -15,6 +21,7 @@ IotsaFilesMod::listHandler() {
   }
   message += "</ul></body></html>";
   server.send(200, "text/html", message);
+#endif
 }
 
 bool

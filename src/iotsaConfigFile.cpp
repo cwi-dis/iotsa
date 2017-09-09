@@ -1,5 +1,8 @@
 #include "iotsa.h"
 #include "iotsaConfigFile.h"
+#ifdef ESP32
+#include <SPIFFS.h>
+#endif
 
 IotsaConfigFileLoad::IotsaConfigFileLoad(String filename) {
   fp = SPIFFS.open(filename, "r");

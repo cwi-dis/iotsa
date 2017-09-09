@@ -6,7 +6,11 @@
 String &defaultPassword() {
   static String dftPwd;
   if (dftPwd == "") {
+#ifdef ESP32
+	  randomSeed(ESP.getEfuseMac());
+#else
 	  randomSeed(ESP.getChipId());
+#endif
 	  dftPwd = String("password") + String(random(1000));
   }
   return dftPwd;

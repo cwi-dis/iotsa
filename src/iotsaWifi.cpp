@@ -1,5 +1,10 @@
 #include <ESP.h>
+#ifdef ESP32
+#include <ESPmDNS.h>
+#include <SPIFFS.h>
+#else
 #include <ESP8266mDNS.h>
+#endif
 #include <FS.h>
 
 #include "iotsa.h"
@@ -24,7 +29,12 @@ unsigned long nextConfigurationModeTimeout;  // When we abort nextConfigurationM
 
 static void wifiDefaultHostName() {
   hostName = "iotsa";
+#ifdef ESP32
+//  hostName += String(uint32_t(ESP.getEfuseMac()), HEX);
+  hostName += String(uint32_t(0), HEX);
+#else
   hostName += String(ESP.getChipId(), HEX);
+#endif
 }
 
 void IotsaWifiMod::setup() {
@@ -39,6 +49,9 @@ void IotsaWifiMod::setup() {
   }
   // If factory reset is requested format the Flash and reboot
   if (tempConfigurationMode == TMPC_RESET) {
+#ifdef ESP32
+  	IFDEBUG IotsaSerial.println("Factory-reset not implemented on ESP32");
+#else
   	IFDEBUG IotsaSerial.println("Factory-reset requested");
   	delay(1000);
   	IFDEBUG IotsaSerial.println("Formatting SPIFFS...");
@@ -46,6 +59,7 @@ void IotsaWifiMod::setup() {
   	IFDEBUG IotsaSerial.println("Format done, rebooting.");
   	delay(2000);
   	ESP.restart();
+#endif
   }
   // Try and connect to an existing Wifi network, if known and not in configuration mode
   if (ssid.length() && tempConfigurationMode != TMPC_CONFIG) {
@@ -288,7 +302,10 @@ void IotsaWifiMod::loop() {
     nextConfigurationModeTimeout = 0;
     configSave();
   }
+#ifndef ESP32
+  // mDNS happens asynchronously on ESP32
   if (haveMDNS) MDNS.update();
+#endif
   if (tempConfigurationMode == TMPC_NORMAL && !configurationMode) {
   	// Should be in normal mode, check that we have WiFi
   	static int disconnectedCount = 0;
