@@ -25,13 +25,10 @@ int tempConfigurationModeReason;
 config_mode  nextConfigurationMode;    // Next configuration mode (i.e. before a power cycle)
 unsigned long nextConfigurationModeTimeout;  // When we abort nextConfigurationMode and revert to normal operation
 
-
-
 static void wifiDefaultHostName() {
   hostName = "iotsa";
 #ifdef ESP32
-//  hostName += String(uint32_t(ESP.getEfuseMac()), HEX);
-  hostName += String(uint32_t(0), HEX);
+  hostName += String(uint32_t(ESP.getEfuseMac()), HEX);
 #else
   hostName += String(ESP.getChipId(), HEX);
 #endif
@@ -61,6 +58,8 @@ void IotsaWifiMod::setup() {
   	ESP.restart();
 #endif
   }
+  WiFi.setAutoConnect(false);
+  WiFi.setAutoReconnect(false);
   // Try and connect to an existing Wifi network, if known and not in configuration mode
   if (ssid.length() && tempConfigurationMode != TMPC_CONFIG) {
     WiFi.mode(WIFI_STA);
