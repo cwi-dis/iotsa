@@ -34,7 +34,11 @@ IotsaApplication::setup() {
   if (!ok) {
     IFDEBUG IotsaSerial.println("SPIFFS.begin() failed, formatting");
 
-#ifndef ESP32
+#ifdef ESP32
+	// Create directories we know we need
+	SPIFFS.mkdir("/config");
+	SPIFFS.mkdir("/data");
+#else
     ok = SPIFFS.format();
     if (!ok) {
       IFDEBUG IotsaSerial.println("SPIFFS.format() failed");

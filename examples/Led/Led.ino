@@ -18,7 +18,7 @@
 
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 
-ESP8266WebServer server(80);
+IotsaWebServer server(80);
 IotsaApplication application(server, "Iotsa LED Server");
 IotsaWifiMod wifiMod(application);
 
@@ -101,7 +101,9 @@ IotsaLedControlMod ledMod(application, NEOPIXEL_PIN);
 void setup(void){
   application.setup();
   application.serverSetup();
+#ifndef ESP32
   ESP.wdtEnable(WDTO_120MS);
+#endif
 }
  
 // Standard loop() routine, hands off most work to the application framework

@@ -89,7 +89,7 @@ void IotsaHelloMod::loop() {
 //
 // Instantiate all the objects we need.
 //
-ESP8266WebServer server(80);  // The web server
+IotsaWebServer server(80);  // The web server
 IotsaApplication application(server, "Iotsa Hello World Server"); // The application framework
 
 //
@@ -111,7 +111,9 @@ IotsaHelloMod helloMod(application, &myAuthenticator); // Our hello module (auth
 void setup(void){
   application.setup();
   application.serverSetup();
+#ifndef ESP32
   ESP.wdtEnable(WDTO_120MS);
+#endif
 }
  
 // Standard loop() routine, hands off everything to the application framework

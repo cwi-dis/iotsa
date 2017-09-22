@@ -18,7 +18,7 @@
 #define WITH_FILESUPLOAD  // Enable upload of static files for webserver
 #define WITH_FILESBACKUP  // Enable backup of all files including config files and webserver files
 
-ESP8266WebServer server(80);
+IotsaWebServer server(80);
 IotsaApplication application(server, "Iotsa Skeleton Server");
 IotsaWifiMod wifiMod(application);
 
@@ -50,7 +50,9 @@ IotsaFilesBackupMod filesBackupMod(application);
 void setup(void){
   application.setup();
   application.serverSetup();
+#ifndef ESP32
   ESP.wdtEnable(WDTO_120MS);
+#endif
 }
  
 void loop(void){
