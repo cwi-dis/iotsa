@@ -37,7 +37,7 @@ static void wifiDefaultHostName() {
 
 void IotsaWifiMod::setup() {
   // Load configuration parameters, and clear any temporary configuration mode (if requested)
-#if 1
+#if 0
   IotsaSerial.println("Enable debug output");
   esp_log_level_set("*", ESP_LOG_DEBUG);
 #endif
@@ -297,16 +297,6 @@ void IotsaWifiMod::configSave() {
 }
 
 void IotsaWifiMod::loop() {
-#if 1
-//  IotsaSerial.print("~");
-  {
-  	static uint32_t nextTime;
-  	if (millis() > nextTime) {
-  		nextTime = millis() + 10000;
-  		WiFi.printDiag(IotsaSerial);
-	}
-  }
-#endif
   if (tempConfigurationModeTimeout && millis() > tempConfigurationModeTimeout) {
     IFDEBUG IotsaSerial.println("Configuration mode timeout. reboot.");
     tempConfigurationMode = TMPC_NORMAL;
