@@ -6,10 +6,13 @@ struct pinModeNames {
    String modeName;
 };
 
+
+
 struct pinModeNames pinModeNames[] = {
   {INPUT, "input"},
   {INPUT_PULLUP, "input_pullup"},
   {OUTPUT, "output"},
+  {PWM_OUTPUT, "pwm_output"},
   {-1, "unused"},
 };
 #define nPinModeNames (sizeof(pinModeNames)/sizeof(pinModeNames[0]))

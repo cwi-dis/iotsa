@@ -2,6 +2,8 @@
 #define _IOTSASIMPLEIO_H_
 #include "iotsa.h"
 
+#define PWM_OUTPUT OUTPUT + 42
+
 class GPIOPort {
 public:
   GPIOPort(const char* _name, int _pin)
@@ -32,6 +34,7 @@ public:
   virtual bool setMode(int _mode) {
     if (mode == _mode) return false;
     mode = _mode;
+    if (mode == PWM_OUTPUT) mode = OUTPUT;
     pinMode(pin, mode);
     return true;
   };
@@ -39,6 +42,8 @@ public:
     value = _value;
     if (mode == OUTPUT)
       digitalWrite(pin, value ? HIGH : LOW);
+     else if (mode == PWM_OUTPUT)
+      analogWrite(pin, value);
   };
   virtual int getValue() {
     if (mode == OUTPUT) return value;
