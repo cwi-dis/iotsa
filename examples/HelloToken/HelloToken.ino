@@ -10,33 +10,16 @@
 // 
 // This version requires a username/password to change the greeting, to enable
 // over-the-air updating and to change the WiFi configuration.
+// The usernames/password combination is changeable.
 //
 
 #include <ESP.h>
 #include "iotsa.h"
 #include "iotsaWifi.h"
+#include "iotsaUser.h"
+#include "iotsaStaticToken.h"
 
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
-
-//
-// Authentication class. Requires username/password to match before allowing changing of
-// the user name to be greeted.
-//
-class IotsaStaticAuthMod : public IotsaAuthMod {
-public:
-  using IotsaAuthMod::IotsaAuthMod;
-  void setup() {}
-  void serverSetup() {}
-  void loop() {}
-  String info() { return ""; }
-  bool needsAuthentication(const char *right=NULL) {
-    if (!server.authenticate("admin", "admin")) {
-      server.requestAuthentication();
-      return true;
-    }
-    return false;
-  }
-};
 
 //
 // Hello "name" module. Greets visitors to the /hello page, and allows
@@ -68,7 +51,7 @@ IotsaHelloMod::handler() {
   // optionally stores a new name to greet the next time.
   for (uint8_t i=0; i<server.args(); i++){
     if( server.argName(i) == "greeting") {
-      if (needsAuthentication()) {
+      if (needsAuthentication("hello")) {
         return;
       }
       greeting = server.arg(i);
@@ -109,15 +92,26 @@ void IotsaHelloMod::loop() {
 //
 IotsaWebServer server(80);  // The web server
 IotsaApplication application(server, "Iotsa Hello World Server"); // The application framework
-IotsaStaticAuthMod myAuthenticator(application);  // Our authenticator module
-IotsaWifiMod wifiMod(application, &myAuthenticator);  // The network configuration module (authenticated)
+
+//
+// Authentication class #1, user-based. Pass in default username, default password is
+// set base on ESP8266 identity.
+//
+IotsaUserMod myUserAuthenticator(application, "owner");  // Our authenticator module
+
+//
+// Authentication class #2, token based. The user can add static tokens with specific rights.
+//
+IotsaStaticTokenMod myTokenAuthenticator(application, myUserAuthenticator);
+
+IotsaWifiMod wifiMod(application, &myUserAuthenticator);  // The network configuration module (authenticated by user only)
 
 #ifdef WITH_OTA
 #include "iotsaOta.h"
-IotsaOtaMod otaMod(application, &myAuthenticator);  // The over-the-air updater module (authenticated)
+IotsaOtaMod otaMod(application, &myUserAuthenticator);  // The over-the-air updater module (authenticated by user only)
 #endif
 
-IotsaHelloMod helloMod(application, &myAuthenticator); // Our hello module (authenticated)
+IotsaHelloMod helloMod(application, &myTokenAuthenticator); // Our hello module (authenticated by user or token)
 
 // Standard setup() method, hands off everything to the application framework
 void setup(void){

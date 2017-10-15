@@ -75,7 +75,7 @@ public:
   static String htmlEncode(String data); // Helper - convert strings to HTML-safe representation
 
 protected:
-  bool needsAuthentication();
+  bool needsAuthentication(const char *right=NULL);
   IotsaApplication &app;
   IotsaWebServer &server;
   IotsaAuthMod *auth;
@@ -85,10 +85,10 @@ protected:
 class IotsaAuthMod : public IotsaMod {
 public:
   using IotsaMod::IotsaMod;	// Inherit constructor
-  virtual bool needsAuthentication();
+  virtual bool needsAuthentication(const char *right=NULL);
 };
 
-inline bool IotsaMod::needsAuthentication() { return auth ? auth->needsAuthentication() : false; }
+inline bool IotsaMod::needsAuthentication(const char *right) { return auth ? auth->needsAuthentication(right) : false; }
 
 extern bool configurationMode;        // True if we have no config, and go into AP mode
 typedef enum { TMPC_NORMAL, TMPC_CONFIG, TMPC_OTA, TMPC_RESET } config_mode;

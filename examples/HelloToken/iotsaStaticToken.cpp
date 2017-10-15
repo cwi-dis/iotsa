@@ -1,31 +1,25 @@
 #include "iotsaUser.h"
 #include "iotsaConfigFile.h"
+#include "iotsaStaticToken.h"
 
 #undef PASSWORD_DEBUGGING	// Enables admin1/admin1 to always log in
 
-String &defaultPassword() {
-  static String dftPwd;
-  if (dftPwd == "") {
-#ifdef ESP32
-	  randomSeed(ESP.getEfuseMac());
-#else
-	  randomSeed(ESP.getChipId());
-#endif
-	  dftPwd = String("password") + String(random(1000));
-  }
-  return dftPwd;
-}
+class StaticToken {
+public:
+  String token;
+  String rights;
+};
 
-IotsaUserMod::IotsaUserMod(IotsaApplication &_app, const char *_username, const char *_password)
-:	username(_username),
-	password(_password),
+IotsaStaticTokenMod::IotsaStaticTokenMod(IotsaApplication &_app, IotsaAuthMod &_chain)
+:	chain(_chain),
 	IotsaAuthMod(_app)
 {
 	configLoad();
 }
 	
 void
-IotsaUserMod::handler() {
+IotsaStaticTokenMod::handler() {
+#if 0
   bool anyChanged = false;
   String pwold, pw1, pw2;
   bool passwordChanged = false;
@@ -68,7 +62,7 @@ IotsaUserMod::handler() {
   	message += "<p><em>Passwords do not match, not changed.</em></p>";
   } else if (passwordChanged) {
   	message += "<p><em>Password has been changed.</em></p>";
-}
+  }
   	
   message += "<form method='get'>Username: <input name='username' value='";
   message += htmlEncode(username);
@@ -90,58 +84,52 @@ IotsaUserMod::handler() {
   message += "empty3";
   message += "'><br><input type='submit'></form>";
   server.send(200, "text/html", message);
+#endif
 }
 
-void IotsaUserMod::setup() {
+void IotsaStaticTokenMod::setup() {
   configLoad();
 }
 
-void IotsaUserMod::serverSetup() {
-  server.on("/users", std::bind(&IotsaUserMod::handler, this));
+void IotsaStaticTokenMod::serverSetup() {
+  server.on("/tokens", std::bind(&IotsaStaticTokenMod::handler, this));
 }
 
-void IotsaUserMod::configLoad() {
-  IotsaConfigFileLoad cf("/config/users.cfg");
-  cf.get("user0", username, username);
-  cf.get("password0", password, password);
+void IotsaStaticTokenMod::configLoad() {
+  IotsaConfigFileLoad cf("/config/statictokens.cfg");
+  cf.get("ntoken", ntoken, 0);
+  if (tokens) free(tokens);
+  tokens = calloc(ntoken, sizeof StaticToken);
+   
+  for (int i=0; i<ntoken; i++) {
+    String tokenValue;
+    String tokenRights;
+    cf.get("token" + String(i), tokens[i].token, "");
+  	cf.get("rights" + String(i), tokens[i].rights, "");
+  	// xxxjack store into a token object
 }
 
-void IotsaUserMod::configSave() {
-  IotsaConfigFileSave cf("/config/users.cfg");
-  cf.put("user0", username);
-  cf.put("password0", password);
-}
-
-void IotsaUserMod::loop() {
-}
-
-String IotsaUserMod::info() {
-  String message = "<p>Usernames/passwords enabled.";
-  message += " See <a href=\"/users\">/users</a> to change.";
-  if (configurationMode && password == "") {
-  	message += "<br>Username and password are the defaults: ";
-  	message += htmlEncode(username);
-  	message += "and ";
-  	String &dfp = defaultPassword();
-  	message += dfp;
-  	message += ".";
+void IotsaStaticTokenMod::configSave() {
+  IotsaConfigFileSave cf("/config/statictokens.cfg");
+  cp.put("ntoken", ntoken);
+  for (int i=0; i<ntoken; i++) {
+	cf.put("token" + String(i), tokens[i].token);
+  	cf.put("rights" + String(i), tokens[i].rights);
   }
+}
+
+void IotsaStaticTokenMod::loop() {
+}
+
+String IotsaStaticTokenMod::info() {
+  String message = "<p>Static tokens enabled.";
+  message += " See <a href=\"/tokens\">/tokens</a> to change.";
   message += "</p>";
   return message;
 }
 
-bool IotsaUserMod::needsAuthentication(const char *right) {
-  // We ignore "right", username/password grants all rights.
-  String &curPassword = password;
-  if (curPassword == "")
-  	curPassword = defaultPassword();
-  if (!server.authenticate(username.c_str(), curPassword.c_str())
-#ifdef PASSWORD_DEBUGGING
-	  && !server.authenticate("admin1", "admin1")
-#endif
-  	) {
-  	server.requestAuthentication();
-  	return true;
-  }
-  return false;
+bool IotsaStaticTokenMod::needsAuthentication(const char *right) {
+  // Check whether a token is present in the headers/args
+  // Check whether it provides the correct right, return false if so
+  return chain->needsAuthentication(right);
 }

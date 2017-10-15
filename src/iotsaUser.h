@@ -9,7 +9,7 @@ public:
   void serverSetup();
   void loop();
   String info();
-  bool needsAuthentication();
+  bool needsAuthentication(const char *right=NULL);
 protected:
   void configLoad();
   void configSave();
