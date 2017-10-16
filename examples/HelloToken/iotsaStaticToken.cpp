@@ -99,7 +99,7 @@ void IotsaStaticTokenMod::configLoad() {
   IotsaConfigFileLoad cf("/config/statictokens.cfg");
   cf.get("ntoken", ntoken, 0);
   if (tokens) free(tokens);
-  tokens = calloc(ntoken, sizeof StaticToken);
+  tokens = (StaticToken *)calloc(ntoken, sizeof(StaticToken));
    
   for (int i=0; i<ntoken; i++) {
     String tokenValue;
@@ -107,11 +107,12 @@ void IotsaStaticTokenMod::configLoad() {
     cf.get("token" + String(i), tokens[i].token, "");
   	cf.get("rights" + String(i), tokens[i].rights, "");
   	// xxxjack store into a token object
+  }
 }
 
 void IotsaStaticTokenMod::configSave() {
   IotsaConfigFileSave cf("/config/statictokens.cfg");
-  cp.put("ntoken", ntoken);
+  cf.put("ntoken", ntoken);
   for (int i=0; i<ntoken; i++) {
 	cf.put("token" + String(i), tokens[i].token);
   	cf.put("rights" + String(i), tokens[i].rights);
@@ -131,5 +132,5 @@ String IotsaStaticTokenMod::info() {
 bool IotsaStaticTokenMod::needsAuthentication(const char *right) {
   // Check whether a token is present in the headers/args
   // Check whether it provides the correct right, return false if so
-  return chain->needsAuthentication(right);
+  return chain.needsAuthentication(right);
 }
