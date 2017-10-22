@@ -19,72 +19,32 @@ IotsaStaticTokenMod::IotsaStaticTokenMod(IotsaApplication &_app, IotsaAuthMod &_
 	
 void
 IotsaStaticTokenMod::handler() {
-#if 0
-  bool anyChanged = false;
-  String pwold, pw1, pw2;
-  bool passwordChanged = false;
-  
-  for (uint8_t i=0; i<server.args(); i++){
-    if( server.argName(i) == "username") {
-    	String un = server.arg(i);
-    	if (un != username) {
-			if (needsAuthentication()) return;
-			username = un;
-	    	anyChanged = true;
-		}
+  if (needsAuthentication()) return;
+  if (server.hasArg("ntoken")) {
+    ntoken = server.arg("ntoken").toInt();
+    if (tokens) free(tokens);
+    tokens = (StaticToken *)calloc(ntoken, sizeof(StaticToken));
+     
+    for (int i=0; i<ntoken; i++) {
+      String tokenValue ;
+      String tokenRights;
+      tokens[i].token = server.arg("token" + String(i));
+      tokens[i].rights = server.arg("rights" + String(i));
     }
-    if( server.argName(i) == "old") {
-    	// password authentication is checked later.
-    	pwold = server.arg(i);
-    }
-    if( server.argName(i) == "password") {
-    	// password authentication is checked later.
-    	pw1 = server.arg(i);
-    	passwordChanged = true;
-    }
-    if( server.argName(i) == "again") {
-    	pw2 = server.arg(i);
-    	passwordChanged = true;
-    }
+    configSave();
   }
-  if (passwordChanged) {
-  	if (pwold != password || pw1 != pw2) {
-  		// Old password incorrect or passwords don't match
-  		anyChanged = false;
-  	} else {
-		password = pw1;
-		anyChanged = true;
-	}
-  }
-  if (anyChanged) configSave();
-  String message = "<html><head><title>Edit users and passwords</title></head><body><h1>Edit users and passwords</h1>";
-  if (passwordChanged && !anyChanged) {
-  	message += "<p><em>Passwords do not match, not changed.</em></p>";
-  } else if (passwordChanged) {
-  	message += "<p><em>Password has been changed.</em></p>";
-  }
-  	
-  message += "<form method='get'>Username: <input name='username' value='";
-  message += htmlEncode(username);
+
+  String message = "<html><head><title>Edit tokens</title></head><body><h1>Edit tokens</h1>";
+  message += "<form method='get'>Number of tokens: <input name='ntoken' type='number' min='0' value='";
+  message += String(ntoken);
   message += "'>";
-  if (password != "") {
-  	message += "<br>Old Password: <input type='password' name='old' value=''";
-  	message += "empty1";
-  	message += "'>";
-  } else if (configurationMode == TMPC_CONFIG) {
-  	message += "<br>Password not set, default is '";
-  	message += defaultPassword();
-  	message += "'.";
-  } else {
-  	message += "<br>Password not set, reboot in configuration mode to see default password.";
+  for (int i=0; i<ntoken; i++) {
+    message += "<br>Token: <input name='token" + String(i) + "' value='" + tokens[i].token + "'>";
+    message += "Rights (/right1/right2/right3/) <input name='rights" + String(i) + "' value='" + tokens[i].rights + "'>";
   }
-  message += "<br>New Password: <input type='password' name='password' value='";
-  message += "empty2";
-  message += "'><br>Repeat New Password: <input type='password' name='again' value='";
-  message += "empty3";
-  message += "'><br><input type='submit'></form>";
+
+  message += "<br><input type='submit'></form>";
   server.send(200, "text/html", message);
-#endif
 }
 
 void IotsaStaticTokenMod::setup() {
@@ -99,6 +59,7 @@ void IotsaStaticTokenMod::configLoad() {
   IotsaConfigFileLoad cf("/config/statictokens.cfg");
   cf.get("ntoken", ntoken, 0);
   if (tokens) free(tokens);
+  if (ntoken <= 0) return;
   tokens = (StaticToken *)calloc(ntoken, sizeof(StaticToken));
    
   for (int i=0; i<ntoken; i++) {
@@ -114,7 +75,7 @@ void IotsaStaticTokenMod::configSave() {
   IotsaConfigFileSave cf("/config/statictokens.cfg");
   cf.put("ntoken", ntoken);
   for (int i=0; i<ntoken; i++) {
-	cf.put("token" + String(i), tokens[i].token);
+	  cf.put("token" + String(i), tokens[i].token);
   	cf.put("rights" + String(i), tokens[i].rights);
   }
 }
@@ -130,7 +91,24 @@ String IotsaStaticTokenMod::info() {
 }
 
 bool IotsaStaticTokenMod::needsAuthentication(const char *right) {
-  // Check whether a token is present in the headers/args
-  // Check whether it provides the correct right, return false if so
+  if (server.hasHeader("Authorization")) {
+    String authHeader = server.header("Authorization");
+    if (authHeader.startsWith("Bearer ")) {
+      String token = authHeader.substring(8);
+      String rightField("/");
+      rightField += right;
+      rightField += "/";
+      // Loop over all tokens.
+      for (int i=0; i<ntoken; i++) {
+        if (tokens[i].token == token) {
+          // The token matches. Check the rights.
+          if (tokens[i].rights == "*" || tokens[i].rights.indexOf(rightField) >= 0) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+  // If no rights fall back to username/password authentication
   return chain.needsAuthentication(right);
 }
