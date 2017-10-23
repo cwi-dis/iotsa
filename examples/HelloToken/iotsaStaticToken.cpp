@@ -94,7 +94,7 @@ bool IotsaStaticTokenMod::needsAuthentication(const char *right) {
   if (server.hasHeader("Authorization")) {
     String authHeader = server.header("Authorization");
     if (authHeader.startsWith("Bearer ")) {
-      String token = authHeader.substring(8);
+      String token = authHeader.substring(7);
       String rightField("/");
       rightField += right;
       rightField += "/";
@@ -103,12 +103,13 @@ bool IotsaStaticTokenMod::needsAuthentication(const char *right) {
         if (tokens[i].token == token) {
           // The token matches. Check the rights.
           if (tokens[i].rights == "*" || tokens[i].rights.indexOf(rightField) >= 0) {
-            return true;
+            return false;
           }
         }
       }
     }
   }
+  Serial.println("No token match, try user/password");
   // If no rights fall back to username/password authentication
   return chain.needsAuthentication(right);
 }
