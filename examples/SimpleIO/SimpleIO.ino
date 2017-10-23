@@ -10,16 +10,17 @@
 #include "iotsa.h"
 #include "iotsaWifi.h"
 #include "iotsaSimpleIO.h"
+#include <esp_wifi.h>
 
 // CHANGE: Add application includes and declarations here
 
-#define WITH_NTP    // Use network time protocol to synchronize the clock.
+#undef WITH_NTP    // Use network time protocol to synchronize the clock.
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 #define WITH_FILES  // Enable static files webserver
 #define WITH_FILESUPLOAD  // Enable upload of static files for webserver
 #define WITH_FILESBACKUP  // Enable backup of all files including config files and webserver files
 
-ESP8266WebServer server(80);
+IotsaWebServer server(80);
 IotsaApplication application(server, "Iotsa Simple IO Server");
 IotsaWifiMod wifiMod(application);
 
@@ -53,7 +54,18 @@ IotsaFilesBackupMod filesBackupMod(application);
 void setup(void){
   application.setup();
   application.serverSetup();
+#ifndef ESP32
   ESP.wdtEnable(WDTO_120MS);
+#endif
+#ifdef ESP32
+  wifi_ps_type_t curMode;
+  esp_wifi_get_ps(&curMode);
+  IotsaSerial.print("esp_wifi_get_ps()=");
+  IotsaSerial.println((int)curMode);
+  pinMode(5, OUTPUT);
+  digitalWrite(5, LOW);
+  esp_wifi_set_ps(WIFI_PS_MODEM);
+#endif
 }
  
 void loop(void){

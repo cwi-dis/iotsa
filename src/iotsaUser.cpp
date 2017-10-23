@@ -6,7 +6,11 @@
 String &defaultPassword() {
   static String dftPwd;
   if (dftPwd == "") {
+#ifdef ESP32
+	  randomSeed(ESP.getEfuseMac());
+#else
 	  randomSeed(ESP.getChipId());
+#endif
 	  dftPwd = String("password") + String(random(1000));
   }
   return dftPwd;
@@ -30,7 +34,7 @@ IotsaUserMod::handler() {
     if( server.argName(i) == "username") {
     	String un = server.arg(i);
     	if (un != username) {
-			if (needsAuthentication()) return;
+			if (needsAuthentication("users")) return;
 			username = un;
 	    	anyChanged = true;
 		}
@@ -126,7 +130,8 @@ String IotsaUserMod::info() {
   return message;
 }
 
-bool IotsaUserMod::needsAuthentication() {
+bool IotsaUserMod::needsAuthentication(const char *right) {
+  // We ignore "right", username/password grants all rights.
   String &curPassword = password;
   if (curPassword == "")
   	curPassword = defaultPassword();

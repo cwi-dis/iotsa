@@ -20,7 +20,7 @@
 
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 
-ESP8266WebServer server(80);
+IotsaWebServer server(80);
 IotsaApplication application(server, "Iotsa Logging Hello World Server");
 IotsaWifiMod wifiMod(application);
 IotsaLoggerMod loggerMod(application);
@@ -81,7 +81,9 @@ void setup(void){
   IotsaSerial.println("Logging Hello: setup called");
   application.serverSetup();
   // Add your setup code here.
+#ifndef ESP32
   ESP.wdtEnable(WDTO_120MS);
+#endif
   IotsaSerial.println("Logging Hello: setup returning");
 }
  

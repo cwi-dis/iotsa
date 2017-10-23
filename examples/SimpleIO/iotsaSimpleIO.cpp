@@ -37,9 +37,11 @@ DigitalPort io12("io12", 12);
 DigitalPort io13("io13", 13);
 DigitalPort io14("io14", 14);
 DigitalPort io16("io16", 16);
-AnalogInput a0("a0", A0);
+AnalogInput a0("a0", A0); // GPIO 36 on most esp32 boards, sometimes 26 or something else
+TimestampInput timePort;
+
 GPIOPort *ports[] = {
-  &io4, &io5, &io12, &io13, &io14, &io16, &a0
+  &io4, &io5, &io12, &io13, &io14, &io16, &a0, &timePort
 };
 #define nPorts (sizeof(ports)/sizeof(ports[0]))
 
@@ -104,11 +106,14 @@ IotsaSimpleIOMod::apiHandler() {
   }
 
   // See if we want json
-  String json = "{\"timestamp\":" + String(millis());
+  String json = "{";
+  bool first = true;
   for (int pi=0; pi<nPorts; pi++) {
     GPIOPort *p = ports[pi];
     if (p->getMode() == INPUT || p->getMode() == INPUT_PULLUP) {
-      json += ",\"" + p->name + "\":" + String(p->getValue());
+      if (!first) json += ",";
+      first = false;
+      json += "\"" + p->name + "\":" + String(p->getValue());
     }
   }
   json += "}";

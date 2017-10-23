@@ -61,6 +61,16 @@ public:
   };
 };
 
+class TimestampInput : public GPIOPort {
+public:
+  TimestampInput() : GPIOPort("timestamp", -1) {}
+  virtual bool setMode(int _mode) { return false; }
+  virtual void setValue(int _value) {}
+  virtual int getValue() {
+    return millis();
+  };
+};
+
 class IotsaSimpleIOMod : public IotsaMod {
 public:
   using IotsaMod::IotsaMod;

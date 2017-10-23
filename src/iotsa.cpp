@@ -1,6 +1,8 @@
 #include <ESP.h>
 #include <FS.h>
-
+#ifdef ESP32
+#include <SPIFFS.h>
+#endif
 #include "iotsa.h"
 
 // Initialize IotsaSerial (a define) to refer to the normal Serial.
@@ -31,18 +33,24 @@ IotsaApplication::setup() {
   IFDEBUG IotsaSerial.println(" done.");
   if (!ok) {
     IFDEBUG IotsaSerial.println("SPIFFS.begin() failed, formatting");
+
+#ifdef ESP32
+	// Create directories we know we need
+	SPIFFS.mkdir("/config");
+	SPIFFS.mkdir("/data");
+#else
     ok = SPIFFS.format();
     if (!ok) {
       IFDEBUG IotsaSerial.println("SPIFFS.format() failed");
     }
     ok = SPIFFS.begin();
+#endif
     if (!ok) {
       IFDEBUG IotsaSerial.println("SPIFFS.begin() after format failed");
     }
   } else {
     IFDEBUG IotsaSerial.println("SPIFFS mounted");
   }
-
   IotsaMod *m;
   for (m=firstEarlyModule; m; m=m->nextModule) {
   	m->setup();

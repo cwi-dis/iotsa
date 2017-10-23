@@ -1,8 +1,13 @@
 #ifndef _IOTSA_H_
 #define _IOTSA_H_
 
+#ifdef ESP32
+#include <ESP32WebServer.h>
+typedef ESP32WebServer IotsaWebServer;
+#else
 #include <ESP8266WebServer.h>
-
+typedef ESP8266WebServer IotsaWebServer;
+#endif
 //
 // Global defines, changes some behaviour in the whole library
 //
@@ -19,7 +24,7 @@ class IotsaMod;
 class IotsaApplication {
 friend class IotsaMod;
 public:
-  IotsaApplication(ESP8266WebServer &_server, const char *_title)
+  IotsaApplication(IotsaWebServer &_server, const char *_title)
   : server(_server), 
     firstModule(NULL), 
     firstEarlyModule(NULL), 
@@ -38,7 +43,7 @@ protected:
   void webServerLoop();
   void webServerNotFoundHandler();
   void webServerRootHandler();
-  ESP8266WebServer &server;
+  IotsaWebServer &server;
   IotsaMod *firstModule;
   IotsaMod *firstEarlyModule;
   String title;
@@ -70,9 +75,9 @@ public:
   static String htmlEncode(String data); // Helper - convert strings to HTML-safe representation
 
 protected:
-  bool needsAuthentication();
+  bool needsAuthentication(const char *right=NULL);
   IotsaApplication &app;
-  ESP8266WebServer &server;
+  IotsaWebServer &server;
   IotsaAuthMod *auth;
   IotsaMod *nextModule;
 };
@@ -80,10 +85,10 @@ protected:
 class IotsaAuthMod : public IotsaMod {
 public:
   using IotsaMod::IotsaMod;	// Inherit constructor
-  virtual bool needsAuthentication();
+  virtual bool needsAuthentication(const char *right=NULL);
 };
 
-inline bool IotsaMod::needsAuthentication() { return auth ? auth->needsAuthentication() : false; }
+inline bool IotsaMod::needsAuthentication(const char *right) { return auth ? auth->needsAuthentication(right) : false; }
 
 extern bool configurationMode;        // True if we have no config, and go into AP mode
 typedef enum { TMPC_NORMAL, TMPC_CONFIG, TMPC_OTA, TMPC_RESET } config_mode;

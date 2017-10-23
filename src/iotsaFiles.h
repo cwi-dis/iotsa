@@ -13,6 +13,7 @@ public:
 private:
   void listHandler();
   void notFoundHandler();
+  void _listDir(String& message, const char *name);
 };
 
 #endif

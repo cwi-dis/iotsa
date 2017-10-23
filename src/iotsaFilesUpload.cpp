@@ -1,5 +1,8 @@
 #include <ESP.h>
 #include "FS.h"
+#ifdef ESP32
+#include <SPIFFS.h>
+#endif
 #include "iotsaFilesUpload.h"
 
 void IotsaFilesUploadMod::setup() {
@@ -11,7 +14,7 @@ bool _uploadOK;
 
 void
 IotsaFilesUploadMod::uploadHandler() {
-  if (needsAuthentication()) return;
+  if (needsAuthentication("uploadfiles")) return;
   HTTPUpload& upload = server.upload();
   _uploadOK = false;
   if(upload.status == UPLOAD_FILE_START){
@@ -42,7 +45,7 @@ IotsaFilesUploadMod::uploadOkHandler() {
 }
 
 void IotsaFilesUploadMod::uploadFormHandler() {
-  if (needsAuthentication()) return;
+  if (needsAuthentication("uploadfiles")) return;
   String message = "<form method='POST' action='/upload' enctype='multipart/form-data'>Select file to upload:<input type='file' name='blob'><br>Filename:<input name='filename'><br><input type='submit' value='Update'></form>";
   server.send(200, "text/html", message);
 }

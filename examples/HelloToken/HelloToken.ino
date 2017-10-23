@@ -6,25 +6,20 @@
 // board) from the Arduino IDE.
 //
 // A "hello" module is added, which greets the user with a name settable through
-// a web form (not kept over reboots). 
+// a web form (not kept over reboots).
+// 
+// This version requires a username/password to change the greeting, to enable
+// over-the-air updating and to change the WiFi configuration.
+// The usernames/password combination is changeable.
 //
 
 #include <ESP.h>
 #include "iotsa.h"
 #include "iotsaWifi.h"
-
-// CHANGE: Add application includes and declarations here
+#include "iotsaUser.h"
+#include "iotsaStaticToken.h"
 
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
-
-IotsaWebServer server(80);
-IotsaApplication application(server, "Iotsa Hello World Server");
-IotsaWifiMod wifiMod(application);
-
-#ifdef WITH_OTA
-#include "iotsaOta.h"
-IotsaOtaMod otaMod(application);
-#endif
 
 //
 // Hello "name" module. Greets visitors to the /hello page, and allows
@@ -34,7 +29,7 @@ IotsaOtaMod otaMod(application);
 // Declaration of the Hello module
 class IotsaHelloMod : public IotsaMod {
 public:
-  IotsaHelloMod(IotsaApplication &_app) : IotsaMod(_app) {}
+  using IotsaMod::IotsaMod;
 	void setup();
 	void serverSetup();
 	void loop();
@@ -56,6 +51,9 @@ IotsaHelloMod::handler() {
   // optionally stores a new name to greet the next time.
   for (uint8_t i=0; i<server.args(); i++){
     if( server.argName(i) == "greeting") {
+      if (needsAuthentication("hello")) {
+        return;
+      }
       greeting = server.arg(i);
     }
   }
@@ -89,10 +87,33 @@ void IotsaHelloMod::loop() {
   // Nothing to do in the loop, for this module
 }
 
-// Instantiate the Hello module, and install it in the framework
-IotsaHelloMod helloMod(application);
+//
+// Instantiate all the objects we need.
+//
+IotsaWebServer server(80);  // The web server
+IotsaApplication application(server, "Iotsa Hello World Server"); // The application framework
 
-// Standard setup() method, hands off most work to the application framework
+//
+// Authentication class #1, user-based. Pass in default username, default password is
+// set base on ESP8266 identity.
+//
+IotsaUserMod myUserAuthenticator(application, "owner");  // Our authenticator module
+
+//
+// Authentication class #2, token based. The user can add static tokens with specific rights.
+//
+IotsaStaticTokenMod myTokenAuthenticator(application, myUserAuthenticator);
+
+IotsaWifiMod wifiMod(application, &myUserAuthenticator);  // The network configuration module (authenticated by user only)
+
+#ifdef WITH_OTA
+#include "iotsaOta.h"
+IotsaOtaMod otaMod(application, &myUserAuthenticator);  // The over-the-air updater module (authenticated by user only)
+#endif
+
+IotsaHelloMod helloMod(application, &myTokenAuthenticator); // Our hello module (authenticated by user or token)
+
+// Standard setup() method, hands off everything to the application framework
 void setup(void){
   application.setup();
   application.serverSetup();
@@ -101,7 +122,7 @@ void setup(void){
 #endif
 }
  
-// Standard loop() routine, hands off most work to the application framework
+// Standard loop() routine, hands off everything to the application framework
 void loop(void){
   application.loop();
 }

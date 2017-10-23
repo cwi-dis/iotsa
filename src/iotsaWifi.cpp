@@ -1,5 +1,11 @@
 #include <ESP.h>
+#ifdef ESP32
+#include <ESPmDNS.h>
+#include <SPIFFS.h>
+#include <esp_log.h>
+#else
 #include <ESP8266mDNS.h>
+#endif
 #include <FS.h>
 
 #include "iotsa.h"
@@ -20,15 +26,21 @@ int tempConfigurationModeReason;
 config_mode  nextConfigurationMode;    // Next configuration mode (i.e. before a power cycle)
 unsigned long nextConfigurationModeTimeout;  // When we abort nextConfigurationMode and revert to normal operation
 
-
-
 static void wifiDefaultHostName() {
   hostName = "iotsa";
+#ifdef ESP32
+  hostName += String(uint32_t(ESP.getEfuseMac()), HEX);
+#else
   hostName += String(ESP.getChipId(), HEX);
+#endif
 }
 
 void IotsaWifiMod::setup() {
   // Load configuration parameters, and clear any temporary configuration mode (if requested)
+#if 0
+  IotsaSerial.println("Enable debug output");
+  esp_log_level_set("*", ESP_LOG_DEBUG);
+#endif
   tempConfigurationMode = nextConfigurationMode = TMPC_NORMAL;
   tempConfigurationModeTimeout = nextConfigurationModeTimeout = 0;
   tempConfigurationModeReason = 0;
@@ -41,9 +53,14 @@ void IotsaWifiMod::setup() {
   if (tempConfigurationMode == TMPC_RESET) {
   	IFDEBUG IotsaSerial.println("Factory-reset requested");
   	delay(1000);
+#ifndef ESP32
   	IFDEBUG IotsaSerial.println("Formatting SPIFFS...");
   	SPIFFS.format();
   	IFDEBUG IotsaSerial.println("Format done, rebooting.");
+#else
+	SPIFFS.remove("/config/wifi.cfg");
+	IFDEBUG IotsaSerial.println("Removed /config/wifi.cfg");
+#endif
   	delay(2000);
   	ESP.restart();
   }
@@ -51,6 +68,8 @@ void IotsaWifiMod::setup() {
   if (ssid.length() && tempConfigurationMode != TMPC_CONFIG) {
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid.c_str(), ssidPassword.c_str());
+	WiFi.setAutoConnect(false);
+	WiFi.setAutoReconnect(false);
     IFDEBUG IotsaSerial.println("");
   
     // Wait for connection
@@ -90,7 +109,7 @@ void IotsaWifiMod::setup() {
     tempConfigurationModeReason = WiFi.status();
     IFDEBUG IotsaSerial.print("Cannot join ");
     IFDEBUG IotsaSerial.print(ssid);
-    IFDEBUG IotsaSerial.print("status=");
+    IFDEBUG IotsaSerial.print(", status=");
     IFDEBUG IotsaSerial.println(tempConfigurationModeReason);
   }
   
@@ -106,6 +125,8 @@ void IotsaWifiMod::setup() {
   String networkName = "config-" + hostName;
   WiFi.mode(WIFI_AP);
   WiFi.softAP(networkName.c_str());
+  WiFi.setAutoConnect(false);
+  WiFi.setAutoReconnect(false);
   IFDEBUG IotsaSerial.print("\nCreating softAP for network ");
   IFDEBUG IotsaSerial.println(networkName);
   IFDEBUG IotsaSerial.print("IP address: ");
@@ -177,7 +198,7 @@ IotsaWifiMod::handlerNormalMode() {
   bool iamsure = false;
   for (uint8_t i=0; i<server.args(); i++) {
     if( server.argName(i) == "config") {
-    	if (needsAuthentication()) return;
+    	if (needsAuthentication("config")) return;
       	nextConfigurationMode = config_mode(atoi(server.arg(i).c_str()));
       	nextConfigurationModeTimeout = millis() + rebootConfigTimeout*1000;
       	anyChanged = true;
@@ -288,7 +309,10 @@ void IotsaWifiMod::loop() {
     nextConfigurationModeTimeout = 0;
     configSave();
   }
+#ifndef ESP32
+  // mDNS happens asynchronously on ESP32
   if (haveMDNS) MDNS.update();
+#endif
   if (tempConfigurationMode == TMPC_NORMAL && !configurationMode) {
   	// Should be in normal mode, check that we have WiFi
   	static int disconnectedCount = 0;

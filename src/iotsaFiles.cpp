@@ -1,19 +1,62 @@
 #include <ESP.h>
 #include "FS.h"
+#ifdef ESP32
+#include <SPIFFS.h>
+#endif
 #include "iotsaFiles.h"
 
 void IotsaFilesMod::setup() {
 }
 
+#ifdef ESP32
+
 void
-IotsaFilesMod::listHandler() {
-  if (needsAuthentication()) return;
-  String message = "<html><head><title>Files</title></head><body><h1>Files</h1><ul>";
-  Dir d = SPIFFS.openDir("/data");
+IotsaFilesMod::_listDir(String& message, const char *name)
+{
+  File d = SPIFFS.open(name);
+  if (!d.isDirectory()) {
+  	message += "<em>Not a directory: ";
+  	message += name;
+  	message += "</em>";
+  	return;
+  }
+  message += "<ul>";
+  File f = d.openNextFile();
+  while (f) {
+      message += "<li><a href=\"" + htmlEncode(f.name()) + "\">" + htmlEncode(f.name()) + "</a>";
+      if (f.isDirectory()) {
+      	message += ":";
+      	_listDir(message, f.name());
+      } else {
+      	message += "(" + String(d.size()) + " bytes)";
+      }
+       
+      message += "</li>";
+  }
+  message += "</ul>";
+}
+
+#else
+
+void
+IotsaFilesMod::_listDir(String& message, const char *name)
+{
+  message += "<ul>";
+  Dir d = SPIFFS.openDir(name);
   while (d.next()) {
       message += "<li><a href=\"" + htmlEncode(d.fileName()) + "\">" + htmlEncode(d.fileName()) + "</a> (" + String(d.fileSize()) + " bytes)</li>";
   }
-  message += "</ul></body></html>";
+  message += "</ul>";
+}
+
+#endif // ESP32
+
+void
+IotsaFilesMod::listHandler() {
+  if (needsAuthentication("listfiles")) return;
+  String message = "<html><head><title>Files</title></head><body><h1>Files</h1>";
+  _listDir(message, "/data");
+  message += "</body></html>";
   server.send(200, "text/html", message);
 }
 
@@ -35,7 +78,7 @@ IotsaFilesMod::notFoundHandler() {
   	// Path may be accessed, but doesn't exist
   	message = "File Does Not Exist\n\n";
   } else {
-   	if (needsAuthentication()) {
+   	if (needsAuthentication("readfiles")) {
    		// Path may be accessed, and exists, but authentication is needed.
    		// Note we return, needsAuthentication() has filled in headers and such.
    		return;
