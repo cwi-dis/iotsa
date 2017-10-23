@@ -34,7 +34,7 @@ IotsaUserMod::handler() {
     if( server.argName(i) == "username") {
     	String un = server.arg(i);
     	if (un != username) {
-			if (needsAuthentication()) return;
+			if (needsAuthentication("users")) return;
 			username = un;
 	    	anyChanged = true;
 		}

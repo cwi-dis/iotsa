@@ -53,7 +53,7 @@ IotsaFilesMod::_listDir(String& message, const char *name)
 
 void
 IotsaFilesMod::listHandler() {
-  if (needsAuthentication()) return;
+  if (needsAuthentication("listfiles")) return;
   String message = "<html><head><title>Files</title></head><body><h1>Files</h1>";
   _listDir(message, "/data");
   message += "</body></html>";
@@ -78,7 +78,7 @@ IotsaFilesMod::notFoundHandler() {
   	// Path may be accessed, but doesn't exist
   	message = "File Does Not Exist\n\n";
   } else {
-   	if (needsAuthentication()) {
+   	if (needsAuthentication("readfiles")) {
    		// Path may be accessed, and exists, but authentication is needed.
    		// Note we return, needsAuthentication() has filled in headers and such.
    		return;

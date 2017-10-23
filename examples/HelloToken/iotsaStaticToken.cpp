@@ -19,7 +19,7 @@ IotsaStaticTokenMod::IotsaStaticTokenMod(IotsaApplication &_app, IotsaAuthMod &_
 	
 void
 IotsaStaticTokenMod::handler() {
-  if (needsAuthentication()) return;
+  if (needsAuthentication("tokens")) return;
   if (server.hasArg("ntoken")) {
     ntoken = server.arg("ntoken").toInt();
     if (tokens) free(tokens);

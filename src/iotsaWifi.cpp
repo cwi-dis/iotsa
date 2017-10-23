@@ -198,7 +198,7 @@ IotsaWifiMod::handlerNormalMode() {
   bool iamsure = false;
   for (uint8_t i=0; i<server.args(); i++) {
     if( server.argName(i) == "config") {
-    	if (needsAuthentication()) return;
+    	if (needsAuthentication("config")) return;
       	nextConfigurationMode = config_mode(atoi(server.arg(i).c_str()));
       	nextConfigurationModeTimeout = millis() + rebootConfigTimeout*1000;
       	anyChanged = true;

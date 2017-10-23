@@ -44,7 +44,7 @@ void IotsaFilesBackupMod::setup() {
 
 void
 IotsaFilesBackupMod::handler() {
-  if (needsAuthentication()) return;
+  if (needsAuthentication("backupfiles")) return;
 #ifdef ESP32
   server.send(404, "text/plain", "404 Not Found: cannot list files on esp32 yet");
 #else

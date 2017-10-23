@@ -47,12 +47,12 @@ IotsaNtpMod::handler() {
   bool anyChanged = false;
   for (uint8_t i=0; i<server.args(); i++){
     if( server.argName(i) == "ntpServer") {
-    	if (needsAuthentication()) return;
+    	if (needsAuthentication("ntp")) return;
     	ntpServer = server.arg(i);
     	anyChanged = true;
     }
     if( server.argName(i) == "minutesWest") {
-    	if (needsAuthentication()) return;
+    	if (needsAuthentication("ntp")) return;
     	minutesWestFromUtc = server.arg(i).toInt();
     	anyChanged = true;
     }
