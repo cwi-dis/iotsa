@@ -32,6 +32,13 @@ If you have enabled over-the-air programming <http://yourdevicename.local/wifico
 	```
 	avahi-browse _services._dns-sd._udp
 	```
+	
+	or, on either, use the convenience script
+	
+	```
+	[...]/iotsa/extras/refreshOTA.sh
+	```
+	
 * Use the normal _Upload_ command to flash your new program.
 
 ## General design philosophy
