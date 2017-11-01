@@ -17,6 +17,16 @@ Go to the [/wificonfig](http://192.168.4.1/wificonfig) page and fill in the name
 
 After filling in the details press _Submit_ and the device will reboot. It should now connect to your Wifi network and you can browse to it at <http://rgbled.local/>. If you visit the _/led_ page you can make the LED blink or light up in a color you specify in hexadecimal (_ff0000_ for red, _00ff00_ for green, etc). If you have the _Hello World Server_ there is no LED to flash, but you can go to _/hello_ and enter your name, the device will then greet you by name on the homepage).
 
+## Status LED
+
+If your iotsa board has the NeoPixel LED the board will communicate exception status conditions (during normal operation the LED will be off, unless programmed differently). The following patterns have the following meaning:
+
+- _Orange_: the board is trying to connect to the configured WiFi network.
+- _Yellow (flashing)_: the board is in configuration mode (at address `192.168.4.1` on its private WiFi network) because it has not been configured yet or because its configured WiFi network is unavailable.
+- _Purple (flashing)_: the board is in configuration mode (at address `192.168.4.1` on its private WiFi network) because you asked it to go to configuration mode.
+- _Magenta (flashing)_: the board is in OTA-programming mode.
+- _Red_: the board is doing a factory reset.
+
 ## Programming
 To do fun things with the iotsa board you will need to do some programming, and probably some hardware construction:
 
