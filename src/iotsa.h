@@ -21,11 +21,20 @@ extern Print *iotsaOverrideSerial;
 
 class IotsaMod;
 
+//
+// Status indication interface.
+//
+class IotsaStatusInterface {
+public:
+  virtual void showStatus() = 0;
+};
+
 class IotsaApplication {
 friend class IotsaMod;
 public:
   IotsaApplication(IotsaWebServer &_server, const char *_title)
-  : server(_server), 
+  : status(NULL),
+    server(_server), 
     firstModule(NULL), 
     firstEarlyModule(NULL), 
     title(_title),
@@ -38,6 +47,7 @@ public:
   void loop();
   void enableOta() { haveOTA = true; }
   bool otaEnabled() { return haveOTA; }
+  IotsaStatusInterface *status;
 protected:
   void webServerSetup();
   void webServerLoop();

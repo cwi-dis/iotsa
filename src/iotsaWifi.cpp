@@ -45,6 +45,7 @@ void IotsaWifiMod::setup() {
   tempConfigurationModeTimeout = nextConfigurationModeTimeout = 0;
   tempConfigurationModeReason = 0;
   configLoad();
+  if (app.status) app.status->showStatus();
   if (tempConfigurationMode) {
   	IFDEBUG IotsaSerial.println("tmpConfigMode, re-saving wifi.cfg without it");
   	configSave();
@@ -64,6 +65,7 @@ void IotsaWifiMod::setup() {
   	delay(2000);
   	ESP.restart();
   }
+  if (app.status) app.status->showStatus();
   // Try and connect to an existing Wifi network, if known and not in configuration mode
   if (ssid.length() && tempConfigurationMode != TMPC_CONFIG) {
     WiFi.mode(WIFI_STA);
@@ -103,6 +105,7 @@ void IotsaWifiMod::setup() {
 		IFDEBUG IotsaSerial.print(", timeout at ");
 		IFDEBUG IotsaSerial.println(tempConfigurationModeTimeout);
 	  }
+	  if (app.status) app.status->showStatus();
       return;
     }
     tempConfigurationMode = TMPC_CONFIG;
@@ -112,6 +115,7 @@ void IotsaWifiMod::setup() {
     IFDEBUG IotsaSerial.print(", status=");
     IFDEBUG IotsaSerial.println(tempConfigurationModeReason);
   }
+  if (app.status) app.status->showStatus();
   
   // Connection to WiFi network failed, or we are in (temp) cofiguration mode. Setup our own network.
   if (tempConfigurationMode) {
@@ -139,6 +143,7 @@ void IotsaWifiMod::setup() {
     haveMDNS = true;
   }
 #endif
+  if (app.status) app.status->showStatus();
 }
 
 void
@@ -185,6 +190,7 @@ IotsaWifiMod::handlerConfigMode() {
   message += "</body></html>";
   server.send(200, "text/html", message);
   if (anyChanged) {
+	if (app.status) app.status->showStatus();
     IFDEBUG IotsaSerial.print("Restart in 2 seconds");
     delay(2000);
     ESP.restart();
@@ -219,7 +225,10 @@ IotsaWifiMod::handlerNormalMode() {
   	nextConfigurationMode = TMPC_RESET;
 	nextConfigurationModeTimeout = millis() + rebootConfigTimeout*1000;
   }
-  if (anyChanged) configSave();
+  if (anyChanged) {
+	if (app.status) app.status->showStatus();
+	configSave();
+  }
   String message = "<html><head><title>WiFi configuration</title></head><body><h1>WiFi configuration</h1>";
   if (nextConfigurationMode == TMPC_CONFIG) {
   	message += "<p><em>Power-cycle device within " + String((nextConfigurationModeTimeout-millis())/1000) + " seconds to activate configuration mode for " + String(rebootConfigTimeout) + " seconds.</em></p>";

@@ -3,9 +3,9 @@
 #include "iotsa.h"
 #include <Adafruit_NeoPixel.h>
 
-class IotsaLedMod : public IotsaMod {
+class IotsaLedMod : public IotsaMod, public IotsaStatusInterface {
 public:
-  IotsaLedMod(IotsaApplication &_app, int pin, neoPixelType t=NEO_GRB + NEO_KHZ800);
+  IotsaLedMod(IotsaApplication &_app, int pin, neoPixelType t=NEO_GRB + NEO_KHZ800, IotsaAuthMod *_auth=NULL);
   void setup();
   void serverSetup();
   void loop();

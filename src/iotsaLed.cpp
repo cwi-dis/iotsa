@@ -7,18 +7,21 @@
 
 // Helper function: get color to show current status of module.
 uint32_t _getStatusColor() {
-  if (configurationMode || tempConfigurationMode == TMPC_CONFIG) return 0x3f003f;	// Pink: configuration mode
+  if (tempConfigurationMode == TMPC_RESET) return 0x3f0000; // Red: Factory reset mode
+  if (tempConfigurationMode == TMPC_CONFIG) return 0x3f003f;	// Pink: user-requested configuration mode
   if (tempConfigurationMode == TMPC_OTA) return 0x003f3f;	// Magenta: OTA mode
+  if (configurationMode) return 0x3f3f00; // Yellow: configuration mode (not user requested)
   if (!WiFi.isConnected()) return 0x3f1f00; // Orange: not connected to WiFi
-  return 0x3f3f3f; // White: all ok.
+  return 0; // Off: all ok.
 }
 
-IotsaLedMod::IotsaLedMod(IotsaApplication &_app, int pin, neoPixelType t)
-:	IotsaMod(_app),
+IotsaLedMod::IotsaLedMod(IotsaApplication &_app, int pin, neoPixelType t, IotsaAuthMod *_auth)
+:	IotsaMod(_app, _auth, true),
 	strip(1, pin, t),
 	rgb(0),
 	nextChangeTime(0)
 {
+	app.status = this;
 }
 
 void IotsaLedMod::setup() {
@@ -79,9 +82,11 @@ void IotsaLedMod::set(uint32_t _rgb, int _onDuration, int _offDuration, int _cou
 
 void IotsaLedMod::showStatus() {
   showingStatus = true;
-  onDuration = 10;
-  offDuration = 4990;
+  onDuration = 500;
+  offDuration = 500;
   isOn = false;
   remainingCount = 0x7fff;
   nextChangeTime = millis();
+  // Call loop here to update immedeately
+  loop();
 }
