@@ -242,6 +242,8 @@ Creates a backup of the complete SPIFFS filesystem (including `/data` and `/conf
 
 Allows showing static colors and repeating patterns on a NeoPixel LED. By default does not provide a web interface, only an API `set(rgb, onDuration, offDuration, count)` for use in your program. But see the _Led_ example for providing a web interface.
 
+The iotsaLed module also implements the `iotsaStatusInterface` protocol, and shows status information during the boot sequence and when the iotsa board is running in a nonstandard mode (configuration mode, OTA mode, etc).
+
 ### iotsaLogger.h
 
 Replaces the standard `Serial` object by an object that stores data in a memory buffer, and allows access to that memory buffer through the URL `/logger`. The buffer is tiny, 4Kb, but this allows some limited debugging over WiFi.
