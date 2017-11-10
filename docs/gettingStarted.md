@@ -25,6 +25,7 @@ If your iotsa board has the NeoPixel LED the board will communicate exception st
 - _Yellow (flashing)_: the board is in configuration mode (at address `192.168.4.1` on its private WiFi network) because it has not been configured yet or because its configured WiFi network is unavailable.
 - _Purple (flashing)_: the board is in configuration mode (at address `192.168.4.1` on its private WiFi network) because you asked it to go to configuration mode.
 - _Magenta (flashing)_: the board is in OTA-programming mode.
+- _Magenta_: the board is in OTA-programming mode and new software is being uploaded.
 - _Red_: the board is doing a factory reset.
 
 ## Programming
