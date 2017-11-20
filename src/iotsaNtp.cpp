@@ -1,9 +1,12 @@
 #include "iotsaNtp.h"
 #include "iotsaConfigFile.h"
 
+#ifdef WITH_TIMEZONE_LIBRARY
+#include <Timezone.h>
+#endif
+
 #define NTP_INTERVAL  600 // How often to ask for an NTP reading
 #define NTP_MIN_INTERVAL 20 // How often to ask if we have no NTP reading yet
-
 
 const unsigned int NTP_PORT = 123;
 
@@ -14,7 +17,15 @@ unsigned long IotsaNtpMod::utcTime()
 
 unsigned long IotsaNtpMod::localTime()
 {
+#ifdef WITH_TIMEZONE_LIBRARY
+  if (tz) {
+  	return tz->toLocal(utcTime());
+  } else {
+  	return utcTime();
+  }
+#else
   return utcTime() - minutesWestFromUtc*60;
+#endif
 }
 
 int IotsaNtpMod::localSeconds()
@@ -51,11 +62,19 @@ IotsaNtpMod::handler() {
     	ntpServer = server.arg(i);
     	anyChanged = true;
     }
+#ifdef WITH_TIMEZONE_LIBRARY
+	if (server.argName(i) == "tzDescription") {
+		if (needsAuthentication("ntp")) return;
+		parseTimezone(server.arg(i));
+		anyChanged = true;
+	}
+#else
     if( server.argName(i) == "minutesWest") {
     	if (needsAuthentication("ntp")) return;
     	minutesWestFromUtc = server.arg(i).toInt();
     	anyChanged = true;
     }
+#endif
     if (anyChanged) configSave();
   }
   String message = "<html><head><title>NTP Client Settings</title></head><body><h1>NTP Client Settings</h1>";
@@ -72,9 +91,17 @@ IotsaNtpMod::handler() {
   message += ".</p>";
   message += "<form method='get'>NTP server: <input name='ntpServer' value='";
   message += htmlEncode(ntpServer);
-  message += "'><br>Minutes west from UTC: <input name='minutesWest' value='";
+  message += "'><br>";
+#ifdef WITH_TIMEZONE_LIBRARY
+  message += "Timezone change information: <input name='tzDescription' value='";
+  message += htmlEncode(tzDescription);
+  message += "'><br>(format  twice <i>name,week(last=0),dow(sun=1),month,hour(utc),delta</i> for example <kbd>CEDT,0,1,3,1,120,CET,0,1,10,1,60</kbd>)<br>";
+#else
+  message += "Minutes west from UTC: <input name='minutesWest' value='";
   message += String(minutesWestFromUtc);
-  message += "'><br><input type='submit'></form>";
+  message += "'><br>";
+#endif
+  message += "<input type='submit'></form>";
   server.send(200, "text/html", message);
 }
 
@@ -96,14 +123,24 @@ void IotsaNtpMod::serverSetup() {
 void IotsaNtpMod::configLoad() {
   IotsaConfigFileLoad cf("/config/ntp.cfg");
   cf.get("ntpServer", ntpServer, "pool.ntp.org");
+#ifdef WITH_TIMEZONE_LIBRARY
+  String newTzdesc;
+  cf.get("tzDescription", newTzdesc, "0");
+  parseTimezone(newTzdesc);
+#else
   cf.get("minutesWest", minutesWestFromUtc, 0);
+#endif
  
 }
 
 void IotsaNtpMod::configSave() {
   IotsaConfigFileSave cf("/config/ntp.cfg");
   cf.put("ntpServer", ntpServer);
+#ifdef WITH_TIMEZONE_LIBRARY
+  cf.put("tzDescription", tzDescription);
+#else
   cf.put("minutesWest", minutesWestFromUtc);
+#endif
 }
 
 void IotsaNtpMod::loop() {
@@ -201,7 +238,90 @@ String IotsaNtpMod::info() {
   message += ":";
   message += String(localSeconds());
   message += ", timezone is ";
+#ifdef WITH_TIMEZONE_LIBRARY
+  message += tzDescription;
+  message += ". ";
+#else
   message += String(minutesWestFromUtc);
-  message += " minutes west of Greenwich. See <a href=\"/ntpconfig\">/ntpconfig</a> to change time configuration.</p>";
+  message += " minutes west of Greenwich. ";
+#endif
+  message += "See <a href=\"/ntpconfig\">/ntpconfig</a> to change time configuration.</p>";
   return message;
 }
+
+#ifdef WITH_TIMEZONE_LIBRARY
+void IotsaNtpMod::parseTimezone(const String& newDesc) {
+	TimeChangeRule dstRule, stdRule;
+	char descBuffer[80];
+	char *token;
+	
+	tzDescription = String();
+	if (tz) delete tz;
+	
+	// Special case: a single number means a constant timezone offset.
+	if (strchr(newDesc.c_str(), ',') == NULL) {
+		strncpy(dstRule.abbrev, newDesc.c_str(), 5); dstRule.abbrev[5] = '\0';
+		dstRule.week = 1;
+		dstRule.dow = 1;
+		dstRule.month = 1;
+		dstRule.hour = 0;
+		dstRule.offset = newDesc.toInt();
+		tzDescription = String(dstRule.offset);
+		tz = new Timezone(dstRule, dstRule);
+		return;
+	}
+	
+	// Normal case: 12 fields separated by commas.
+	strncpy(descBuffer, newDesc.c_str(), 80);
+	token = strtok(descBuffer, ",");
+	if (token == NULL) return;
+	strncpy(dstRule.abbrev, token, 5); dstRule.abbrev[5] = '\0';
+	
+	token = strtok(NULL, ",");
+	if (token == NULL) return;
+	dstRule.week = atoi(token);
+	
+	token = strtok(NULL, ",");
+	if (token == NULL) return;
+	dstRule.dow = atoi(token);
+	
+	token = strtok(NULL, ",");
+	if (token == NULL) return;
+	dstRule.month = atoi(token);
+	
+	token = strtok(NULL, ",");
+	if (token == NULL) return;
+	dstRule.hour = atoi(token);
+	
+	token = strtok(NULL, ",");
+	if (token == NULL) return;
+	dstRule.offset = atoi(token);
+	
+	token = strtok(NULL, ",");
+	if (token == NULL) return;
+	strncpy(stdRule.abbrev, token, 5); stdRule.abbrev[5] = '\0';
+	
+	token = strtok(NULL, ",");
+	if (token == NULL) return;
+	stdRule.week = atoi(token);
+	
+	token = strtok(NULL, ",");
+	if (token == NULL) return;
+	stdRule.dow = atoi(token);
+	
+	token = strtok(NULL, ",");
+	if (token == NULL) return;
+	stdRule.month = atoi(token);
+	
+	token = strtok(NULL, ",");
+	if (token == NULL) return;
+	stdRule.hour = atoi(token);
+	
+	token = strtok(NULL, ",");
+	if (token == NULL) return;
+	stdRule.offset = atoi(token);
+	
+	tzDescription = newDesc;
+	tz = new Timezone(dstRule, stdRule);
+}
+#endif // WITH_TIMEZONE_LIBRARY

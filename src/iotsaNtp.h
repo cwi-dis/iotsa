@@ -5,6 +5,15 @@
 
 const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
 
+//  For converting UTC to local time this module can use a fixed offset, but also the timezone
+// library from https://github.com/JChristensen/Timezone
+// Define WITH_TIMEZONE_LIBRARY to use the latter.
+#define WITH_TIMEZONE_LIBRARY
+
+#ifdef WITH_TIMEZONE_LIBRARY
+class Timezone;
+#endif
+
 class IotsaNtpMod : public IotsaMod {
 public:
   using IotsaMod::IotsaMod;
@@ -21,10 +30,16 @@ public:
   int localHours12();
   bool localIsPM();
 
- String ntpServer;
-  int minutesWestFromUtc;
+  String ntpServer;
   
 protected:
+#ifdef WITH_TIMEZONE_LIBRARY
+  Timezone *tz;
+  String tzDescription;
+  void parseTimezone(const String& newDesc);
+#else
+  int minutesWestFromUtc;
+#endif
   void configLoad();
   void configSave();
   void handler();
