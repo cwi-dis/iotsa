@@ -6,7 +6,7 @@
 #endif
 
 // Helper function: get color to show current status of module.
-uint32_t _getStatusColor() {
+static uint32_t _getStatusColor() {
   if (tempConfigurationMode == TMPC_RESET) return 0x3f0000; // Red: Factory reset mode
   if (tempConfigurationMode == TMPC_CONFIG) return 0x3f003f;	// Pink: user-requested configuration mode
   if (tempConfigurationMode == TMPC_OTA) return 0x003f3f;	// Magenta: OTA mode
