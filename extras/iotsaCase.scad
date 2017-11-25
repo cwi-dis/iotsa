@@ -15,7 +15,11 @@ numberOfMMRemoved = extraMMRemoved + (numberOfRowsRemoved*2.54);
 // How thick should the box walls be
 boxThickness = 1.5;
 // gap we want between board and box (on all sides, individually) and around connector
-leeWay = 0.3;   
+leeWay = 0.3;
+// Gap we want between box and lid
+lidLeeWay = 0.2;
+// How much space is needed between neoPixel retainer and right box edge
+neoPixelSpace = 1.4;
 // Height (above PCB) of tallest component
 iotsaComponentHeight = 14;
 // How far the soldering extends below the board.
@@ -119,17 +123,17 @@ module box() {
                     cube([innerXSize, 0.5*boxBackThickness+leeWay, 0.5*boxTopThickness]);
 
                 // front left retainer hole
-                translate([boxLeftThickness,-0.5*boxFrontThickness, outerZSize-boxTopThickness-retainerLength]) 
+                translate([boxLeftThickness+lidLeeWay,-0.5*boxFrontThickness, outerZSize-boxTopThickness-retainerLength]) 
                     cube([retainerWidth, 2*boxFrontThickness, retainerWidth]); 
                 // front right retainer hole
-                translate([outerXSize-boxRightThickness-retainerWidth, -0.5*boxFrontThickness, outerZSize-boxTopThickness-retainerLength]) 
+                translate([outerXSize-boxRightThickness-retainerWidth-2*lidLeeWay, -0.5*boxFrontThickness, outerZSize-boxTopThickness-retainerLength]) 
                     cube([retainerWidth, 2*boxFrontThickness, retainerWidth]); 
 
                 // back left retainer hole
-                translate([boxLeftThickness,innerYSize+boxFrontThickness-0.5*boxBackThickness, outerZSize-boxTopThickness-retainerLength]) 
+                translate([boxLeftThickness+lidLeeWay,innerYSize+boxFrontThickness-0.5*boxBackThickness, outerZSize-boxTopThickness-retainerLength]) 
                     cube([retainerWidth, 2*boxBackThickness, retainerWidth]); 
                 // back right retainer hole
-                translate([outerXSize-boxRightThickness-retainerWidth, innerYSize+boxFrontThickness-0.5*boxBackThickness, outerZSize-boxTopThickness-retainerLength]) 
+                translate([outerXSize-boxRightThickness-retainerWidth-2*lidLeeWay, innerYSize+boxFrontThickness-0.5*boxBackThickness, outerZSize-boxTopThickness-retainerLength]) 
                     cube([retainerWidth, 2*boxBackThickness, retainerWidth]); 
             }
             // The front support for the iotsa board
@@ -179,28 +183,31 @@ module box() {
 }
 
 module lid() {
-      translate([-esp12AntennaStickout-leeWay, -boxFrontThickness-leeWay, iotsaComponentHeight + leeWay])
+      translate([-esp12AntennaStickout-leeWay+lidLeeWay, -boxFrontThickness-leeWay, iotsaComponentHeight + leeWay])
         union() {
             // The lid itself
-            cube([innerXSize, innerYSize+boxFrontThickness, boxTopThickness]);
+            cube([innerXSize-2*lidLeeWay, innerYSize+boxFrontThickness-lidLeeWay, boxTopThickness]);
             // The left front retainer rod
-            translate([0, boxFrontThickness+leeWay, -retainerLength]) cube([retainerWidth, retainerWidth, retainerLength+boxTopThickness]);
-            translate([0.5*retainerWidth, 0.75*retainerWidth, -retainerLength+0.5*retainerWidth]) sphere(d=retainerWidth, $fn=12);
+            translate([0, boxFrontThickness+leeWay+lidLeeWay, -retainerLength]) cube([retainerWidth, retainerWidth, retainerLength+boxTopThickness]);
+            translate([0.5*retainerWidth, 0.75*retainerWidth+lidLeeWay, -retainerLength+0.5*retainerWidth]) sphere(d=retainerWidth, $fn=12);
 
             // The right front retainer rod
-            translate([innerXSize-retainerWidth, boxFrontThickness+leeWay, -retainerLength]) cube([retainerWidth, retainerWidth, retainerLength+boxTopThickness]);
+            translate([innerXSize-retainerWidth-2*lidLeeWay, boxFrontThickness+leeWay+lidLeeWay, -retainerLength]) cube([retainerWidth, retainerWidth, retainerLength+boxTopThickness]);
             translate([innerXSize-0.5*retainerWidth, 0.75*retainerWidth, -retainerLength+0.5*retainerWidth]) sphere(d=retainerWidth, $fn=12);
 
             // The left back retainer rod
-            translate([0, innerYSize+boxFrontThickness-retainerWidth-leeWay, -retainerLength]) cube([retainerWidth, retainerWidth, retainerLength+boxTopThickness]);
+            translate([0, innerYSize+boxFrontThickness-retainerWidth-leeWay-lidLeeWay, -retainerLength]) cube([retainerWidth, retainerWidth, retainerLength+boxTopThickness]);
             translate([0.5*retainerWidth, innerYSize+boxFrontThickness-0.25*retainerWidth, -retainerLength+0.5*retainerWidth]) sphere(d=retainerWidth, $fn=12);
 
             // The right back retainer rod
-            translate([innerXSize-retainerWidth, innerYSize+boxFrontThickness-retainerWidth-leeWay, -retainerLength]) cube([retainerWidth, retainerWidth, retainerLength+boxTopThickness]);
+            translate([innerXSize-retainerWidth-2*lidLeeWay, innerYSize+boxFrontThickness-retainerWidth-leeWay-lidLeeWay, -retainerLength]) cube([retainerWidth, retainerWidth, retainerLength+boxTopThickness]);
             translate([innerXSize-0.5*retainerWidth, innerYSize+boxFrontThickness-0.25*retainerWidth, -retainerLength+0.5*retainerWidth]) sphere(d=retainerWidth, $fn=12);
             
             // The board locking rod
-            translate([36-retainerWidth, innerYSize+boxFrontThickness-retainerWidth-leeWay, -iotsaComponentHeight]) cube([2*retainerWidth, retainerWidth, iotsaComponentHeight+boxTopThickness]);
+            translate([36-retainerWidth, innerYSize+boxFrontThickness-retainerWidth-leeWay, -iotsaComponentHeight+leeWay]) cube([2*retainerWidth, retainerWidth, iotsaComponentHeight+boxTopThickness-leeWay]);
+            
+            // The neoPixel locking rod
+            translate([innerXSize-retainerWidth-neoPixelSpace, boxFrontThickness+18-retainerWidth, -iotsaComponentHeight+leeWay+1]) cube([retainerWidth, 4*retainerWidth, iotsaComponentHeight+boxTopThickness-leeWay-1]);
         }
 }
 
