@@ -13,15 +13,12 @@ void
 IotsaApplication::addMod(IotsaMod *mod) {
   mod->nextModule = firstModule;
   firstModule = mod;
-  mod->server = server;
 }
 
 void
 IotsaApplication::addModEarly(IotsaMod *mod) {
   mod->nextModule = firstEarlyModule;
   firstEarlyModule = mod;
-  mod->server = server;
-  
 }
 
 void

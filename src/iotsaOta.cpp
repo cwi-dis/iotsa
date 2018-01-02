@@ -2,14 +2,14 @@
 #include <ArduinoOTA.h>
 
 #ifdef ESP32
-#define WDT_FEED()
+#define optFeedWatchdog()
 #else
-#define WDT_FEED() ESP.wdtFeed()
+#define optFeedWatchdog() ESP.wdtFeed()
 #endif
 
 void otaOnStart() {
   IFDEBUG IotsaSerial.println("ota: download started");
-  WDT_FEED();
+  optFeedWatchdog();
 }
 
 void otaOnProgress(unsigned int progress, unsigned int total) {
@@ -19,17 +19,17 @@ void otaOnProgress(unsigned int progress, unsigned int total) {
   if (millis() > tempConfigurationModeTimeout - 1000*CONFIGURATION_MODE_TIMEOUT) {
 	  tempConfigurationModeTimeout = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
   }
-  WDT_FEED();
+  optFeedWatchdog();
 }
 
 void otaOnEnd() {
   IFDEBUG IotsaSerial.println("ota: download finished");
-  WDT_FEED();
+  optFeedWatchdog();
 }
 
 void otaOnError(int error) {
   IFDEBUG { IotsaSerial.print("ota: error: "); IotsaSerial.println(error); }
-  WDT_FEED();
+  optFeedWatchdog();
 }
 
 void IotsaOtaMod::setup() {

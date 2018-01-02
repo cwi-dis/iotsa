@@ -10,7 +10,6 @@
 #include "iotsa.h"
 #include "iotsaWifi.h"
 #include "iotsaSimpleIO.h"
-#include <esp_wifi.h>
 
 // CHANGE: Add application includes and declarations here
 
