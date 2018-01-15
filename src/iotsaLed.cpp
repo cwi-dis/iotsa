@@ -7,11 +7,11 @@
 
 // Helper function: get color to show current status of module.
 static uint32_t _getStatusColor() {
-  if (tempConfigurationMode == TMPC_RESET) return 0x3f0000; // Red: Factory reset mode
-  if (tempConfigurationMode == TMPC_CONFIG) return 0x3f003f;	// Pink: user-requested configuration mode
-  if (tempConfigurationMode == TMPC_OTA) return 0x003f3f;	// Magenta: OTA mode
-  if (configurationMode) return 0x3f3f00; // Yellow: configuration mode (not user requested)
   if (!WiFi.isConnected()) return 0x3f1f00; // Orange: not connected to WiFi
+  if (tempConfigurationMode == TMPC_RESET) return 0x3f0000; // Red: Factory reset mode
+  if (tempConfigurationMode == TMPC_CONFIG) return 0x3f003f;	// Magenta: user-requested configuration mode
+  if (tempConfigurationMode == TMPC_OTA) return 0x003f3f;	// Cyan: OTA mode
+  if (configurationMode) return 0x3f3f00; // Yellow: configuration mode (not user requested)
   return 0; // Off: all ok.
 }
 
