@@ -29,19 +29,25 @@ IotsaUserMod::handler() {
   bool anyChanged = false;
   String pwold, pw1, pw2;
   bool passwordChanged = false;
+  bool oldPasswordCorrect = false;
+  bool newPasswordsMatch = false;
+  String newUsername;
   
   for (uint8_t i=0; i<server.args(); i++){
     if( server.argName(i) == "username") {
-    	String un = server.arg(i);
-    	if (un != username) {
+    	newUsername = server.arg(i);
+    	if (newUsername == username) {
+    		newUsername = "";
+    		anyChanged = false;
+    	} else {
 			if (needsAuthentication("users")) return;
-			username = un;
 	    	anyChanged = true;
 		}
     }
     if( server.argName(i) == "old") {
     	// password authentication is checked later.
     	pwold = server.arg(i);
+    	oldPasswordCorrect = pwold == password;
     }
     if( server.argName(i) == "password") {
     	// password authentication is checked later.
@@ -54,21 +60,30 @@ IotsaUserMod::handler() {
     }
   }
   if (passwordChanged) {
-  	if (pwold != password || pw1 != pw2) {
-  		// Old password incorrect or passwords don't match
-  		anyChanged = false;
-  	} else {
-		password = pw1;
-		anyChanged = true;
-	}
+	  newPasswordsMatch = pw1 == pw2;
+	  if (newPasswordsMatch && oldPasswordCorrect) {
+	  	password = pw1;
+	  	anyChanged = true;
+	  } else {
+	  	anyChanged = false;
+	  }
+  }
+  if (anyChanged && newUsername != "") {
+  	username = newUsername;
   }
   if (anyChanged) configSave();
+  
   String message = "<html><head><title>Edit users and passwords</title></head><body><h1>Edit users and passwords</h1>";
-  if (passwordChanged && !anyChanged) {
-  	message += "<p><em>Passwords do not match, not changed.</em></p>";
-  } else if (passwordChanged) {
+  if (anyChanged && newUsername != "") {
+  	message += "<p><em>Username changed.</e,></p>";
+  }
+  if (passwordChanged && anyChanged) {
   	message += "<p><em>Password has been changed.</em></p>";
-}
+  } else if (passwordChanged && !oldPasswordCorrect) {
+  	message += "<p><em>Old password incorrect.</em></p>";
+  } else if (passwordChanged && !newPasswordsMatch) {
+  	message += "<p><em>Passwords do not match, not changed.</em></p>";
+  }
   	
   message += "<form method='get'>Username: <input name='username' value='";
   message += htmlEncode(username);
@@ -104,12 +119,20 @@ void IotsaUserMod::configLoad() {
   IotsaConfigFileLoad cf("/config/users.cfg");
   cf.get("user0", username, username);
   cf.get("password0", password, password);
+  IotsaSerial.print("Loaded users.cfg. Username=");
+  IotsaSerial.print(username);
+  IotsaSerial.print(", password length=");
+  IotsaSerial.println(password.length());
 }
 
 void IotsaUserMod::configSave() {
   IotsaConfigFileSave cf("/config/users.cfg");
   cf.put("user0", username);
   cf.put("password0", password);
+  IotsaSerial.print("Saved users.cfg. Username=");
+  IotsaSerial.print(username);
+  IotsaSerial.print(", password length=");
+  IotsaSerial.println(password.length());
 }
 
 void IotsaUserMod::loop() {
@@ -119,12 +142,12 @@ String IotsaUserMod::info() {
   String message = "<p>Usernames/passwords enabled.";
   message += " See <a href=\"/users\">/users</a> to change.";
   if (configurationMode && password == "") {
-  	message += "<br>Username and password are the defaults: ";
+  	message += "<br>Username and password are the defaults: '";
   	message += htmlEncode(username);
-  	message += "and ";
+  	message += "' and '";
   	String &dfp = defaultPassword();
   	message += dfp;
-  	message += ".";
+  	message += "'.";
   }
   message += "</p>";
   return message;
@@ -140,7 +163,10 @@ bool IotsaUserMod::needsAuthentication(const char *right) {
 	  && !server.authenticate("admin1", "admin1")
 #endif
   	) {
-  	server.requestAuthentication();
+  	server.sendHeader("WWW-Authenticate", "Basic realm=\"Login Required\"");
+  	server.send(401, "text/plain", "401 Unauthorized\n");
+  	IotsaSerial.print("Return 401 Unauthorized for right=");
+  	IotsaSerial.println(right);
   	return true;
   }
   return false;
