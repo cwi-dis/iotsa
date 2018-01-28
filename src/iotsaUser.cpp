@@ -88,16 +88,17 @@ IotsaUserMod::handler() {
   message += "<form method='get'>Username: <input name='username' value='";
   message += htmlEncode(username);
   message += "'>";
-  if (password != "") {
-  	message += "<br>Old Password: <input type='password' name='old' value=''";
-  	message += "empty1";
-  	message += "'>";
-  } else if (configurationMode == TMPC_CONFIG) {
-  	message += "<br>Password not set, default is '";
-  	message += defaultPassword();
-  	message += "'.";
-  } else {
-  	message += "<br>Password not set, reboot in configuration mode to see default password.";
+  message += "<br>Old Password: <input type='password' name='old' value=''";
+  message += "empty1";
+  message += "'>";
+  if (password == "") {
+	if (configurationMode == TMPC_CONFIG) {
+	  message += "<br><i>(Password not set, default is '";
+	  message += defaultPassword();
+	  message += "')</i>";
+	} else {
+	  message += "<br><i>(Password not set, reboot in configuration mode to see default password)</i>)";
+	}
   }
   message += "<br>New Password: <input type='password' name='password' value='";
   message += "empty2";
