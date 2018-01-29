@@ -1,14 +1,15 @@
 {
     "name" : "iotsa",
+    "version" : "1.1.0",
     "description" : "Library/application framework that allows easy creation of web servers and REST servers. Optional modules provide access control, clock synchronisation, over-the-air programming, static document storage and retrieval and more. Add your own modules to access hardware.",
+    "keywords" : "web, http, rest, wifi",
     "authors" : {
         "name" : "Jack Jansen",
         "email" : "Jack.Jansen@cwi.nl"
     },
     "repository" : {
         "type" : "git",
-        "url" : "https://github.com/cwi-dis/iotsa.git",
-        "branch" : "exp-platformio"
+        "url" : "https://github.com/cwi-dis/iotsa.git"
     },
     "frameworks" : "Arduino",
     "platforms" : [ "espressif8266"],
@@ -18,6 +19,6 @@
         "Timezone" : ">=1.1.1"
     },
     "examples" : [
-        "[Ex]xamples/*/*.ino"
+        "[Ee]xamples/*/*.ino"
     ]
 }
