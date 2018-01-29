@@ -3,16 +3,25 @@
 This library contains a framework to easily create esp8266-based web servers that can interface to all sorts of sensors and actuators. At the moment the servers can be partially REST-compatible, more support for this will be added later, including
 seamless integration with the [Igor home automation server](https://github.com/cwi-dis/igor). 
 
-PCB design for a small board with an ESP-12 and room for additional hardware is included, see the _hardware_ section below. A 3D-printable case (which can be customized to the size you need, and with extra holes for wires or switches or LEDs or whatever) is included too. In case you already have the hardware: there is a [Getting Started with Iotsa](docs/gettingStarted.md) guide available too.
 
 Home page is <https://github.com/cwi-dis/iotsa>. 
 This software is licensed under the [MIT license](LICENSE.txt) by the CWI DIS group, <http://www.dis.cwi.nl>.
 
 ## Installation and use
 
+Iotsa can be used with both the Arduino IDE and with the PlatformIO build system (which can be used from within Atom or VSCode or from the command line). The Arduino IDE is easiest to get started with, but PlatformIO is more powerful if you want to target multiple device types, use _Git_ integration, etc.
+
+### Arduino IDE
+
 Download the zipfile (via <https://github.com/cwi-dis/iotsa>) and install into Arduino IDE with _Sketch_ -> _Include Library_ -> _Add .ZIP Library..._ . (If you downloaded the zipfile through github you may have to rename the directory because it may be called something like _iotsa___master_).
 
 Build the _Hello_ example and flash it onto an ESP-12 or similar board.
+
+### PlatformIO
+
+The _iotsa_ library should be known to the library manager, so simply adding it to your _platformio.ini_ file should do the trick. PlatformIO integration of iotsa is more recent than Arduino IDE use, so please report issues if you find them.
+
+### Both Arduino IDE and PlatformIO
 
 On reboot, the board will first initialize the SPIFFS flash filesystem (if needed) and then create a WiFi network with a name similar to _config-iotsa1234_. Connect a device to that network and visit <http://192.168.4.1>. Configure your device name, WiFi name and password, and after reboot the iotsa board should connect to your network and be visible as <http://yourdevicename.local>.
 
@@ -20,26 +29,32 @@ When the device is running normally you can visit <http://yourdevicename.local/w
 
 If you have enabled over-the-air programming <http://yourdevicename.local/wificonfig> will also allow you to request the device to go into programmable mode. Again, you have two minutes to power cycle and then two minutes to reprogram:
 
-* In _Tools_ -> _Port_ -> _Network Port_ select your device.
-	* Sometimes ota-programmable devices are slow to appear because of mDNS issues. On a Mac, run the following command in a _Terminal_ window to speed up discovery:
-	
-	```
-	dns-sd -B _services._dns-sd._udp.
-	```
-	
-	or, on Linux,
-	
-	```
-	avahi-browse _services._dns-sd._udp
-	```
-	
-	or, on either, use the convenience script
-	
-	```
-	[...]/iotsa/extras/refreshOTA.sh
-	```
-	
-* Use the normal _Upload_ command to flash your new program.
+- _For Arduino IDE_: 
+  - In _Tools_ -> _Port_ -> _Network Port_ select your device.
+    - Sometimes ota-programmable devices are slow to appear because of mDNS issues. On a Mac, run the following command in a _Terminal_ window to speed up discovery:
+
+      ```
+      dns-sd -B _services._dns-sd._udp.
+      ```
+
+      or, on Linux,
+
+      ```
+      avahi-browse _services._dns-sd._udp
+      ```
+
+      or, on either, use the convenience script
+
+      ```
+      [...]/iotsa/extras/refreshOTA.sh
+      ```
+  - Use the normal _Upload_ command to flash your new program.
+- _For PlatformIO_: 
+  - Visit <http://yourdevicename.local> and note the IP address.
+  - Upload with the following command (possibly replacing _yourdevicename.local_ with the IP address):
+  ```
+  pio run -t upload --upload-port yourdevicename.local
+  ```
 
 ## General design philosophy
 

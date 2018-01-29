@@ -22,7 +22,9 @@ After filling in the details press _Submit_ and the device will reboot. It shoul
 If your iotsa board has the NeoPixel LED the board will communicate exception status conditions (during normal operation the LED will be off, unless programmed differently). The following patterns have the following meaning:
 
 - _Orange_: the board is trying to connect to the configured WiFi network.
-- _Yellow (flashing)_: the board is in configuration mode (at address `192.168.4.1` on its private WiFi network) because it has not been configured yet or because its configured WiFi network is unavailable.
+- _Yellow (flashing)_: the board is in configuration mode (at address `192.168.4.1` on its private WiFi network) because it has not been configured yet or because its configured WiFi network is unavailable.* Use the normal _Upload_ command to flash your new program.
+* Use the normal _Upload_ command to flash your new program.
+
 - _Magenta (flashing)_: the board is in configuration mode (at address `192.168.4.1` on its private WiFi network) because you asked it to go to configuration mode.
 - _Cyan (flashing)_: the board is in OTA-programming mode.
 - _Cyan_: the board is in OTA-programming mode and new software is being uploaded.
@@ -36,6 +38,8 @@ To do fun things with the iotsa board you will need to do some programming, and 
 * You need to install the [iotsa library](https://github.com/cwi-dis/iotsa), <https://github.com/cwi-dis/iotsa>.
 * You may want to install some additional libraries and/or disable them:
 	* Check `iotsa/iotsaNtp.h` to enable or disable timezone support using `WITH_TIMEZONE_LIBRARY`. If enabled, you need to install <https://github.com/JChristensen/Timezone> and <http://playground.arduino.cc/code/time>.
+
+> It is also possible to use _PlatformIO_ in stead of the _Arduino IDE_ to program your iotsa board. View the [readme file](../readme.md) for details.
 
 After you have installed all this, in the Arduino IDE you use the menu to select your board: _Tools_ -> _Board_ -> _ESP8266 Modules_ ->  _ESP-12E_, which corresponds to the hardware on your iotsa.
 
