@@ -14,12 +14,8 @@
 #include <ESP.h>
 #include "iotsa.h"
 #include "iotsaWifi.h"
-#include <DHT.h>
 
 // CHANGE: Add application includes and declarations here
-
-#define DHT_PIN 13
-#define DHT_TYPE DHT21
 
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 
