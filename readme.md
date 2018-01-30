@@ -15,17 +15,27 @@ Iotsa can be used with both the Arduino IDE and with the PlatformIO build system
 
 Download the zipfile (via <https://github.com/cwi-dis/iotsa>) and install into Arduino IDE with _Sketch_ -> _Include Library_ -> _Add .ZIP Library..._ . (If you downloaded the zipfile through github you may have to rename the directory because it may be called something like _iotsa___master_).
 
-Build the _Hello_ example and flash it onto an ESP-12 or similar board.
+Build the _Hello_ example (_File -> Examples -> iotsa -> Hello_) and flash it onto an ESP-12 or similar board.
 
 ### PlatformIO
 
 The _iotsa_ library should be known to the library manager, so simply adding it to your _platformio.ini_ file should do the trick. PlatformIO integration of iotsa is more recent than Arduino IDE use, so please report issues if you find them.
+
+For platformIO each example in the _examples_ folder has its own _platform.ini_ file to build it. Open `iotsa/examples/Hello` in _VSCode_ or _Atom_ and build it, or use the command line:
+
+```
+$ cd iotsa/examples/Hello
+$ platformio run --target build
+$ platformio run --target upload
+```
 
 ### Both Arduino IDE and PlatformIO
 
 On reboot, the board will first initialize the SPIFFS flash filesystem (if needed) and then create a WiFi network with a name similar to _config-iotsa1234_. Connect a device to that network and visit <http://192.168.4.1>. Configure your device name, WiFi name and password, and after reboot the iotsa board should connect to your network and be visible as <http://yourdevicename.local>.
 
 When the device is running normally you can visit <http://yourdevicename.local/wificonfig> and request the device to go back into configuration mode, or to do a factory reset. After requesting this you have 2 minutes to power cycle the device to make it go into configuration mode again (see previous paragraph) or do a complete factory reset. When in configuration mode you have two minutes to change the configuration (device name, WiFi name, password) before the device reverts to normal operation. The idea behind this sequence (_request configuration mode_, then _power cycle_, then _change parameters_) is that you need both network acccess and physical access before you can do a disruptive operation on the device.
+
+### OTA programming
 
 If you have enabled over-the-air programming <http://yourdevicename.local/wificonfig> will also allow you to request the device to go into programmable mode. Again, you have two minutes to power cycle and then two minutes to reprogram:
 
@@ -51,9 +61,10 @@ If you have enabled over-the-air programming <http://yourdevicename.local/wifico
   - Use the normal _Upload_ command to flash your new program.
 - _For PlatformIO_: 
   - Visit <http://yourdevicename.local> and note the IP address.
-  - Upload with the following command (possibly replacing _yourdevicename.local_ with the IP address):
+  - Edit `platform.ini` and add the `upload_port` setting with the correct host name or IP address,
+  - or upload with the following command line:
   ```
-  pio run -t upload --upload-port yourdevicename.local
+  platformio run -t upload --upload-port yourdevicename.local
   ```
 
 ## General design philosophy
