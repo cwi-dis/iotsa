@@ -19,7 +19,7 @@ typedef ESP8266WebServer IotsaWebServer;
 extern Print *iotsaOverrideSerial;
 #define IotsaSerial (*iotsaOverrideSerial)
 
-class IotsaMod;
+class IotsaBaseMod;
 
 //
 // Status indication interface.
@@ -30,7 +30,7 @@ public:
 };
 
 class IotsaApplication {
-friend class IotsaMod;
+friend class IotsaBaseMod;
 public:
   IotsaApplication(IotsaWebServer &_server, const char *_title)
   : status(NULL),
@@ -40,8 +40,8 @@ public:
     title(_title),
     haveOTA(false)
     {}
-  void addMod(IotsaMod *mod);
-  void addModEarly(IotsaMod *mod);
+  void addMod(IotsaBaseMod *mod);
+  void addModEarly(IotsaBaseMod *mod);
   void setup();
   void serverSetup();
   void loop();
@@ -54,18 +54,18 @@ protected:
   void webServerNotFoundHandler();
   void webServerRootHandler();
   IotsaWebServer &server;
-  IotsaMod *firstModule;
-  IotsaMod *firstEarlyModule;
+  IotsaBaseMod *firstModule;
+  IotsaBaseMod *firstEarlyModule;
   String title;
   bool haveOTA;
 };
 
 class IotsaAuthMod;
 
-class IotsaMod {
+class IotsaBaseMod {
 friend class IotsaApplication;
 public:
-  IotsaMod(IotsaApplication &_app, IotsaAuthMod *_auth=NULL, bool early=false)
+  IotsaBaseMod(IotsaApplication &_app, IotsaAuthMod *_auth=NULL, bool early=false)
   : app(_app), 
   	server(_app.server), 
   	auth(_auth), 
@@ -78,18 +78,29 @@ public:
     }
   }
   virtual void setup() = 0;
-  virtual void serverSetup() = 0;
   virtual void loop() = 0;
-  virtual String info() = 0;
-
-  static String htmlEncode(String data); // Helper - convert strings to HTML-safe representation
-
+  virtual String info();
+  virtual void serverSetup();
 protected:
   bool needsAuthentication(const char *right=NULL);
   IotsaApplication &app;
   IotsaWebServer &server;
   IotsaAuthMod *auth;
-  IotsaMod *nextModule;
+  IotsaBaseMod *nextModule;
+};
+
+class IotsaMod : public IotsaBaseMod {
+public:
+  IotsaMod(IotsaApplication &_app, IotsaAuthMod *_auth=NULL, bool early=false)
+  : IotsaBaseMod(_app, _auth, early)
+  {
+  }
+  virtual String info() = 0;
+  virtual void serverSetup() = 0;
+
+  static String htmlEncode(String data); // Helper - convert strings to HTML-safe representation
+
+protected:
 };
 
 class IotsaAuthMod : public IotsaMod {
@@ -98,7 +109,7 @@ public:
   virtual bool needsAuthentication(const char *right=NULL);
 };
 
-inline bool IotsaMod::needsAuthentication(const char *right) { return auth ? auth->needsAuthentication(right) : false; }
+inline bool IotsaBaseMod::needsAuthentication(const char *right) { return auth ? auth->needsAuthentication(right) : false; }
 
 extern bool configurationMode;        // True if we have no config, and go into AP mode
 typedef enum { TMPC_NORMAL, TMPC_CONFIG, TMPC_OTA, TMPC_RESET } config_mode;

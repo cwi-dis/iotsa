@@ -10,13 +10,13 @@
 Print *iotsaOverrideSerial = &Serial;
 
 void
-IotsaApplication::addMod(IotsaMod *mod) {
+IotsaApplication::addMod(IotsaBaseMod *mod) {
   mod->nextModule = firstModule;
   firstModule = mod;
 }
 
 void
-IotsaApplication::addModEarly(IotsaMod *mod) {
+IotsaApplication::addModEarly(IotsaBaseMod *mod) {
   mod->nextModule = firstEarlyModule;
   firstEarlyModule = mod;
 }
@@ -48,7 +48,7 @@ IotsaApplication::setup() {
   } else {
     IFDEBUG IotsaSerial.println("SPIFFS mounted");
   }
-  IotsaMod *m;
+  IotsaBaseMod *m;
   for (m=firstEarlyModule; m; m=m->nextModule) {
   	m->setup();
   }
@@ -59,7 +59,7 @@ IotsaApplication::setup() {
 
 void
 IotsaApplication::serverSetup() {
-  IotsaMod *m;
+  IotsaBaseMod *m;
 
   for (m=firstEarlyModule; m; m=m->nextModule) {
   	m->serverSetup();
@@ -76,7 +76,7 @@ IotsaApplication::serverSetup() {
 
 void
 IotsaApplication::loop() {
-  IotsaMod *m;
+  IotsaBaseMod *m;
   for (m=firstEarlyModule; m; m=m->nextModule) {
   	m->loop();
   }
@@ -111,7 +111,7 @@ IotsaApplication::webServerNotFoundHandler() {
 void
 IotsaApplication::webServerRootHandler() {
   String message = "<html><head><title>" + title + "</title></head><body><h1>" + title + "</h1>";
-  IotsaMod *m;
+  IotsaBaseMod *m;
   for (m=firstModule; m; m=m->nextModule) {
     message += m->info();
   }
@@ -127,6 +127,14 @@ IotsaApplication::webServerLoop() {
   server.handleClient();
 }
 
+String IotsaBaseMod::info() {
+  // Info method that does nothing, usually overridden for IotsaMod modules
+  return "";
+}
+
+void IotsaBaseMod::serverSetup() {
+  // setup method that does nothing, usually overridden for IotsaMod modules
+}
 
 String IotsaMod::htmlEncode(String data) {
   const char *p = data.c_str();
