@@ -40,7 +40,7 @@ public:
 	void serverSetup();
 	void loop();
   String info();
-  bool getHandler(const JsonVariant& request, JsonObject& reply);
+  bool getHandler(JsonObject& reply);
   bool putHandler(const JsonVariant& request, JsonObject& reply);
 private:
   void handler();
@@ -69,18 +69,24 @@ IotsaHelloMod::handler() {
   server.send(200, "text/html", message);
 }
 
-bool IotsaHelloMod::getHandler(const JsonVariant& request, JsonObject& reply) {
-  return false;
+bool IotsaHelloMod::getHandler(JsonObject& reply) {
+  reply["greeting"] = greeting;
+  return true;
 }
 
 bool IotsaHelloMod::putHandler(const JsonVariant& request, JsonObject& reply) {
+  JsonVariant arg = request["greeting"];
+  if (arg.is<char*>()) {
+    greeting = arg.as<String>();
+    return true;
+  }
   return false;
 }
 
 void IotsaHelloMod::serverSetup() {
   // Setup the web server hooks for this module.
   server.on("/hello", std::bind(&IotsaHelloMod::handler, this));
-  apiSetup("/api/hello", get=true, put=true);
+  apiSetup("/api/hello", true, true);
 }
 
 String IotsaHelloMod::info() {

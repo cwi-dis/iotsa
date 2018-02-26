@@ -3,12 +3,12 @@
 #include "iotsa.h"
 #include <ArduinoJson.h>
 
-class IotsaApiMod : public IotsaBaseMod {
+class IotsaApiMod : public IotsaMod {
 public:
   using IotsaMod::IotsaMod;
 protected:
-  void apiSetup(String path, bool get=false, bool put=false, bool post=false, bool delete=false);
-  virtual bool getHandler(const JsonVariant& request, JsonObject& reply) { return false; }
+  void apiSetup(String path, bool get=false, bool put=false, bool post=false);
+  virtual bool getHandler(JsonObject& reply) { return false; }
   virtual bool putHandler(const JsonVariant& request, JsonObject& reply) { return false; }
   virtual bool postHandler(const JsonVariant& request, JsonObject& reply) { return false; }
 private:
