@@ -1,6 +1,7 @@
 #ifndef _IOTSANTP_H_
 #define _IOTSANTP_H_
 #include "iotsa.h"
+#include "iotsaApi.h"
 #include <WiFiUdp.h>
 
 const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
@@ -14,7 +15,7 @@ const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of th
 class Timezone;
 #endif
 
-class IotsaNtpMod : public IotsaMod {
+class IotsaNtpMod : public IotsaApiMod {
 public:
   using IotsaMod::IotsaMod;
   void setup();
@@ -33,6 +34,8 @@ public:
   String ntpServer;
   
 protected:
+  bool getHandler(const char *path, JsonObject& reply);
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
 #ifdef WITH_TIMEZONE_LIBRARY
   Timezone *tz;
   String tzDescription;

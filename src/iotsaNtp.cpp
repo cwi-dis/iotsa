@@ -116,8 +116,44 @@ void IotsaNtpMod::setup() {
   configLoad();
 }
 
+
+bool IotsaNtpMod::getHandler(const char *path, JsonObject& reply) {
+  reply["ntpServer"] = ntpServer;
+#ifdef WITH_TIMEZONE_LIBRARY
+  reply["tzDescription"] = tzDescription;
+  long _minutesWest = utcTime() - localTime();
+  reply["minutesWest"] = _minutesWest;
+#else
+  reply["minutesWest"] = minutesWest;
+#endif
+  return true;
+}
+
+bool IotsaNtpMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+  bool anyChanged = false;
+  JsonObject& reqObj = request.as<JsonObject>();
+  if (reqObj.containsKey("ntpServer")) {
+    ntpServer = reqObj.get<String>("ntpServer");
+    anyChanged = true;
+  }
+#ifdef WITH_TIMEZONE_LIBRARY
+  if (reqObj.containsKey("tzDescription")) {
+    ntpServer = reqObj.get<String>("tzDescription");
+    anyChanged = true;
+  }
+#else
+  if (reqObj.containsKey("minutesWest")) {
+    ntpServer = reqObj.get<int>("minutesWest");
+    anyChanged = true;
+  }
+#endif
+  if (anyChanged) configSave();
+  return anyChanged;
+}
+
 void IotsaNtpMod::serverSetup() {
   server.on("/ntpconfig", std::bind(&IotsaNtpMod::handler, this));
+  apiSetup("/api/ntpconfig", true, true);
 }
 
 void IotsaNtpMod::configLoad() {
