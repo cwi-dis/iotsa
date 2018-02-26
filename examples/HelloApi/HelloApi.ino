@@ -40,8 +40,8 @@ public:
 	void serverSetup();
 	void loop();
   String info();
-  bool getHandler(JsonObject& reply);
-  bool putHandler(const JsonVariant& request, JsonObject& reply);
+  bool getHandler(const char *path, JsonObject& reply);
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
 private:
   void handler();
 };
@@ -69,12 +69,12 @@ IotsaHelloMod::handler() {
   server.send(200, "text/html", message);
 }
 
-bool IotsaHelloMod::getHandler(JsonObject& reply) {
+bool IotsaHelloMod::getHandler(const char *path, JsonObject& reply) {
   reply["greeting"] = greeting;
   return true;
 }
 
-bool IotsaHelloMod::putHandler(const JsonVariant& request, JsonObject& reply) {
+bool IotsaHelloMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   JsonVariant arg = request["greeting"];
   if (arg.is<char*>()) {
     greeting = arg.as<String>();
