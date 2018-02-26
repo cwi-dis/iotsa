@@ -247,6 +247,53 @@ IotsaWifiMod::handlerNormalMode() {
   server.send(200, "text/html", message);
 }
 
+bool IotsaWifiMod::getHandler(const char *path, JsonObject& reply) {
+  reply["hostName"] = hostName;
+  reply["rebootTimeout"] = rebootConfigTimeout;
+  if (configurationMode) {
+    reply["ssid"] = ssid;
+    reply["ssidPassword"] = ssidPassword;
+  } else {
+    if (nextConfigurationMode) {
+      reply["requestedMode"] = nextConfigurationMode;
+      reply["timeout"] = (nextConfigurationModeTimeout - millis())/1000;
+    }
+  }
+  return true;
+}
+
+bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+  bool anyChanged = false;
+  JsonObject& reqObj = request.as<JsonObject>();
+  if (configurationMode) {
+    if (reqObj.containsKey("ssid")) {
+      ssid = reqObj.get<String>("ssid");
+      anyChanged = true;
+    }
+    if (reqObj.containsKey("ssidPassword")) {
+      ssid = reqObj.get<String>("ssidPassword");
+      anyChanged = true;
+    }
+    if (reqObj.containsKey("hostName")) {
+      ssid = reqObj.get<String>("hostName");
+      anyChanged = true;
+    }
+    if (reqObj.containsKey("rebootTimeout")) {
+      ssid = reqObj.get<int>("rebootTimeout");
+      anyChanged = true;
+    }
+  } else {
+    if (reqObj.containsKey("requestedMode")) {
+      nextConfigurationMode = config_mode(reqObj.get<int>("requestedMode"));
+      anyChanged = nextConfigurationMode != config_mode(0);
+      if (anyChanged)
+        nextConfigurationModeTimeout = millis() + rebootConfigTimeout*1000;
+    }
+  }
+  if (anyChanged) configSave();
+  return anyChanged;
+}
+
 void IotsaWifiMod::serverSetup() {
 //  server.on("/hello", std::bind(&IotsaWifiMod::handler, this));
   if (configurationMode) {
@@ -254,6 +301,7 @@ void IotsaWifiMod::serverSetup() {
   } else {
     server.on("/wificonfig", std::bind(&IotsaWifiMod::handlerNormalMode, this));
   }
+  apiSetup("/api/wificonfig", true, true);
 }
 
 String IotsaWifiMod::info() {
