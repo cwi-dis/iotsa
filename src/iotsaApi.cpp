@@ -7,6 +7,7 @@ void IotsaApiMod::apiSetup(const char* path, bool get, bool put, bool post) {
 }
 
 void IotsaApiMod::_getHandlerWrapper(const char *path) {
+    if (needsAuthentication(path, "get")) return;
     IFDEBUG IotsaSerial.print("GET api ");
     IFDEBUG IotsaSerial.println(path);
     DynamicJsonBuffer replyBuffer;
@@ -24,6 +25,7 @@ void IotsaApiMod::_getHandlerWrapper(const char *path) {
 }
 
 void IotsaApiMod::_putHandlerWrapper(const char *path) {
+    if (needsAuthentication(path, "put")) return;
     IFDEBUG IotsaSerial.print("PUT api ");
     IFDEBUG IotsaSerial.println(path);
     DynamicJsonBuffer requestBuffer;
@@ -43,6 +45,7 @@ void IotsaApiMod::_putHandlerWrapper(const char *path) {
 }
 
 void IotsaApiMod::_postHandlerWrapper(const char *path) {
+    if (needsAuthentication(path, "post")) return;
     IFDEBUG IotsaSerial.print("POST api ");
     IFDEBUG IotsaSerial.println(path);
     DynamicJsonBuffer requestBuffer;

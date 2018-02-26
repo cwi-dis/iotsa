@@ -39,6 +39,9 @@ public:
   using IotsaLedMod::IotsaLedMod;
   void serverSetup();
   String info();
+protected:
+  bool getHandler(const char *path, JsonObject& reply);
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
 private:
   void handler();
 };
@@ -83,9 +86,32 @@ IotsaLedControlMod::handler() {
   server.send(200, "text/html", message);
 }
 
+bool IotsaLedControlMod::getHandler(const char *path, JsonObject& reply) {
+  reply["rgb"] = rgb;
+  reply["onDuration"] = onDuration;
+  reply["offDuration"] = offDuration;
+  reply["isOn"] = isOn;
+  reply["count"] = remainingCount;
+  return true;
+}
+
+bool IotsaLedControlMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+  JsonVariant arg = request["rgb"]|0xffffff;
+  uint32_t _rgb = arg.as<unsigned long>();
+  arg = request["onDuration"]|0;
+  int _onDuration = arg.as<int>();
+  arg = request["offDuration"]|0;
+  int _offDuration = arg.as<int>();
+  arg = request["count"]|0;
+  int _count = arg.as<int>();
+  set(_rgb, _onDuration, _offDuration, _count);
+  return true;
+}
+
 void IotsaLedControlMod::serverSetup() {
   // Setup the web server hooks for this module.
   server.on("/led", std::bind(&IotsaLedControlMod::handler, this));
+  apiSetup("/api/led", true, true);
 }
 
 String IotsaLedControlMod::info() {

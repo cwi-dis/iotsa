@@ -1,9 +1,10 @@
 #ifndef _IOTSALED_H_
 #define _IOTSALED_H_
 #include "iotsa.h"
+#include "iotsaApi.h"
 #include <Adafruit_NeoPixel.h>
 
-class IotsaLedMod : public IotsaMod, public IotsaStatusInterface {
+class IotsaLedMod : public IotsaApiMod, public IotsaStatusInterface {
 public:
   IotsaLedMod(IotsaApplication &_app, int pin, neoPixelType t=NEO_GRB + NEO_KHZ800, IotsaAuthMod *_auth=NULL);
   void setup();

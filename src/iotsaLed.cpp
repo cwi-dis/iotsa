@@ -16,7 +16,7 @@ static uint32_t _getStatusColor() {
 }
 
 IotsaLedMod::IotsaLedMod(IotsaApplication &_app, int pin, neoPixelType t, IotsaAuthMod *_auth)
-:	IotsaMod(_app, _auth, true),
+:	IotsaApiMod(_app, _auth, true),
 	strip(1, pin, t),
 	rgb(0),
 	nextChangeTime(0)
