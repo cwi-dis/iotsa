@@ -286,8 +286,11 @@ bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, Json
     if (reqObj.containsKey("requestedMode")) {
       nextConfigurationMode = config_mode(reqObj.get<int>("requestedMode"));
       anyChanged = nextConfigurationMode != config_mode(0);
-      if (anyChanged)
+      if (anyChanged) {
         nextConfigurationModeTimeout = millis() + rebootConfigTimeout*1000;
+        reply["requestedMode"] = nextConfigurationMode;
+        reply["timeout"] = (nextConfigurationModeTimeout - millis())/1000;
+      }
     }
   }
   if (anyChanged) configSave();
