@@ -108,12 +108,50 @@ IotsaUserMod::handler() {
   server.send(200, "text/html", message);
 }
 
+#ifdef notyet
+bool IotsaUserMod::getHandler(const char *path, JsonObject& reply) {
+  if (strcmp(path, "/api/user") == 0) {
+    JsonArray& users = reply.createNestedArray("users");
+    JsonObject& user = users.createNestedObject();
+    user["username"] = username;
+    return true;
+  }
+  return false;
+}
+
+bool IotsaUserMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+  if (strcmp(path, "/api/user/0") != 0) return false;
+  if (configurationMode != TMPC_CONFIG) return false;
+  bool anyChanged = false;
+  JsonObject& reqObj = request.as<JsonObject>();
+  // Check old password, if a password has been set.
+  if (password) {
+    String old = reqObj.get<String>("old");
+    if (old != password) return false;
+  }
+  if (reqObj.containsKey("username")) {
+    username = reqObj.get<String>("username");
+    anyChanged = true;
+  }
+  if (reqObj.containsKey("password")) {
+    password = reqObj.get<String>("password");
+    anyChanged = true;
+  }
+  if (anyChanged) configSave();
+  return anyChanged;
+}
+#endif // notyet
+
 void IotsaUserMod::setup() {
   configLoad();
 }
 
 void IotsaUserMod::serverSetup() {
   server.on("/users", std::bind(&IotsaUserMod::handler, this));
+#ifdef notyet
+  server.on("/api/users", true);
+  server.on("/api/users/0", true, false, true);
+#endif // notyet
 }
 
 void IotsaUserMod::configLoad() {
