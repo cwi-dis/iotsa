@@ -3,7 +3,7 @@
 #include "iotsa.h"
 #include "iotsaApi.h"
 
-class IotsaUserMod : public IotsaAuthApiMod {
+class IotsaUserMod : public IotsaAuthMod {
 public:
   IotsaUserMod(IotsaApplication &_app, const char *_username="admin", const char *_password="");
   void setup();
