@@ -19,7 +19,8 @@ String &defaultPassword() {
 IotsaUserMod::IotsaUserMod(IotsaApplication &_app, const char *_username, const char *_password)
 :	username(_username),
 	password(_password),
-	IotsaAuthMod(_app)
+	IotsaAuthMod(_app),
+  api(this, server)
 {
 	configLoad();
 }
@@ -108,9 +109,8 @@ IotsaUserMod::handler() {
   server.send(200, "text/html", message);
 }
 
-#ifdef notyet
 bool IotsaUserMod::getHandler(const char *path, JsonObject& reply) {
-  if (strcmp(path, "/api/user") == 0) {
+  if (strcmp(path, "/api/users") == 0) {
     JsonArray& users = reply.createNestedArray("users");
     JsonObject& user = users.createNestedObject();
     user["username"] = username;
@@ -120,7 +120,7 @@ bool IotsaUserMod::getHandler(const char *path, JsonObject& reply) {
 }
 
 bool IotsaUserMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
-  if (strcmp(path, "/api/user/0") != 0) return false;
+  if (strcmp(path, "/api/users/0") != 0) return false;
   if (configurationMode != TMPC_CONFIG) return false;
   bool anyChanged = false;
   JsonObject& reqObj = request.as<JsonObject>();
@@ -140,7 +140,6 @@ bool IotsaUserMod::postHandler(const char *path, const JsonVariant& request, Jso
   if (anyChanged) configSave();
   return anyChanged;
 }
-#endif // notyet
 
 void IotsaUserMod::setup() {
   configLoad();
@@ -148,10 +147,8 @@ void IotsaUserMod::setup() {
 
 void IotsaUserMod::serverSetup() {
   server.on("/users", std::bind(&IotsaUserMod::handler, this));
-#ifdef notyet
-  server.on("/api/users", true);
-  server.on("/api/users/0", true, false, true);
-#endif // notyet
+  api.setup("/api/users", true);
+  api.setup("/api/users/0", true, false, true);
 }
 
 void IotsaUserMod::configLoad() {

@@ -3,7 +3,7 @@
 #include "iotsa.h"
 #include "iotsaApi.h"
 
-class IotsaUserMod : public IotsaAuthMod {
+class IotsaUserMod : public IotsaAuthMod, public IotsaApiProvider {
 public:
   IotsaUserMod(IotsaApplication &_app, const char *_username="admin", const char *_password="");
   void setup();
@@ -11,14 +11,15 @@ public:
   void loop();
   String info();
   bool needsAuthentication(const char *right=NULL);
-protected:
   bool getHandler(const char *path, JsonObject& reply);
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
+  bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply);
+protected:
   void configLoad();
   void configSave();
   void handler();
   String username;
   String password;
+  IotsaApi api;
 };
 
 #endif
