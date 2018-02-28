@@ -113,6 +113,7 @@ public:
 
 inline bool IotsaBaseMod::needsAuthentication(const char *right) { return auth ? auth->needsAuthentication(right) : false; }
 inline bool IotsaBaseMod::needsAuthentication(const char *right, const char *verb) { return auth ? auth->needsAuthentication(right, verb) : false; }
+inline bool IotsaAuthMod::needsAuthentication(const char *right, const char *verb) { return needsAuthentication("api"); }
 
 extern bool configurationMode;        // True if we have no config, and go into AP mode
 typedef enum { TMPC_NORMAL, TMPC_CONFIG, TMPC_OTA, TMPC_RESET } config_mode;

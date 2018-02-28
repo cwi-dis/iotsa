@@ -17,7 +17,7 @@ class Timezone;
 
 class IotsaNtpMod : public IotsaApiMod {
 public:
-  using IotsaMod::IotsaMod;
+  using IotsaApiMod::IotsaApiMod;
   void setup();
   void serverSetup();
   void loop();

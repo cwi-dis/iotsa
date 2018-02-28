@@ -23,6 +23,22 @@ void IotsaNothingMod::setup() {
   configLoad();
 }
 
+bool IotsaNothingMod::getHandler(const char *path, JsonObject& reply) {
+  reply["argument"] = argument;
+  return true;
+}
+
+bool IotsaNothingMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+  bool anyChanged = false;
+  JsonObject& reqObj = request.as<JsonObject>();
+  if (reqObj.containsKey("argument")) {
+    argument = reqObj.get<String>("argument");
+    anyChanged = true;
+  }
+  if (anyChanged) configSave();
+  return anyChanged;
+}
+
 void IotsaNothingMod::serverSetup() {
   server.on("/nothing", std::bind(&IotsaNothingMod::handler, this));
 }

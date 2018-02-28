@@ -208,6 +208,24 @@ IotsaAuthMod(IotsaApplication &_app, IotsaAuthMod *_auth=NULL, bool early=false)
 
 The optional `early` argument signifies that the module should be initialized early, this is generally used only by the WiFi module.
 
+### iotsaApi.h
+
+Contains a class `IotsaApiMod`, a subclass of `IotsaMod`. Subclass this to implementing modules that also provide a REST interface. The class provides a method to register your API endpoint:
+
+```
+void apiSetup(const char* path, bool get=false, bool put=false, bool post=false);
+```
+
+Call this in your `serverSetup()` method. Call multiple times if your class implements multiple endpoints.
+You should also provide the following methods to implement your `GET`, `PUT` and `POST` methods (for the ones for which you passed `true` in your `apiSetup` call):
+
+```
+bool getHandler(const char *path, JsonObject& reply);
+bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
+bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply);
+```
+These methods are called on incoming REST calls. The request parameter object (or array, or value) is in `request`, store results in `reply` (which is already an initialized empty object). Return `true` for success, `false` for any failure (which will not return the reply object to the caller).
+
 ### iotsaWifi.h
 
 Handles WiFi configuration, factory reset and (if enabled) over-the-air programming.
@@ -224,6 +242,8 @@ In ota-programming mode the device functions normally, but can also be reprogram
 In configuration mode the device does not connect to a WiFi network, but in stead creates its own network (as a base station) with a name starting with "_config-_". The user can now connect a device to this network and visit `http://192.168.4.1/wificonfig`. Here it is possible to change the normal (production) WiFi network to connect to and the password.
 
 If a device is new (it has no WiFi network name) it will enter configuration mode automatically. If a device cannot find its configured WiFi network it will enter configuration mode for 2 minutes and then reboot.
+
+The module also provides a REST api on `/api/wificonfig` (and this api depends on whether in configuration mode or not).
 
 ### iotsaSimple.h
 
@@ -269,6 +289,8 @@ Creates a backup of the complete SPIFFS filesystem (including `/data` and `/conf
 Allows showing static colors and repeating patterns on a NeoPixel LED. By default does not provide a web interface, only an API `set(rgb, onDuration, offDuration, count)` for use in your program. But see the _Led_ example for providing a web interface.
 
 The iotsaLed module also implements the `iotsaStatusInterface` protocol, and shows status information during the boot sequence and when the iotsa board is running in a nonstandard mode (configuration mode, OTA mode, etc).
+
+The module does not provide a user-visible endpoint or REST api, but can be used as a base class for this. See [examples/Led](examples/Led) for an example.
 
 ### iotsaLogger.h
 
