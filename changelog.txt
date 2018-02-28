@@ -1,3 +1,12 @@
+iotsa 1.2.0 - 28-Feb-2018
+
+- Added unified REST access through IotsaApiMod.
+- Adadpted IotsaAuthMode to allow fine-grained access control over API methods.
+
+iotsa 1.1.0 - 29-Jan-2018
+
+- Ported to platformIO (in addition to Arduino IDE)
+
 iotsa 1.0.1 - 17-Jul-2017
 
 - Added IotsaMod::htmlEncode() method to help escaping strings embedded in the HTML.

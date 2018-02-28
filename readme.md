@@ -298,7 +298,7 @@ Replaces the standard `Serial` object by an object that stores data in a memory 
 
 ### iotsaNothing.h
 
-A module that does nothing. Use this as the basis of your own modules. Provides a REST
+A module that does nothing. Use this as the basis of your own modules. Provides a user interface at `/nothing` and a REST interface on `/api/nothing`.
 
 ### iotsaNtp.h
 
@@ -316,6 +316,8 @@ int localHours12();			// Local time-of-day, hours (0-11)
 bool localIsPM();			// AM/PM indicator
 
 ```
+
+Provides a user interface at `/ntp` and a REST interface at `/api/ntp`.
 ### iotsaOta.h
 
 Allows Over-the-air reprogramming of a iotsa server. After ota-programming has been enabled the device will show up (for 2 minutes) in the Arduino IDE, menu _Tools_ -> _Port_, under the _Network Ports_ section. Select it, and press the checkmark on your sketch to upload.
