@@ -159,6 +159,10 @@ void IotsaUserMod::configLoad() {
   IotsaSerial.print(username);
   IotsaSerial.print(", password length=");
   IotsaSerial.println(password.length());
+  if (password.length() == 0) {
+    IotsaSerial.print("Default password set to ");
+    IotsaSerial.println(defaultPassword());
+  }
 }
 
 void IotsaUserMod::configSave() {
