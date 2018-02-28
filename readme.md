@@ -298,7 +298,7 @@ Replaces the standard `Serial` object by an object that stores data in a memory 
 
 ### iotsaNothing.h
 
-A module that does nothing. Use this as the basis of your own modules.
+A module that does nothing. Use this as the basis of your own modules. Provides a REST
 
 ### iotsaNtp.h
 
