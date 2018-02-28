@@ -304,7 +304,7 @@ void IotsaWifiMod::serverSetup() {
   } else {
     server.on("/wificonfig", std::bind(&IotsaWifiMod::handlerNormalMode, this));
   }
-  apiSetup("/api/wificonfig", true, true);
+  api.setup("/api/wificonfig", true, true);
 }
 
 String IotsaWifiMod::info() {

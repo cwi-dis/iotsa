@@ -1,18 +1,18 @@
 #include "iotsaApi.h"
 
-void IotsaApiMod::apiSetup(const char* path, bool get, bool put, bool post) {
-    if (get) server.on(path, HTTP_GET, std::bind(&IotsaApiMod::_getHandlerWrapper, this, path));
-    if (put) server.on(path, HTTP_PUT, std::bind(&IotsaApiMod::_putHandlerWrapper, this, path));
-    if (post) server.on(path, HTTP_POST, std::bind(&IotsaApiMod::_postHandlerWrapper, this, path));
+void IotsaApi::setup(const char* path, bool get, bool put, bool post) {
+    if (get) server.on(path, HTTP_GET, std::bind(&IotsaApi::_getHandlerWrapper, this, path));
+    if (put) server.on(path, HTTP_PUT, std::bind(&IotsaApi::_putHandlerWrapper, this, path));
+    if (post) server.on(path, HTTP_POST, std::bind(&IotsaApi::_postHandlerWrapper, this, path));
 }
 
-void IotsaApiMod::_getHandlerWrapper(const char *path) {
-    if (needsAuthentication(path, "get")) return;
+void IotsaApi::_getHandlerWrapper(const char *path) {
+    if (provider->needsAuthentication(path, "get")) return;
     IFDEBUG IotsaSerial.print("GET api ");
     IFDEBUG IotsaSerial.println(path);
     DynamicJsonBuffer replyBuffer;
     JsonObject& reply = replyBuffer.createObject();
-    bool ok = getHandler(path, reply);
+    bool ok = provider->getHandler(path, reply);
     if (ok) {
         String replyData;
         reply.printTo(replyData);
@@ -24,15 +24,15 @@ void IotsaApiMod::_getHandlerWrapper(const char *path) {
     }
 }
 
-void IotsaApiMod::_putHandlerWrapper(const char *path) {
-    if (needsAuthentication(path, "put")) return;
+void IotsaApi::_putHandlerWrapper(const char *path) {
+    if (provider->needsAuthentication(path, "put")) return;
     IFDEBUG IotsaSerial.print("PUT api ");
     IFDEBUG IotsaSerial.println(path);
     DynamicJsonBuffer requestBuffer;
     JsonObject& request = requestBuffer.parseObject(server.arg("plain"));
     DynamicJsonBuffer replyBuffer;
     JsonObject& reply = replyBuffer.createObject();
-    bool ok = putHandler(path, request, reply);
+    bool ok = provider->putHandler(path, request, reply);
     if (ok) {
         String replyData;
         reply.printTo(replyData);
@@ -44,15 +44,15 @@ void IotsaApiMod::_putHandlerWrapper(const char *path) {
     }
 }
 
-void IotsaApiMod::_postHandlerWrapper(const char *path) {
-    if (needsAuthentication(path, "post")) return;
+void IotsaApi::_postHandlerWrapper(const char *path) {
+    if (provider->needsAuthentication(path, "post")) return;
     IFDEBUG IotsaSerial.print("POST api ");
     IFDEBUG IotsaSerial.println(path);
     DynamicJsonBuffer requestBuffer;
     JsonObject& request = requestBuffer.parseObject(server.arg("plain"));
     DynamicJsonBuffer replyBuffer;
     JsonObject& reply = replyBuffer.createObject();
-    bool ok = postHandler(path, request, reply);
+    bool ok = provider->postHandler(path, request, reply);
     if (ok) {
         String replyData;
         reply.printTo(replyData);

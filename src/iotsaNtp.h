@@ -32,7 +32,7 @@ public:
   bool localIsPM();
 
   String ntpServer;
-  
+  using IotsaBaseMod::needsAuthentication;
 protected:
   bool getHandler(const char *path, JsonObject& reply);
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
