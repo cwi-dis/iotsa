@@ -22,6 +22,16 @@ extern Print *iotsaOverrideSerial;
 class IotsaBaseMod;
 
 //
+// Operations allowed via the API
+//
+typedef enum IotsaApiOperation {
+  IOTSA_API_GET,
+  IOTSA_API_PUT,
+  IOTSA_API_POST,
+  IOTSA_API_DELETE
+} IotsaApiOperation;
+
+//
 // Status indication interface.
 //
 class IotsaStatusInterface {
@@ -84,7 +94,7 @@ public:
 protected:
   bool needsAuthentication() { return needsAuthentication(NULL);}
   virtual bool needsAuthentication(const char *right);
-//  virtual bool needsAuthentication(const char *right, const char *verb);
+//  virtual bool needsAuthentication(const char *right, IotsaApiOperation verb);
   IotsaApplication &app;
   IotsaWebServer &server;
   IotsaAuthMod *auth;
@@ -109,10 +119,10 @@ class IotsaAuthMod : public IotsaMod {
 public:
   using IotsaMod::IotsaMod;	// Inherit constructor
   virtual bool needsAuthentication(const char *right);
-  virtual bool needsAuthentication(const char *object, const char *verb);
+  virtual bool needsAuthentication(const char *object, IotsaApiOperation verb);
 };
 inline bool IotsaBaseMod::needsAuthentication(const char *right) { return auth ? auth->needsAuthentication(right) : false; }
-inline bool IotsaAuthMod::needsAuthentication(const char *object, const char *verb) { return auth ? auth->needsAuthentication(object, verb) : false; }
+inline bool IotsaAuthMod::needsAuthentication(const char *object, IotsaApiOperation verb) { return auth ? auth->needsAuthentication(object, verb) : false; }
 
 extern bool configurationMode;        // True if we have no config, and go into AP mode
 typedef enum { TMPC_NORMAL, TMPC_CONFIG, TMPC_OTA, TMPC_RESET } config_mode;

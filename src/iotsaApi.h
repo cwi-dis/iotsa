@@ -10,7 +10,7 @@ public:
   virtual bool getHandler(const char *path, JsonObject& reply) { return false; }
   virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
   virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
-  virtual bool needsAuthentication(const char *right, const char *verb) {return false;}
+  virtual bool needsAuthentication(const char *right, IotsaApiOperation verb) {return false;}
 };
 
 class IotsaApi {
