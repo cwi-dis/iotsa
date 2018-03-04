@@ -272,6 +272,15 @@ and then repeatedly call `cf.put("name", variable)`.
 
 ## available standard modules
 
+### iotsaCapabilities.h
+
+An authentication module (_IotsaAuthMod_) that trusts an external server, 
+the _issuer_, to determine access rights to this board.
+
+The _issuer_ and this board share a secret key.
+
+More documentation will be forthcoming.
+
 ### iotsaFiles.h
 
 Allows read access to files stored in `/data` on the SPIFFS file system (in the flash memory chip). Could be used for a simple web server.
@@ -327,7 +336,17 @@ Allows Over-the-air reprogramming of a iotsa server. After ota-programming has b
 An authentication module (_IotsaAuthMod_) that stores a single username and password. Other modules can then specify they are only accessible after the user authenticates with this username/password combination.
 
 Accessing URL `/users` allows changing the password, and if the password has never been set the default password is shown whenever the device is booted in configuration mode.
- 
+
+### iotsaMultiUser.h
+
+An authentication module (_IotsaAuthMod_) that stores a multiple usernames, passwords
+and rights. Other modules can then specify they are only accessible after the user authenticates with a username/password combination that has the correct _right_ in
+its set of rights.
+
+Accessing URL `/users` allows adding and changing users. A factory-installed device
+has no users, and allows all rights always.
+
+
 ## sample programs
 - [Skeleton](examples/Skeleton/Skeleton.ino) is a good starting point for your own applications.
 - [Hello](examples/Hello/Hello.ino) is the simplest "Hello, user" server.
