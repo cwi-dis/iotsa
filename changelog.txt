@@ -1,3 +1,7 @@
+iotsa 1.2.1 - 5-Mar-2018
+
+- Fixed typo in ArduinoJson dependency
+
 iotsa 1.2.0 - 28-Feb-2018
 
 - Added unified REST access through IotsaApiMod.
