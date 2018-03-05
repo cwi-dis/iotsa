@@ -36,9 +36,9 @@ IotsaOtaMod otaMod(application);
 class IotsaHelloMod : public IotsaApiMod {
 public:
   IotsaHelloMod(IotsaApplication &_app) : IotsaApiMod(_app) {}
-	void setup();
-	void serverSetup();
-	void loop();
+  void setup();
+  void serverSetup();
+  void loop();
   String info();
 protected:
   bool getHandler(const char *path, JsonObject& reply);
@@ -51,7 +51,7 @@ String greeting;
 
 // Implementation of the Hello module
 void IotsaHelloMod::setup() {
-	// Nothing to do during early initialization for this module
+  // Nothing to do during early initialization for this module
 }
 
 void
@@ -87,18 +87,18 @@ bool IotsaHelloMod::putHandler(const char *path, const JsonVariant& request, Jso
 void IotsaHelloMod::serverSetup() {
   // Setup the web server hooks for this module.
   server.on("/hello", std::bind(&IotsaHelloMod::handler, this));
-  apiSetup("/api/hello", true, true);
+  api.setup("/api/hello", true, true);
 }
 
 String IotsaHelloMod::info() {
   // Return some information about this module, for the main page of the web server.
   String rv = "<p>See <a href=\"/hello\">/hello</a> for info, ";
   if (greeting == "") {
-  	rv += "and to set the name to be greeted by.";
+    rv += "and to set the name to be greeted by.";
   } else {
-  	rv += "or to change the name ";
-  	rv += htmlEncode(greeting);
-  	rv += " that is currently greeted.";
+    rv += "or to change the name ";
+    rv += htmlEncode(greeting);
+    rv += " that is currently greeted.";
   }
   rv += "</p>";
   return rv;
