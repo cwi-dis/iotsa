@@ -11,7 +11,7 @@ public:
   void loop();
   String info();
   bool allows(const char *right=NULL);
-  bool allows(const char *obj, const char *verb) { return allows("api");}
+  bool allows(const char *obj, IotsaApiOperation verb) { return allows("api");}
   bool getHandler(const char *path, JsonObject& reply);
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
   bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply);
