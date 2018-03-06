@@ -17,7 +17,7 @@ public:
   : obj(_obj),
     next(NULL)
   { scopes[0] = _get; scopes[1] = _put; scopes[2] = _post; }
-  bool needsAuthentication(const char *obj, IotsaApiOperation verb);
+  bool allows(const char *obj, IotsaApiOperation verb);
 private:
   String obj;
   IotsaCapabilityObjectScope scopes[3];
@@ -26,12 +26,12 @@ private:
 
 class IotsaCapabilityMod : public IotsaAuthMod, public IotsaApiProvider {
 public:
-  IotsaCapabilityMod(IotsaApplication &_app, IotsaAuthMod &_chain);
+  IotsaCapabilityMod(IotsaApplication &_app, IotsaAuthenticationProvider &_chain);
   void setup();
   void serverSetup();
   void loop();
   String info();
-  bool needsAuthentication(const char *obj, IotsaApiOperation verb);
+  bool allows(const char *obj, IotsaApiOperation verb);
   bool getHandler(const char *path, JsonObject& reply);
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
 protected:
@@ -41,7 +41,7 @@ protected:
   void handler();
   IotsaCapability *capabilities;
   IotsaApi api;
-  IotsaAuthMod &chain;
+  IotsaAuthenticationProvider &chain;
   String trustedIssuer;
   String issuerKey;
 };

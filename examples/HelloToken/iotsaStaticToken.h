@@ -6,18 +6,19 @@ class StaticToken;
 
 class IotsaStaticTokenMod : public IotsaAuthMod {
 public:
-  IotsaStaticTokenMod(IotsaApplication &_app, IotsaAuthMod &_chain);
+  IotsaStaticTokenMod(IotsaApplication &_app, IotsaAuthenticationProvider &_chain);
   void setup();
   void serverSetup();
   void loop();
   String info();
-  bool needsAuthentication(const char *right=NULL);
+  bool allows(const char *right=NULL);
+  bool allows(const char *obj, const char *verb);
 protected:
   void configLoad();
   void configSave();
   void handler();
   
-  IotsaAuthMod &chain;
+  IotsaAuthenticationProvider &chain;
   int ntoken;
   StaticToken *tokens;
 };

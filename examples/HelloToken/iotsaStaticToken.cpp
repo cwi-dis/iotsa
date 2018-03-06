@@ -10,7 +10,7 @@ public:
   String rights;
 };
 
-IotsaStaticTokenMod::IotsaStaticTokenMod(IotsaApplication &_app, IotsaAuthMod &_chain)
+IotsaStaticTokenMod::IotsaStaticTokenMod(IotsaApplication &_app, IotsaAuthenticationProvider &_chain)
 :	chain(_chain),
 	IotsaAuthMod(_app)
 {
@@ -90,7 +90,7 @@ String IotsaStaticTokenMod::info() {
   return message;
 }
 
-bool IotsaStaticTokenMod::needsAuthentication(const char *right) {
+bool IotsaStaticTokenMod::allows(const char *right) {
   if (server.hasHeader("Authorization")) {
     String authHeader = server.header("Authorization");
     if (authHeader.startsWith("Bearer ")) {
@@ -103,7 +103,7 @@ bool IotsaStaticTokenMod::needsAuthentication(const char *right) {
         if (tokens[i].token == token) {
           // The token matches. Check the rights.
           if (tokens[i].rights == "*" || tokens[i].rights.indexOf(rightField) >= 0) {
-            return false;
+            return true;
           }
         }
       }
@@ -111,5 +111,10 @@ bool IotsaStaticTokenMod::needsAuthentication(const char *right) {
   }
   Serial.println("No token match, try user/password");
   // If no rights fall back to username/password authentication
-  return chain.needsAuthentication(right);
+  return chain.allows(right);
 }
+
+bool IotsaStaticTokenMod::allows(const char *obj, const char *verb) {
+  return allows("api");
+}
+

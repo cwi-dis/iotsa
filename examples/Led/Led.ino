@@ -111,7 +111,7 @@ bool IotsaLedControlMod::putHandler(const char *path, const JsonVariant& request
 void IotsaLedControlMod::serverSetup() {
   // Setup the web server hooks for this module.
   server.on("/led", std::bind(&IotsaLedControlMod::handler, this));
-  apiSetup("/api/led", true, true);
+  api.setup("/api/led", true, true);
 }
 
 String IotsaLedControlMod::info() {

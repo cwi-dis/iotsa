@@ -20,7 +20,8 @@ public:
   void serverSetup();
   void loop();
   String info();
-  bool needsAuthentication(const char *right=NULL);
+  bool allows(const char *right=NULL);
+  bool allows(const char *obj, IotsaApiOperation verb);
   bool getHandler(const char *path, JsonObject& reply);
   bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply);
 protected:

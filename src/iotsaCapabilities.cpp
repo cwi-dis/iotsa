@@ -36,7 +36,7 @@ static IotsaCapabilityObjectScope getRightFrom(const JsonVariant& arg) {
   return IOTSA_SCOPE_NONE;
 }
 
-bool IotsaCapability::needsAuthentication(const char *_obj, IotsaApiOperation verb) {
+bool IotsaCapability::allows(const char *_obj, IotsaApiOperation verb) {
   IotsaCapabilityObjectScope scope = scopes[int(verb)];
   int matchLength = obj.length();
   switch(scope) {
@@ -44,32 +44,32 @@ bool IotsaCapability::needsAuthentication(const char *_obj, IotsaApiOperation ve
       break;
     case IOTSA_SCOPE_SELF:
       if (strcmp(obj.c_str(), _obj) == 0)
-        return false;
+        return true;
       break;
     case IOTSA_SCOPE_FULL:
       if (strncmp(obj.c_str(), _obj, matchLength) == 0) {
         char nextCh = _obj[matchLength];
         if (nextCh == '\0' || nextCh == '/')
-          return false;
+          return true;
       }
       break;
     case IOTSA_SCOPE_CHILD:
       if (strncmp(obj.c_str(), _obj, matchLength) == 0) {
         char nextCh = _obj[matchLength];
         if (nextCh == '/')
-          return false;
+          return true;
       }
       break;
   }
   // See if there is a next capabiliy we can check, otherwise we don't have permission.
-  if (next) return next->needsAuthentication(_obj, verb);
-  return true;
+  if (next) return next->allows(_obj, verb);
+  return false;
 }
 
-IotsaCapabilityMod::IotsaCapabilityMod(IotsaApplication &_app, IotsaAuthMod& _chain)
+IotsaCapabilityMod::IotsaCapabilityMod(IotsaApplication &_app, IotsaAuthenticationProvider& _chain)
 :	IotsaAuthMod(_app),
   capabilities(NULL),
-  api(this, server),
+  api(this, this, server),
   chain(_chain),
   trustedIssuer(""),
   issuerKey("")
@@ -86,7 +86,7 @@ IotsaCapabilityMod::handler() {
       server.send(401, "text/plain", "401 Unauthorized, not in configuration mode");
       return;
     }
-    if (chain.needsAuthentication("capabilities")) return;
+    if (needsAuthentication("capabilities")) return;
     if (_trustedIssuer != "") trustedIssuer = _trustedIssuer;
     if (_issuerKey != "") issuerKey = _issuerKey;
     configSave();
@@ -164,14 +164,14 @@ String IotsaCapabilityMod::info() {
   return message;
 }
 
-bool IotsaCapabilityMod::needsAuthentication(const char *obj, IotsaApiOperation verb) {
+bool IotsaCapabilityMod::allows(const char *obj, IotsaApiOperation verb) {
   loadCapabilitiesFromRequest();
   if (capabilities) {
-    if (!capabilities->needsAuthentication(obj, verb))
-      return false;
+    if (capabilities->allows(obj, verb))
+      return true;
   }
   // If no rights fall back to username/password authentication
-  return chain.needsAuthentication(obj, verb);
+  return chain.allows(obj, verb);
 }
 
 void IotsaCapabilityMod::loadCapabilitiesFromRequest() {

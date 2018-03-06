@@ -127,6 +127,14 @@ IotsaApplication::webServerLoop() {
   server.handleClient();
 }
 
+bool IotsaBaseMod::needsAuthentication(const char *object, IotsaApiOperation verb) { 
+  return auth ? !auth->allows(object, verb) : false; 
+}
+
+bool IotsaBaseMod::needsAuthentication(const char *right) { 
+  return auth ? !auth->allows(right) : false; 
+}
+
 String IotsaBaseMod::info() {
   // Info method that does nothing, usually overridden for IotsaMod modules
   return "";

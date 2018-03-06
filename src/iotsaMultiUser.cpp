@@ -4,7 +4,7 @@
 IotsaMultiUserMod::IotsaMultiUserMod(IotsaApplication &_app)
 :	IotsaAuthMod(_app),
   users(NULL),
-  api(this, server)
+  api(this, this, server)
 {
 	configLoad();
 }
@@ -202,9 +202,9 @@ String IotsaMultiUserMod::info() {
   return message;
 }
 
-bool IotsaMultiUserMod::needsAuthentication(const char *right) {
+bool IotsaMultiUserMod::allows(const char *right) {
   // No users means everything is allowed.
-  if (users == NULL) return false;
+  if (users == NULL) return true;
   // Otherwise we loop over all users until we find one that matches.
   IotsaUser *u = users;
   while (u) {
@@ -213,7 +213,7 @@ bool IotsaMultiUserMod::needsAuthentication(const char *right) {
       rightField += right;
       rightField += "/";
       if (u->rights == "*" || u->rights.indexOf(rightField) >= 0) {
-        return false;   // False means this is allowed
+        return true;
       }
       break;
     }
@@ -223,5 +223,9 @@ bool IotsaMultiUserMod::needsAuthentication(const char *right) {
   server.send(401, "text/plain", "401 Unauthorized\n");
   IotsaSerial.print("Return 401 Unauthorized for right=");
   IotsaSerial.println(right);
-  return true;
+  return false;
+}
+
+bool IotsaMultiUserMod::allows(const char *obj, IotsaApiOperation verb) {
+  return allows("api");
 }
