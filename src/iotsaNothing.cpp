@@ -1,3 +1,4 @@
+#include "iotsa.h"
 #include "iotsaNothing.h"
 #include "iotsaConfigFile.h"
 void

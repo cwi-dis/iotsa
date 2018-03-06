@@ -1,3 +1,7 @@
+iotsa 1.4 - 6-Mar-2018
+
+- Fixed serious issue in design of access control.
+
 iotsa 1.2.1 - 5-Mar-2018
 
 - Fixed typo in ArduinoJson dependency

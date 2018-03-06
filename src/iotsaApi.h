@@ -3,25 +3,26 @@
 #include "iotsa.h"
 #include <ArduinoJson.h>
 
-class IotsaApiProvider {
+class IotsaApiProvider  {
 public:
   IotsaApiProvider() {}
   virtual ~IotsaApiProvider() {}
-  virtual bool getHandler(const char *path, JsonObject& reply) { return false; }
-  virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
-  virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
-  virtual bool needsAuthentication(const char *right, const char *verb) {return false;}
+  virtual bool getHandler(const char *path, JsonObject& reply) = 0;
+  virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) = 0;
+  virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) = 0;
 };
 
 class IotsaApi {
 public:
-  IotsaApi(IotsaApiProvider* _provider, IotsaWebServer& _server)
+  IotsaApi(IotsaApiProvider* _provider, IotsaAuthenticationProvider* _auth, IotsaWebServer& _server)
   : provider(_provider),
+    auth(_auth),
     server(_server)
   {}
   void setup(const char* path, bool get=false, bool put=false, bool post=false);
 private:
   IotsaApiProvider* provider; 
+  IotsaAuthenticationProvider* auth;
   IotsaWebServer& server;
   void _getHandlerWrapper(const char *path);
   void _putHandlerWrapper(const char *path);
@@ -30,10 +31,13 @@ private:
 
 class IotsaApiMod : public IotsaMod, public IotsaApiProvider {
 public:
-  IotsaApiMod(IotsaApplication &_app, IotsaAuthMod *_auth=NULL, bool early=false)
+  IotsaApiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
   : IotsaMod(_app, _auth, early),
-    api(this, server)
+    api(this, _auth, server)
   {}
+  virtual bool getHandler(const char *path, JsonObject& reply) { return false; }
+  virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
+  virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
 protected:
   IotsaApi api;
 };

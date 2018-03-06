@@ -20,7 +20,7 @@ IotsaUserMod::IotsaUserMod(IotsaApplication &_app, const char *_username, const 
 :	username(_username),
 	password(_password),
 	IotsaAuthMod(_app),
-  api(this, server)
+  api(this, this, server)
 {
 	configLoad();
 }
@@ -119,6 +119,10 @@ bool IotsaUserMod::getHandler(const char *path, JsonObject& reply) {
   return false;
 }
 
+bool IotsaUserMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+  return false;
+}
+
 bool IotsaUserMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   if (strcmp(path, "/api/users/0") != 0) return false;
   if (configurationMode != TMPC_CONFIG) return false;
@@ -193,7 +197,7 @@ String IotsaUserMod::info() {
   return message;
 }
 
-bool IotsaUserMod::needsAuthentication(const char *right) {
+bool IotsaUserMod::allows(const char *right) {
   // We ignore "right", username/password grants all rights.
   String &curPassword = password;
   if (curPassword == "")
@@ -207,7 +211,7 @@ bool IotsaUserMod::needsAuthentication(const char *right) {
   	server.send(401, "text/plain", "401 Unauthorized\n");
   	IotsaSerial.print("Return 401 Unauthorized for right=");
   	IotsaSerial.println(right);
-  	return true;
+  	return false;
   }
-  return false;
+  return true;
 }

@@ -29,12 +29,15 @@ public:
   void serverSetup() {}
   void loop() {}
   String info() { return ""; }
-  bool needsAuthentication(const char *right=NULL) {
+  bool allows(const char *right=NULL) {
     if (!server.authenticate("admin", "admin")) {
       server.requestAuthentication();
-      return true;
+      return false;
     }
-    return false;
+    return true;
+  }
+  bool allows(const char *obj, const char *verb) {
+    return allows("api");
   }
 };
 

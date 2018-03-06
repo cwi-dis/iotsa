@@ -62,10 +62,17 @@ protected:
 
 class IotsaAuthMod;
 
+class IotsaAuthenticationProvider {
+public:
+  virtual ~IotsaAuthenticationProvider() {}
+  virtual bool allows(const char *right=NULL) = 0;
+  virtual bool allows(const char *obj, const char *verb) = 0;
+};
+
 class IotsaBaseMod {
 friend class IotsaApplication;
 public:
-  IotsaBaseMod(IotsaApplication &_app, IotsaAuthMod *_auth=NULL, bool early=false)
+  IotsaBaseMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
   : app(_app), 
   	server(_app.server), 
   	auth(_auth), 
@@ -81,19 +88,18 @@ public:
   virtual void loop() = 0;
   virtual String info();
   virtual void serverSetup();
+  virtual bool needsAuthentication(const char *right=NULL);
+  virtual bool needsAuthentication(const char *obj, const char *verb);
 protected:
-  bool needsAuthentication() { return needsAuthentication(NULL);}
-  virtual bool needsAuthentication(const char *right);
-//  virtual bool needsAuthentication(const char *right, const char *verb);
   IotsaApplication &app;
   IotsaWebServer &server;
-  IotsaAuthMod *auth;
+  IotsaAuthenticationProvider *auth;
   IotsaBaseMod *nextModule;
 };
 
 class IotsaMod : public IotsaBaseMod {
 public:
-  IotsaMod(IotsaApplication &_app, IotsaAuthMod *_auth=NULL, bool early=false)
+  IotsaMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
   : IotsaBaseMod(_app, _auth, early)
   {
   }
@@ -105,14 +111,10 @@ public:
 protected:
 };
 
-class IotsaAuthMod : public IotsaMod {
+class IotsaAuthMod : public IotsaMod, public IotsaAuthenticationProvider {
 public:
   using IotsaMod::IotsaMod;	// Inherit constructor
-  virtual bool needsAuthentication(const char *right);
-  virtual bool needsAuthentication(const char *object, const char *verb);
 };
-inline bool IotsaBaseMod::needsAuthentication(const char *right) { return auth ? auth->needsAuthentication(right) : false; }
-inline bool IotsaAuthMod::needsAuthentication(const char *object, const char *verb) { return auth ? auth->needsAuthentication(object, verb) : false; }
 
 extern bool configurationMode;        // True if we have no config, and go into AP mode
 typedef enum { TMPC_NORMAL, TMPC_CONFIG, TMPC_OTA, TMPC_RESET } config_mode;
