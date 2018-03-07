@@ -44,7 +44,7 @@ IotsaLogPrinter::write(uint8_t ch) {
   if (logBuffer->outp >= BUFFER_SIZE) logBuffer->outp = 0;
 };
 
-IotsaLoggerMod::IotsaLoggerMod(IotsaApplication &_app, IotsaAuthMod *_auth)
+IotsaLoggerMod::IotsaLoggerMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth)
 : IotsaMod(_app, _auth, true)
 {
   iotsaOverrideSerial = &iotsaLogPrinter;
@@ -53,6 +53,7 @@ IotsaLoggerMod::IotsaLoggerMod(IotsaApplication &_app, IotsaAuthMod *_auth)
 
 void
 IotsaLoggerMod::handler() {
+  if (needsAuthentication("logger")) return;
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
   server.send(200, "text/plain");
   String msg;
@@ -90,6 +91,6 @@ void IotsaLoggerMod::loop() {
 }
 
 String IotsaLoggerMod::info() {
-  String message = "<p>Built with logger. See <a href=\"/logger\">/logger</a> for details.</p>";
+  String message = "<p>Built with logger. See <a href=\"/logger\">/logger</a> to see the log.</p>";
   return message;
 }

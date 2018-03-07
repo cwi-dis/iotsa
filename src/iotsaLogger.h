@@ -4,7 +4,7 @@
 
 class IotsaLoggerMod : public IotsaMod {
 public:
-  IotsaLoggerMod(IotsaApplication &_app, IotsaAuthMod *_auth=NULL);
+  IotsaLoggerMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL);
   void setup();
   void serverSetup();
   void loop();
