@@ -131,6 +131,10 @@ bool IotsaCapabilityMod::putHandler(const char *path, const JsonVariant& request
   return anyChanged;
 }
 
+bool IotsaCapabilityMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+  return false;
+}
+
 void IotsaCapabilityMod::setup() {
   configLoad();
 }
@@ -172,6 +176,11 @@ bool IotsaCapabilityMod::allows(const char *obj, IotsaApiOperation verb) {
   }
   // If no rights fall back to username/password authentication
   return chain.allows(obj, verb);
+}
+
+bool IotsaCapabilityMod::allows(const char *right) {
+  // If no rights fall back to username/password authentication
+  return chain.allows(right);
 }
 
 void IotsaCapabilityMod::loadCapabilitiesFromRequest() {
