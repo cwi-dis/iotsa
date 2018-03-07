@@ -152,6 +152,8 @@ void IotsaCapabilityMod::configLoad() {
 
 void IotsaCapabilityMod::configSave() {
   IotsaConfigFileSave cf("/config/capabilities.cfg");
+  cf.put("issuer", trustedIssuer);
+  cf.put("key", issuerKey);
   IotsaSerial.print("Saved capabilities.cfg, issuer=");
   IotsaSerial.print(trustedIssuer);
   IotsaSerial.print(", key length=");
@@ -171,8 +173,13 @@ String IotsaCapabilityMod::info() {
 bool IotsaCapabilityMod::allows(const char *obj, IotsaApiOperation verb) {
   loadCapabilitiesFromRequest();
   if (capabilities) {
-    if (capabilities->allows(obj, verb))
+    if (capabilities->allows(obj, verb)) {
+      IFDEBUGX IotsaSerial.print("Capability allows operation on ");
+      IFDEBUGX IotsaSerial.println(obj);
       return true;
+    }
+    IFDEBUGX IotsaSerial.print("Capability does NOT allow operation on ");
+    IFDEBUGX IotsaSerial.println(obj);
   }
   // If no rights fall back to username/password authentication
   return chain.allows(obj, verb);
