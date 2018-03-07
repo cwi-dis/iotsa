@@ -81,8 +81,8 @@ void
 IotsaCapabilityMod::handler() {
   String _trustedIssuer = server.arg("trustedIssuer");
   String _issuerKey = server.arg("issuerKey");
-  if (_trustedIssuer || issuerKey) {
-    if (configurationMode == TMPC_CONFIG) {
+  if (_trustedIssuer != "" || _issuerKey != "") {
+    if (configurationMode != TMPC_CONFIG) {
       server.send(401, "text/plain", "401 Unauthorized, not in configuration mode");
       return;
     }
@@ -154,7 +154,7 @@ void IotsaCapabilityMod::configSave() {
   IotsaConfigFileSave cf("/config/capabilities.cfg");
   IotsaSerial.print("Saved capabilities.cfg, issuer=");
   IotsaSerial.print(trustedIssuer);
-  IotsaSerial.print("key kength=");
+  IotsaSerial.print(", key length=");
   IotsaSerial.println(issuerKey.length());
 }
 
