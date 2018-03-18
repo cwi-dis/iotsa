@@ -82,7 +82,7 @@ IotsaCapabilityMod::handler() {
   String _trustedIssuer = server.arg("trustedIssuer");
   String _issuerKey = server.arg("issuerKey");
   if (_trustedIssuer != "" || _issuerKey != "") {
-    if (configurationMode != TMPC_CONFIG) {
+    if (!iotsaConfig.inConfigurationMode()) {
       server.send(401, "text/plain", "401 Unauthorized, not in configuration mode");
       return;
     }
@@ -94,7 +94,7 @@ IotsaCapabilityMod::handler() {
     return;
   }
   String message = "<html><head><title>Capability Authority</title></head><body><h1>Capability Authority</h1>";
-  if (configurationMode != TMPC_CONFIG)
+  if (!iotsaConfig.inConfigurationMode())
     message += "<p><em>Note:</em> You must be in configuration mode to be able to change issuer or key.</p>";
   message += "<form method='get'>Issuer: <input name='trustedIssuer' value='";
   message += htmlEncode(trustedIssuer);
@@ -114,7 +114,7 @@ bool IotsaCapabilityMod::getHandler(const char *path, JsonObject& reply) {
 
 bool IotsaCapabilityMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   if (strcmp(path, "/api/capabilities") != 0) return false;
-  if (configurationMode != TMPC_CONFIG) return false;
+  if (!iotsaConfig.inConfigurationMode()) return false;
   bool anyChanged = false;
   JsonObject& reqObj = request.as<JsonObject>();
   if (reqObj.containsKey("trustedIssuer")) {
@@ -238,7 +238,7 @@ void IotsaCapabilityMod::loadCapabilitiesFromRequest() {
   if (root.containsKey("aud")) {
     JsonVariant audience = root["aud"];
     String myUrl("http://");
-    myUrl += hostName;
+    myUrl += iotsaConfig.hostName;
     myUrl += ".local";
     if (audience != "*" && !stringContainedIn(myUrl.c_str(), audience)) {
       IFDEBUGX IotsaSerial.print("Audience did not match, wtd=");

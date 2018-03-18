@@ -126,12 +126,28 @@ public:
   using IotsaMod::IotsaMod;	// Inherit constructor
 };
 
-extern bool configurationMode;        // True if we have no config, and go into AP mode
-typedef enum { TMPC_NORMAL, TMPC_CONFIG, TMPC_OTA, TMPC_RESET } config_mode;
-extern config_mode  tempConfigurationMode;    // Current configuration mode (i.e. after a power cycle)
-extern unsigned long tempConfigurationModeTimeout;  // When we reboot out of current configuration mode
-extern config_mode  nextConfigurationMode;    // Next configuration mode (i.e. before a power cycle)
-extern unsigned long nextConfigurationModeTimeout;  // When we abort nextConfigurationMode and revert to normal operation
-extern String hostName;
+typedef enum { IOTSA_MODE_NORMAL, IOTSA_MODE_CONFIG, IOTSA_MODE_OTA, IOTSA_MODE_FACTORY_RESET } config_mode;
 
+class IotsaConfig {
+public:
+  bool wifiPrivateNetworkMode;
+  config_mode configurationMode;
+  unsigned long configurationModeEndTime;
+  config_mode nextConfigurationMode;
+  int nextConfigurationModeEndTime;
+  String hostName;
+  int configurationModeTimeout;
+
+  bool inConfigurationMode() { return configurationMode == IOTSA_MODE_CONFIG; }
+  uint32_t getStatusColor() {
+    if (!WiFi.isConnected()) return 0x3f1f00; // Orange: not connected to WiFi
+    if (configurationMode == IOTSA_MODE_FACTORY_RESET) return 0x3f0000; // Red: Factory reset mode
+    if (configurationMode == IOTSA_MODE_CONFIG) return 0x3f003f;	// Magenta: user-requested configuration mode
+    if (configurationMode == IOTSA_MODE_OTA) return 0x003f3f;	// Cyan: OTA mode
+    if (wifiPrivateNetworkMode) return 0x3f3f00; // Yellow: configuration mode (not user requested)
+    return 0; // Off: all ok.
+  }
+};
+
+extern IotsaConfig iotsaConfig;
 #endif

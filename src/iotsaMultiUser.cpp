@@ -106,7 +106,7 @@ bool IotsaMultiUserMod::getHandler(const char *path, JsonObject& reply) {
 
 bool IotsaMultiUserMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   if (strcmp(path, "/api/users") != 0) return false;
-  if (configurationMode != TMPC_CONFIG) return false;
+  if (!iotsaConfig.inConfigurationMode()) return false;
   bool anyChanged = false;
   IotsaUser *u = new IotsaUser();
   JsonObject& reqObj = request.as<JsonObject>();

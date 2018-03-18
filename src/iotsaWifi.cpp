@@ -1,4 +1,5 @@
 #include <ESP.h>
+#include <user_interface.h>
 #ifdef ESP32
 #include <ESPmDNS.h>
 #include <SPIFFS.h>
@@ -14,24 +15,25 @@
 
 #define WIFI_TIMEOUT 30                  // How long to wait for our WiFi network to appear
 
+int privateNetworkModeReason;
 //
 // Global variables, because other modules need them too.
 //
-String hostName;  // mDNS hostname, and also used for AP network name if needed.
-bool configurationMode;        // True if we have no config, and go into AP mode
-int rebootConfigTimeout;		// Timeout (in seconds) for rebooting in configuration mode
-config_mode  tempConfigurationMode;    // Current configuration mode (i.e. after a power cycle)
-unsigned long tempConfigurationModeTimeout;  // When we reboot out of current configuration mode
-int tempConfigurationModeReason;
-config_mode  nextConfigurationMode;    // Next configuration mode (i.e. before a power cycle)
-unsigned long nextConfigurationModeTimeout;  // When we abort nextConfigurationMode and revert to normal operation
+IotsaConfig iotsaConfig = {
+  false,
+  IOTSA_MODE_NORMAL,
+  0,
+  IOTSA_MODE_NORMAL,
+  0,
+  ""
+};
 
 static void wifiDefaultHostName() {
-  hostName = "iotsa";
+  iotsaConfig.hostName = "iotsa";
 #ifdef ESP32
-  hostName += String(uint32_t(ESP.getEfuseMac()), HEX);
+  iotsaConfig.hostName += String(uint32_t(ESP.getEfuseMac()), HEX);
 #else
-  hostName += String(ESP.getChipId(), HEX);
+  iotsaConfig.hostName += String(ESP.getChipId(), HEX);
 #endif
 }
 
@@ -41,17 +43,28 @@ void IotsaWifiMod::setup() {
   IotsaSerial.println("Enable debug output");
   esp_log_level_set("*", ESP_LOG_DEBUG);
 #endif
-  tempConfigurationMode = nextConfigurationMode = TMPC_NORMAL;
-  tempConfigurationModeTimeout = nextConfigurationModeTimeout = 0;
-  tempConfigurationModeReason = 0;
+  iotsaConfig.configurationMode = IOTSA_MODE_NORMAL;
+  iotsaConfig.nextConfigurationMode = IOTSA_MODE_NORMAL;
+  iotsaConfig.configurationModeEndTime = 0;
+  iotsaConfig.nextConfigurationModeEndTime = 0;
+  privateNetworkModeReason = 0;
   configLoad();
   if (app.status) app.status->showStatus();
-  if (tempConfigurationMode) {
+  if (iotsaConfig.configurationMode) {
   	IFDEBUG IotsaSerial.println("tmpConfigMode, re-saving wifi.cfg without it");
   	configSave();
   }
+  // If a configuration mode was requested but the reset reason was not
+  // external reset (the button) or powerup we do not honor the configuration mode
+  // request: it could be triggered through a software bug or so, and we want to require
+  // user interaction.
+  rst_info *rip = ESP.getResetInfoPtr();
+  if (rip->reason != REASON_DEFAULT_RST && rip->reason != REASON_EXT_SYS_RST) {
+    iotsaConfig.configurationMode = IOTSA_MODE_NORMAL;
+    IFDEBUG IotsaSerial.println("tmpConfigMode not honoured because of reset reason");
+  }
   // If factory reset is requested format the Flash and reboot
-  if (tempConfigurationMode == TMPC_RESET) {
+  if (iotsaConfig.configurationMode == IOTSA_MODE_FACTORY_RESET) {
   	IFDEBUG IotsaSerial.println("Factory-reset requested");
   	delay(1000);
 #ifndef ESP32
@@ -66,12 +79,12 @@ void IotsaWifiMod::setup() {
   	ESP.restart();
   }
   if (app.status) app.status->showStatus();
-  // Try and connect to an existing Wifi network, if known and not in configuration mode
-  if (ssid.length() && tempConfigurationMode != TMPC_CONFIG) {
+  // Try and connect to an existing Wifi network, if known
+  if (ssid.length()) {
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid.c_str(), ssidPassword.c_str());
-	WiFi.setAutoConnect(false);
-	WiFi.setAutoReconnect(false);
+    WiFi.setAutoConnect(false);
+    WiFi.setAutoReconnect(false);
     IFDEBUG IotsaSerial.println("");
   
     // Wait for connection
@@ -89,44 +102,45 @@ void IotsaWifiMod::setup() {
       IFDEBUG IotsaSerial.print("IP address: ");
       IFDEBUG IotsaSerial.println(WiFi.localIP());
       IFDEBUG IotsaSerial.print("Hostname ");
-      IFDEBUG IotsaSerial.println(hostName);
+      IFDEBUG IotsaSerial.println(iotsaConfig.hostName);
       
       WiFi.setAutoReconnect(true);
 
-      if (MDNS.begin(hostName.c_str())) {
+      if (MDNS.begin(iotsaConfig.hostName.c_str())) {
         MDNS.addService("http", "tcp", 80);
+        MDNS.addService("iotsa", "tcp", 80);
         IFDEBUG IotsaSerial.println("MDNS responder started");
         haveMDNS = true;
       }
-	  if (tempConfigurationMode) {
-		tempConfigurationModeTimeout = millis() + 1000*rebootConfigTimeout;
-		IFDEBUG IotsaSerial.print("tempConfigMode=");
-		IFDEBUG IotsaSerial.print((int)tempConfigurationMode);
-		IFDEBUG IotsaSerial.print(", timeout at ");
-		IFDEBUG IotsaSerial.println(tempConfigurationModeTimeout);
-	  }
-	  if (app.status) app.status->showStatus();
+      if (iotsaConfig.configurationMode) {
+        iotsaConfig.configurationModeEndTime = millis() + 1000*iotsaConfig.configurationModeTimeout;
+        IFDEBUG IotsaSerial.print("tempConfigMode=");
+        IFDEBUG IotsaSerial.print((int)iotsaConfig.configurationMode);
+        IFDEBUG IotsaSerial.print(", timeout at ");
+        IFDEBUG IotsaSerial.println(iotsaConfig.configurationModeEndTime);
+      }
+      if (app.status) app.status->showStatus();
       return;
     }
-    tempConfigurationMode = TMPC_CONFIG;
-    tempConfigurationModeReason = WiFi.status();
+    iotsaConfig.wifiPrivateNetworkMode = true;
+    privateNetworkModeReason = WiFi.status();
     IFDEBUG IotsaSerial.print("Cannot join ");
     IFDEBUG IotsaSerial.print(ssid);
     IFDEBUG IotsaSerial.print(", status=");
-    IFDEBUG IotsaSerial.println(tempConfigurationModeReason);
+    IFDEBUG IotsaSerial.println(privateNetworkModeReason);
   }
   if (app.status) app.status->showStatus();
   
-  // Connection to WiFi network failed, or we are in (temp) cofiguration mode. Setup our own network.
-  if (tempConfigurationMode) {
-    tempConfigurationModeTimeout = millis() + 1000*rebootConfigTimeout;
+  // Make sure we also end configurationMode on a private network
+  if (iotsaConfig.configurationMode) {
+    iotsaConfig.configurationModeEndTime = millis() + 1000*iotsaConfig.configurationModeTimeout;
   	IFDEBUG IotsaSerial.print("tempConfigMode=");
-  	IFDEBUG IotsaSerial.print((int)tempConfigurationMode);
+  	IFDEBUG IotsaSerial.print((int)iotsaConfig.configurationMode);
   	IFDEBUG IotsaSerial.print(", timeout at ");
-  	IFDEBUG IotsaSerial.println(tempConfigurationModeTimeout);
+  	IFDEBUG IotsaSerial.println(iotsaConfig.configurationModeEndTime);
   }
-  configurationMode = true;
-  String networkName = "config-" + hostName;
+  iotsaConfig.wifiPrivateNetworkMode = true; // xxxjack
+  String networkName = "config-" + iotsaConfig.hostName;
   WiFi.mode(WIFI_AP);
   WiFi.softAP(networkName.c_str());
   WiFi.setAutoConnect(false);
@@ -159,15 +173,15 @@ IotsaWifiMod::handlerConfigMode() {
       anyChanged = true;
     }
     if( server.argName(i) == "hostName") {
-      hostName = server.arg(i);
+      iotsaConfig.hostName = server.arg(i);
       anyChanged = true;
     }
     if( server.argName(i) == "rebootTimeout") {
-      rebootConfigTimeout = server.arg(i).toInt();
+      iotsaConfig.configurationModeTimeout = server.arg(i).toInt();
       anyChanged = true;
     }
     if (anyChanged) {
-    	nextConfigurationMode = TMPC_NORMAL;
+    	iotsaConfig.nextConfigurationMode = IOTSA_MODE_NORMAL;
     	configSave();
 	}
   }
@@ -183,9 +197,9 @@ IotsaWifiMod::handlerConfigMode() {
   message += "'><br>Password: <input name='ssidPassword' value='";
   message += htmlEncode(ssidPassword);
   message += "'><br>Hostname: <input name='hostName' value='";
-  message += htmlEncode(hostName);
+  message += htmlEncode(iotsaConfig.hostName);
   message += "'><br>Configuration mode timeout: <input name='rebootTimeout' value='";
-  message += String(rebootConfigTimeout);
+  message += String(iotsaConfig.configurationModeTimeout);
   message += "'><br><input type='submit'></form>";
   message += "</body></html>";
   server.send(200, "text/html", message);
@@ -205,8 +219,8 @@ IotsaWifiMod::handlerNormalMode() {
   for (uint8_t i=0; i<server.args(); i++) {
     if( server.argName(i) == "config") {
     	if (needsAuthentication("config")) return;
-      	nextConfigurationMode = config_mode(atoi(server.arg(i).c_str()));
-      	nextConfigurationModeTimeout = millis() + rebootConfigTimeout*1000;
+      	iotsaConfig.nextConfigurationMode = config_mode(atoi(server.arg(i).c_str()));
+      	iotsaConfig.nextConfigurationModeEndTime = millis() + iotsaConfig.configurationModeTimeout*1000;
       	anyChanged = true;
     }
     if( server.argName(i) == "factoryreset" && atoi(server.arg(i).c_str()) == 1) {
@@ -222,21 +236,21 @@ IotsaWifiMod::handlerNormalMode() {
 	}
   }
   if (factoryReset && iamsure) {
-  	nextConfigurationMode = TMPC_RESET;
-	nextConfigurationModeTimeout = millis() + rebootConfigTimeout*1000;
+  	iotsaConfig.nextConfigurationMode = IOTSA_MODE_FACTORY_RESET;
+	iotsaConfig.nextConfigurationModeEndTime = millis() + iotsaConfig.configurationModeTimeout*1000;
   }
   if (anyChanged) {
 	if (app.status) app.status->showStatus();
 	configSave();
   }
   String message = "<html><head><title>WiFi configuration</title></head><body><h1>WiFi configuration</h1>";
-  if (nextConfigurationMode == TMPC_CONFIG) {
-  	message += "<p><em>Power-cycle device within " + String((nextConfigurationModeTimeout-millis())/1000) + " seconds to activate configuration mode for " + String(rebootConfigTimeout) + " seconds.</em></p>";
-  	message += "<p><em>Connect to WiFi network config-" + htmlEncode(hostName) + ", device 192.168.4.1 to change settings during that configuration period. </em></p>";
-  } else if (nextConfigurationMode == TMPC_OTA) {
-  	message += "<p><em>Power-cycle device within " + String((nextConfigurationModeTimeout-millis())/1000) + "seconds to activate OTA mode for " + String(rebootConfigTimeout) + " seconds.</em></p>";
-  } else if (nextConfigurationMode == TMPC_RESET) {
-  	message += "<p><em>Power-cycle device within " + String((nextConfigurationModeTimeout-millis())/1000) + "seconds to reset to factory settings.</em></p>";
+  if (iotsaConfig.nextConfigurationMode == IOTSA_MODE_CONFIG) {
+  	message += "<p><em>Power-cycle device within " + String((iotsaConfig.nextConfigurationModeEndTime-millis())/1000) + " seconds to activate configuration mode for " + String(iotsaConfig.configurationModeTimeout) + " seconds.</em></p>";
+  	message += "<p><em>Connect to WiFi network config-" + htmlEncode(iotsaConfig.hostName) + ", device 192.168.4.1 to change settings during that configuration period. </em></p>";
+  } else if (iotsaConfig.nextConfigurationMode == IOTSA_MODE_OTA) {
+  	message += "<p><em>Power-cycle device within " + String((iotsaConfig.nextConfigurationModeEndTime-millis())/1000) + "seconds to activate OTA mode for " + String(iotsaConfig.configurationModeTimeout) + " seconds.</em></p>";
+  } else if (iotsaConfig.nextConfigurationMode == IOTSA_MODE_FACTORY_RESET) {
+  	message += "<p><em>Power-cycle device within " + String((iotsaConfig.nextConfigurationModeEndTime-millis())/1000) + "seconds to reset to factory settings.</em></p>";
   }
   message += "<form method='get'><input name='config' type='checkbox' value='1'> Enter configuration mode after next reboot.<br>";
   if (app.otaEnabled()) {
@@ -248,15 +262,15 @@ IotsaWifiMod::handlerNormalMode() {
 }
 
 bool IotsaWifiMod::getHandler(const char *path, JsonObject& reply) {
-  reply["hostName"] = hostName;
-  reply["rebootTimeout"] = rebootConfigTimeout;
-  if (configurationMode) {
+  reply["hostName"] = iotsaConfig.hostName;
+  reply["rebootTimeout"] = iotsaConfig.configurationModeTimeout;
+  if (iotsaConfig.wifiPrivateNetworkMode) {
     reply["ssid"] = ssid;
     reply["ssidPassword"] = ssidPassword;
   } else {
-    if (nextConfigurationMode) {
-      reply["requestedMode"] = nextConfigurationMode;
-      reply["timeout"] = (nextConfigurationModeTimeout - millis())/1000;
+    if (iotsaConfig.nextConfigurationMode) {
+      reply["requestedMode"] = iotsaConfig.nextConfigurationMode;
+      reply["timeout"] = (iotsaConfig.nextConfigurationModeEndTime - millis())/1000;
     }
   }
   return true;
@@ -265,7 +279,7 @@ bool IotsaWifiMod::getHandler(const char *path, JsonObject& reply) {
 bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
   JsonObject& reqObj = request.as<JsonObject>();
-  if (configurationMode) {
+  if (iotsaConfig.wifiPrivateNetworkMode) {
     if (reqObj.containsKey("ssid")) {
       ssid = reqObj.get<String>("ssid");
       anyChanged = true;
@@ -284,12 +298,12 @@ bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, Json
     }
   } else {
     if (reqObj.containsKey("requestedMode")) {
-      nextConfigurationMode = config_mode(reqObj.get<int>("requestedMode"));
-      anyChanged = nextConfigurationMode != config_mode(0);
+      iotsaConfig.nextConfigurationMode = config_mode(reqObj.get<int>("requestedMode"));
+      anyChanged = iotsaConfig.nextConfigurationMode != config_mode(0);
       if (anyChanged) {
-        nextConfigurationModeTimeout = millis() + rebootConfigTimeout*1000;
-        reply["requestedMode"] = nextConfigurationMode;
-        reply["timeout"] = (nextConfigurationModeTimeout - millis())/1000;
+        iotsaConfig.nextConfigurationModeEndTime = millis() + iotsaConfig.configurationModeTimeout*1000;
+        reply["requestedMode"] = iotsaConfig.nextConfigurationMode;
+        reply["timeout"] = (iotsaConfig.nextConfigurationModeEndTime - millis())/1000;
       }
     }
   }
@@ -299,7 +313,7 @@ bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, Json
 
 void IotsaWifiMod::serverSetup() {
 //  server.on("/hello", std::bind(&IotsaWifiMod::handler, this));
-  if (configurationMode) {
+  if (iotsaConfig.wifiPrivateNetworkMode) {
     server.on("/wificonfig", std::bind(&IotsaWifiMod::handlerConfigMode, this));
   } else {
     server.on("/wificonfig", std::bind(&IotsaWifiMod::handlerNormalMode, this));
@@ -317,63 +331,81 @@ String IotsaWifiMod::info() {
   message += String(ip&0xff) + "." + String((ip>>8)&0xff) + "." + String((ip>>16)&0xff) + "." + String((ip>>24)&0xff);
   if (haveMDNS) {
     message += ", hostname is ";
-    message += htmlEncode(hostName);
+    message += htmlEncode(iotsaConfig.hostName);
     message += ".local. ";
   } else {
     message += " (no mDNS, so no hostname). ";
   }
   message += "See <a href=\"/wificonfig\">/wificonfig</a> to change network parameters.</p>";
-  if (tempConfigurationMode) {
-  	message += "<p>In configuration mode " + String((int)tempConfigurationMode) + "(reason: " + String(tempConfigurationModeReason) + "), will timeout in " + String((tempConfigurationModeTimeout-millis())/1000) + " seconds.</p>";
-  } else if (nextConfigurationMode) {
-  	message += "<p>Configuration mode " + String((int)nextConfigurationMode) + " requested, enable by rebooting within " + String((nextConfigurationModeTimeout-millis())/1000) + " seconds.</p>";
-  } else if (tempConfigurationModeTimeout) {
-  	message += "<p>Strange, no configuration mode but timeout is " + String(tempConfigurationModeTimeout-millis()) + "ms.</p>";
+  if (iotsaConfig.configurationMode) {
+  	message += "<p>In configuration mode " + String((int)iotsaConfig.configurationMode) + "(reason: " + String(privateNetworkModeReason) + "), will timeout in " + String((iotsaConfig.configurationModeEndTime-millis())/1000) + " seconds.</p>";
+  } else if (iotsaConfig.nextConfigurationMode) {
+  	message += "<p>Configuration mode " + String((int)iotsaConfig.nextConfigurationMode) + " requested, enable by rebooting within " + String((iotsaConfig.nextConfigurationModeEndTime-millis())/1000) + " seconds.</p>";
+  } else if (iotsaConfig.configurationModeEndTime) {
+  	message += "<p>Strange, no configuration mode but timeout is " + String(iotsaConfig.configurationModeEndTime-millis()) + "ms.</p>";
   }
+  message += "<p>Last boot " + String((int)millis()/1000) + " seconds ago, reason ";
+  rst_info *rip = ESP.getResetInfoPtr();
+  static const char *reasons[] = {
+    "power",
+    "hardwareWatchdog",
+    "exception",
+    "softwareWatchdog",
+    "softwareReboot",
+    "deepSleepAwake",
+    "externalReset"
+  };
+  const char *reason = "unknown";
+  if ((int)rip->reason < sizeof(reasons)/sizeof(reasons[0])) {
+    reason = reasons[(int)rip->reason];
+  }
+  message += reason;
+  message += " ("+String((int)rip->reason)+").</p>";
   return message;
 }
 
 void IotsaWifiMod::configLoad() {
   IotsaConfigFileLoad cf("/config/wifi.cfg");
   int tcm;
-  cf.get("mode", tcm, (int)TMPC_NORMAL);
-  tempConfigurationMode = (config_mode)tcm;
+  cf.get("mode", tcm, (int)IOTSA_MODE_NORMAL);
+  iotsaConfig.configurationMode = (config_mode)tcm;
   cf.get("ssid", ssid, "");
   cf.get("ssidPassword", ssidPassword, "");
-  cf.get("hostName", hostName, "");
-  cf.get("rebootTimeout", rebootConfigTimeout, CONFIGURATION_MODE_TIMEOUT);
-  if (hostName == "") wifiDefaultHostName();
+  cf.get("hostName", iotsaConfig.hostName, "");
+  cf.get("rebootTimeout", iotsaConfig.configurationModeTimeout, CONFIGURATION_MODE_TIMEOUT);
+  if (iotsaConfig.hostName == "") wifiDefaultHostName();
  
 }
 
 void IotsaWifiMod::configSave() {
   IotsaConfigFileSave cf("/config/wifi.cfg");
-  cf.put("mode", nextConfigurationMode); // Note: nextConfigurationMode, which will be read as tempConfigurationMode
+  cf.put("mode", iotsaConfig.nextConfigurationMode); // Note: nextConfigurationMode, which will be read as configurationMode
   cf.put("ssid", ssid);
   cf.put("ssidPassword", ssidPassword);
-  cf.put("hostName", hostName);
-  cf.put("rebootTimeout", rebootConfigTimeout);
+  cf.put("hostName", iotsaConfig.hostName);
+  cf.put("rebootTimeout", iotsaConfig.configurationModeTimeout);
   IFDEBUG IotsaSerial.println("Saved wifi.cfg");
 }
 
 void IotsaWifiMod::loop() {
-  if (tempConfigurationModeTimeout && millis() > tempConfigurationModeTimeout) {
+  if (iotsaConfig.configurationModeEndTime && millis() > iotsaConfig.configurationModeEndTime) {
     IFDEBUG IotsaSerial.println("Configuration mode timeout. reboot.");
-    tempConfigurationMode = TMPC_NORMAL;
-    tempConfigurationModeTimeout = 0;
+    iotsaConfig.configurationMode = IOTSA_MODE_NORMAL;
+    iotsaConfig.configurationModeEndTime = 0;
     ESP.restart();
   }
-  if (nextConfigurationModeTimeout && millis() > nextConfigurationModeTimeout) {
+  if (iotsaConfig.nextConfigurationModeEndTime && millis() > iotsaConfig.nextConfigurationModeEndTime) {
     IFDEBUG IotsaSerial.println("Next configuration mode timeout. Clearing.");
-    nextConfigurationMode = TMPC_NORMAL;
-    nextConfigurationModeTimeout = 0;
+    iotsaConfig.nextConfigurationMode = IOTSA_MODE_NORMAL;
+    iotsaConfig.nextConfigurationModeEndTime = 0;
     configSave();
   }
 #ifndef ESP32
   // mDNS happens asynchronously on ESP32
   if (haveMDNS) MDNS.update();
 #endif
-  if (tempConfigurationMode == TMPC_NORMAL && !configurationMode) {
+  // xxxjack
+  if (!iotsaConfig.wifiPrivateNetworkMode) {
   	// Should be in normal mode, check that we have WiFi
   	static int disconnectedCount = 0;
   	if (WiFi.status() == WL_CONNECTED) {
@@ -386,7 +418,7 @@ void IotsaWifiMod::loop() {
 			IFDEBUG IotsaSerial.println("Wifi connection lost");
 		}
 		disconnectedCount++;
-		if (disconnectedCount > 32000) {
+		if (disconnectedCount > 60000) {
 			IFDEBUG IotsaSerial.println("Wifi connection lost too long. Reboot.");
 			ESP.restart();
 		}

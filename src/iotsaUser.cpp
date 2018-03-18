@@ -93,7 +93,7 @@ IotsaUserMod::handler() {
   message += "empty1";
   message += "'>";
   if (password == "") {
-	if (configurationMode == TMPC_CONFIG) {
+	if (iotsaConfig.inConfigurationMode()) {
 	  message += "<br><i>(Password not set, default is '";
 	  message += defaultPassword();
 	  message += "')</i>";
@@ -125,7 +125,7 @@ bool IotsaUserMod::putHandler(const char *path, const JsonVariant& request, Json
 
 bool IotsaUserMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   if (strcmp(path, "/api/users/0") != 0) return false;
-  if (configurationMode != TMPC_CONFIG) return false;
+  if (!iotsaConfig.inConfigurationMode()) return false;
   bool anyChanged = false;
   JsonObject& reqObj = request.as<JsonObject>();
   // Check old password, if a password has been set.
@@ -185,7 +185,7 @@ void IotsaUserMod::loop() {
 String IotsaUserMod::info() {
   String message = "<p>Usernames/passwords enabled.";
   message += " See <a href=\"/users\">/users</a> to change.";
-  if (configurationMode && password == "") {
+  if (iotsaConfig.inConfigurationMode() && password == "") {
   	message += "<br>Username and password are the defaults: '";
   	message += htmlEncode(username);
   	message += "' and '";
