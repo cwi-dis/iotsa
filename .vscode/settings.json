@@ -1,6 +1,6 @@
 {
     "terminal.integrated.env.osx": {
-        "PATH": "/Users/jack/.platformio/penv/bin:/Users/jack/.platformio/penv:/opt/local/bin:/opt/local/sbin:/Library/Frameworks/Python.framework/Versions/2.7/bin:/Users/jack/bin:/usr/local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/X11/bin:/Applications/Wireshark.app/Contents/MacOS",
+        "PATH": "/Users/jack/.platformio/penv/bin:/Users/jack/.platformio/penv:/Users/jack/bin:/usr/local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/X11/bin:/Applications/Wireshark.app/Contents/MacOS",
         "PLATFORMIO_CALLER": "vscode"
     },
     "files.associations": {
@@ -8,6 +8,7 @@
         "array": "cpp",
         "istream": "cpp",
         "tuple": "cpp",
-        "utility": "cpp"
+        "utility": "cpp",
+        "type_traits": "cpp"
     }
 }

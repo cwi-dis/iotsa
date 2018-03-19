@@ -16,13 +16,7 @@ protected:
 private:
   void configLoad();
   void configSave();
-  void handlerNormalMode();
-  void handlerConfigMode();
-
-  String ssid;
-  String ssidPassword;
-  bool haveMDNS;
-
+  void handler();
 };
 
 #endif
