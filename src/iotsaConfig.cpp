@@ -103,9 +103,9 @@ IotsaConfigMod::handler() {
     }
     if( server.argName(i) == "mode") {
     	if (needsAuthentication("config")) return;
-      	iotsaConfig.nextConfigurationMode = config_mode(atoi(server.arg(i).c_str()));
-      	iotsaConfig.nextConfigurationModeEndTime = millis() + iotsaConfig.configurationModeTimeout*1000;
-      	anyChanged = true;
+      iotsaConfig.nextConfigurationMode = config_mode(atoi(server.arg(i).c_str()));
+      iotsaConfig.nextConfigurationModeEndTime = millis() + iotsaConfig.configurationModeTimeout*1000;
+      anyChanged = true;
     }
     if( server.argName(i) == "factoryreset" && atoi(server.arg(i).c_str()) == 1) {
     	// Note: factoryReset does NOT require authenticationso users have a way to reclaim
@@ -142,29 +142,31 @@ IotsaConfigMod::handler() {
       message += " seconds to activate.</em></p>";
     }
   }
-  if (iotsaConfig.wifiPrivateNetworkMode && app.otaEnabled()) {
-  	message += "<p>(<em>Warning:</em> Enabling OTA may not work because mDNS not available on this WiFi network.)</p>";
+  if (!iotsaConfig.inConfigurationMode()) {
+    message += "<p>Hostname: ";
+    message += htmlEncode(iotsaConfig.hostName);
+    message += " (goto configuration mode to change)<br>Configuration mode timeout: ";
+    message += String((iotsaConfig.nextConfigurationModeEndTime - millis())/1000);
+    message += " (goto configuration mode to change)</p>";
   }
   message += "<form method='get'>";
   if (iotsaConfig.inConfigurationMode()) {
     message += "Hostname: <input name='hostName' value='";
     message += htmlEncode(iotsaConfig.hostName);
     message += "'><br>Configuration mode timeout: <input name='rebootTimeout' value='";
-    message += String(iotsaConfig.configurationModeTimeout);
+    message += String(iotsaConfig.configurationModeTimeout/1000);
     message += "><br>";
-  } else {
-    message += "Hostname: ";
-    message += htmlEncode(iotsaConfig.hostName);
-    message += " (goto configuration mode to change)<br>Configuration mode timeout: ";
-    message += String((iotsaConfig.nextConfigurationModeEndTime - millis())/1000);
-    message += " (goto configuration mode to change)<br>";
-
-    message += "<input name='mode' type='checkbox' value='1'> Enter configuration mode after next reboot.<br>";
-    if (app.otaEnabled()) {
-      message += "<input name='mode' type='checkbox' value='2'> Enable over-the-air update after next reboot.</br>";
-    }
-    message += "<input name='factoryreset' type='checkbox' value='1'> Factory-reset and clear all files. <input name='iamsure' type='checkbox' value='1'> Yes, I am sure.</br>";
   }
+
+  message += "<input name='mode' type='checkbox' value='1'> Enter configuration mode after next reboot.<br>";
+  if (app.otaEnabled()) {
+    message += "<input name='mode' type='checkbox' value='2'> Enable over-the-air update after next reboot.";
+    if (iotsaConfig.wifiPrivateNetworkMode) {
+      message += "(<em>Warning:</em> Enabling OTA may not work because mDNS not available on this WiFi network.)";
+    }
+    message += "<br>";
+  }
+  message += "<input name='factoryreset' type='checkbox' value='1'> Factory-reset and clear all files. <input name='iamsure' type='checkbox' value='1'> Yes, I am sure.</br>";
   message += "<input type='submit'></form>";
   message += "</body></html>";
   server.send(200, "text/html", message);

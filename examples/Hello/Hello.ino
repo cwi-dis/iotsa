@@ -48,7 +48,6 @@ String helloInfo() {
   	rv += "\" that is currently greeted.";
   }
   rv += "</p>";
-  rv += "<p>Last power cycle " + String(millis()/1000) + "s, last boot time " + String((millis()-bootTime)/1000) + "s.</p>";
   return rv;
 }
 

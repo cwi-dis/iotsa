@@ -91,6 +91,7 @@ void IotsaWifiMod::setup() {
 
 void
 IotsaWifiMod::handler() {
+  if (needsAuthentication("config")) return;
   bool anyChanged = false;
   for (uint8_t i=0; i<server.args(); i++){
     if( server.argName(i) == "ssid") {

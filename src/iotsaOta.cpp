@@ -61,7 +61,7 @@ String IotsaOtaMod::info() {
   } else if (iotsaConfig.nextConfigurationMode == IOTSA_MODE_OTA) {
   	rv = "<p>Over the air (OTA) programming has been requested. Power cycle within " + String((iotsaConfig.nextConfigurationModeEndTime - millis())/1000) + " seconds to enable.</p>";
   } else {
-    rv = "<p>Over the air (OTA) programming possible, visit <a href=\"/wificonfig\">/wificonfig</a> to enable.</p>";
+    rv = "<p>Over the air (OTA) programming possible, visit <a href=\"/config\">/config</a> to enable.</p>";
   }
   return rv;
 }

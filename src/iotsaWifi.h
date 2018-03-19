@@ -2,10 +2,14 @@
 #define _IOTSAWIFI_H_
 #include "iotsa.h"
 #include "iotsaApi.h"
+#include "iotsaConfig.h"
 
 class IotsaWifiMod : public IotsaApiMod {
 public:
-  IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL) : IotsaApiMod(_app, _auth, true) {}
+  IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL) 
+  : IotsaApiMod(_app, _auth, true),
+    configMod(_app, _auth)
+  {}
 	void setup();
 	void serverSetup();
 	void loop();
@@ -21,7 +25,7 @@ private:
   String ssid;
   String ssidPassword;
   bool haveMDNS;
-
+  IotsaConfigMod configMod;
 };
 
 #endif
