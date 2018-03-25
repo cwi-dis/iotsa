@@ -149,5 +149,8 @@ public:
   }
 };
 
+#define WITH_IOTSA_CONFIG_STRUCT
+
 extern IotsaConfig iotsaConfig;
+extern String& hostName;
 #endif
