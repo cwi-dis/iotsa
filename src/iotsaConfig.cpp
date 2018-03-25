@@ -25,6 +25,8 @@ IotsaConfig iotsaConfig = {
   ""
 };
 
+String& hostName(iotsaConfig.hostName);
+
 static void wifiDefaultHostName() {
   iotsaConfig.hostName = "iotsa";
 #ifdef ESP32
