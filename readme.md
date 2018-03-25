@@ -33,11 +33,11 @@ $ platformio run --target upload
 
 On reboot, the board will first initialize the SPIFFS flash filesystem (if needed) and then create a WiFi network with a name similar to _config-iotsa1234_. Connect a device to that network and visit <http://192.168.4.1>. Configure your device name, WiFi name and password, and after reboot the iotsa board should connect to your network and be visible as <http://yourdevicename.local>.
 
-When the device is running normally you can visit <http://yourdevicename.local/wificonfig> and request the device to go back into configuration mode, or to do a factory reset. After requesting this you have 2 minutes to power cycle the device to make it go into configuration mode again (see previous paragraph) or do a complete factory reset. When in configuration mode you have two minutes to change the configuration (device name, WiFi name, password) before the device reverts to normal operation. The idea behind this sequence (_request configuration mode_, then _power cycle_, then _change parameters_) is that you need both network acccess and physical access before you can do a disruptive operation on the device.
+When the device is running normally you can visit <http://yourdevicename.local/wificonfig> and request the device to go back into configuration mode, or to do a factory reset. After requesting this you have 5 minutes to power cycle the device to make it go into configuration mode again (see previous paragraph) or do a complete factory reset. When in configuration mode you have two minutes to change the configuration (device name, WiFi name, password) before the device reverts to normal operation. The idea behind this sequence (_request configuration mode_, then _power cycle_, then _change parameters_) is that you need both network acccess and physical access before you can do a disruptive operation on the device.
 
 ### OTA programming
 
-If you have enabled over-the-air programming <http://yourdevicename.local/wificonfig> will also allow you to request the device to go into programmable mode. Again, you have two minutes to power cycle and then two minutes to reprogram:
+If you have enabled over-the-air programming <http://yourdevicename.local/wificonfig> will also allow you to request the device to go into programmable mode. Again, you have 5 minutes to power cycle and then 5 minutes to reprogram:
 
 - _For Arduino IDE_: 
   - In _Tools_ -> _Port_ -> _Network Port_ select your device.
@@ -228,10 +228,27 @@ These methods are called on incoming REST calls. The request parameter object (o
 
 ### iotsaWifi.h
 
-Handles WiFi configuration, factory reset and (if enabled) over-the-air programming.
-This is technically a module, but unlike other modules it is not really optional. This module also opens and/or initializes the SPIFFS filesystem (for historical reasons).
+Handles WiFi configuration.
+This is technically a module, but unlike other modules it is not really optional for this release .You must instantiate it in your program.
 
-If the iotsa server is operating in normal (production) mode a user can access URL `/wificonfig` to request configuration mode, factory reset or ota-programming mode. The user must then turn power off and on again within 2 minutes to switch the iotsa server to its new mode, for another 2 minutes. If nothing happens during this period the server reboots and reverts to normal mode.
+A iotsa device can join an existing WiFi network (normal WiFi mode) or create a temporary network as an Access Point (private WiFi mode). 
+In private mode the device does not connect to a WiFi network, but in stead creates its own network (as a base station) with a name starting with "_config-_". The user can now connect a device to this network and visit `http://192.168.4.1/wificonfig`. Here it is possible to set the normal WiFi network to connect to and the password.
+
+If a device is new (it has no WiFi network name) it will enter private mode automatically. If a device cannot find its configured WiFi network it will enter private mode for 5 minutes and then reboot and retry joining the configured network.
+
+If a device has a WiFi network configured but it cannot join this network after trying for 5 minutes it will go to private network mode.
+
+If a device is in normal WiFi mode the WiFi parameters can only be changed if the device is in configuration mode.
+
+The module also provides a REST api on `/api/wificonfig` (and this api depends on whether in configuration mode or not).
+
+### iotsaConfig.h
+
+Handles general configuration, factory reset and (if enabled) over-the-air programming.
+This is technically a module, but unlike other modules it is not really optional. It should _not_ be instantiated in your
+program, this happens automatically. This module also opens and/or initializes the SPIFFS filesystem.
+
+If the iotsa server is operating in normal (production) mode a user can access URL `/config` to request configuration mode, factory reset or ota-programming mode. The user must then turn power off and on again within 5 minutes to switch the iotsa server to its new mode, for another 5 minutes. If nothing happens during this period the server reboots and reverts to normal mode.
 
 The intention of requiring a power cycle is that any "dangerous" operation requires both network access (to request the operation) and physical access (to turn power on and off).
 
@@ -239,11 +256,7 @@ On a factory reset all configuration information (literally: _all_) is forgotten
 
 In ota-programming mode the device functions normally, but can also be reprogrammed using the Arduino IDE and its OTA facilities.
 
-In configuration mode the device does not connect to a WiFi network, but in stead creates its own network (as a base station) with a name starting with "_config-_". The user can now connect a device to this network and visit `http://192.168.4.1/wificonfig`. Here it is possible to change the normal (production) WiFi network to connect to and the password.
-
-If a device is new (it has no WiFi network name) it will enter configuration mode automatically. If a device cannot find its configured WiFi network it will enter configuration mode for 2 minutes and then reboot.
-
-The module also provides a REST api on `/api/wificonfig` (and this api depends on whether in configuration mode or not).
+The module also provides a REST api on `/api/config` (and this api depends on whether in configuration mode or not).
 
 ### iotsaSimple.h
 
@@ -329,7 +342,7 @@ bool localIsPM();			// AM/PM indicator
 Provides a user interface at `/ntp` and a REST interface at `/api/ntp`.
 ### iotsaOta.h
 
-Allows Over-the-air reprogramming of a iotsa server. After ota-programming has been enabled the device will show up (for 2 minutes) in the Arduino IDE, menu _Tools_ -> _Port_, under the _Network Ports_ section. Select it, and press the checkmark on your sketch to upload.
+Allows Over-the-air reprogramming of a iotsa server. After ota-programming has been enabled the device will show up (for 5 minutes) in the Arduino IDE, menu _Tools_ -> _Port_, under the _Network Ports_ section. Select it, and press the checkmark on your sketch to upload.
 
 ### iotsaUser.h
 

@@ -1,3 +1,14 @@
+iotsa 1.5 - x-xxx-xxxx
+
+- WiFi config and general config have been split into two modules (listening on /wifi and /config, and the
+  respective /api endpoints). All general configuration parameters are now in a global iotsaConfig structure.
+  The iotsaConfig module does not have to be instantiated, this happens automatically.
+- Configuration mode can now be active on the normal WiFi network. The special private network is only used when
+  no WiFi network is configured or the configured network is not available. Private network no longer implies
+  configuration mode.
+- All web form argument handling has been converted to no longer using looping over the arguments.
+- Default timeouts for reprogramming and configuration mode and such set to 5 minutes.
+
 iotsa 1.4 - 6-Mar-2018
 
 - Fixed serious issue in design of access control.
