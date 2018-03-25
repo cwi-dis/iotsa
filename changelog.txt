@@ -1,4 +1,4 @@
-iotsa 1.5 - 26-Mar-2018
+iotsa 1.6 - 26-Mar-2018
 
 - WiFi config and general config have been split into two modules (listening on /wifi and /config, and the
   respective /api endpoints). All general configuration parameters are now in a global iotsaConfig structure.
@@ -8,6 +8,10 @@ iotsa 1.5 - 26-Mar-2018
   configuration mode.
 - All web form argument handling has been converted to no longer using looping over the arguments.
 - Default timeouts for reprogramming and configuration mode and such set to 5 minutes.
+
+iotsa 1.5 - 8-Mar-2018
+
+- Added support for capability-based access to resources.
 
 iotsa 1.4 - 6-Mar-2018
 
