@@ -57,10 +57,8 @@ void
 helloHandler() {
   // Handles the page that is specific to the Hello module, greets the user and
   // optionally stores a new name to greet the next time.
-  for (uint8_t i=0; i<server.args(); i++){
-    if( server.argName(i) == "greeting") {
-      greeting = server.arg(i);
-    }
+  if( server.hasArg("greeting")) {
+    greeting = server.arg("greeting");
   }
   String message = "<html><head><title>Hello Server</title></head><body><h1>Hello Server</h1>";
   message += "<p>Hello, " + IotsaMod::htmlEncode(greeting) + "!</p>";

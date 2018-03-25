@@ -12,7 +12,7 @@ public:
   void loop();
   String info();
   bool allows(const char *right=NULL);
-  bool allows(const char *obj, const char *verb);
+  bool allows(const char *obj, IotsaApiOperation verb);
 protected:
   void configLoad();
   void configSave();

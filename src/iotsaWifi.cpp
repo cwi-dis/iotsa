@@ -91,33 +91,41 @@ void IotsaWifiMod::setup() {
 
 void
 IotsaWifiMod::handler() {
+  bool wrongMode = false;
   if (needsAuthentication("config")) return;
   bool anyChanged = false;
-  for (uint8_t i=0; i<server.args(); i++){
-    if( server.argName(i) == "ssid") {
-      ssid = server.arg(i);
+  if( server.hasArg("ssid")) {
+    if (iotsaConfig.inConfigurationMode() || iotsaConfig.wifiPrivateNetworkMode) {
+      ssid = server.arg("ssid");
       anyChanged = true;
+    } else {
+      wrongMode = true;
     }
-    if( server.argName(i) == "ssidPassword") {
-      ssidPassword = server.arg(i);
+  }
+  if( server.hasArg("ssidPassword")) {
+    if (iotsaConfig.inConfigurationMode() || iotsaConfig.wifiPrivateNetworkMode) {
+      ssidPassword = server.arg("ssidPassword");
       anyChanged = true;
+    } else {
+      wrongMode = true;
     }
-    if (anyChanged) {
-    	configSave();
-    }
+  }
+  if (anyChanged) {
+    configSave();
   }
   String message = "<html><head><title>WiFi configuration</title></head><body><h1>WiFi configuration</h1>";
   if (anyChanged) {
     message += "<p>Settings saved to EEPROM. <em>Rebooting device to activate new settings.</em></p>";
+  }
+  if (wrongMode) {
+    message += "<p><em>Error:</em> must be in configuration mode to change WiFi settings. See <a href='/config'>/config</a> to enable.</p>";
   }
   message += "<p>Hostname: ";
   message += htmlEncode(iotsaConfig.hostName);
   message += ", see <a href='/config'>/config</a> to change.</p>";
   message += "<form method='get'>Network: <input name='ssid' value='";
   message += htmlEncode(ssid);
-  message += "'><br>Password: <input type='password' name='ssidPassword' value='";
-  message += htmlEncode(ssidPassword);
-  message += "'><br><input type='submit'></form>";
+  message += "'><br>Password: <input type='password' name='ssidPassword'><br><input type='submit'></form>";
   message += "</body></html>";
   server.send(200, "text/html", message);
   if (anyChanged) {
@@ -130,7 +138,9 @@ IotsaWifiMod::handler() {
 
 bool IotsaWifiMod::getHandler(const char *path, JsonObject& reply) {
   reply["ssid"] = ssid;
+#if 0
   reply["ssidPassword"] = ssidPassword;
+#endif
   return true;
 }
 

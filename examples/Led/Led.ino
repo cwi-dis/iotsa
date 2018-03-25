@@ -56,23 +56,21 @@ IotsaLedControlMod::handler() {
   int _count = 1;
   int _onDuration = 0;
   int _offDuration = 0;
-  for (uint8_t i=0; i<server.args(); i++){
-    if( server.argName(i) == "rgb") {
-      _rgb = strtol(server.arg(i).c_str(), 0, 16);
-      anyChanged = true;
-    }
-    if( server.argName(i) == "onDuration") {
-      _onDuration = server.arg(i).toInt();
-      anyChanged = true;
-    }
-    if( server.argName(i) == "offDuration") {
-      _offDuration = server.arg(i).toInt();
-      anyChanged = true;
-    }
-    if( server.argName(i) == "count") {
-      _count = server.arg(i).toInt();
-      anyChanged = true;
-    }
+  if( server.hasArg("rgb")) {
+    _rgb = strtol(server.arg("rgb").c_str(), 0, 16);
+    anyChanged = true;
+  }
+  if( server.hasArg("onDuration")) {
+    _onDuration = server.arg("onDuration").toInt();
+    anyChanged = true;
+  }
+  if( server.hasArg("offDuration")) {
+    _offDuration = server.arg("offDuration").toInt();
+    anyChanged = true;
+  }
+  if( server.hasArg("count")) {
+    _count = server.arg("count").toInt();
+    anyChanged = true;
   }
   if (anyChanged) set(_rgb, _onDuration, _offDuration, _count);
   

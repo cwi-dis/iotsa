@@ -28,46 +28,34 @@ IotsaUserMod::IotsaUserMod(IotsaApplication &_app, const char *_username, const 
 void
 IotsaUserMod::handler() {
   bool anyChanged = false;
-  String pwold, pw1, pw2;
   bool passwordChanged = false;
   bool oldPasswordCorrect = false;
   bool newPasswordsMatch = false;
   String newUsername;
   
-  for (uint8_t i=0; i<server.args(); i++){
-    if( server.argName(i) == "username") {
-    	newUsername = server.arg(i);
-    	if (newUsername == username) {
-    		newUsername = "";
-    		anyChanged = false;
-    	} else {
-			if (needsAuthentication("users")) return;
-	    	anyChanged = true;
-		}
-    }
-    if( server.argName(i) == "old") {
-    	// password authentication is checked later.
-    	pwold = server.arg(i);
-    	oldPasswordCorrect = pwold == password;
-    }
-    if( server.argName(i) == "password") {
-    	// password authentication is checked later.
-    	pw1 = server.arg(i);
-    	passwordChanged = true;
-    }
-    if( server.argName(i) == "again") {
-    	pw2 = server.arg(i);
-    	passwordChanged = true;
+  if( server.hasArg("username")) {
+    newUsername = server.arg("username");
+    if (newUsername == username) {
+      // No change, really.
+      newUsername = "";
+      anyChanged = false;
+    } else {
+      if (needsAuthentication("users")) return;
+      anyChanged = true;
     }
   }
-  if (passwordChanged) {
-	  newPasswordsMatch = pw1 == pw2;
-	  if (newPasswordsMatch && oldPasswordCorrect) {
-	  	password = pw1;
-	  	anyChanged = true;
-	  } else {
-	  	anyChanged = false;
-	  }
+  if( server.hasArg("password")) {
+    // password authentication is checked later.
+    String pw1 = server.arg("passwd");
+    String pw2 = server.arg("again");
+    String old = server.arg("old");
+    oldPasswordCorrect = (old == password);
+    newPasswordsMatch = (pw1 == pw2);
+    if (oldPasswordCorrect && newPasswordsMatch) {
+      password = pw1;
+      passwordChanged = true;
+      anyChanged = true;
+    }
   }
   if (anyChanged && newUsername != "") {
   	username = newUsername;
@@ -93,13 +81,13 @@ IotsaUserMod::handler() {
   message += "empty1";
   message += "'>";
   if (password == "") {
-	if (iotsaConfig.inConfigurationMode()) {
-	  message += "<br><i>(Password not set, default is '";
-	  message += defaultPassword();
-	  message += "')</i>";
-	} else {
-	  message += "<br><i>(Password not set, reboot in configuration mode to see default password)</i>)";
-	}
+    if (iotsaConfig.inConfigurationMode()) {
+      message += "<br><i>(Password not set, default is '";
+      message += defaultPassword();
+      message += "')</i>";
+    } else {
+      message += "<br><i>(Password not set, reboot in configuration mode to see default password)</i>)";
+    }
   }
   message += "<br>New Password: <input type='password' name='password' value='";
   message += "empty2";

@@ -114,7 +114,7 @@ bool IotsaStaticTokenMod::allows(const char *right) {
   return chain.allows(right);
 }
 
-bool IotsaStaticTokenMod::allows(const char *obj, const char *verb) {
+bool IotsaStaticTokenMod::allows(const char *obj, IotsaApiOperation verb) {
   return allows("api");
 }
 

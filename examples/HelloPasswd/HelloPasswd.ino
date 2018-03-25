@@ -36,7 +36,7 @@ public:
     }
     return true;
   }
-  bool allows(const char *obj, const char *verb) {
+  bool allows(const char *obj, IotsaApiOperation verb) {
     return allows("api");
   }
 };
@@ -69,13 +69,11 @@ void
 IotsaHelloMod::handler() {
   // Handles the page that is specific to the Hello module, greets the user and
   // optionally stores a new name to greet the next time.
-  for (uint8_t i=0; i<server.args(); i++){
-    if( server.argName(i) == "greeting") {
-      if (needsAuthentication()) {
-        return;
-      }
-      greeting = server.arg(i);
+  if( server.hasArg("greeting")) {
+    if (needsAuthentication()) {
+      return;
     }
+    greeting = server.arg("greeting");
   }
   String message = "<html><head><title>Hello Server</title></head><body><h1>Hello Server</h1>";
   message += "<form method='get'>Greeting: <input name='greeting' value='";

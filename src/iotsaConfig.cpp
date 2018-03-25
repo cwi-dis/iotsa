@@ -89,43 +89,36 @@ void
 IotsaConfigMod::handler() {
   bool anyChanged = false;
   bool hostnameChanged = false;
-  bool factoryReset = false;
-  bool iamsure = false;
-  for (uint8_t i=0; i<server.args(); i++){
-    String argValue = server.arg(i);
-    if( server.argName(i) == "hostName" && argValue != iotsaConfig.hostName) {
-      iotsaConfig.hostName = server.arg(i);
+  if( server.hasArg("hostName")) {
+    String argValue = server.arg("hostname");
+    if (argValue != iotsaConfig.hostName) {
+      iotsaConfig.hostName = argValue;
       anyChanged = true;
       hostnameChanged = true;
     }
-    if( server.argName(i) == "rebootTimeout") {
-      int newValue = argValue.toInt();
-      if (newValue != iotsaConfig.configurationModeTimeout) {
-        iotsaConfig.configurationModeTimeout = newValue;
-        anyChanged = true;
-      }
+  }
+  if( server.hasArg("rebootTimeout")) {
+    int newValue = server.arg("rebootTimeout").toInt();
+    if (newValue != iotsaConfig.configurationModeTimeout) {
+      iotsaConfig.configurationModeTimeout = newValue;
+      anyChanged = true;
     }
-    if( server.argName(i) == "mode" && argValue != "0") {
-    	if (needsAuthentication("config")) return;
+  }
+  if( server.hasArg("mode")) {
+    String argValue = server.arg("mode");
+    if (argValue != "0") {
+      if (needsAuthentication("config")) return;
       iotsaConfig.nextConfigurationMode = config_mode(atoi(argValue.c_str()));
       iotsaConfig.nextConfigurationModeEndTime = millis() + iotsaConfig.configurationModeTimeout*1000;
       anyChanged = true;
     }
-    if( server.argName(i) == "factoryreset" && argValue == "1") {
-    	// Note: factoryReset does NOT require authenticationso users have a way to reclaim
-    	// hardware for which they have lost the username/password. The device will, however,
-    	// be reset to factory settings, so no information can be leaked.
-    	factoryReset = true;
-    	anyChanged = true;
-  	}
-    if( server.argName(i) == "iamsure" && argValue == "1") {
-    	// Note: does not set anyChanged, so only has a function if factoryReset is also set
-    	iamsure = true;
-  	}
   }
-  if (factoryReset && iamsure) {
-  	iotsaConfig.nextConfigurationMode = IOTSA_MODE_FACTORY_RESET;
-  	iotsaConfig.nextConfigurationModeEndTime = millis() + iotsaConfig.configurationModeTimeout*1000;
+  if( server.hasArg("factoryreset") && server.hasArg("iamsure")) {
+    if (server.arg("factoryreset") == "1" && server.arg("iamsure") == "1") {
+      iotsaConfig.nextConfigurationMode = IOTSA_MODE_FACTORY_RESET;
+      iotsaConfig.nextConfigurationModeEndTime = millis() + iotsaConfig.configurationModeTimeout*1000;
+      anyChanged = true;
+    }
   }
 
   if (anyChanged) {
@@ -150,7 +143,7 @@ IotsaConfigMod::handler() {
     message += "<p>Hostname: ";
     message += htmlEncode(iotsaConfig.hostName);
     message += " (goto configuration mode to change)<br>Configuration mode timeout: ";
-    message += String(iotsaConfig.configurationModeTimeout/1000);
+    message += String(iotsaConfig.configurationModeTimeout);
     message += " (goto configuration mode to change)</p>";
   }
   message += "<form method='get'>";

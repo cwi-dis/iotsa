@@ -4,12 +4,10 @@
 void
 IotsaNothingMod::handler() {
   bool anyChanged = false;
-  for (uint8_t i=0; i<server.args(); i++){
-    if( server.argName(i) == "argument") {
-    	if (needsAuthentication()) return;
-    	argument = server.arg(i);
-    	anyChanged = true;
-    }
+  if( server.hasArg("argument")) {
+    if (needsAuthentication()) return;
+    argument = server.arg("argument");
+    anyChanged = true;
   }
   if (anyChanged) configSave();
 

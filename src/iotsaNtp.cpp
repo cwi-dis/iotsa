@@ -56,27 +56,26 @@ bool IotsaNtpMod::localIsPM()
 void
 IotsaNtpMod::handler() {
   bool anyChanged = false;
-  for (uint8_t i=0; i<server.args(); i++){
-    if( server.argName(i) == "ntpServer") {
-    	if (needsAuthentication("ntp")) return;
-    	ntpServer = server.arg(i);
-    	anyChanged = true;
-    }
+  if( server.hasArg("ntpServer")) {
+    if (needsAuthentication("ntp")) return;
+    ntpServer = server.arg("ntpServer");
+    anyChanged = true;
+  }
 #ifdef WITH_TIMEZONE_LIBRARY
-	if (server.argName(i) == "tzDescription") {
+	if (server.hasArg("tzDescription")) {
 		if (needsAuthentication("ntp")) return;
-		parseTimezone(server.arg(i));
+		parseTimezone(server.arg("tzDescription"));
 		anyChanged = true;
 	}
 #else
-    if( server.argName(i) == "minutesWest") {
-    	if (needsAuthentication("ntp")) return;
-    	minutesWestFromUtc = server.arg(i).toInt();
-    	anyChanged = true;
-    }
-#endif
-    if (anyChanged) configSave();
+  if( server.hasarg("minutesWest")) {
+    if (needsAuthentication("ntp")) return;
+    minutesWestFromUtc = server.arg("minuteswest").toInt();
+    anyChanged = true;
   }
+#endif
+  if (anyChanged) configSave();
+  
   String message = "<html><head><title>NTP Client Settings</title></head><body><h1>NTP Client Settings</h1>";
   message += "<p>Current UTC time is ";
   message += String(utcTime());

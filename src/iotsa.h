@@ -12,7 +12,7 @@ typedef ESP8266WebServer IotsaWebServer;
 // Global defines, changes some behaviour in the whole library
 //
 #define IFDEBUG if(1)
-#define CONFIGURATION_MODE_TIMEOUT  120  // How long to go to temp configuration mode at reboot
+#define CONFIGURATION_MODE_TIMEOUT 300  // How long to go to temp configuration mode at reboot
 
 // Magic to allow logging to be kept in-core, if wanted, by using
 // IotsaSerial in stead of Serial.
