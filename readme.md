@@ -31,13 +31,13 @@ $ platformio run --target upload
 
 ### Both Arduino IDE and PlatformIO
 
-On reboot, the board will first initialize the SPIFFS flash filesystem (if needed) and then create a WiFi network with a name similar to _config-iotsa1234_. Connect a device to that network and visit <http://192.168.4.1>. Configure your device name, WiFi name and password, and after reboot the iotsa board should connect to your network and be visible as <http://yourdevicename.local>.
+On reboot, the board will first initialize the SPIFFS flash filesystem (if needed) and then create a WiFi network with a name similar to _config-iotsa1234_. Connect a device to that network and visit <http://192.168.4.1>. Configure your device name (at <http://192.168.4.1/config>) and WiFi name and password (at <http://192.168.4.1/wificonfig>), and after reboot the iotsa board should connect to your network and be visible as <http://yourdevicename.local>.
 
-When the device is running normally you can visit <http://yourdevicename.local/wificonfig> and request the device to go back into configuration mode, or to do a factory reset. After requesting this you have 5 minutes to power cycle the device to make it go into configuration mode again (see previous paragraph) or do a complete factory reset. When in configuration mode you have two minutes to change the configuration (device name, WiFi name, password) before the device reverts to normal operation. The idea behind this sequence (_request configuration mode_, then _power cycle_, then _change parameters_) is that you need both network acccess and physical access before you can do a disruptive operation on the device.
+When the device is running normally you can visit <http://yourdevicename.local/config> and request the device to go into configuration mode, or to do a factory reset. After requesting this you have 5 minutes to power cycle the device to make it go into configuration mode again (see previous paragraph) or do a complete factory reset. When in configuration mode you have five minutes to change the configuration (device name, WiFi name, password, maybe other parameters) before the device reverts to normal operation. The idea behind this sequence (_request configuration mode_, then _power cycle_, then _change parameters_) is that you need both network acccess and physical access before you can do a disruptive operation on the device.
 
 ### OTA programming
 
-If you have enabled over-the-air programming <http://yourdevicename.local/wificonfig> will also allow you to request the device to go into programmable mode. Again, you have 5 minutes to power cycle and then 5 minutes to reprogram:
+If you have enabled over-the-air programming <http://yourdevicename.local/config> will also allow you to request the device to go into programmable mode. Again, you have 5 minutes to power cycle and then 5 minutes to reprogram:
 
 - _For Arduino IDE_: 
   - In _Tools_ -> _Port_ -> _Network Port_ select your device.
@@ -226,22 +226,6 @@ bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply
 ```
 These methods are called on incoming REST calls. The request parameter object (or array, or value) is in `request`, store results in `reply` (which is already an initialized empty object). Return `true` for success, `false` for any failure (which will not return the reply object to the caller).
 
-### iotsaWifi.h
-
-Handles WiFi configuration.
-This is technically a module, but unlike other modules it is not really optional for this release .You must instantiate it in your program.
-
-A iotsa device can join an existing WiFi network (normal WiFi mode) or create a temporary network as an Access Point (private WiFi mode). 
-In private mode the device does not connect to a WiFi network, but in stead creates its own network (as a base station) with a name starting with "_config-_". The user can now connect a device to this network and visit `http://192.168.4.1/wificonfig`. Here it is possible to set the normal WiFi network to connect to and the password.
-
-If a device is new (it has no WiFi network name) it will enter private mode automatically. If a device cannot find its configured WiFi network it will enter private mode for 5 minutes and then reboot and retry joining the configured network.
-
-If a device has a WiFi network configured but it cannot join this network after trying for 5 minutes it will go to private network mode.
-
-If a device is in normal WiFi mode the WiFi parameters can only be changed if the device is in configuration mode.
-
-The module also provides a REST api on `/api/wificonfig` (and this api depends on whether in configuration mode or not).
-
 ### iotsaConfig.h
 
 Handles general configuration, factory reset and (if enabled) over-the-air programming.
@@ -257,6 +241,22 @@ On a factory reset all configuration information (literally: _all_) is forgotten
 In ota-programming mode the device functions normally, but can also be reprogrammed using the Arduino IDE and its OTA facilities.
 
 The module also provides a REST api on `/api/config` (and this api depends on whether in configuration mode or not).
+
+### iotsaWifi.h
+
+Handles WiFi configuration.
+This is technically a module, but unlike other modules it is not really optional for this release .You must instantiate it in your program.
+
+A iotsa device can join an existing WiFi network (normal WiFi mode) or create a temporary network as an Access Point (private WiFi mode). 
+In private mode the device does not connect to a WiFi network, but in stead creates its own network (as a base station) with a name starting with "_config-_". The user can now connect a device to this network and visit `http://192.168.4.1/wificonfig`. Here it is possible to set the normal WiFi network to connect to and the password.
+
+If a device is new (it has no WiFi network name) it will enter private mode automatically. If a device cannot find its configured WiFi network it will enter private mode for 5 minutes and then reboot and retry joining the configured network.
+
+If a device has a WiFi network configured but it cannot join this network after trying for 5 minutes it will go to private network mode.
+
+If a device is in normal WiFi mode the WiFi parameters can only be changed if the device is in configuration mode.
+
+The module also provides a REST api on `/api/wificonfig` (and this api depends on whether in configuration mode or not).
 
 ### iotsaSimple.h
 

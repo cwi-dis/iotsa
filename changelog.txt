@@ -1,4 +1,4 @@
-iotsa 1.5 - x-xxx-xxxx
+iotsa 1.5 - 26-Mar-2018
 
 - WiFi config and general config have been split into two modules (listening on /wifi and /config, and the
   respective /api endpoints). All general configuration parameters are now in a global iotsaConfig structure.
