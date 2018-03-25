@@ -92,29 +92,33 @@ IotsaConfigMod::handler() {
   bool factoryReset = false;
   bool iamsure = false;
   for (uint8_t i=0; i<server.args(); i++){
-    if( server.argName(i) == "hostName") {
+    String argValue = server.arg(i);
+    if( server.argName(i) == "hostName" && argValue != iotsaConfig.hostName) {
       iotsaConfig.hostName = server.arg(i);
       anyChanged = true;
       hostnameChanged = true;
     }
     if( server.argName(i) == "rebootTimeout") {
-      iotsaConfig.configurationModeTimeout = server.arg(i).toInt();
-      anyChanged = true;
+      int newValue = argValue.toInt();
+      if (newValue != iotsaConfig.configurationModeTimeout) {
+        iotsaConfig.configurationModeTimeout = newValue;
+        anyChanged = true;
+      }
     }
-    if( server.argName(i) == "mode") {
+    if( server.argName(i) == "mode" && argValue != "0") {
     	if (needsAuthentication("config")) return;
-      iotsaConfig.nextConfigurationMode = config_mode(atoi(server.arg(i).c_str()));
+      iotsaConfig.nextConfigurationMode = config_mode(atoi(argValue.c_str()));
       iotsaConfig.nextConfigurationModeEndTime = millis() + iotsaConfig.configurationModeTimeout*1000;
       anyChanged = true;
     }
-    if( server.argName(i) == "factoryreset" && atoi(server.arg(i).c_str()) == 1) {
+    if( server.argName(i) == "factoryreset" && argValue == "1") {
     	// Note: factoryReset does NOT require authenticationso users have a way to reclaim
     	// hardware for which they have lost the username/password. The device will, however,
     	// be reset to factory settings, so no information can be leaked.
     	factoryReset = true;
     	anyChanged = true;
   	}
-    if( server.argName(i) == "iamsure" && atoi(server.arg(i).c_str()) == 1) {
+    if( server.argName(i) == "iamsure" && argValue == "1") {
     	// Note: does not set anyChanged, so only has a function if factoryReset is also set
     	iamsure = true;
   	}
@@ -146,7 +150,7 @@ IotsaConfigMod::handler() {
     message += "<p>Hostname: ";
     message += htmlEncode(iotsaConfig.hostName);
     message += " (goto configuration mode to change)<br>Configuration mode timeout: ";
-    message += String((iotsaConfig.nextConfigurationModeEndTime - millis())/1000);
+    message += String(iotsaConfig.configurationModeTimeout/1000);
     message += " (goto configuration mode to change)</p>";
   }
   message += "<form method='get'>";
@@ -154,19 +158,20 @@ IotsaConfigMod::handler() {
     message += "Hostname: <input name='hostName' value='";
     message += htmlEncode(iotsaConfig.hostName);
     message += "'><br>Configuration mode timeout: <input name='rebootTimeout' value='";
-    message += String(iotsaConfig.configurationModeTimeout/1000);
-    message += "><br>";
+    message += String(iotsaConfig.configurationModeTimeout);
+    message += "'><br>";
   }
 
-  message += "<input name='mode' type='checkbox' value='1'> Enter configuration mode after next reboot.<br>";
+  message += "<input name='mode' type='radio' value='0' checked> Enter normal mode after next reboot.<br>";
+  message += "<input name='mode' type='radio' value='1'> Enter configuration mode after next reboot.<br>";
   if (app.otaEnabled()) {
-    message += "<input name='mode' type='checkbox' value='2'> Enable over-the-air update after next reboot.";
+    message += "<input name='mode' type='radio' value='2'> Enable over-the-air update after next reboot.";
     if (iotsaConfig.wifiPrivateNetworkMode) {
       message += "(<em>Warning:</em> Enabling OTA may not work because mDNS not available on this WiFi network.)";
     }
     message += "<br>";
   }
-  message += "<input name='factoryreset' type='checkbox' value='1'> Factory-reset and clear all files. <input name='iamsure' type='checkbox' value='1'> Yes, I am sure.</br>";
+  message += "<br><input name='factoryreset' type='checkbox' value='1'> Factory-reset and clear all files. <input name='iamsure' type='checkbox' value='1'> Yes, I am sure.</br>";
   message += "<input type='submit'></form>";
   message += "</body></html>";
   server.send(200, "text/html", message);
