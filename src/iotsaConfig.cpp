@@ -36,6 +36,26 @@ static void wifiDefaultHostName() {
 #endif
 }
 
+static const char* getBootReason() {
+  static const char *reason = NULL;
+  if (reason == NULL) {
+    rst_info *rip = ESP.getResetInfoPtr();
+    static const char *reasons[] = {
+      "power",
+      "hardwareWatchdog",
+      "exception",
+      "softwareWatchdog",
+      "softwareReboot",
+      "deepSleepAwake",
+      "externalReset"
+    };
+    reason = "unknown";
+    if ((int)rip->reason < sizeof(reasons)/sizeof(reasons[0])) {
+      reason = reasons[(int)rip->reason];
+    }
+  }
+  return reason;
+}
 static const char *modeName(config_mode mode) {
   if (mode == IOTSA_MODE_NORMAL)
     return "normal";
@@ -184,10 +204,18 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
     reply["currentMode"] = iotsaConfig.configurationMode;
     reply["currentModeTimeout"] = (iotsaConfig.configurationModeEndTime - millis())/1000;
   }
+  if (iotsaConfig.wifiPrivateNetworkMode) {
+    reply["privateWifi"] = true;
+  }
   if (iotsaConfig.nextConfigurationMode) {
     reply["requestedMode"] = iotsaConfig.nextConfigurationMode;
     reply["requestedModeTimeout"] = (iotsaConfig.nextConfigurationModeEndTime - millis())/1000;
   }
+  reply["version"] = IOTSA_VERSION;
+  reply["fullVersion"] = IOTSA_FULL_VERSION;
+  reply["program"] = app.title;
+  reply["bootCause"] = getBootReason();
+  reply["uptime"] = millis() / 1000;
   return true;
 }
 
@@ -242,23 +270,9 @@ String IotsaConfigMod::info() {
   	message += "<p>Strange, no configuration mode but timeout is " + String(iotsaConfig.configurationModeEndTime-millis()) + "ms.</p>";
   }
   message += "<p>Last boot " + String((int)millis()/1000) + " seconds ago, reason ";
-  rst_info *rip = ESP.getResetInfoPtr();
-  static const char *reasons[] = {
-    "power",
-    "hardwareWatchdog",
-    "exception",
-    "softwareWatchdog",
-    "softwareReboot",
-    "deepSleepAwake",
-    "externalReset"
-  };
-  const char *reason = "unknown";
-  if ((int)rip->reason < sizeof(reasons)/sizeof(reasons[0])) {
-    reason = reasons[(int)rip->reason];
-  }
-  message += reason;
-  message += " ("+String((int)rip->reason)+").</p>";
-  message += "<p>See <a href=\"/config\">/config</a> to change configuration.</p>";
+  message += getBootReason();
+  message += ".</p>";
+  message += "<p>" + app.title + " is based on iotsa " + IOTSA_FULL_VERSION + ". See <a href=\"/config\">/config</a> to change configuration.</p>";
   return message;
 }
 

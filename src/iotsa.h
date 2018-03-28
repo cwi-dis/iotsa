@@ -1,6 +1,8 @@
 #ifndef _IOTSA_H_
 #define _IOTSA_H_
 
+#include "iotsaVersion.h"
+
 #ifdef ESP32
 #include <ESP32WebServer.h>
 typedef ESP32WebServer IotsaWebServer;
@@ -58,6 +60,8 @@ public:
   void enableOta() { haveOTA = true; }
   bool otaEnabled() { return haveOTA; }
   IotsaStatusInterface *status;
+  String title;
+  bool haveOTA;
 protected:
   void webServerSetup();
   void webServerLoop();
@@ -66,8 +70,6 @@ protected:
   IotsaWebServer &server;
   IotsaBaseMod *firstModule;
   IotsaBaseMod *firstEarlyModule;
-  String title;
-  bool haveOTA;
 };
 
 class IotsaAuthMod;
@@ -100,6 +102,7 @@ public:
   virtual void serverSetup();
   virtual bool needsAuthentication(const char *right=NULL);
   virtual bool needsAuthentication(const char *obj, IotsaApiOperation verb);
+
 protected:
   IotsaApplication &app;
   IotsaWebServer &server;
