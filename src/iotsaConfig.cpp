@@ -201,18 +201,18 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   reply["hostName"] = iotsaConfig.hostName;
   reply["modeTimeout"] = iotsaConfig.configurationModeTimeout;
   if (iotsaConfig.configurationMode) {
-    reply["currentMode"] = iotsaConfig.configurationMode;
+    reply["currentMode"] = int(iotsaConfig.configurationMode);
     reply["currentModeTimeout"] = (iotsaConfig.configurationModeEndTime - millis())/1000;
   }
   if (iotsaConfig.wifiPrivateNetworkMode) {
     reply["privateWifi"] = true;
   }
   if (iotsaConfig.nextConfigurationMode) {
-    reply["requestedMode"] = iotsaConfig.nextConfigurationMode;
+    reply["requestedMode"] = int(iotsaConfig.nextConfigurationMode);
     reply["requestedModeTimeout"] = (iotsaConfig.nextConfigurationModeEndTime - millis())/1000;
   }
-  reply["version"] = IOTSA_VERSION;
-  reply["fullVersion"] = IOTSA_FULL_VERSION;
+  reply["iotsaVersion"] = IOTSA_VERSION;
+  reply["iotsaFullVersion"] = IOTSA_FULL_VERSION;
   reply["program"] = app.title;
   reply["bootCause"] = getBootReason();
   reply["uptime"] = millis() / 1000;
@@ -247,7 +247,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
     anyChanged = iotsaConfig.nextConfigurationMode != config_mode(0);
     if (anyChanged) {
       iotsaConfig.nextConfigurationModeEndTime = millis() + iotsaConfig.configurationModeTimeout*1000;
-      reply["requestedMode"] = iotsaConfig.nextConfigurationMode;
+      reply["requestedMode"] = int(iotsaConfig.nextConfigurationMode);
       reply["requestedModeTimeout"] = (iotsaConfig.nextConfigurationModeEndTime - millis())/1000;
       reply["needsReboot"] = true;
     }
