@@ -55,7 +55,6 @@ def main():
     if commit:
         fullVersion = "(" + fullVersion + '"@"' + commit + ")"
     vf.define("IOTSA_FULL_VERSION", fullVersion)
-    print 'xxx', fullVersion
     if vf.changed:
         vf.save()
         

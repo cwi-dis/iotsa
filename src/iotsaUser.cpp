@@ -141,6 +141,7 @@ void IotsaUserMod::serverSetup() {
   server.on("/users", std::bind(&IotsaUserMod::handler, this));
   api.setup("/api/users", true);
   api.setup("/api/users/0", true, false, true);
+  name = "users";
 }
 
 void IotsaUserMod::configLoad() {

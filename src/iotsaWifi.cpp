@@ -166,6 +166,7 @@ bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, Json
 void IotsaWifiMod::serverSetup() {
   server.on("/wificonfig", std::bind(&IotsaWifiMod::handler, this));
   api.setup("/api/wificonfig", true, true);
+  name = "wificonfig";
 }
 
 String IotsaWifiMod::info() {

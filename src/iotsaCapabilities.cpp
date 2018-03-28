@@ -142,6 +142,7 @@ void IotsaCapabilityMod::setup() {
 void IotsaCapabilityMod::serverSetup() {
   server.on("/capabilities", std::bind(&IotsaCapabilityMod::handler, this));
   api.setup("/api/capabilities", true, true, false);
+  name = "capabilities";
 }
 
 void IotsaCapabilityMod::configLoad() {

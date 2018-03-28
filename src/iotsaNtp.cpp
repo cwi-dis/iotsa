@@ -153,6 +153,7 @@ bool IotsaNtpMod::putHandler(const char *path, const JsonVariant& request, JsonO
 void IotsaNtpMod::serverSetup() {
   server.on("/ntpconfig", std::bind(&IotsaNtpMod::handler, this));
   api.setup("/api/ntpconfig", true, true);
+  name = "ntpconfig";
 }
 
 void IotsaNtpMod::configLoad() {

@@ -22,6 +22,7 @@ extern Print *iotsaOverrideSerial;
 #define IotsaSerial (*iotsaOverrideSerial)
 
 class IotsaBaseMod;
+class IotsaConfigMod;
 
 //
 // Operations allowed via the API
@@ -43,6 +44,7 @@ public:
 
 class IotsaApplication {
 friend class IotsaBaseMod;
+friend class IotsaConfigMod;
 public:
   IotsaApplication(IotsaWebServer &_server, const char *_title)
   : status(NULL),
@@ -60,8 +62,6 @@ public:
   void enableOta() { haveOTA = true; }
   bool otaEnabled() { return haveOTA; }
   IotsaStatusInterface *status;
-  String title;
-  bool haveOTA;
 protected:
   void webServerSetup();
   void webServerLoop();
@@ -70,6 +70,8 @@ protected:
   IotsaWebServer &server;
   IotsaBaseMod *firstModule;
   IotsaBaseMod *firstEarlyModule;
+  String title;
+  bool haveOTA;
 };
 
 class IotsaAuthMod;
@@ -83,6 +85,7 @@ public:
 
 class IotsaBaseMod {
 friend class IotsaApplication;
+friend class IotsaConfigMod;
 public:
   IotsaBaseMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
   : app(_app), 
@@ -108,6 +111,7 @@ protected:
   IotsaWebServer &server;
   IotsaAuthenticationProvider *auth;
   IotsaBaseMod *nextModule;
+  String name;
 };
 
 class IotsaMod : public IotsaBaseMod {

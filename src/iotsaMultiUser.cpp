@@ -141,6 +141,7 @@ void IotsaMultiUserMod::setup() {
 void IotsaMultiUserMod::serverSetup() {
   server.on("/users", std::bind(&IotsaMultiUserMod::handler, this));
   api.setup("/api/users", true, false, true);
+  name = "users";
   IotsaUser *u = users;
   while(u) {
     api.setup(u->apiEndpoint.c_str(), true, false, true);

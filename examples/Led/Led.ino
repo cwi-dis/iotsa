@@ -110,6 +110,7 @@ void IotsaLedControlMod::serverSetup() {
   // Setup the web server hooks for this module.
   server.on("/led", std::bind(&IotsaLedControlMod::handler, this));
   api.setup("/api/led", true, true);
+  name = "led";
 }
 
 String IotsaLedControlMod::info() {

@@ -216,6 +216,15 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   reply["program"] = app.title;
   reply["bootCause"] = getBootReason();
   reply["uptime"] = millis() / 1000;
+  JsonArray& modules = reply.createNestedArray("modules");
+  for (IotsaBaseMod *m=app.firstEarlyModule; m; m=m->nextModule) {
+    if (m->name != "")
+      modules.add(m->name);
+  }
+  for (IotsaBaseMod *m=app.firstModule; m; m=m->nextModule) {
+    if (m->name != "")
+      modules.add(m->name);
+  }
   return true;
 }
 
@@ -254,6 +263,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
 void IotsaConfigMod::serverSetup() {
   server.on("/config", std::bind(&IotsaConfigMod::handler, this));
   api.setup("/api/config", true, true);
+  name = "config";
 }
 
 String IotsaConfigMod::info() {
@@ -269,10 +279,10 @@ String IotsaConfigMod::info() {
   } else if (iotsaConfig.configurationModeEndTime) {
   	message += "<p>Strange, no configuration mode but timeout is " + String(iotsaConfig.configurationModeEndTime-millis()) + "ms.</p>";
   }
-  message += "<p>Last boot " + String((int)millis()/1000) + " seconds ago, reason ";
+  message += "<p>" + app.title + " is based on iotsa " + IOTSA_FULL_VERSION + ". See <a href=\"/config\">/config</a> to change configuration.";
+  message += "Last boot " + String((int)millis()/1000) + " seconds ago, reason ";
   message += getBootReason();
   message += ".</p>";
-  message += "<p>" + app.title + " is based on iotsa " + IOTSA_FULL_VERSION + ". See <a href=\"/config\">/config</a> to change configuration.</p>";
   return message;
 }
 

@@ -41,6 +41,7 @@ bool IotsaNothingMod::putHandler(const char *path, const JsonVariant& request, J
 void IotsaNothingMod::serverSetup() {
   server.on("/nothing", std::bind(&IotsaNothingMod::handler, this));
   api.setup("/api/nothing", true, true);
+  name = "nothing";
 }
 
 void IotsaNothingMod::configLoad() {
