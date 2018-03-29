@@ -447,7 +447,19 @@ class Main:
         
     def cmd_ota(self):
         """Upload new firmware to target (target must be in ota mode)"""
-        assert 0
+        filename = self._getcmd()
+        if not filename:
+            print >>sys.stderr, "%s: ota requires a filename" % sys.argv[0]
+            sys.exit(1)
+        self.loadDevice()
+        ESPOTA="$HOME/.platformio/packages/tool-espotapy/espota.py"
+        #cmd = [ESPOTA, '-i', self.device.ipAddress, '-f', filename]
+        cmd = '"%s" -i %s -f "%s"' % (ESPOTA, self.device.ipAddress, filename)
+        status = subprocess.call(cmd, shell=True)
+        if status != 0:
+            print >>sys.stderr, "%s: OTA command %s failed" % (sys.argv[0], ESPOTA)
+            sys.exit(1)
+        
         
     def cmd_otaMode(self):
         """Ask target to go into over-the-air programming mode"""
@@ -502,6 +514,9 @@ class Main:
         """Show target information for a specific module, next argument is module name"""
         self.loadDevice()
         modName = self._getcmd()
+        if not modName:
+            print >>sys.stderr, "%s: xInfo requires a module name" % sys.argv[0]
+            sys.exit(1)
         ext = self.device.getApi(modName)
         ext.load()
         ext.printStatus()
@@ -510,6 +525,9 @@ class Main:
         """Configure a specific module on the target, next argument is module name"""
         self.loadDevice()
         modName = self._getcmd()
+        if not modName:
+            print >>sys.stderr, "%s: xConfig requires a module name" % sys.argv[0]
+            sys.exit(1)
         ext = self.device.getApi(modName)
         ext.load()
         
@@ -529,7 +547,7 @@ class Main:
             ext.set(name, value)
             anyDone = True
         if not anyDone:
-            print >>sys.stderr, "%s: extConfig %s: requires name=value [...] to set config variables" % sys.argv[0]
+            print >>sys.stderr, "%s: xConfig %s: requires name=value [...] to set config variables" % sys.argv[0]
             sys.exit(1)
         ext.save()
         
