@@ -149,7 +149,7 @@ class IotsaConfig:
     def _handlePutReply(self, r):
         if r.text and r.text[0] == '{':
             reply = r.json()
-            if reply['needsReboot']:
+            if reply.get('needsReboot'):
                 msg = 'Reboot %s within %s seconds to activate mode %s' % (self.ipAddress, reply.get('requestedModeTimeout', '???'), self.modeName(reply.get('requestedMode')))
                 raise UserIntervention(msg)
             
@@ -159,7 +159,11 @@ class IotsaConfig:
     def set(self, name, value):
         self.settings[name] = value
         
-        
+    def printStatus(self):
+        print '%s:' % self.device.ipAddress
+        for k, v in self.status.items():
+            print '  %-15s: %s' % (k, v)
+            
 class IotsaDevice(IotsaConfig):
     def __init__(self, ipAddress, protocol=None):
         self.ipAddress = ipAddress
@@ -184,7 +188,7 @@ class IotsaDevice(IotsaConfig):
         return self.apis[api]
         
     def printStatus(self):
-        print '%s:' % self.ipAddress
+        print '%s:' % self.device.ipAddress
         print '  program:        ', self.status.get('program', 'unknown')
         print '  last boot:      ', 
         lastboot = self.status.get('uptime')
@@ -363,6 +367,37 @@ class Main:
             sys.exit(1)
         self.device.save()
         
+    def cmd_wifiInfo(self):
+        self.loadDevice()
+        wifi = self.device.getApi('wificonfig')
+        wifi.load()
+        wifi.printStatus()
+        
+    def cmd_wifiConfig(self):
+        self.loadDevice()
+        wifi = self.device.getApi('wificonfig')
+        wifi.load()
+        
+        anyDone = False
+        while True:
+            subCmd = self._getcmd()
+            if not subCmd or subCmd == '--':
+                break
+            if not '=' in subCmd:
+                self._ungetcmd(subCmd)
+                break
+            name, rest = subCmd.split('=')
+            if type(rest) == type(()):
+                value = '='.join(rest)
+            else:
+                value = rest
+            wifi.set(name, value)
+            anyDone = True
+        if not anyDone:
+            print >>sys.stderr, "%s: wifiConfig: requires name=value [...] to set config variables" % sys.argv[0]
+            sys.exit(1)
+        wifi.save()
+
     def cmd_wifi(self):
         self.loadDevice()
         if not self.device.get('privateWifi') and self.device.get('currentMode', 0) != 1:
