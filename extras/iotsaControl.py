@@ -171,6 +171,9 @@ class IotsaConfig:
                 msg = 'Reboot %s within %s seconds to activate mode %s' % (self.device, reply.get('requestedModeTimeout', '???'), self._modeName(reply.get('requestedMode')))
                 raise UserIntervention(msg)
             
+    def get(self, name, default=None):
+        return self.status.get(name, default)
+        
     def set(self, name, value):
         self.configSettings[name] = value
         
@@ -232,10 +235,23 @@ class Main:
     def __init__(self):
         self.wifi = None
         self.device = None
+        self.cmdlist = []
+        
+    def _getcmd(self):
+        if not self.cmdlist: return None
+        return self.cmdlist.pop(0)
+        
+    def _ungetcmd(self, cmd):
+        self.cmdlist.insert(0, cmd)
         
     def run(self):
         self.parseArgs()
-        for cmd in self.args.command:
+        self.cmdlist = self.args.command
+        if type(self.cmdlist) != type([]):
+            self.cmdlist = [self.cmdlist]
+        while True:
+            cmd = self._getcmd()
+            if not cmd: break
             cmdName = 'cmd_' + cmd
             if not hasattr(self, cmdName):
                 print >>sys.stderr, "%s: unknown command %s, help for help" % (sys.argv[0], cmd)
@@ -290,6 +306,33 @@ class Main:
         self.device.set('requestedMode', 3)
         self.device.save()
 
+    def cmd_config(self):
+        """Set configuration mode parameters"""
+        self.loadDevice()
+        if self.device.get('currentMode', 0) != 1:
+            raise UserIntervention("Set target into configuration mode first. See configMode or configWait commands.")
+        
+        anyDone = False
+        while True:
+            subCmd = self._getcmd()
+            if not subCmd or subCmd == '--':
+                break
+            if not '=' in subCmd:
+                self._ungetcmd(subCmd)
+                break
+            name, rest = subCmd.split('=')
+            if type(rest) == type(()):
+                value = '='.join(rest)
+            else:
+                value = rest
+            self.device.set(name, value)
+            anyDone = True
+        if not anyDone:
+            print >>sys.stderr, "%s: config: requires name=value [...] to set config variables" % sys.argv[0]
+            sys.exit(1)
+        self.device.save()
+        
+            
     def parseArgs(self):
         global VERBOSE
         parser = argparse.ArgumentParser(description="Access Igor home automation service and other http databases")
