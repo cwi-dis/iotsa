@@ -5,32 +5,91 @@ import sys
 import socket
 import urlparse
 import requests
-
 VERBOSE=False
 
 class UserIntervention(Exception):
     pass
+
+if sys.platform == 'darwin':
+    import subprocess
+    import plistlib
+    class PlatformWifi:
+        def __init__(self):
+            self.wifiInterface = 'en2'
+
+        def platformListWifiNetworks(self):
+            if VERBOSE: print 'Listing wifi networks (OSX)'
+            p = subprocess.Popen('/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport --scan --xml', shell=True, stdout=subprocess.PIPE)
+            data = plistlib.readPlist(p.stdout)
+            wifiNames = map(lambda d : d['SSID_STR'], data)
+            wifiNames.sort()
+            if VERBOSE: print 'Wifi networks found:', wifiNames
+            return wifiNames
+
+        def platformJoinWifiNetwork(self, ssid, password):
+            if VERBOSE: print 'Joining network (OSX):', ssid
+            cmd = 'networksetup -setairportnetwork %s %s' % (self.wifiInterface, ssid)
+            if password:
+                cmd += ' ' + password
+            status = p = subprocess.call(cmd, shell=True)
+            if VERBOSE: print 'Join network status:', status
+            return status == 0
+
+        def platformCurrentWifiNetworks(self):
+            if VERBOSE: print 'Find current networks (OSX)'
+            cmd = 'networksetup -getairportnetwork %s' % self.wifiInterface
+            p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+            data = p.stdout.read()
+            if VERBOSE: print 'Find result was:', data
+            wifiName = data.split(':')[-1]
+            wifiName = wifiName.strip()
+            return [wifiName]
+else:
+    class PlatformWifi:
+        def __init__(self):
+            pass
+
+        def platformListWifiNetworks(self):
+            raise UserIntervention("Please look for WiFi SSIDs (network names) starting with 'config-'")
+
+        def platformJoinWifiNetwork(self, ssid, password):
+            raise UserIntervention("Please join WiFi network named %s" % ssid)
+            
+        def platformCurrentWifiNetworks(self):
+            return []
     
-class IotsaWifi:
+class IotsaWifi(PlatformWifi):
     def __init__(self):
+        PlatformWifi.__init__(self)
         self.ssid = None
         self.device = None
         
     def findNetworks(self):
-        raise UserIntervention("Please look for WiFi SSIDs (network names) starting with 'config-'")
+        all = self.platformListWifiNetworks()
+        rv = []
+        for net in all:
+            if net.startswith('config-'):
+                rv.append(net)
+        return rv
         
     def _isNetworkSelected(self, ssid):
-        return False
+        return ssid in self.platformCurrentWifiNetworks()
 
     def _isConfigNetwork(self):
-        return self.ssid and self.ssid.startswith('config-')
+        if self.ssid and self.ssid.startswith('config-'):
+            return True
+        for c in self.platformCurrentWifiNetworks():
+            if c.startswith('config-'):
+                return True
+        return False
                 
     def selectNetwork(self, ssid, password=None):
         if self._isNetworkSelected(ssid):
             return True
-        raise UserIntervention("Please join WiFi network named %s" % ssid)
-        self.ssid = ssid
-        return True
+        ok = self.platformJoinWifiNetwork(ssid, password)
+        if ok:
+            self.ssid = ssid
+        return ok
         
     def _checkDevice(self, deviceName):
         try:
@@ -257,6 +316,11 @@ class Main:
             if not ok:
                 print >>sys.stderr, "%s: cannot select wifi network %s" % (sys.argv[0], self.args.ssid)
                 sys.exit(1)
+        return
+
+    def loadDevice(self):
+        if self.device: return
+        self.loadWifi()
         if not self.args.target or self.args.target == "auto":
             all = self.wifi.findDevices()
             if len(all) == 0:
@@ -271,11 +335,6 @@ class Main:
             self.args.target = all[0]
         if self.args.target:
             ok = self.wifi.selectDevice(self.args.target)
-        return
-
-    def loadDevice(self):
-        if self.device: return
-        self.loadWifi()
         self.device = IotsaConfig(self.wifi.currentDevice())
         if self.args.bearer:
             self.device.setBearerToken(self.args.bearer)
