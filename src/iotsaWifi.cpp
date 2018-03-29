@@ -152,7 +152,7 @@ bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, Json
     anyChanged = true;
   }
   if (reqObj.containsKey("ssidPassword")) {
-    ssid = reqObj.get<String>("ssidPassword");
+    ssidPassword = reqObj.get<String>("ssidPassword");
     anyChanged = true;
   }
   if (anyChanged) configSave();
