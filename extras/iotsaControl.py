@@ -5,6 +5,8 @@ import sys
 import socket
 import urlparse
 import requests
+import time
+
 VERBOSE=False
 
 class UserIntervention(Exception):
@@ -117,49 +119,29 @@ class IotsaWifi(PlatformWifi):
         return self.device
         
 class IotsaConfig:
-    def __init__(self, device, protocol=None):
+    def __init__(self, device, api):
         self.device = device
-        if protocol == None: protocol = 'http'
-        self.configURL = '%s://%s/api/config' % (protocol, self.device)
-        self.wifiConfigURL = '%s://%s/api/wificonfig' % (protocol, self.device)
+        self.configURL = '%s://%s/api/%s' % (self.device.protocol, self.device.ipAddress, api)
         self.status = {}
-        self.configSettings = {}
-        self.wifiConfigSettings = {}
-        self.auth = None
-        self.bearer_token = None
-        
-    def setLogin(self, username, password):
-        self.auth = (username, password)
-        
-    def setBearerToken(self, token):
-        self.bearerToken = token
-        
+        self.settings = {}
+
     def load(self):
         headers = {}
-        if self.bearer_token:
-            self.headers['Authorization'] = 'Bearer '+self.bearerToken
+        if self.device.bearerToken:
+            self.headers['Authorization'] = 'Bearer '+self.device.bearerToken
         if VERBOSE: print 'GET %s' % (self.configURL)
-        r = requests.get(self.configURL, auth=self.auth, headers=headers)
+        r = requests.get(self.configURL, auth=self.device.auth, headers=headers)
         if VERBOSE: print 'returned: %s', r.text
         r.raise_for_status()
         self.status = r.json()
         
     def save(self):
-        if self.configSettings:
+        if self.settings:
             headers = {}
-            if self.bearer_token:
-                self.headers['Authorization'] = 'Bearer '+self.bearerToken
-            if VERBOSE: print 'PUT %s: %s' % (self.configURL, self.configSettings)
-            r = requests.put(self.configURL, auth=self.auth, headers=headers, json=self.configSettings)
-            if VERBOSE: print 'returned: %s', r.text
-            r.raise_for_status()
-            self._handlePutReply(r)
-        if self.wifiSettings:
-            headers = {}
-            if self.bearer_token:
-                self.headers['Authorization'] = 'Bearer '+self.bearerToken
-            if VERBOSE: print 'PUT %s: %s' % (self.wifiConfigURL, self.wifiSettings)
-            r = requests.put(self.wifiConfigURL, auth=self.auth, headers=headers, json=self.wifiSettings)
+            if self.device.bearerToken:
+                self.headers['Authorization'] = 'Bearer '+self.device.bearerToken
+            if VERBOSE: print 'PUT %s: %s' % (self.configURL, self.settings)
+            r = requests.put(self.configURL, auth=self.device.auth, headers=headers, json=self.settings)
             if VERBOSE: print 'returned: %s', r.text
             r.raise_for_status()
             self._handlePutReply(r)
@@ -168,17 +150,41 @@ class IotsaConfig:
         if r.text and r.text[0] == '{':
             reply = r.json()
             if reply['needsReboot']:
-                msg = 'Reboot %s within %s seconds to activate mode %s' % (self.device, reply.get('requestedModeTimeout', '???'), self._modeName(reply.get('requestedMode')))
+                msg = 'Reboot %s within %s seconds to activate mode %s' % (self.ipAddress, reply.get('requestedModeTimeout', '???'), self.modeName(reply.get('requestedMode')))
                 raise UserIntervention(msg)
             
     def get(self, name, default=None):
         return self.status.get(name, default)
         
     def set(self, name, value):
-        self.configSettings[name] = value
+        self.settings[name] = value
+        
+        
+class IotsaDevice(IotsaConfig):
+    def __init__(self, ipAddress, protocol=None):
+        self.ipAddress = ipAddress
+        if protocol == None: 
+            protocol = 'http'
+        self.protocol = protocol
+        IotsaConfig.__init__(self, self, 'config')
+        self.auth = None
+        self.bearerToken = None
+        self.apis = {}
+        
+    def setLogin(self, username, password):
+        self.auth = (username, password)
+        
+    def setBearerToken(self, token):
+        self.bearerToken = token
+        
+    def getApi(self, api):
+        if api == 'config': return self
+        if not api in self.apis:
+            self.apis[api] = IotsaConfig(self, api)
+        return self.apis[api]
         
     def printStatus(self):
-        print '%s:' % self.device
+        print '%s:' % self.ipAddress
         print '  program:        ', self.status.get('program', 'unknown')
         print '  last boot:      ', 
         lastboot = self.status.get('uptime')
@@ -202,16 +208,16 @@ class IotsaConfig:
         if lastreason:
             print '(%s)' % lastreason,
         print
-        print '  runmode:        ', self._modeName(self.status.get('currentMode', 0)),
+        print '  runmode:        ', self.modeName(self.status.get('currentMode', 0)),
         timeout = self.status.get('currentModeTimeout')
         if timeout:
             print '(%d seconds more)' % timeout,
-        if self.status.get('privateWifi'):
-            print 'NOTE: on private WiFi network'
         print
+        if self.status.get('privateWifi'):
+            print '     NOTE:         on private WiFi network'
         reqMode = self.status.get('requestedMode')
         if reqMode:
-            print '  requested mode: ', self._modeName(reqMode),
+            print '  requested mode: ', self.modeName(reqMode),
             timeout = self.status.get('requestedModeTimeout', '???')
             if timeout:
                 print '(needs reboot within %s seconds)' % timeout,
@@ -223,7 +229,7 @@ class IotsaConfig:
             print m,
         print
             
-    def _modeName(self, mode):
+    def modeName(self, mode):
         if mode is None: return 'unknown'
         mode = int(mode)
         names = ['normal', 'config', 'ota', 'factoryReset']
@@ -294,12 +300,37 @@ class Main:
         self.device.set('requestedMode', 1)
         self.device.save()
 
+    def cmd_configWait(self):
+        """Ask device to go into configuration mode and wait until it is (probably after user intervention)"""
+        self._configModeAndWait(1)
+        
     def cmd_otaMode(self):
         """Ask device to go into over-the-air programming mode"""
         self.loadDevice()
         self.device.set('requestedMode', 2)
         self.device.save()
 
+    def cmd_otaWait(self):
+        """Ask device to go into over-the-air programming mode and wait until it is (probably after user intervention)"""
+        self._configModeAndWait(2)
+        
+    def _configModeAndWait(self, mode):
+        self.loadDevice()
+        self.device.set('requestedMode', mode)
+        try:
+            self.device.save()
+        except UserIntervention, arg:
+            print >>sys.stderr, "%s: %s" % (sys.argv[0], arg)
+        while True:
+            time.sleep(5)
+            self.device.load()
+            if self.device.get('currentMode') == mode:
+                break
+            reqMode = self.device.get('requestedMode', 0)
+            if self.device.get('requestedMode') != mode:
+                print >>sys.stderr, "%s: target now has requestedMode %s in stead of %s?" % (sys.argv[0], self.device.modeName(reqMode), self.device.modeName(mode))
+            print >>sys.stderr, "%s: Reboot %s within %s seconds to activate mode %s" % (sys.argv[0], self.device.ipAddress, self.device.get('requestedModeTimeout', '???'), self.device.modeName(reqMode))
+            
     def cmd_factoryReset(self):
         """Ask device to do a factory-reset"""
         self.loadDevice()
@@ -332,7 +363,31 @@ class Main:
             sys.exit(1)
         self.device.save()
         
-            
+    def cmd_wifi(self):
+        self.loadDevice()
+        if not self.device.get('privateWifi') and self.device.get('currentMode', 0) != 1:
+            raise UserIntervention("Set target into configuration mode first. See configMode or configWait commands.")
+        
+        anyDone = False
+        while True:
+            subCmd = self._getcmd()
+            if not subCmd or subCmd == '--':
+                break
+            if not '=' in subCmd:
+                self._ungetcmd(subCmd)
+                break
+            name, rest = subCmd.split('=')
+            if type(rest) == type(()):
+                value = '='.join(rest)
+            else:
+                value = rest
+            self.device.set(name, value)
+            anyDone = True
+        if not anyDone:
+            print >>sys.stderr, "%s: config: requires name=value [...] to set config variables" % sys.argv[0]
+            sys.exit(1)
+        self.device.save()
+        
     def parseArgs(self):
         global VERBOSE
         parser = argparse.ArgumentParser(description="Access Igor home automation service and other http databases")
@@ -378,7 +433,7 @@ class Main:
             self.args.target = all[0]
         if self.args.target:
             ok = self.wifi.selectDevice(self.args.target)
-        self.device = IotsaConfig(self.wifi.currentDevice())
+        self.device = IotsaDevice(self.wifi.currentDevice())
         if self.args.bearer:
             self.device.setBearerToken(self.args.bearer)
         if self.args.credentials:
