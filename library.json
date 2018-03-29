@@ -20,7 +20,8 @@
         "Adafruit NeoPixel" : ">=1.0.0",
         "Time" : ">=1.5",
         "Timezone" : ">=1.1.1",
-        "ArduinoJson" : ">=5.13.0"
+        "ArduinoJson" : ">=5.13.0",
+        "ArduinoJWT" : ">=1.0.1"
     },
     "examples" : [
         "[Ee]xamples/*/*.ino"
