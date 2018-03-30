@@ -44,5 +44,7 @@ install:
     - platformio lib -g install "Timezone@~1.1.1"
     - platformio lib -g install "ArduinoJson@~5.13.0"
     - platformio lib -g install "ArduinoJWT@~1.0.1"
+    - platformio lib -g install "DHT sensor library"
+    - platformio lib -g install "Adafruit Unified Sensor"
 script:
     - platformio ci --lib="." --board=nodemcuv2
