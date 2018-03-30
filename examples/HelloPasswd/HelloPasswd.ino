@@ -12,7 +12,7 @@
 // over-the-air updating and to change the WiFi configuration.
 //
 
-#include <ESP.h>
+#include <Esp.h>
 #include "iotsa.h"
 #include "iotsaWifi.h"
 
