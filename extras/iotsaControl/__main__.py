@@ -187,7 +187,13 @@ class Main:
             print >>sys.stderr, "%s: ota requires a filename" % sys.argv[0]
             sys.exit(1)
         self.loadDevice()
-        ESPOTA="$HOME/.platformio/packages/tool-espotapy/espota.py"
+        ESPOTA="~/.platformio/packages/tool-espotapy/espota.py"
+        ESPOTA = os.environ.get("ESPOTA", ESPOTA)
+        ESPOTA = os.path.expanduser(ESPOTA)
+        if not os.path.exists(ESPOTA):
+            print >>sys.stderr, "%s: Not found: %s" % (sys.argv[0], ESPOTA)
+            print >>sys.stderr, "%s: Please install espota.py and optionally set ESPOTA environment variable"
+            sys.exit(1)
         #cmd = [ESPOTA, '-i', self.device.ipAddress, '-f', filename]
         cmd = '"%s" -i %s -f "%s"' % (ESPOTA, self.device.ipAddress, filename)
         status = subprocess.call(cmd, shell=True)

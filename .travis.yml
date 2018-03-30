@@ -39,17 +39,24 @@
 # Template #2: The project is intended to by used as a library with examples
 #
 
-# language: python
-# python:
-#     - "2.7"
-#
-# env:
-#     - PLATFORMIO_CI_SRC=path/to/test/file.c
-#     - PLATFORMIO_CI_SRC=examples/file.ino
-#     - PLATFORMIO_CI_SRC=path/to/test/directory
-#
-# install:
-#     - pip install -U platformio
-#
-# script:
-#     - platformio ci --lib="." --board=ID_1 --board=ID_2 --board=ID_N
+language: python
+python:
+    - "2.7"
+env:
+    - PLATFORMIO_CI_SRC=examples/Hello
+    - PLATFORMIO_CI_SRC=examples/HelloApi
+    - PLATFORMIO_CI_SRC=examples/HelloCpp
+    - PLATFORMIO_CI_SRC=examples/HelloPasswd
+    - PLATFORMIO_CI_SRC=examples/HelloRights
+    - PLATFORMIO_CI_SRC=examples/HelloToken
+    - PLATFORMIO_CI_SRC=examples/HelloUser
+    - PLATFORMIO_CI_SRC=examples/Led
+    - PLATFORMIO_CI_SRC=examples/Light
+    - PLATFORMIO_CI_SRC=examples/Log
+    - PLATFORMIO_CI_SRC=examples/SimpleIO
+    - PLATFORMIO_CI_SRC=examples/Skeleton
+    - PLATFORMIO_CI_SRC=examples/Temperature
+install:
+    - pip install -U platformio
+script:
+    - platformio ci --lib="." --board=nodemcuv2

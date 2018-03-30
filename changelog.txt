@@ -1,6 +1,11 @@
+iotsa 1.7 - 30-Mar-2018
+
+- Added iotsaControl module and program to allow programmatic configuration of iotsa devices.
+- Added more variables to /api/config for iotsaControl.
+
 iotsa 1.6.1
 
-- Added iotsaConfig.h and return version info in config api.
+- Added iotsaVersion.h and return version info in config api.
 
 iotsa 1.6 - 26-Mar-2018
 
