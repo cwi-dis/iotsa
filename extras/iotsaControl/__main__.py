@@ -1,276 +1,11 @@
 #!/usr/bin/env python
 import argparse
-import os
 import sys
-import socket
-import urlparse
 import requests
 import time
-import zeroconf
+import api
+import machdep
 
-VERBOSE=False
-
-class UserIntervention(Exception):
-    pass
-
-if sys.platform == 'darwin':
-    import subprocess
-    import plistlib
-    class PlatformWifi:
-        def __init__(self):
-            self.wifiInterface = 'en2'
-
-        def platformListWifiNetworks(self):
-            if VERBOSE: print 'Listing wifi networks (OSX)'
-            p = subprocess.Popen('/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport --scan --xml', shell=True, stdout=subprocess.PIPE)
-            data = plistlib.readPlist(p.stdout)
-            wifiNames = map(lambda d : d['SSID_STR'], data)
-            wifiNames.sort()
-            if VERBOSE: print 'Wifi networks found:', wifiNames
-            return wifiNames
-
-        def platformJoinWifiNetwork(self, ssid, password):
-            if VERBOSE: print 'Joining network (OSX):', ssid
-            cmd = 'networksetup -setairportnetwork %s %s' % (self.wifiInterface, ssid)
-            if password:
-                cmd += ' ' + password
-            status = p = subprocess.call(cmd, shell=True)
-            if VERBOSE: print 'Join network status:', status
-            return status == 0
-
-        def platformCurrentWifiNetworks(self):
-            if VERBOSE: print 'Find current networks (OSX)'
-            cmd = 'networksetup -getairportnetwork %s' % self.wifiInterface
-            p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-            data = p.stdout.read()
-            if VERBOSE: print 'Find result was:', data
-            wifiName = data.split(':')[-1]
-            wifiName = wifiName.strip()
-            return [wifiName]
-else:
-    class PlatformWifi:
-        def __init__(self):
-            pass
-
-        def platformListWifiNetworks(self):
-            raise UserIntervention("Please look for WiFi SSIDs (network names) starting with 'config-'")
-
-        def platformJoinWifiNetwork(self, ssid, password):
-            raise UserIntervention("Please join WiFi network named %s" % ssid)
-            
-        def platformCurrentWifiNetworks(self):
-            return []
-
-class IotsaMDNSCollector:
-    def __init__(self):
-        self.found = []
-        if VERBOSE: print 'Start mDNS browser for _iotsa._tcp.local.'
-        self.zeroconf = zeroconf.Zeroconf()
-        self.browser = zeroconf.ServiceBrowser(self.zeroconf, "_iotsa._tcp.local.", self)
-        
-    def remove_service(self, zc, type, name):
-        pass
-        
-    def add_service(self, zc, type, name):
-        if VERBOSE: print 'Found mDNS entry for', name, 'type:', type
-        info = zc.get_service_info(type, name)
-        if info.port != 80:
-            print >>sys.stderr, "%s: Ignore %s with port %s" % (sys.argv[0], name, info.port)
-            return
-        self.found.append(info.server)
-        
-    def run(self, timeout=5):
-        time.sleep(timeout)
-        self.zeroconf.close()
-        self.zeroconf = None
-        self.browser = None
-        if VERBOSE: print 'Stop mDNS browsing, found', self.found
-        return self.found
-        
-class IotsaWifi(PlatformWifi):
-    def __init__(self):
-        PlatformWifi.__init__(self)
-        self.ssid = None
-        self.device = None
-        
-    def findNetworks(self):
-        all = self.platformListWifiNetworks()
-        rv = []
-        for net in all:
-            if net.startswith('config-'):
-                rv.append(net)
-        return rv
-        
-    def _isNetworkSelected(self, ssid):
-        return ssid in self.platformCurrentWifiNetworks()
-
-    def _isConfigNetwork(self):
-        if self.ssid and self.ssid.startswith('config-'):
-            return True
-        for c in self.platformCurrentWifiNetworks():
-            if c.startswith('config-'):
-                return True
-        return False
-                
-    def selectNetwork(self, ssid, password=None):
-        if self._isNetworkSelected(ssid):
-            return True
-        ok = self.platformJoinWifiNetwork(ssid, password)
-        if ok:
-            self.ssid = ssid
-        return ok
-        
-    def _checkDevice(self, deviceName):
-        try:
-            _ = socket.create_connection((deviceName, 80), 20)
-        except socket.timeout:
-            return False
-        except socket.gaierror:
-            print >>sys.stderr, 'Unknown host: %s' % deviceName
-            return False
-        return True
-        
-    def findDevices(self):
-        if self._isConfigNetwork():
-            if self._checkDevice('192.168.4.1'):
-                return ['192.168.4.1']
-        collect = IotsaMDNSCollector()
-        devices = collect.run()
-        return devices
-        #raise UserIntervention("Please use Bonjour or avahi to find WiFi devices serving _iotsa._tcp")
-        
-    def selectDevice(self, device):
-        if self._checkDevice(device):
-            self.device = device
-            return True
-        return False
-        
-    def currentDevice(self):
-        return self.device
-        
-class IotsaConfig:
-    def __init__(self, device, api):
-        self.device = device
-        self.configURL = '%s://%s/api/%s' % (self.device.protocol, self.device.ipAddress, api)
-        self.status = {}
-        self.settings = {}
-
-    def load(self):
-        headers = {}
-        if self.device.bearerToken:
-            self.headers['Authorization'] = 'Bearer '+self.device.bearerToken
-        if VERBOSE: print 'GET %s' % (self.configURL)
-        r = requests.get(self.configURL, auth=self.device.auth, headers=headers)
-        if VERBOSE: print 'returned: %s', r.text
-        r.raise_for_status()
-        self.status = r.json()
-        
-    def save(self):
-        if self.settings:
-            headers = {}
-            if self.device.bearerToken:
-                self.headers['Authorization'] = 'Bearer '+self.device.bearerToken
-            if VERBOSE: print 'PUT %s: %s' % (self.configURL, self.settings)
-            r = requests.put(self.configURL, auth=self.device.auth, headers=headers, json=self.settings)
-            if VERBOSE: print 'returned: %s', r.text
-            r.raise_for_status()
-            self._handlePutReply(r)
-            
-    def _handlePutReply(self, r):
-        if r.text and r.text[0] == '{':
-            reply = r.json()
-            if reply.get('needsReboot'):
-                msg = 'Reboot %s within %s seconds to activate mode %s' % (self.ipAddress, reply.get('requestedModeTimeout', '???'), self.modeName(reply.get('requestedMode')))
-                raise UserIntervention(msg)
-            
-    def get(self, name, default=None):
-        return self.status.get(name, default)
-        
-    def set(self, name, value):
-        self.settings[name] = value
-        
-    def printStatus(self):
-        print '%s:' % self.device.ipAddress
-        for k, v in self.status.items():
-            print '  %-16s %s' % (str(k)+':', v)
-            
-class IotsaDevice(IotsaConfig):
-    def __init__(self, ipAddress, protocol=None):
-        self.ipAddress = ipAddress
-        if protocol == None: 
-            protocol = 'http'
-        self.protocol = protocol
-        IotsaConfig.__init__(self, self, 'config')
-        self.auth = None
-        self.bearerToken = None
-        self.apis = {}
-        
-    def setLogin(self, username, password):
-        self.auth = (username, password)
-        
-    def setBearerToken(self, token):
-        self.bearerToken = token
-        
-    def getApi(self, api):
-        if api == 'config': return self
-        if not api in self.apis:
-            self.apis[api] = IotsaConfig(self, api)
-        return self.apis[api]
-        
-    def printStatus(self):
-        print '%s:' % self.device.ipAddress
-        print '  program:        ', self.status.get('program', 'unknown')
-        print '  last boot:      ', 
-        lastboot = self.status.get('uptime')
-        if not lastboot:
-            print '???',
-        else:
-            if lastboot <= 60:
-                print '%ds' % lastboot,
-            else:
-                lastboot /= 60
-                if lastboot <= 60:
-                    print '%dm' % lastboot,
-                else:
-                    lastboot /= 60
-                    if lastboot <= 24:
-                        print '%dh' % lastboot,
-                    else:
-                        lastboot /= 24
-                        print '%dd' % lastboot,
-        lastreason = self.status.get('bootCause')
-        if lastreason:
-            print '(%s)' % lastreason,
-        print
-        print '  runmode:        ', self.modeName(self.status.get('currentMode', 0)),
-        timeout = self.status.get('currentModeTimeout')
-        if timeout:
-            print '(%d seconds more)' % timeout,
-        print
-        if self.status.get('privateWifi'):
-            print '     NOTE:         on private WiFi network'
-        reqMode = self.status.get('requestedMode')
-        if reqMode:
-            print '  requested mode: ', self.modeName(reqMode),
-            timeout = self.status.get('requestedModeTimeout', '???')
-            if timeout:
-                print '(needs reboot within %s seconds)' % timeout,
-            print
-        print '  hostname:       ', self.status.get('hostName', '')
-        print '  iotsa:          ', self.status.get('iotsaFullVersion', '???')
-        print '  modules:        ',
-        for m in self.status.get('modules', ['???']):
-            print m,
-        print
-            
-    def modeName(self, mode):
-        if mode is None: return 'unknown'
-        mode = int(mode)
-        names = ['normal', 'config', 'ota', 'factoryReset']
-        if mode >= 0 and mode < len(names):
-            return names[mode]
-        return 'unknown-mode-%d' % mode
-        
 class Main:
     """Main commandline program"""
     
@@ -295,7 +30,7 @@ class Main:
             handler = getattr(self, cmdName)
             try:
                 handler()
-            except UserIntervention, arg:
+            except api.UserIntervention, arg:
                 print >>sys.stderr, "%s: %s: user intervention required:" % (sys.argv[0], cmd)
                 print >>sys.stderr, "%s: %s" % (sys.argv[0], arg)
                 sys.exit(2)
@@ -309,7 +44,7 @@ class Main:
         self.device.set('requestedMode', mode)
         try:
             self.device.save()
-        except UserIntervention, arg:
+        except api.UserIntervention, arg:
             print >>sys.stderr, "%s: %s" % (sys.argv[0], arg)
         while True:
             time.sleep(5)
@@ -323,7 +58,6 @@ class Main:
             
     def parseArgs(self):
         """Command line argument handling"""
-        global VERBOSE
         parser = argparse.ArgumentParser(description="Access Igor home automation service and other http databases")
         parser.add_argument("--ssid", action="store", metavar="SSID", help="Connect to WiFi network named SSID")
         parser.add_argument("--ssidpw", action="store", metavar="password", help="WiFi password for network SSID")
@@ -338,7 +72,8 @@ class Main:
     #    parser.add_argument("--certificate", metavar='CERTFILE', help="Verify https certificates from given file")
         parser.add_argument("command", nargs="+", help="Command to run (help for list)")
         self.args = parser.parse_args()
-        VERBOSE=self.args.verbose
+        api.VERBOSE=self.args.verbose
+        machdep.VERBOSE=self.args.verbose
 
     def _getcmd(self):
         """Helper method to handle multiple commands"""
@@ -352,7 +87,7 @@ class Main:
     def loadWifi(self):
         """Load WiFi network (if not already done)"""
         if self.wifi: return
-        self.wifi = IotsaWifi()
+        self.wifi = api.IotsaWifi()
         if self.args.ssid:
             ok = self.wifi.selectNetwork(self.args.ssid, self.args.ssidpw)
             if not ok:
@@ -378,7 +113,7 @@ class Main:
             self.args.target = all[0]
         if self.args.target:
             ok = self.wifi.selectDevice(self.args.target)
-        self.device = IotsaDevice(self.wifi.currentDevice())
+        self.device = api.IotsaDevice(self.wifi.currentDevice())
         if self.args.bearer:
             self.device.setBearerToken(self.args.bearer)
         if self.args.credentials:
@@ -389,7 +124,7 @@ class Main:
         """Set target configuration parameters (target must be in configuration mode)"""
         self.loadDevice()
         if self.device.get('currentMode', 0) != 1:
-            raise UserIntervention("Set target into configuration mode first. See configMode or configWait commands.")
+            raise api.UserIntervention("Set target into configuration mode first. See configMode or configWait commands.")
         
         anyDone = False
         while True:
