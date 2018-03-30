@@ -1,7 +1,8 @@
-iotsa 1.7 - 30-Mar-2018
+iotsa 1.7.1 - 30-Mar-2018
 
 - Added iotsaControl module and program to allow programmatic configuration of iotsa devices.
 - Added more variables to /api/config for iotsaControl.
+- Fixed case error in Esp.h include which stopped travis builds from working.
 
 iotsa 1.6.1
 
