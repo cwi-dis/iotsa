@@ -4,6 +4,8 @@ import sys
 import requests
 import time
 import api
+import os
+import subprocess
 import machdep
 
 class Main:
