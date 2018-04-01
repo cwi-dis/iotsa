@@ -118,6 +118,7 @@ class IotsaConfig:
                 self.headers['Authorization'] = 'Bearer '+self.device.bearerToken
             if VERBOSE: print 'PUT %s: %s' % (self.configURL, self.settings)
             r = requests.put(self.configURL, auth=self.device.auth, headers=headers, json=self.settings)
+            self.settings = {}
             if VERBOSE: print 'returned: %s', r.text
             r.raise_for_status()
             self._handlePutReply(r)

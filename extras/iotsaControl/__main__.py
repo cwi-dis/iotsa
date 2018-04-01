@@ -7,6 +7,7 @@ import api
 import os
 import subprocess
 import machdep
+import urllib
 
 class Main:
     """Main commandline program"""
@@ -119,7 +120,7 @@ class Main:
         if self.args.bearer:
             self.device.setBearerToken(self.args.bearer)
         if self.args.credentials:
-            self.device.setCredentials(*self.args.credentials.split(':'))
+            self.device.setLogin(*self.args.credentials.split(':'))
         self.device.load()
             
     def cmd_config(self):
@@ -186,8 +187,9 @@ class Main:
         """Upload new firmware to target (target must be in ota mode)"""
         filename = self._getcmd()
         if not filename:
-            print >>sys.stderr, "%s: ota requires a filename" % sys.argv[0]
+            print >>sys.stderr, "%s: ota requires a filename or URL" % sys.argv[0]
             sys.exit(1)
+        filename, _ = urllib.urlretrieve(filename)
         self.loadDevice()
         ESPOTA="~/.platformio/packages/tool-espotapy/espota.py"
         ESPOTA = os.environ.get("ESPOTA", ESPOTA)
