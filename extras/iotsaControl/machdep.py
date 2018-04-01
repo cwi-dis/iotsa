@@ -1,5 +1,6 @@
 import sys
 import time
+import os
 
 VERBOSE=False
 
@@ -8,7 +9,7 @@ if sys.platform == 'darwin':
     import plistlib
     class PlatformWifi:
         def __init__(self):
-            self.wifiInterface = 'en2'
+            self.wifiInterface = os.getenv('IOTSA_WIFI', 'en2')
 
         def platformListWifiNetworks(self):
             if VERBOSE: print 'Listing wifi networks (OSX)'
