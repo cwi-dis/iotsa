@@ -1,11 +1,12 @@
 #include <Esp.h>
-#include <user_interface.h>
 #ifdef ESP32
 #include <ESPmDNS.h>
 #include <SPIFFS.h>
 #include <esp_log.h>
+#include <rom/rtc.h>
 #else
 #include <ESP8266mDNS.h>
+#include <user_interface.h>
 #endif
 #include <FS.h>
 
@@ -39,6 +40,8 @@ static void wifiDefaultHostName() {
 static const char* getBootReason() {
   static const char *reason = NULL;
   if (reason == NULL) {
+    reason = "unknown";
+#ifndef ESP32
     rst_info *rip = ESP.getResetInfoPtr();
     static const char *reasons[] = {
       "power",
@@ -49,10 +52,34 @@ static const char* getBootReason() {
       "deepSleepAwake",
       "externalReset"
     };
-    reason = "unknown";
     if ((int)rip->reason < sizeof(reasons)/sizeof(reasons[0])) {
       reason = reasons[(int)rip->reason];
     }
+#else
+  RESET_REASON r = rtc_get_reset_reason(0);
+  static const char *reasons[] = {
+    "0",
+    "power",
+    "2",
+    "softwareReboot",
+    "legacyWatchdog",
+    "deepSleepAwake",
+    "sdio",
+    "tg0Watchdog",
+    "tg1Watchdog",
+    "rtcWatchdog",
+    "intrusion",
+    "tgWatchdogCpu",
+    "softwareRebootCpu",
+    "rtcWatchdogCpu",
+    "externalReset",
+    "brownout",
+    "rtcWatchdogRtc"
+  };
+  if ((int)r < sizeof(reasons)/sizeof(reasons[0])) {
+    reason = reasons[(int)r];
+  }
+#endif
   }
   return reason;
 }
@@ -84,8 +111,13 @@ void IotsaConfigMod::setup() {
   // external reset (the button) or powerup we do not honor the configuration mode
   // request: it could be triggered through a software bug or so, and we want to require
   // user interaction.
+#ifndef ESP32
   rst_info *rip = ESP.getResetInfoPtr();
-  if (rip->reason != REASON_DEFAULT_RST && rip->reason != REASON_EXT_SYS_RST) {
+  bool badReason = rip->reason != REASON_DEFAULT_RST && rip->reason != REASON_EXT_SYS_RST;
+#else
+  bool badReason = rtc_get_reset_reason(0) != POWERON_RESET;
+#endif
+  if (badReason) {
     iotsaConfig.configurationMode = IOTSA_MODE_NORMAL;
     IFDEBUG IotsaSerial.println("tmpConfigMode not honoured because of reset reason");
   }
