@@ -73,6 +73,7 @@ class Main:
         parser.add_argument("--credentials", metavar="USER:PASS", help="Add Authorization: Basic header line with given credentials")
     #    parser.add_argument("--noverify", action='store_true', help="Disable verification of https signatures")
     #    parser.add_argument("--certificate", metavar='CERTFILE', help="Verify https certificates from given file")
+        parser.add_argument("--compat", action="store_true", help="Compatability for old iotsa devices (ota only)")
         parser.add_argument("command", nargs="+", help="Command to run (help for list)")
         self.args = parser.parse_args()
         api.VERBOSE=self.args.verbose
@@ -121,7 +122,8 @@ class Main:
             self.device.setBearerToken(self.args.bearer)
         if self.args.credentials:
             self.device.setLogin(*self.args.credentials.split(':'))
-        self.device.load()
+        if not self.args.compat:
+            self.device.load()
             
     def cmd_config(self):
         """Set target configuration parameters (target must be in configuration mode)"""
