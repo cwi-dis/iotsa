@@ -214,6 +214,12 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   reply["iotsaVersion"] = IOTSA_VERSION;
   reply["iotsaFullVersion"] = IOTSA_FULL_VERSION;
   reply["program"] = app.title;
+#ifdef IOTSA_CONFIG_PROGRAM_SOURCE
+  reply["programSource"] = IOTSA_CONFIG_PROGRAM_SOURCE;
+#endif
+#ifdef IOTSA_CONFIG_PROGRAM_VERSION
+  reply["programVersion"] = IOTSA_CONFIG_PROGRAM_VERSION;
+#endif
   reply["bootCause"] = getBootReason();
   reply["uptime"] = millis() / 1000;
   JsonArray& modules = reply.createNestedArray("modules");
