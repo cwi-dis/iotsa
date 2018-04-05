@@ -44,6 +44,9 @@ class Main:
     def _configModeAndWait(self, mode):
         """Helper method to request a specific mode and wait until the user has enabled it"""
         self.loadDevice()
+        if self.device.get('currentMode') == mode:
+            print "%s: target already in mode %s" % (sys.argv[0], self.device.modeName(mode))
+            return
         self.device.set('requestedMode', mode)
         try:
             self.device.save()
@@ -58,7 +61,8 @@ class Main:
             if self.device.get('requestedMode') != mode:
                 print >>sys.stderr, "%s: target now has requestedMode %s in stead of %s?" % (sys.argv[0], self.device.modeName(reqMode), self.device.modeName(mode))
             print >>sys.stderr, "%s: Reboot %s within %s seconds to activate mode %s" % (sys.argv[0], self.device.ipAddress, self.device.get('requestedModeTimeout', '???'), self.device.modeName(reqMode))
-            
+        print "%s: target is now in %s mode" % (sys.argv[0], self.device.modeName(mode))
+        
     def parseArgs(self):
         """Command line argument handling"""
         parser = argparse.ArgumentParser(description="Access Igor home automation service and other http databases")
