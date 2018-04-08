@@ -28,6 +28,8 @@ IotsaConfig iotsaConfig = {
 
 String& hostName(iotsaConfig.hostName);
 
+static unsigned long rebootAt;
+
 static void wifiDefaultHostName() {
   iotsaConfig.hostName = "iotsa";
 #ifdef ESP32
@@ -227,9 +229,8 @@ IotsaConfigMod::handler() {
   message += "</body></html>";
   server.send(200, "text/html", message);
   if (hostnameChanged) {
-    IFDEBUG IotsaSerial.print("Restart in 2 seconds");
-    delay(2000);
-    ESP.restart();
+    IFDEBUG IotsaSerial.println("Restart in 2 seconds");
+    rebootAt = millis() + 2000;
   }
 }
 
@@ -299,8 +300,9 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   }
   if (anyChanged) configSave();
   if (reqObj.get<bool>("reboot")) {
-    delay(2000);
-    ESP.restart();
+    IFDEBUG IotsaSerial.println("Restart in 2 seconds.");
+    rebootAt = millis() + 2000;
+    anyChanged = true;
   }
   return anyChanged;
 }
@@ -361,6 +363,10 @@ void IotsaConfigMod::configSave() {
 }
 
 void IotsaConfigMod::loop() {
+  if (rebootAt && millis() > rebootAt) {
+    IFDEBUG IotsaSerial.println("Software requested reboot.");
+    ESP.restart();
+  }
   if (iotsaConfig.configurationModeEndTime && millis() > iotsaConfig.configurationModeEndTime) {
     IFDEBUG IotsaSerial.println("Configuration mode timeout. reboot.");
     iotsaConfig.configurationMode = IOTSA_MODE_NORMAL;

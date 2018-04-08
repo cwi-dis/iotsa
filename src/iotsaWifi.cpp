@@ -14,7 +14,8 @@
 #include "iotsaWifi.h"
 
 #define WIFI_TIMEOUT 30
-int privateNetworkModeReason;
+static int privateNetworkModeReason;
+static unsigned long rebootAt;
 
 void IotsaWifiMod::setup() {
   configLoad();
@@ -135,9 +136,8 @@ IotsaWifiMod::handler() {
   server.send(200, "text/html", message);
   if (anyChanged) {
     if (app.status) app.status->showStatus();
-    IFDEBUG IotsaSerial.print("Restart in 2 seconds");
-    delay(2000);
-    ESP.restart();
+    IFDEBUG IotsaSerial.println("Restart in 2 seconds.");
+    rebootAt = millis() + 2000;
   }
 }
 
@@ -162,8 +162,8 @@ bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, Json
   }
   if (anyChanged) configSave();
   if (reqObj.get<bool>("reboot")) {
-    delay(2000);
-    ESP.restart();
+    IFDEBUG IotsaSerial.println("Restart in 2 seconds.");
+    rebootAt = millis() + 2000;
   }
   return anyChanged;
 }
@@ -213,6 +213,10 @@ void IotsaWifiMod::loop() {
   // mDNS happens asynchronously on ESP32
   if (haveMDNS) MDNS.update();
 #endif
+  if (rebootAt && millis() > rebootAt) {
+    IFDEBUG IotsaSerial.println("Software requested reboot.");
+    ESP.restart();
+  }
   // xxxjack
   if (!iotsaConfig.wifiPrivateNetworkMode) {
   	// Should be in normal mode, check that we have WiFi
