@@ -48,8 +48,13 @@ void IotsaWifiMod::setup() {
       WiFi.setAutoReconnect(true);
 
       if (MDNS.begin(iotsaConfig.hostName.c_str())) {
+#ifdef ESP32
+        MDNS.addService("_http", "_tcp", 80);
+        MDNS.addService("_iotsa", "_tcp", 80);
+#else
         MDNS.addService("http", "tcp", 80);
         MDNS.addService("iotsa", "tcp", 80);
+#endif
         IFDEBUG IotsaSerial.println("MDNS responder started");
         haveMDNS = true;
       }
