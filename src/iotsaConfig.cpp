@@ -256,6 +256,9 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
 #ifdef IOTSA_CONFIG_PROGRAM_VERSION
   reply["programVersion"] = IOTSA_CONFIG_PROGRAM_VERSION;
 #endif
+#ifdef ARDUINO_VARIANT
+  reply["board"] = ARDUINO_VARIANT;
+#endif
   reply["bootCause"] = getBootReason();
   reply["uptime"] = millis() / 1000;
   JsonArray& modules = reply.createNestedArray("modules");
