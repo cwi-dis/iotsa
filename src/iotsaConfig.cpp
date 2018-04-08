@@ -113,13 +113,17 @@ void IotsaConfigMod::setup() {
   // user interaction.
 #ifndef ESP32
   rst_info *rip = ESP.getResetInfoPtr();
+  int reason = (int)rip->reason;
   bool badReason = rip->reason != REASON_DEFAULT_RST && rip->reason != REASON_EXT_SYS_RST;
 #else
-  bool badReason = rtc_get_reset_reason(0) != POWERON_RESET;
+  int reason = rtc_get_reset_reason(0);
+  // xxxjack Not sure why I sometimes see the WDT reset on pressing the reset button...
+  bool badReason = reason != POWERON_RESET && reason != RTCWDT_RTC_RESET;
 #endif
   if (badReason) {
     iotsaConfig.configurationMode = IOTSA_MODE_NORMAL;
-    IFDEBUG IotsaSerial.println("tmpConfigMode not honoured because of reset reason");
+    IFDEBUG IotsaSerial.print("tmpConfigMode not honoured because of reset reason:");
+    IFDEBUG IotsaSerial.println(reason);
   }
   // If factory reset is requested format the Flash and reboot
   if (iotsaConfig.configurationMode == IOTSA_MODE_FACTORY_RESET) {
