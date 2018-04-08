@@ -129,7 +129,7 @@ void IotsaConfigMod::setup() {
   if (iotsaConfig.configurationMode == IOTSA_MODE_FACTORY_RESET) {
   	IFDEBUG IotsaSerial.println("Factory-reset requested");
   	delay(1000);
-#ifndef ESP32
+#ifndef ESP32not
   	IFDEBUG IotsaSerial.println("Formatting SPIFFS...");
   	SPIFFS.format();
   	IFDEBUG IotsaSerial.println("Format done, rebooting.");
