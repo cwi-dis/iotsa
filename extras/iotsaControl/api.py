@@ -196,7 +196,7 @@ class IotsaDevice(IotsaConfig):
         if timeout:
             print '(%d seconds more)' % timeout,
         print
-        if status.pop('privateWifi'):
+        if status.pop('privateWifi', False):
             print '     NOTE:         on private WiFi network'
         reqMode = status.pop('requestedMode', None)
         if reqMode:
