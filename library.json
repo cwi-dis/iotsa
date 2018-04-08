@@ -15,7 +15,7 @@
         "extraScript" : "extras/mkversionh.py"
     },
     "frameworks" : "Arduino",
-    "platforms" : [ "espressif8266"],
+    "platforms" : [ "espressif8266", "espressif32"],
     "dependencies" : [
         {
             "name" : "Adafruit NeoPixel",
@@ -36,6 +36,10 @@
         {
             "name" : "ArduinoJWT",
             "version" :  "~1.0.1"
+        },
+        {
+            "name" : "ESP32WebServer",
+            "platform" : "espressif32"
         }
     ],
     "examples" : [
