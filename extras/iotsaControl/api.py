@@ -1,6 +1,7 @@
 import sys
 import socket
 import requests
+import copy
 
 VERBOSE=False
 
@@ -165,10 +166,11 @@ class IotsaDevice(IotsaConfig):
         return self.apis[api]
         
     def printStatus(self):
+        status = copy.deepcopy(self.status)
         print '%s:' % self.device.ipAddress
-        print '  program:        ', self.status.get('program', 'unknown')
+        print '  program:        ', status.pop('program', 'unknown')
         print '  last boot:      ', 
-        lastboot = self.status.get('uptime')
+        lastboot = status.pop('uptime')
         if not lastboot:
             print '???',
         else:
@@ -185,30 +187,33 @@ class IotsaDevice(IotsaConfig):
                     else:
                         lastboot /= 24
                         print '%dd' % lastboot,
-        lastreason = self.status.get('bootCause')
+        lastreason = status.pop('bootCause')
         if lastreason:
             print '(%s)' % lastreason,
         print
-        print '  runmode:        ', self.modeName(self.status.get('currentMode', 0)),
-        timeout = self.status.get('currentModeTimeout')
+        print '  runmode:        ', self.modeName(status.pop('currentMode', 0)),
+        timeout = status.pop('currentModeTimeout', None)
         if timeout:
             print '(%d seconds more)' % timeout,
         print
-        if self.status.get('privateWifi'):
+        if status.pop('privateWifi'):
             print '     NOTE:         on private WiFi network'
-        reqMode = self.status.get('requestedMode')
+        reqMode = status.pop('requestedMode', None)
         if reqMode:
             print '  requested mode: ', self.modeName(reqMode),
-            timeout = self.status.get('requestedModeTimeout', '???')
+            timeout = status.pop('requestedModeTimeout', '???')
             if timeout:
                 print '(needs reboot within %s seconds)' % timeout,
             print
-        print '  hostname:       ', self.status.get('hostName', '')
-        print '  iotsa:          ', self.status.get('iotsaFullVersion', '???')
+        print '  hostName:       ', status.pop('hostName', '')
+        iotsaVersion = status.pop('iotsaVersion', '???')
+        print '  iotsa:          ', status.pop('iotsaFullVersion', iotsaVersion)
         print '  modules:        ',
-        for m in self.status.get('modules', ['???']):
+        for m in status.pop('modules', ['???']):
             print m,
         print
+        for k, v in status.items():
+            print '  %-16s %s' % (k+':', v)
             
     def modeName(self, mode):
         if mode is None: return 'unknown'
