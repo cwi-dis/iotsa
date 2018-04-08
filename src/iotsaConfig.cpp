@@ -120,7 +120,7 @@ void IotsaConfigMod::setup() {
   // xxxjack Not sure why I sometimes see the WDT reset on pressing the reset button...
   bool badReason = reason != POWERON_RESET && reason != RTCWDT_RTC_RESET;
 #endif
-  if (badReason) {
+  if (badReason && iotsaConfig.configurationMode != IOTSA_MODE_NORMAL) {
     iotsaConfig.configurationMode = IOTSA_MODE_NORMAL;
     IFDEBUG IotsaSerial.print("tmpConfigMode not honoured because of reset reason:");
     IFDEBUG IotsaSerial.println(reason);

@@ -132,7 +132,7 @@ class Main:
     def cmd_config(self):
         """Set target configuration parameters (target must be in configuration mode)"""
         self.loadDevice()
-        if self.device.get('currentMode', 0) != 1:
+        if self.device.get('currentMode', 0) != 1 and not self.device.get('privateWifi', 0):
             raise api.UserIntervention("Set target into configuration mode first. See configMode or configWait commands.")
         
         anyDone = False
