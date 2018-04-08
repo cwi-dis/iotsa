@@ -44,8 +44,8 @@ install:
     - platformio lib -g install "Timezone@~1.1.1"
     - platformio lib -g install "ArduinoJson@~5.13.0"
     - platformio lib -g install "ArduinoJWT@~1.0.1"
-    - platformio lib -g install "ESP32WebServer"
 #    - platformio lib -g install "DHT sensor library"
 #    - platformio lib -g install "Adafruit Unified Sensor"
 script:
-    - platformio ci --lib="." --board=nodemcuv2 --board=esp32thing
+    - platformio ci --lib="." --board=nodemcuv2
+    - platformio lib -g install "ESP32WebServer" && platformio ci --lib="." --board=esp32thing
