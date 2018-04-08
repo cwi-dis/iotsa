@@ -367,7 +367,6 @@ has no users, and allows all rights always.
 - [Light](examples/Light/Light.ino) measures ambient light level with an LDR connected to the analog input.
 - [Temperature](examples/Temperature/Temperature.ino) measures temperature with a slightly more complicated sensor, a DHT21.
 - [Led](examples/Led/Led.ino) controls the color of a NeoPixel LED, and can set up repeating patterns. Uses _iotsaLed_ module.
-- [SimpleIO](examples/SimpleIO/SimpleIO.ino) server that allows web access to analog and digital pins. Also shows how to use the _iotsaConfigFile_ classes.
 - [HelloPasswd](examples/HelloPasswd/HelloPasswd.ino) The same "Hello" server, but now using a _IotsaAuthMod_ for access control (you need to provide username "admin" and password "admin" to change the greeting name).
 - [HelloUser](examples/HelloUser/HelloUser.ino) Another "Hello" server that needs authentication, but this time using _IotsaUserMod_ so the password can be changed.
 - [Log](examples/Log/Log.ino) Example of using the _iotsaLogger_ module.
@@ -376,11 +375,13 @@ has no users, and allows all rights always.
 
 Here are some projects that use iotsa, and that also be used as further examples (_Note that as of this writing not all projects may be publicly accessible yet_):
 
+* [iotsaGPIO](http://github.com/cwi-dis/iotsaGPIO): allows web access (or REST access) to analog and digital input and output pins.
 * [iotsaDisplayServer](http://github.com/cwi-dis/iotsaDisplayServer): Drives an LCD display, such as an i2c 4x40 character module. Support for a buzzer (to attract user attention) and buttons (programmable to trigger actions by accessing programmable URLs) is included.
 * [iotsaMotorServer](http://github.com/cwi-dis/iotsaMotorServer): Drives one or more stepper motors. Schematics and 3D models are included for a device to lift an object (such as a plant in a pot) to a height that can be changed through the web.
 * [iotsaNeoClock](http://github.com/cwi-dis/iotsaNeoClock): A clock comprised of 60 NeoPixel LEDs. Shows the time, but can also show programmable patterns (as alerts) and temporal information (such as expected rainfall for the coming hour). Schematics and building instructions included.
 * [iotsaDoorOpener](http://github.com/cwi-dis/iotsaDoorOpener): Operates a solenoid to open a door. On web access, or when an RFID tag (such as a keychain fob or a mifare contactless transport card) is presented. RFID cards are programmable (over the net, or using a special "learn" card). A web request can be sent to a programmable URL when a card is presented.
 * [iotsaSmartMeter](http://github.com/cwi-dis/iotsaSmartMeter): Reads electricity and gas usage of a dutch Smart Meter through the standardised P1 port and makes the data available on the net.
+* [iotsaDoorbellButton](http://github.com/cwi-dis/iotsaDoorbellButton) and [iotsaDoorbellRinger](http://github.com/cwi-dis/iotsaDoorbellRinger) are two very simple REST services that together form a door bell. 
 
 ## hardware
 

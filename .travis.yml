@@ -34,7 +34,6 @@ env:
     - PLATFORMIO_CI_SRC=examples/Led
     - PLATFORMIO_CI_SRC=examples/Light
     - PLATFORMIO_CI_SRC=examples/Log
-    - PLATFORMIO_CI_SRC=examples/SimpleIO
     - PLATFORMIO_CI_SRC=examples/Skeleton
 #    - PLATFORMIO_CI_SRC=examples/Temperature
 install:
