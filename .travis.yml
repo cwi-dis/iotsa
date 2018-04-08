@@ -23,7 +23,7 @@ install:
 script:
 - platformio ci --lib="." --board=nodemcuv2
 - platformio lib -g install "ESP32WebServer" && platformio ci --lib="." --board=esp32thing
-before-deploy:
+before_deploy:
 - |
   (
     mkdir ~/deploy

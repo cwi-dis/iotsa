@@ -39,6 +39,7 @@
         },
         {
             "name" : "ESP32WebServer",
+            "version" : ">=1.0",
             "platforms" : "espressif32"
         }
     ],
