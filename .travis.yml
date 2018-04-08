@@ -1,50 +1,53 @@
-# Continuous Integration (CI) is the practice, in software
-# engineering, of merging all developer working copies with a shared mainline
-# several times a day < http://docs.platformio.org/page/ci/index.html >
-#
-# Documentation:
-#
-# * Travis CI Embedded Builds with PlatformIO
-#   < https://docs.travis-ci.com/user/integration/platformio/ >
-#
-# * PlatformIO integration with Travis CI
-#   < http://docs.platformio.org/page/ci/travis.html >
-#
-# * User Guide for `platformio ci` command
-#   < http://docs.platformio.org/page/userguide/cmd_ci.html >
-#
-#
-# Please choice one of the following templates (proposed below) and uncomment
-# it (remove "# " before each line) or use own configuration according to the
-# Travis CI documentation (see above).
-#
-
-
 language: python
 python:
-    - "2.7"
+- '2.7'
 env:
-    - PLATFORMIO_CI_SRC=examples/Hello
-    - PLATFORMIO_CI_SRC=examples/HelloApi
-    - PLATFORMIO_CI_SRC=examples/HelloCpp
-    - PLATFORMIO_CI_SRC=examples/HelloPasswd
-    - PLATFORMIO_CI_SRC=examples/HelloRights
-    - PLATFORMIO_CI_SRC=examples/HelloToken
-    - PLATFORMIO_CI_SRC=examples/HelloUser
-    - PLATFORMIO_CI_SRC=examples/Led
-    - PLATFORMIO_CI_SRC=examples/Light
-    - PLATFORMIO_CI_SRC=examples/Log
-    - PLATFORMIO_CI_SRC=examples/Skeleton
-#    - PLATFORMIO_CI_SRC=examples/Temperature
+- PLATFORMIO_CI_SRC=examples/Hello
+- PLATFORMIO_CI_SRC=examples/HelloApi
+- PLATFORMIO_CI_SRC=examples/HelloCpp
+- PLATFORMIO_CI_SRC=examples/HelloPasswd
+- PLATFORMIO_CI_SRC=examples/HelloRights
+- PLATFORMIO_CI_SRC=examples/HelloToken
+- PLATFORMIO_CI_SRC=examples/HelloUser
+- PLATFORMIO_CI_SRC=examples/Led
+- PLATFORMIO_CI_SRC=examples/Light
+- PLATFORMIO_CI_SRC=examples/Log
+- PLATFORMIO_CI_SRC=examples/Skeleton
 install:
-    - pip install -U platformio
-    - platformio lib -g install "Adafruit NeoPixel@~1.1.6"
-    - platformio lib -g install "Time@>=1.5"
-    - platformio lib -g install "Timezone@~1.1.1"
-    - platformio lib -g install "ArduinoJson@~5.13.0"
-    - platformio lib -g install "ArduinoJWT@~1.0.1"
-#    - platformio lib -g install "DHT sensor library"
-#    - platformio lib -g install "Adafruit Unified Sensor"
+- pip install -U platformio
+- platformio lib -g install "Adafruit NeoPixel@~1.1.6"
+- platformio lib -g install "Time@>=1.5"
+- platformio lib -g install "Timezone@~1.1.1"
+- platformio lib -g install "ArduinoJson@~5.13.0"
+- platformio lib -g install "ArduinoJWT@~1.0.1"
 script:
-    - platformio ci --lib="." --board=nodemcuv2
-    - platformio lib -g install "ESP32WebServer" && platformio ci --lib="." --board=esp32thing
+- platformio ci --lib="." --board=nodemcuv2
+- platformio lib -g install "ESP32WebServer" && platformio ci --lib="." --board=esp32thing
+before-deploy:
+- |
+  (
+    mkdir ~/deploy
+    cd examples
+    for e in *; do
+        if test -d $e/.pioenvs; then
+            (
+                cd $e
+                for d in *; do
+                if test -f $d/firmware.bin; then
+                    cp $d/firmware.bin ~/deploy/firmware.$e.$d.bin
+                fi
+                done
+            )
+        fi
+    done
+  )
+deploy:
+  provider: releases
+  api_key:
+    secure: K5gCDbJmwy6jSEphXxOD43tuTUErklAPMx3DmTGmuoLhaj30g4WbHJ0c2oVou6O8A841EPJxAda8uvaatMPGsNz2usRwCVTODEQTnOSgEgJBOC0AulMICoxFZQLr+1rch7mIF1RSEr+nnG1sNICJ7EB/3X/xMXWEOM7aLhJqHcYsaX5CoZIht9Dq0C5zUD4car6sWCRNjxFIlzK4+iJ5XqPgqNqez9zsVnTjfOAT1rDM7asC7Oq+T/JJkVFxi+8SJ/1KhmmEWH1+FPpPEfqIHbwrBw0hF5NLUUWSTvz3Gzt6zrcDCg9CwMVolPuaaJb/x1Vc+Ar24z0Cn+syKEr2gTU57XJ8QvyxvVCDY0VY1ADJ+yS7MrkoPNywGtPSElLk27AhHsf5G7+tij+7DwpL4+O/fsoMpwSOP4qcFIzat0J9dRqKxFvqyETpzXjVhKIkO3C0rgkRZLwtwohwy+BUypaUUgr66485d1+MqIFyFMsy694uEXtl60+KC9gnYplPh8T+WcWn/rsToGm730qB/2AyFJ0ZQs3BE73ETHlxWWK5voGhOnPVrZAu0A9NTpW5Z/LtbN5wvI+inUhpuGdpBPGdP7inuRF1HIMr7P4N9ksxRPCUC4k/yT1cdLIU0mfgPwhHCnFy8FqQfVK3tvXaIVc3dVB3Bw2c6/eiJsrv+xA=
+  file: "~/deploy/*"
+  skip_cleanup: true
+  on:
+    repo: cwi-dis/iotsa
+    tags: true
+    all_branches: true

@@ -1,3 +1,8 @@
+iotsa 1.7.2 - 8-Apr-2018
+
+- Enabled (experimental) esp32 support again.
+- Various fixes to iotsaControl and how it interfaces to iotsa boards
+
 iotsa 1.7.1 - 30-Mar-2018
 
 - Added iotsaControl module and program to allow programmatic configuration of iotsa devices.
