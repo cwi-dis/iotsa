@@ -23,5 +23,5 @@ install:
 - platformio lib -g install "ArduinoJson@~5.13.0"
 - platformio lib -g install "ArduinoJWT@~1.0.1"
 script:
-- platformio ci -v --lib="." --board=nodemcuv2
-- platformio lib -g install "ESP32WebServer" && platformio ci -v --lib="." --board=esp32thing
+- platformio ci --lib="." --project-option="lib_ldf_mode=deep+" --board=nodemcuv2
+- platformio lib -g install "ESP32WebServer" && platformio ci -v --lib="." --project-option="lib_ldf_mode=deep+" --board=esp32thing
