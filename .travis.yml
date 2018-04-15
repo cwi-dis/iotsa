@@ -13,6 +13,8 @@ env:
 - PLATFORMIO_CI_SRC=examples/Light
 - PLATFORMIO_CI_SRC=examples/Log
 - PLATFORMIO_CI_SRC=examples/Skeleton
+- PLATFORMIO_CI_SRC=examples/Button
+- PLATFORMIO_CI_SRC=examples/Ringer
 install:
 - pip install -U platformio
 - platformio lib -g install "Adafruit NeoPixel@~1.1.6"

@@ -285,6 +285,10 @@ and then repeatedly call `cf.put("name", variable)`.
 
 ## available standard modules
 
+### iotsaButton.h
+
+A generalized module for handling buttons and switches attached to GPIO pins. Uses _iotsaRequest.h_ to enable REST calls when buttons are pressed.
+
 ### iotsaCapabilities.h
 
 An authentication module (_IotsaAuthMod_) that trusts an external server, 
@@ -344,6 +348,10 @@ Provides a user interface at `/ntp` and a REST interface at `/api/ntp`.
 
 Allows Over-the-air reprogramming of a iotsa server. After ota-programming has been enabled the device will show up (for 5 minutes) in the Arduino IDE, menu _Tools_ -> _Port_, under the _Network Ports_ section. Select it, and press the checkmark on your sketch to upload.
 
+### iotsaRequest.h
+
+Allows issuing of _http_ and _https_ requests. Carrying username/password credentials and tokens is possible. This is not a complete module in itself, but provides the building blocks to allow other modules to easily add the ability to send (configurable) web requests.
+
 ### iotsaUser.h
 
 An authentication module (_IotsaAuthMod_) that stores a single username and password. Other modules can then specify they are only accessible after the user authenticates with this username/password combination.
@@ -367,6 +375,7 @@ has no users, and allows all rights always.
 - [Light](examples/Light/Light.ino) measures ambient light level with an LDR connected to the analog input.
 - [Temperature](examples/Temperature/Temperature.ino) measures temperature with a slightly more complicated sensor, a DHT21.
 - [Led](examples/Led/Led.ino) controls the color of a NeoPixel LED, and can set up repeating patterns. Uses _iotsaLed_ module.
+- [Ringer](examples/Ringer/Ringer.ino) 
 - [HelloPasswd](examples/HelloPasswd/HelloPasswd.ino) The same "Hello" server, but now using a _IotsaAuthMod_ for access control (you need to provide username "admin" and password "admin" to change the greeting name).
 - [HelloUser](examples/HelloUser/HelloUser.ino) Another "Hello" server that needs authentication, but this time using _IotsaUserMod_ so the password can be changed.
 - [Log](examples/Log/Log.ino) Example of using the _iotsaLogger_ module.
