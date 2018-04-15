@@ -6,7 +6,6 @@
 // will allow serving of web pages and other documents, and of uploading those.
 //
 
-#include <Esp.h>
 #include "iotsa.h"
 #include "iotsaWifi.h"
 
@@ -50,9 +49,6 @@ IotsaFilesBackupMod filesBackupMod(application);
 void setup(void){
   application.setup();
   application.serverSetup();
-#ifndef ESP32
-  ESP.wdtEnable(WDTO_120MS);
-#endif
 }
  
 void loop(void){

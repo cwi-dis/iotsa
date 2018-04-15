@@ -13,7 +13,6 @@
 // The usernames/password combination is changeable.
 //
 
-#include <Esp.h>
 #include "iotsa.h"
 #include "iotsaWifi.h"
 #include "iotsaUser.h"
@@ -109,9 +108,6 @@ IotsaHelloMod helloMod(application, &myAuthenticator); // Our hello module (auth
 void setup(void){
   application.setup();
   application.serverSetup();
-#ifndef ESP32
-  ESP.wdtEnable(WDTO_120MS);
-#endif
 }
  
 // Standard loop() routine, hands off everything to the application framework

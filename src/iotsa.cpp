@@ -49,6 +49,9 @@ IotsaApplication::setup() {
   for (m=firstModule; m; m=m->nextModule) {
   	m->setup();
   }
+#ifndef ESP32
+  ESP.wdtEnable(WDTO_120MS);
+#endif
 }
 
 void

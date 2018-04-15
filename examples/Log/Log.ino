@@ -10,7 +10,6 @@
 //
 // This example is used for testing the logger.
 
-#include <Esp.h>
 #include "iotsa.h"
 #include "iotsaWifi.h"
 #include "iotsaSimple.h"
@@ -79,9 +78,6 @@ void setup(void){
   IotsaSerial.println("Logging Hello: setup called");
   application.serverSetup();
   // Add your setup code here.
-#ifndef ESP32
-  ESP.wdtEnable(WDTO_120MS);
-#endif
   IotsaSerial.println("Logging Hello: setup returning");
 }
  

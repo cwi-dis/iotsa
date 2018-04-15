@@ -11,7 +11,6 @@
 // and needs a pretty bright light to make it go to the maximum value of 1024). 
 //
 
-#include <Esp.h>
 #include "iotsa.h"
 #include "iotsaWifi.h"
 
@@ -122,9 +121,6 @@ IotsaLightMod lightMod(application);
 void setup(void){
   application.setup();
   application.serverSetup();
-#ifndef ESP32
-  ESP.wdtEnable(WDTO_120MS);
-#endif
 }
  
 // Standard loop() routine, hands off most work to the application framework

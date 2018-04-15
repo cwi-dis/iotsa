@@ -9,7 +9,6 @@
 // a web form (not kept over reboots). 
 //
 
-#include <Esp.h>
 #include "iotsa.h"
 #include "iotsaWifi.h"
 
@@ -94,9 +93,6 @@ IotsaHelloMod helloMod(application);
 void setup(void){
   application.setup();
   application.serverSetup();
-#ifndef ESP32
-  ESP.wdtEnable(WDTO_120MS);
-#endif
 }
  
 // Standard loop() routine, hands off most work to the application framework
