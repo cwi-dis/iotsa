@@ -14,7 +14,7 @@
 #define PIN_BUTTON 4	// GPIO4 is the pushbutton
 #define PIN_NEOPIXEL 15  // pulled-down during boot, can be used for NeoPixel afterwards
 
-ESP8266WebServer server(80);
+IotsaWebServer server(80);
 IotsaApplication application(server, "Button Server");
 
 // Configure modules we need

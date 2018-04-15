@@ -5,7 +5,7 @@
 
 #define PIN_ALARM 4 // GPIO4 connects to the buzzer
 
-ESP8266WebServer server(80);
+IotsaWebServer server(80);
 IotsaApplication application(server, "Ringer Server");
 
 // Configure modules we need
