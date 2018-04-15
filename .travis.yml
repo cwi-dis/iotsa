@@ -2,19 +2,19 @@ language: python
 python:
 - '2.7'
 env:
-- PLATFORMIO_CI_SRC=examples/Hello
-- PLATFORMIO_CI_SRC=examples/HelloApi
-- PLATFORMIO_CI_SRC=examples/HelloCpp
-- PLATFORMIO_CI_SRC=examples/HelloPasswd
-- PLATFORMIO_CI_SRC=examples/HelloRights
-- PLATFORMIO_CI_SRC=examples/HelloToken
-- PLATFORMIO_CI_SRC=examples/HelloUser
-- PLATFORMIO_CI_SRC=examples/Led
-- PLATFORMIO_CI_SRC=examples/Light
-- PLATFORMIO_CI_SRC=examples/Log
-- PLATFORMIO_CI_SRC=examples/Skeleton
-- PLATFORMIO_CI_SRC=examples/Button
-- PLATFORMIO_CI_SRC=examples/Ringer
+- IOTSA_EXAMPLE=Hello PLATFORMIO_CI_SRC=examples/Hello
+- IOTSA_EXAMPLE=HelloApi PLATFORMIO_CI_SRC=examples/HelloApi
+- IOTSA_EXAMPLE=HelloCpp PLATFORMIO_CI_SRC=examples/HelloCpp
+- IOTSA_EXAMPLE=HelloPasswd PLATFORMIO_CI_SRC=examples/HelloPasswd
+- IOTSA_EXAMPLE=HelloRights PLATFORMIO_CI_SRC=examples/HelloRights
+- IOTSA_EXAMPLE=HelloToken PLATFORMIO_CI_SRC=examples/HelloToken
+- IOTSA_EXAMPLE=HelloUser PLATFORMIO_CI_SRC=examples/HelloUser
+- IOTSA_EXAMPLE=Led PLATFORMIO_CI_SRC=examples/Led
+- IOTSA_EXAMPLE=Light PLATFORMIO_CI_SRC=examples/Light
+- IOTSA_EXAMPLE=Log PLATFORMIO_CI_SRC=examples/Log
+- IOTSA_EXAMPLE=Skeleton PLATFORMIO_CI_SRC=examples/Skeleton
+- IOTSA_EXAMPLE=Button PLATFORMIO_CI_SRC=examples/Button
+- IOTSA_EXAMPLE=Ringer PLATFORMIO_CI_SRC=examples/Ringer
 install:
 - pip install -U platformio
 - platformio lib -g install "Adafruit NeoPixel@~1.1.6"
@@ -22,6 +22,7 @@ install:
 - platformio lib -g install "Timezone@~1.1.1"
 - platformio lib -g install "ArduinoJson@~5.13.0"
 - platformio lib -g install "ArduinoJWT@~1.0.1"
+- platformio lib -g install "ESP32WebServer"
 script:
 - platformio ci --lib="." --project-option="lib_ldf_mode=deep+" --board=nodemcuv2
-- platformio lib -g install "ESP32WebServer" && platformio ci -v --lib="." --project-option="lib_ldf_mode=deep+" --board=esp32thing
+- platformio ci --lib="." --project-option="lib_ldf_mode=deep+" --board=esp32thing
