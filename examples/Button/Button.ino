@@ -29,7 +29,7 @@ const int nButton = sizeof(buttons) / sizeof(buttons[0]);
 callback buttonOk = std::bind(&IotsaLedMod::set, ledMod, 0x002000, 250, 0, 1);
 callback buttonNotOk = std::bind(&IotsaLedMod::set, ledMod, 0x200000, 250, 0, 1);
 
-IotsaButtonMod buttonMod(application, buttons, nButton, &myTokenAuthenticator, buttonOk, buttonNotOk);
+IotsaButtonMod buttonMod(application, buttons, nButton, NULL, buttonOk, buttonNotOk);
 
 //
 // Boilerplate for iotsa server, with hooks to our code added.
