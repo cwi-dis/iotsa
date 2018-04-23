@@ -54,6 +54,10 @@ public:
     title(_title),
     haveOTA(false)
     {}
+  // Explicitly disable copy constructor and assignment
+  IotsaApplication(const IotsaApplication& that) = delete;
+  IotsaApplication& operator=(const IotsaApplication& that) = delete;
+
   void addMod(IotsaBaseMod *mod);
   void addModEarly(IotsaBaseMod *mod);
   void setup();
@@ -78,6 +82,10 @@ class IotsaAuthMod;
 
 class IotsaAuthenticationProvider {
 public:
+  IotsaAuthenticationProvider() {}
+  IotsaAuthenticationProvider(const IotsaAuthenticationProvider& that) = delete;
+  IotsaAuthenticationProvider& operator=(const IotsaAuthenticationProvider& that) = delete;
+
   virtual ~IotsaAuthenticationProvider() {}
   virtual bool allows(const char *right=NULL) = 0;
   virtual bool allows(const char *obj, IotsaApiOperation verb) = 0;
@@ -99,6 +107,8 @@ public:
       app.addMod(this);
     }
   }
+  IotsaBaseMod& operator=(const IotsaBaseMod& that) = delete;
+
   virtual void setup() = 0;
   virtual void loop() = 0;
   virtual String info();
@@ -120,6 +130,7 @@ public:
   : IotsaBaseMod(_app, _auth, early)
   {
   }
+  IotsaMod& operator=(const IotsaMod& that) = delete;
   virtual String info() = 0;
   virtual void serverSetup() = 0;
 
