@@ -3,6 +3,9 @@
 #include <WiFiUdp.h>
 #include <coap.h>
 
+// Static variable
+IotsaCoapServiceMod* IotsaCoapApiService::_coapMod = NULL;
+
 class CoapEndpoint {
 public:
   CoapEndpoint(IotsaApiProvider *_provider, const char *_path, bool _get, bool _put, bool _post)
