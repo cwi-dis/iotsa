@@ -42,7 +42,7 @@ protected:
   void configSave();
   void handler();
   IotsaCapability *capabilities;
-  IotsaRestApiService api;
+  IotsaApiService api;
   IotsaAuthenticationProvider &chain;
   String trustedIssuer;
   String issuerKey;

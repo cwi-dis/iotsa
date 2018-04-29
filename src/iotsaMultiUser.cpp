@@ -4,7 +4,7 @@
 IotsaMultiUserMod::IotsaMultiUserMod(IotsaApplication &_app)
 :	IotsaAuthMod(_app),
   users(NULL),
-  api(this, this, server)
+  api(this, _app, this, server)
 {
 	configLoad();
 }

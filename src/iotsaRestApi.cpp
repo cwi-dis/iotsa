@@ -1,5 +1,6 @@
 #include "iotsaApi.h"
 
+#ifdef IOTSA_WITH_REST
 void IotsaRestApiService::setup(const char* path, bool get, bool put, bool post) {
     if (get) server.on(path, HTTP_GET, std::bind(&IotsaRestApiService::_getHandlerWrapper, this, path));
     if (put) server.on(path, HTTP_PUT, std::bind(&IotsaRestApiService::_putHandlerWrapper, this, path));
@@ -63,3 +64,4 @@ void IotsaRestApiService::_postHandlerWrapper(const char *path) {
         IFDEBUG IotsaSerial.println("-> ERR");
     }
 }
+#endif // IOTSA_WITH_REST

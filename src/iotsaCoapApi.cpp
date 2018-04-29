@@ -1,5 +1,5 @@
-#include "iotsaCoapApi.h"
-
+#include "iotsaApi.h"
+#ifdef IOTSA_WITH_COAP
 void IotsaCoapApiService::setup(const char* path, bool get, bool put, bool post) {
 #if 0
     if (get) server.on(path, HTTP_GET, std::bind(&IotsaApi::_getHandlerWrapper, this, path));
@@ -7,3 +7,4 @@ void IotsaCoapApiService::setup(const char* path, bool get, bool put, bool post)
     if (post) server.on(path, HTTP_POST, std::bind(&IotsaApi::_postHandlerWrapper, this, path));
 #endif
 }
+#endif

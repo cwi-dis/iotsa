@@ -21,7 +21,7 @@ protected:
   void handler();
   String username;
   String password;
-  IotsaRestApiService api;
+  IotsaApiService api;
 };
 
 #endif

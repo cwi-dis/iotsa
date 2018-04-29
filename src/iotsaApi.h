@@ -3,6 +3,9 @@
 #include "iotsa.h"
 #include <ArduinoJson.h>
 
+#define IOTSA_WITH_REST
+#define IOTSA_WITH_COAP
+
 class IotsaApiProvider  {
 public:
   IotsaApiProvider() {}
@@ -12,40 +15,60 @@ public:
   virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) = 0;
 };
 
-class IotsaApiService {
+class IotsaApiServiceProvider {
 public:
-  IotsaApiService() {}
-  virtual ~IotsaApiService() {}
+  IotsaApiServiceProvider() {}
+  virtual ~IotsaApiServiceProvider() {}
   virtual void setup(const char* path, bool get=false, bool put=false, bool post=false) = 0;
 };
 
-class IotsaRestApiService : public IotsaApiService {
+#ifdef IOTSA_WITH_REST
+#include "iotsaRestApi.h"
+#endif
+#ifdef IOTSA_WITH_COAP
+#include "iotsaCoapApi.h"
+#endif
+
+#if defined(IOTSA_WITH_REST) && defined(IOTSA_WITH_COAP)
+//
+// Class that provides both REST and COAP service endpoint implementations.
+//
+class IotsaANYApiService : public IotsaApiServiceProvider {
 public:
-  IotsaRestApiService(IotsaApiProvider* _provider, IotsaAuthenticationProvider* _auth, IotsaWebServer& _server)
-  : provider(_provider),
-    auth(_auth),
-    server(_server)
+  IotsaANYApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth, IotsaWebServer& _server)
+  : restService(_provider, _app, _auth, _server),
+    coapService(_provider, _app, _auth, _server)
   {}
-  void setup(const char* path, bool get=false, bool put=false, bool post=false);
+  void setup(const char* path, bool get=false, bool put=false, bool post=false) {
+    restService.setup(path, get, put, post);
+    coapService.setup(path, get, put, post);
+  }
 private:
-  IotsaApiProvider* provider; 
-  IotsaAuthenticationProvider* auth;
-  IotsaWebServer& server;
-  void _getHandlerWrapper(const char *path);
-  void _putHandlerWrapper(const char *path);
-  void _postHandlerWrapper(const char *path);
+  IotsaRestApiService restService;
+  IotsaCoapApiService coapService;
 };
 
-class IotsaApiMod : public IotsaMod, public IotsaApiProvider {
+class IotsaANYApiMod : public IotsaMod, public IotsaApiProvider {
 public:
-  IotsaApiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
+  IotsaANYApiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
   : IotsaMod(_app, _auth, early),
-    api(this, _auth, server)
+    api(this, _app, _auth, server)
   {}
   virtual bool getHandler(const char *path, JsonObject& reply) { return false; }
   virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
   virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
 protected:
-  IotsaRestApiService api;
+  IotsaANYApiService api;
 };
-#endif
+typedef IotsaANYApiMod IotsaApiMod;
+typedef IotsaANYApiService IotsaApiService;
+#elif defined(IOTSA_WITH_COAP)
+typedef IotsaCoapApiMod IotsaApiMod;
+typedef IotsaCoapApiService IotsaApiService;
+#elif defined(IOTSA_WITH_REST)
+typedef IotsaRestApiMod IotsaApiMod;
+typedef IotsaRestApiService IotsaApiService;
+#else
+// Don't define IotsaApiMod
+#endif // IOTSA_WITH_REST, IOTSA_WITH_COAP
+#endif // _IOTSAAPI_H_

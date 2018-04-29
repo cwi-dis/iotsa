@@ -30,7 +30,7 @@ protected:
   void configSave();
   void handler();
   IotsaUser *users;
-  IotsaRestApiService api;
+  IotsaApiService api;
 };
 
 #endif
