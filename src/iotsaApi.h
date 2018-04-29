@@ -12,9 +12,16 @@ public:
   virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) = 0;
 };
 
-class IotsaApi {
+class IotsaApiService {
 public:
-  IotsaApi(IotsaApiProvider* _provider, IotsaAuthenticationProvider* _auth, IotsaWebServer& _server)
+  IotsaApiService() {}
+  virtual ~IotsaApiService() {}
+  virtual void setup(const char* path, bool get=false, bool put=false, bool post=false) = 0;
+};
+
+class IotsaRestApiService : public IotsaApiService {
+public:
+  IotsaRestApiService(IotsaApiProvider* _provider, IotsaAuthenticationProvider* _auth, IotsaWebServer& _server)
   : provider(_provider),
     auth(_auth),
     server(_server)
@@ -39,6 +46,6 @@ public:
   virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
   virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
 protected:
-  IotsaApi api;
+  IotsaRestApiService api;
 };
 #endif

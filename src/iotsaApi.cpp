@@ -1,12 +1,12 @@
 #include "iotsaApi.h"
 
-void IotsaApi::setup(const char* path, bool get, bool put, bool post) {
-    if (get) server.on(path, HTTP_GET, std::bind(&IotsaApi::_getHandlerWrapper, this, path));
-    if (put) server.on(path, HTTP_PUT, std::bind(&IotsaApi::_putHandlerWrapper, this, path));
-    if (post) server.on(path, HTTP_POST, std::bind(&IotsaApi::_postHandlerWrapper, this, path));
+void IotsaRestApiService::setup(const char* path, bool get, bool put, bool post) {
+    if (get) server.on(path, HTTP_GET, std::bind(&IotsaRestApiService::_getHandlerWrapper, this, path));
+    if (put) server.on(path, HTTP_PUT, std::bind(&IotsaRestApiService::_putHandlerWrapper, this, path));
+    if (post) server.on(path, HTTP_POST, std::bind(&IotsaRestApiService::_postHandlerWrapper, this, path));
 }
 
-void IotsaApi::_getHandlerWrapper(const char *path) {
+void IotsaRestApiService::_getHandlerWrapper(const char *path) {
     if (auth && !auth->allows(path, IOTSA_API_GET)) return;
     IFDEBUG IotsaSerial.print("GET api ");
     IFDEBUG IotsaSerial.println(path);
@@ -24,7 +24,7 @@ void IotsaApi::_getHandlerWrapper(const char *path) {
     }
 }
 
-void IotsaApi::_putHandlerWrapper(const char *path) {
+void IotsaRestApiService::_putHandlerWrapper(const char *path) {
     if (auth && !auth->allows(path, IOTSA_API_PUT)) return;
     IFDEBUG IotsaSerial.print("PUT api ");
     IFDEBUG IotsaSerial.println(path);
@@ -44,7 +44,7 @@ void IotsaApi::_putHandlerWrapper(const char *path) {
     }
 }
 
-void IotsaApi::_postHandlerWrapper(const char *path) {
+void IotsaRestApiService::_postHandlerWrapper(const char *path) {
     if (auth && !auth->allows(path, IOTSA_API_POST)) return;
     IFDEBUG IotsaSerial.print("POST api ");
     IFDEBUG IotsaSerial.println(path);
