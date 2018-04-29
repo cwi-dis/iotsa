@@ -41,6 +41,10 @@
             "name" : "ESP32WebServer",
             "version" : ">=1.0",
             "platforms" : "espressif32"
+        },
+        {
+            "name" : "CoAP simple library",
+            "version" : "https://github.com/jackjansen/CoAP-simple-library.git"
         }
     ],
     "examples" : [

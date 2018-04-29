@@ -2,22 +2,11 @@
 #define _IOTSACOAPAPI_H_
 #include "iotsa.h"
 
-class IotsaCoapServiceMod : public IotsaBaseMod {
-public:
-  IotsaCoapServiceMod(IotsaApplication &_app)
-  : IotsaBaseMod(_app)
-  {}
-  void setup();
-  void loop();
-};
+class IotsaCoapServiceMod;
 
 class IotsaCoapApiService : public IotsaApiServiceProvider {
 public:
-  IotsaCoapApiService(IotsaApiProvider* _provider, IotsaApplication &_app)
-  : provider(_provider)
-  { 
-    if (_coapMod == NULL) _coapMod = new IotsaCoapServiceMod(_app); 
-  }
+  IotsaCoapApiService(IotsaApiProvider* _provider, IotsaApplication &_app);
   IotsaCoapApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth, IotsaWebServer& _server)
   : IotsaCoapApiService(_provider, _app)
   {}
