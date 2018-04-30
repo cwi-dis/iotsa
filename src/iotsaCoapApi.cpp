@@ -3,6 +3,8 @@
 #include <WiFiUdp.h>
 #include <coap.h>
 
+#define COAP_PROTOCOL_DEBUG
+
 // Static variable
 IotsaCoapServiceMod* IotsaCoapApiService::_coapMod = NULL;
 
@@ -24,16 +26,30 @@ public:
   bool post;
   CoapEndpoint *next;
   Coap* coap;
-
+  CoapCallback getCallback(Coap *_coap);
   void callbackImpl(CoapPacket &pkt, IPAddress ip, int port);
 
 };
 
+CoapCallback CoapEndpoint::getCallback(Coap *_coap) {
+    coap = _coap;
+    return std::bind(&CoapEndpoint::callbackImpl, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+}
+
 void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
+#ifdef COAP_PROTOCOL_DEBUG
+    IotsaSerial.print("COAP pkt recvd from "); IotsaSerial.println(ip);
+    IotsaSerial.print("type "); IotsaSerial.println(int(pkt.type));
+    IotsaSerial.print("code "); IotsaSerial.println(int(pkt.code));
+    IotsaSerial.print("tokenlen "); IotsaSerial.println(int(pkt.tokenlen));
+    IotsaSerial.print("payloadlen "); IotsaSerial.println(int(pkt.payloadlen));
+    IotsaSerial.print("messageid "); IotsaSerial.println(int(pkt.messageid));
+    IotsaSerial.print("optionnum "); IotsaSerial.println(int(pkt.optionnum));
+#endif
     bool ok = false;
     String replyData;
     // Handle requests, after chaing that type (get/put/post) is supported.
-    if (pkt.type == COAP_GET) {
+    if (pkt.code == COAP_GET) {
         IFDEBUG IotsaSerial.print("COAP-GET api ");
         IFDEBUG IotsaSerial.println(path);
         ok = get;
@@ -45,8 +61,8 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
                 reply.printTo(replyData);
             }
         }
-    }
-    if (pkt.type == COAP_PUT) {
+    } else
+    if (pkt.code == COAP_PUT) {
         IFDEBUG IotsaSerial.print("COAP-PUT api ");
         IFDEBUG IotsaSerial.println(path);
         ok = put && pkt.type == COAP_APPLICATION_JSON;
@@ -54,6 +70,9 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
             char dataBuffer[pkt.payloadlen+1];
             memcpy(dataBuffer, pkt.payload, pkt.payloadlen);
             dataBuffer[pkt.payloadlen] = 0;
+#ifdef COAP_PROTOCOL_DEBUG
+            IotsaSerial.print("payload "); IotsaSerial.println(dataBuffer);
+#endif
             DynamicJsonBuffer requestBuffer;
             JsonObject& request = requestBuffer.parseObject(dataBuffer);
             DynamicJsonBuffer replyBuffer;
@@ -63,8 +82,8 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
                 reply.printTo(replyData);
             }
         }
-    }
-    if (pkt.type == COAP_POST) {
+    } else
+    if (pkt.code == COAP_POST) {
         IFDEBUG IotsaSerial.print("COAP-POST api ");
         IFDEBUG IotsaSerial.println(path);
         ok = post && pkt.type == COAP_APPLICATION_JSON;
@@ -72,6 +91,9 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
             char dataBuffer[pkt.payloadlen+1];
             memcpy(dataBuffer, pkt.payload, pkt.payloadlen);
             dataBuffer[pkt.payloadlen] = 0;
+#ifdef COAP_PROTOCOL_DEBUG
+            IotsaSerial.print("payload "); IotsaSerial.println(dataBuffer);
+#endif
             DynamicJsonBuffer requestBuffer;
             JsonObject& request = requestBuffer.parseObject(dataBuffer);
             DynamicJsonBuffer replyBuffer;
@@ -81,15 +103,22 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
                 reply.printTo(replyData);
             }
         }
+    } else {
+        IFDEBUG IotsaSerial.print("COAP-UNKNOWN ");
+        IFDEBUG IotsaSerial.println(int(pkt.code));
     }
     // Send reply, either a JSON datastructure or an error.
     if (ok) {
+#ifdef COAP_PROTOCOL_DEBUG
+        IotsaSerial.print("replyData "); IotsaSerial.println(replyData);
+#endif
         coap->sendResponse(ip, port, pkt.messageid, replyData.c_str(), replyData.length(), COAP_CONTENT, COAP_APPLICATION_JSON, NULL, 0);
         IFDEBUG IotsaSerial.println("-> OK");
     } else {
         coap->sendResponse(ip, port, pkt.messageid, NULL, 0, COAP_BAD_REQUEST, COAP_NONE, NULL, 0);
         IFDEBUG IotsaSerial.println("-> ERR");
     }
+    delay(2000); // xxxjack
 }
 
 class IotsaCoapServiceMod : public IotsaBaseMod {
@@ -122,7 +151,7 @@ void IotsaCoapServiceMod::loop() {
 void IotsaCoapServiceMod::addEndpoint(CoapEndpoint *ep, const char *path) {
     ep->next = firstEndpoint;
     firstEndpoint = ep;
-    coap.server(std::bind(&CoapEndpoint::callbackImpl, ep, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), String(path));
+    coap.server(ep->getCallback(&coap), String(path));
 }
 
 IotsaCoapApiService::IotsaCoapApiService(IotsaApiProvider* _provider, IotsaApplication &_app)
