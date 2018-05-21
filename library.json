@@ -12,6 +12,7 @@
         "url" : "https://github.com/cwi-dis/iotsa.git"
     },
     "build": {
+        "flags" : "-DCOAP_BUF_MAX_SIZE=512",
         "extraScript" : "extras/mkversionh.py"
     },
     "frameworks" : "Arduino",

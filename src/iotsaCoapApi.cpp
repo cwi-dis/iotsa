@@ -38,7 +38,7 @@ CoapCallback CoapEndpoint::getCallback(Coap *_coap) {
 
 void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
 #ifdef COAP_PROTOCOL_DEBUG
-    IotsaSerial.print("COAP pkt recvd from "); IotsaSerial.println(ip);
+    IotsaSerial.print("COAP pkt recvd from "); IotsaSerial.print(ip); IotsaSerial.print(" port "); IotsaSerial.println(port);
     IotsaSerial.print("type "); IotsaSerial.println(int(pkt.type));
     IotsaSerial.print("code "); IotsaSerial.println(int(pkt.code));
     IotsaSerial.print("tokenlen "); IotsaSerial.println(int(pkt.tokenlen));
@@ -111,9 +111,15 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
     if (ok) {
 #ifdef COAP_PROTOCOL_DEBUG
         IotsaSerial.print("replyData "); IotsaSerial.println(replyData);
+        IotsaSerial.print("replyLen "); IotsaSerial.println(replyData.length());
 #endif
-        coap->sendResponse(ip, port, pkt.messageid, replyData.c_str(), replyData.length(), COAP_CONTENT, COAP_APPLICATION_JSON, NULL, 0);
-        IFDEBUG IotsaSerial.println("-> OK");
+        int rv = coap->sendResponse(ip, port, pkt.messageid, replyData.c_str(), replyData.length(), COAP_CONTENT, COAP_APPLICATION_JSON, NULL, 0);
+        if (rv) {
+            IFDEBUG IotsaSerial.println("-> OK");
+        } else {
+            coap->sendResponse(ip, port, pkt.messageid, NULL, 0, COAP_INTERNAL_SERVER_ERROR, COAP_NONE, NULL, 0);
+            IotsaSerial.println("-> xmitReplyError");
+        }
     } else {
         coap->sendResponse(ip, port, pkt.messageid, NULL, 0, COAP_BAD_REQUEST, COAP_NONE, NULL, 0);
         IFDEBUG IotsaSerial.println("-> ERR");
