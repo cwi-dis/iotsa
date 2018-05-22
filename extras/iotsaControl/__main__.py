@@ -17,29 +17,41 @@ class Main:
         self.device = None
         self.cmdlist = []
         
+    def __del__(self):
+        self.close()
+        
+    def close(self):
+        self.wifi = None
+        if self.device:
+            self.device.close()
+        self.device = None
+        
     def run(self):
         """Run the main commandline program"""
         self.parseArgs()
         self.cmdlist = self.args.command
         if type(self.cmdlist) != type([]):
             self.cmdlist = [self.cmdlist]
-        while True:
-            cmd = self._getcmd()
-            if not cmd: break
-            cmdName = 'cmd_' + cmd
-            if not hasattr(self, cmdName):
-                print >>sys.stderr, "%s: unknown command %s, help for help" % (sys.argv[0], cmd)
-                sys.exit(1)
-            handler = getattr(self, cmdName)
-            try:
-                handler()
-            except api.UserIntervention, arg:
-                print >>sys.stderr, "%s: %s: user intervention required:" % (sys.argv[0], cmd)
-                print >>sys.stderr, "%s: %s" % (sys.argv[0], arg)
-                sys.exit(2)
-            except requests.exceptions.HTTPError, arg:
-                print >>sys.stderr, "%s: %s: %s" % (sys.argv[0], cmd, arg)
-                sys.exit(1)
+        try:
+            while True:
+                cmd = self._getcmd()
+                if not cmd: break
+                cmdName = 'cmd_' + cmd
+                if not hasattr(self, cmdName):
+                    print >>sys.stderr, "%s: unknown command %s, help for help" % (sys.argv[0], cmd)
+                    sys.exit(1)
+                handler = getattr(self, cmdName)
+                try:
+                    handler()
+                except api.UserIntervention, arg:
+                    print >>sys.stderr, "%s: %s: user intervention required:" % (sys.argv[0], cmd)
+                    print >>sys.stderr, "%s: %s" % (sys.argv[0], arg)
+                    sys.exit(2)
+                except requests.exceptions.HTTPError, arg:
+                    print >>sys.stderr, "%s: %s: %s" % (sys.argv[0], cmd, arg)
+                    sys.exit(1)
+        finally:
+            self.close()
 
     def _configModeAndWait(self, mode):
         """Helper method to request a specific mode and wait until the user has enabled it"""

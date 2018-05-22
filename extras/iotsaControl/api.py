@@ -4,6 +4,7 @@ import requests
 import copy
 import coapthon.client.helperclient
 import urlparse
+from json import loads as json_loads
 
 VERBOSE=False
 
@@ -143,7 +144,16 @@ class IotsaCOAPProtocolHandler:
         else:
             host = parts.netloc
             port = 5683
+        try:
+            host = socket.gethostbyname(host)
+        except socket.gaierror:
+            pass
         self.client = coapthon.client.helperclient.HelperClient(server=(host, port))
+        
+    def __del__(self):
+        if self.client:
+            self.client.stop()
+        del self.client
         
     def get(self, endpoint, auth=None, token=None, json=None):
         assert auth is None
@@ -152,8 +162,8 @@ class IotsaCOAPProtocolHandler:
         endpoint = self.basePath+endpoint
         if VERBOSE: print 'COAP GET coap://%s:%d%s' % (self.client.server[0], self.client.server[1], endpoint)
         rv = self.client.get(endpoint)
-        if VERBOSE: print 'COAP GET returned', repr(rv)
-        return rv
+        if VERBOSE: print 'COAP GET returned', repr(rv.payload)
+        return json_loads(rv.payload)
         
     def put(self, endpoint, auth=None, token=None, json=None):
         assert auth is None
@@ -226,6 +236,13 @@ class IotsaDevice(IotsaConfig):
         self.auth = None
         self.bearerToken = None
         self.apis = {}
+        
+    def __del__(self):
+        self.close()
+        
+    def close(self):
+        self.protocolHandler = None
+        self.apis = None
         
     def setLogin(self, username, password):
         self.auth = (username, password)
