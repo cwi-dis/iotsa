@@ -5,6 +5,7 @@ import copy
 import coapthon.client.helperclient
 import urlparse
 from json import loads as json_loads
+from json import dumps as json_dumps
 
 VERBOSE=False
 
@@ -107,13 +108,13 @@ class IotsaRESTProtocolHandler:
         
         
     def get(self, endpoint, auth=None, token=None, json=None):
-        return self.request('GET', endpoint, auth, json)
+        return self.request('GET', endpoint, auth=auth, token=token, json=json)
         
     def put(self, endpoint, auth=None, token=None, json=None):
-        return self.request('PUT', endpoint, auth, json)
+        return self.request('PUT', endpoint, auth=auth, token=token, json=json)
         
     def post(self, endpoint, auth=None, token=None, json=None):
-        return self.request('POST', endpoint, auth, json)
+        return self.request('POST', endpoint, auth=auth, token=token, json=json)
         
     def request(self, method, endpoint, auth=None, token=None, json=None):
         headers = {}
@@ -168,25 +169,22 @@ class IotsaCOAPProtocolHandler:
     def put(self, endpoint, auth=None, token=None, json=None):
         assert auth is None
         assert token is None
-        return self.request('PUT', endpoint, auth, json)
+        assert json is not None
+        endpoint = self.basePath+endpoint
+        if VERBOSE: print 'COAP PUT coap://%s:%d%s' % (self.client.server[0], self.client.server[1], endpoint)
+        rv = self.client.put(endpoint, json_dumps(json))
+        if VERBOSE: print 'COAP PUT returned', repr(rv.payload)
+        return json_loads(rv.payload)
         
     def post(self, endpoint, auth=None, token=None, json=None):
         assert auth is None
         assert token is None
-        return self.request('POST', endpoint, auth, json)
-        
-    def request(self, method, endpoint, auth=None, token=None, json=None):
-        xxxxxx
-        assert auth is None
-        assert token is None
-        url = self.baseURL + endpoint
-        if VERBOSE: print 'COAP %s %s' % (method, url)
-        r = requests.get(url, auth=auth, json=json)
-        if VERBOSE: print 'COAP %s returned: %s' % (method, r.text)
-        r.raise_for_status()
-        if r.text and r.test[0] == '{':
-            return r.json()
-        return None
+        assert json is not None
+        endpoint = self.basePath+endpoint
+        if VERBOSE: print 'COAP POST coap://%s:%d%s' % (self.client.server[0], self.client.server[1], endpoint)
+        rv = self.client.post(endpoint, json_dumps(json))
+        if VERBOSE: print 'COAP POST returned', repr(rv.payload)
+        return json_loads(rv.payload)
         
 HandlerForProto = {
     'http' : IotsaRESTProtocolHandler,
@@ -206,7 +204,7 @@ class IotsaConfig:
         
     def save(self):
         if self.settings:
-            reply = self.device.protocolHandler.get(self.endpoint, auth=self.device.auth, token=self.device.token, json=self.settings)
+            reply = self.device.protocolHandler.put(self.endpoint, auth=self.device.auth, token=self.device.bearerToken, json=self.settings)
             if reply and reply.get('needsReboot'):
                 msg = 'Reboot %s within %s seconds to activate mode %s' % (self.ipAddress, reply.get('requestedModeTimeout', '???'), self.modeName(reply.get('requestedMode')))
                 raise UserIntervention(msg)
