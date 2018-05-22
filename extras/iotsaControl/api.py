@@ -2,6 +2,8 @@ import sys
 import socket
 import requests
 import copy
+import coapthon.client.helperclient
+import urlparse
 
 VERBOSE=False
 
@@ -95,39 +97,107 @@ class IotsaWifi(PlatformWifi):
     def currentDevice(self):
         return self.device
         
+class IotsaRESTProtocolHandler:
+    def __init__(self, baseURL):
+        if baseURL[-1] != '/':
+            baseURL += '/'
+        baseURL += 'api/'
+        self.baseURL = baseURL
+        
+        
+    def get(self, endpoint, auth=None, token=None, json=None):
+        return self.request('GET', endpoint, auth, json)
+        
+    def put(self, endpoint, auth=None, token=None, json=None):
+        return self.request('PUT', endpoint, auth, json)
+        
+    def post(self, endpoint, auth=None, token=None, json=None):
+        return self.request('POST', endpoint, auth, json)
+        
+    def request(self, method, endpoint, auth=None, token=None, json=None):
+        headers = {}
+        if token:
+            headers['Authorization'] = 'Bearer '+token
+        url = self.baseURL + endpoint
+        if VERBOSE: print 'REST %s %s' % (method, url)
+        r = requests.get(url, auth=auth, json=json)
+        if VERBOSE: print 'REST %s returned: %s' % (method, r.text)
+        r.raise_for_status()
+        if r.text and r.text[0] == '{':
+            return r.json()
+        return None
+
+class IotsaCOAPProtocolHandler:
+    def __init__(self, baseURL):
+        parts = urlparse.urlparse(baseURL)
+        self.basePath = parts.path
+        if not self.basePath:
+            self.basePath = '/'
+        assert not parts.params
+        assert not parts.query
+        assert not parts.fragment
+        assert parts.netloc
+        if ':' in parts.netloc:
+            host, port = parts.netloc.split(':')
+            port = int(port)
+        else:
+            host = parts.netloc
+            port = 5683
+        self.client = coapthon.client.helperclient.HelperClient(server=(host, port))
+        
+    def get(self, endpoint, auth=None, token=None, json=None):
+        assert auth is None
+        assert token is None
+        assert json is None
+        endpoint = self.basePath+endpoint
+        if VERBOSE: print 'COAP GET coap://%s:%d%s' % (self.client.server[0], self.client.server[1], endpoint)
+        rv = self.client.get(endpoint)
+        if VERBOSE: print 'COAP GET returned', repr(rv)
+        return rv
+        
+    def put(self, endpoint, auth=None, token=None, json=None):
+        assert auth is None
+        assert token is None
+        return self.request('PUT', endpoint, auth, json)
+        
+    def post(self, endpoint, auth=None, token=None, json=None):
+        assert auth is None
+        assert token is None
+        return self.request('POST', endpoint, auth, json)
+        
+    def request(self, method, endpoint, auth=None, token=None, json=None):
+        xxxxxx
+        assert auth is None
+        assert token is None
+        url = self.baseURL + endpoint
+        if VERBOSE: print 'COAP %s %s' % (method, url)
+        r = requests.get(url, auth=auth, json=json)
+        if VERBOSE: print 'COAP %s returned: %s' % (method, r.text)
+        r.raise_for_status()
+        if r.text and r.test[0] == '{':
+            return r.json()
+        return None
+        
+HandlerForProto = {
+    'http' : IotsaRESTProtocolHandler,
+    'https' : IotsaRESTProtocolHandler,
+    'coap' : IotsaCOAPProtocolHandler,
+}
+
 class IotsaConfig:
     def __init__(self, device, api):
         self.device = device
-        self.configURL = '%s://%s/api/%s' % (self.device.protocol, self.device.ipAddress, api)
+        self.endpoint = api
         self.status = {}
         self.settings = {}
 
     def load(self):
-        headers = {}
-        if self.device.bearerToken:
-            self.headers['Authorization'] = 'Bearer '+self.device.bearerToken
-        if VERBOSE: print 'GET %s' % (self.configURL)
-        r = requests.get(self.configURL, auth=self.device.auth, headers=headers)
-        if VERBOSE: print 'returned: %s' % r.text
-        r.raise_for_status()
-        self.status = r.json()
+        self.status = self.device.protocolHandler.get(self.endpoint, auth=self.device.auth, token=self.device.bearerToken)
         
     def save(self):
         if self.settings:
-            headers = {}
-            if self.device.bearerToken:
-                self.headers['Authorization'] = 'Bearer '+self.device.bearerToken
-            if VERBOSE: print 'PUT %s: %s' % (self.configURL, self.settings)
-            r = requests.put(self.configURL, auth=self.device.auth, headers=headers, json=self.settings)
-            self.settings = {}
-            if VERBOSE: print 'returned: %s', r.text
-            r.raise_for_status()
-            self._handlePutReply(r)
-            
-    def _handlePutReply(self, r):
-        if r.text and r.text[0] == '{':
-            reply = r.json()
-            if reply.get('needsReboot'):
+            reply = self.device.protocolHandler.get(self.endpoint, auth=self.device.auth, token=self.device.token, json=self.settings)
+            if reply and reply.get('needsReboot'):
                 msg = 'Reboot %s within %s seconds to activate mode %s' % (self.ipAddress, reply.get('requestedModeTimeout', '???'), self.modeName(reply.get('requestedMode')))
                 raise UserIntervention(msg)
             
@@ -143,11 +213,15 @@ class IotsaConfig:
             print '  %-16s %s' % (str(k)+':', v)
             
 class IotsaDevice(IotsaConfig):
-    def __init__(self, ipAddress, protocol=None):
+    def __init__(self, ipAddress, port=None, protocol=None):
         self.ipAddress = ipAddress
         if protocol == None: 
             protocol = 'http'
-        self.protocol = protocol
+        url = '%s://%s' % (protocol, ipAddress)
+        if port:
+            url += ':%d' % port
+        HandlerClass = HandlerForProto[protocol]
+        self.protocolHandler = HandlerClass(url)
         IotsaConfig.__init__(self, self, 'config')
         self.auth = None
         self.bearerToken = None

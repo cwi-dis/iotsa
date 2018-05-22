@@ -69,6 +69,8 @@ class Main:
         parser.add_argument("--ssid", action="store", metavar="SSID", help="Connect to WiFi network named SSID")
         parser.add_argument("--ssidpw", action="store", metavar="password", help="WiFi password for network SSID")
         parser.add_argument("--target", "-t", action="store", metavar="IP", help="Iotsa board to operate on (use \"auto\" for automatic)")
+        parser.add_argument("--protocol", action="store", metavar="PROTO", help="Access protocol (default: http, allowed: https, coap)")
+        parser.add_argument("--port", action="store", metavar="PROTO", help="Port number (default depends on protocol)")
     
     #    parser.add_argument("-u", "--url", help="Base URL of the server (default: %s, environment IGORSERVER_URL)" % CONFIG.get('igor', 'url'))
         parser.add_argument("--verbose", action="store_true", help="Print what is happening")
@@ -121,7 +123,7 @@ class Main:
             self.args.target = all[0]
         if self.args.target:
             ok = self.wifi.selectDevice(self.args.target)
-        self.device = api.IotsaDevice(self.wifi.currentDevice())
+        self.device = api.IotsaDevice(self.wifi.currentDevice(), protocol=self.args.protocol, port=self.args.port)
         if self.args.bearer:
             self.device.setBearerToken(self.args.bearer)
         if self.args.credentials:
