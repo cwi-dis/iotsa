@@ -26,7 +26,7 @@ static IotsaLogPrinter iotsaLogPrinter;
 
 size_t
 IotsaLogPrinter::write(uint8_t ch) {
-  iotsaOriginalSerial->write(ch);
+  size_t rv = iotsaOriginalSerial->write(ch);
   if (logBuffer == 0) logBuffer = (struct LogBuffer *)malloc(sizeof(*logBuffer));
   if (logBuffer->magic != BUFFER_MAGIC || logBuffer->inp >= BUFFER_SIZE || logBuffer->outp >= BUFFER_SIZE) {
     // Buffer seems invalid. Re-initialize.
@@ -42,6 +42,7 @@ IotsaLogPrinter::write(uint8_t ch) {
   }
   if (logBuffer->inp == logBuffer->outp) logBuffer->outp++;
   if (logBuffer->outp >= BUFFER_SIZE) logBuffer->outp = 0;
+  return rv;
 };
 
 IotsaLoggerMod::IotsaLoggerMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth)

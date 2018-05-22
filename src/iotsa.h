@@ -152,7 +152,7 @@ public:
   config_mode configurationMode;
   unsigned long configurationModeEndTime;
   config_mode nextConfigurationMode;
-  int nextConfigurationModeEndTime;
+  unsigned long nextConfigurationModeEndTime;
   String hostName;
   int configurationModeTimeout;
 

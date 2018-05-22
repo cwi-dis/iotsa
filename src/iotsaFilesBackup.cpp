@@ -61,9 +61,8 @@ IotsaFilesBackupMod::handler() {
   	File fp = SPIFFS.open(fileName, "r");
   	if (!fp) continue;
   	//fileName = fileName.substring(1);
-  	int fileNameLength = fileName.length();
-  	int fileSize = d.fileSize();
-  	int filePadding = 512 - (fileSize & 511);
+  	size_t fileSize = d.fileSize();
+  	size_t filePadding = 512 - (fileSize & 511);
   	if (filePadding == 512) filePadding = 0;
   	IFDEBUG IotsaSerial.print("  size=");
   	IFDEBUG IotsaSerial.println(fileSize);

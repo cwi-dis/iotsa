@@ -16,7 +16,7 @@ static bool stringContainedIn(const char *wanted, JsonVariant& got) {
     return false;
   }
   JsonArray& gotArray = got.as<JsonArray>();
-  for(int i=0; i<gotArray.size(); i++) {
+  for(size_t i=0; i<gotArray.size(); i++) {
     const char *gotItem = gotArray[i];
     if (strcmp(gotItem, wanted) == 0) {
       return true;

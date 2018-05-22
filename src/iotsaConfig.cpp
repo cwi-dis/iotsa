@@ -54,7 +54,7 @@ static const char* getBootReason() {
       "deepSleepAwake",
       "externalReset"
     };
-    if ((int)rip->reason < sizeof(reasons)/sizeof(reasons[0])) {
+    if (rip->reason < sizeof(reasons)/sizeof(reasons[0])) {
       reason = reasons[(int)rip->reason];
     }
 #else
@@ -271,12 +271,10 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
 
 bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
-  bool hostnameChanged = true;
   JsonObject& reqObj = request.as<JsonObject>();
   if (reqObj.containsKey("hostName")) {
     iotsaConfig.hostName = reqObj.get<String>("hostName");
     anyChanged = true;
-    hostnameChanged = true;
     reply["needsReboot"] = true;
   }
   if (reqObj.containsKey("modeTimeout")) {

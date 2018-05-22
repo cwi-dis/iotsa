@@ -12,7 +12,7 @@ public:
   bool sendOnPress;
   bool sendOnRelease;
   int debounceState;
-  int debounceTime;
+  unsigned int debounceTime;
   bool buttonState;
   IotsaRequest req;
 };

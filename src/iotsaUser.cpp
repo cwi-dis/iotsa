@@ -17,10 +17,10 @@ String &defaultPassword() {
 }
 
 IotsaUserMod::IotsaUserMod(IotsaApplication &_app, const char *_username, const char *_password)
-:	username(_username),
+:	IotsaAuthMod(_app),
+  username(_username),
 	password(_password),
-	IotsaAuthMod(_app),
-  api(this, _app, this, server)
+	api(this, _app, this, server)
 {
 	configLoad();
 }
