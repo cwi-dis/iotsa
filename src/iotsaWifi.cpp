@@ -13,7 +13,6 @@
 #include "iotsaConfigFile.h"
 #include "iotsaWifi.h"
 
-#define WIFI_TIMEOUT 30
 static int privateNetworkModeReason;
 static unsigned long rebootAt;
 
@@ -30,7 +29,7 @@ void IotsaWifiMod::setup() {
     IFDEBUG IotsaSerial.println("");
   
     // Wait for connection
-    int count = WIFI_TIMEOUT;
+    int count = IOTSA_WIFI_TIMEOUT;
     while (WiFi.status() != WL_CONNECTED && count > 0) {
       delay(1000);
       IFDEBUG IotsaSerial.print(".");

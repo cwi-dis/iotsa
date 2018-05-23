@@ -8,10 +8,9 @@ const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of th
 
 //  For converting UTC to local time this module can use a fixed offset, but also the timezone
 // library from https://github.com/JChristensen/Timezone
-// Define WITH_TIMEZONE_LIBRARY to use the latter.
-#define WITH_TIMEZONE_LIBRARY
+// Define IOTSA_WITH_TIMEZONE_LIBRARY to use the latter.
 
-#ifdef WITH_TIMEZONE_LIBRARY
+#ifdef IOTSA_WITH_TIMEZONE_LIBRARY
 class Timezone;
 #endif
 
@@ -35,7 +34,7 @@ public:
 protected:
   bool getHandler(const char *path, JsonObject& reply);
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
-#ifdef WITH_TIMEZONE_LIBRARY
+#ifdef IOTSA_WITH_TIMEZONE_LIBRARY
   Timezone *tz;
   String tzDescription;
   void parseTimezone(const String& newDesc);

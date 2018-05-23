@@ -1,7 +1,7 @@
 #include "iotsaNtp.h"
 #include "iotsaConfigFile.h"
 
-#ifdef WITH_TIMEZONE_LIBRARY
+#ifdef IOTSA_WITH_TIMEZONE_LIBRARY
 #include <Timezone.h>
 #endif
 
@@ -17,7 +17,7 @@ unsigned long IotsaNtpMod::utcTime()
 
 unsigned long IotsaNtpMod::localTime()
 {
-#ifdef WITH_TIMEZONE_LIBRARY
+#ifdef IOTSA_WITH_TIMEZONE_LIBRARY
   if (tz) {
   	return tz->toLocal(utcTime());
   } else {
@@ -61,7 +61,7 @@ IotsaNtpMod::handler() {
     ntpServer = server.arg("ntpServer");
     anyChanged = true;
   }
-#ifdef WITH_TIMEZONE_LIBRARY
+#ifdef IOTSA_WITH_TIMEZONE_LIBRARY
 	if (server.hasArg("tzDescription")) {
 		if (needsAuthentication("ntp")) return;
 		parseTimezone(server.arg("tzDescription"));
@@ -91,7 +91,7 @@ IotsaNtpMod::handler() {
   message += "<form method='get'>NTP server: <input name='ntpServer' value='";
   message += htmlEncode(ntpServer);
   message += "'><br>";
-#ifdef WITH_TIMEZONE_LIBRARY
+#ifdef IOTSA_WITH_TIMEZONE_LIBRARY
   message += "Timezone change information: <input name='tzDescription' value='";
   message += htmlEncode(tzDescription);
   message += "'><br>(format  twice <i>name,week(last=0),dow(sun=1),month,hour(utc),delta</i> for example <kbd>CEDT,0,1,3,1,120,CET,0,1,10,1,60</kbd>)<br>";
@@ -118,7 +118,7 @@ void IotsaNtpMod::setup() {
 
 bool IotsaNtpMod::getHandler(const char *path, JsonObject& reply) {
   reply["ntpServer"] = ntpServer;
-#ifdef WITH_TIMEZONE_LIBRARY
+#ifdef IOTSA_WITH_TIMEZONE_LIBRARY
   reply["tzDescription"] = tzDescription;
   long _minutesWest = utcTime() - localTime();
   reply["minutesWest"] = _minutesWest;
@@ -135,7 +135,7 @@ bool IotsaNtpMod::putHandler(const char *path, const JsonVariant& request, JsonO
     ntpServer = reqObj.get<String>("ntpServer");
     anyChanged = true;
   }
-#ifdef WITH_TIMEZONE_LIBRARY
+#ifdef IOTSA_WITH_TIMEZONE_LIBRARY
   if (reqObj.containsKey("tzDescription")) {
     ntpServer = reqObj.get<String>("tzDescription");
     anyChanged = true;
@@ -159,7 +159,7 @@ void IotsaNtpMod::serverSetup() {
 void IotsaNtpMod::configLoad() {
   IotsaConfigFileLoad cf("/config/ntp.cfg");
   cf.get("ntpServer", ntpServer, "pool.ntp.org");
-#ifdef WITH_TIMEZONE_LIBRARY
+#ifdef IOTSA_WITH_TIMEZONE_LIBRARY
   String newTzdesc;
   cf.get("tzDescription", newTzdesc, "0");
   parseTimezone(newTzdesc);
@@ -172,7 +172,7 @@ void IotsaNtpMod::configLoad() {
 void IotsaNtpMod::configSave() {
   IotsaConfigFileSave cf("/config/ntp.cfg");
   cf.put("ntpServer", ntpServer);
-#ifdef WITH_TIMEZONE_LIBRARY
+#ifdef IOTSA_WITH_TIMEZONE_LIBRARY
   cf.put("tzDescription", tzDescription);
 #else
   cf.put("minutesWest", minutesWestFromUtc);
@@ -274,7 +274,7 @@ String IotsaNtpMod::info() {
   message += ":";
   message += String(localSeconds());
   message += ", timezone is ";
-#ifdef WITH_TIMEZONE_LIBRARY
+#ifdef IOTSA_WITH_TIMEZONE_LIBRARY
   message += tzDescription;
   message += ". ";
 #else
@@ -285,7 +285,7 @@ String IotsaNtpMod::info() {
   return message;
 }
 
-#ifdef WITH_TIMEZONE_LIBRARY
+#ifdef IOTSA_WITH_TIMEZONE_LIBRARY
 void IotsaNtpMod::parseTimezone(const String& newDesc) {
 	TimeChangeRule dstRule, stdRule;
 	char descBuffer[80];
@@ -360,4 +360,4 @@ void IotsaNtpMod::parseTimezone(const String& newDesc) {
 	tzDescription = newDesc;
 	tz = new Timezone(dstRule, stdRule);
 }
-#endif // WITH_TIMEZONE_LIBRARY
+#endif // IOTSA_WITH_TIMEZONE_LIBRARY

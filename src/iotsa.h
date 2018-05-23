@@ -2,6 +2,7 @@
 #define _IOTSA_H_
 
 #include "iotsaVersion.h"
+#include "iotsaBuildOptions.h"
 
 #ifdef ESP32
 #include <ESP32WebServer.h>
@@ -13,7 +14,12 @@ typedef ESP8266WebServer IotsaWebServer;
 //
 // Global defines, changes some behaviour in the whole library
 //
+#ifdef IOTSA_WITH_DEBUG
 #define IFDEBUG if(1)
+#else
+#define IFDEBUG if(0)
+#endif
+
 #define CONFIGURATION_MODE_TIMEOUT 300  // How long to go to temp configuration mode at reboot
 
 // Magic to allow logging to be kept in-core, if wanted, by using

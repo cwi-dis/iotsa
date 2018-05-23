@@ -7,14 +7,13 @@ Print *iotsaOriginalSerial = &Serial;
 #include "iotsaLogger.h"
 #include "iotsaConfigFile.h"
 
-#define BUFFER_SIZE 4096
 #define BUFFER_MAGIC 0xaddedbed
 static struct LogBuffer {
   uint32_t magic;
   uint32_t generation;
   uint32_t inp;
   uint32_t outp;
-  uint8_t buffer[BUFFER_SIZE];
+  uint8_t buffer[IOTSA_LOGGER_BUFFER_SIZE];
 } *logBuffer;
 
 class IotsaLogPrinter : public Print {
@@ -28,7 +27,7 @@ size_t
 IotsaLogPrinter::write(uint8_t ch) {
   size_t rv = iotsaOriginalSerial->write(ch);
   if (logBuffer == 0) logBuffer = (struct LogBuffer *)malloc(sizeof(*logBuffer));
-  if (logBuffer->magic != BUFFER_MAGIC || logBuffer->inp >= BUFFER_SIZE || logBuffer->outp >= BUFFER_SIZE) {
+  if (logBuffer->magic != BUFFER_MAGIC || logBuffer->inp >= IOTSA_LOGGER_BUFFER_SIZE || logBuffer->outp >= IOTSA_LOGGER_BUFFER_SIZE) {
     // Buffer seems invalid. Re-initialize.
     logBuffer->magic = BUFFER_MAGIC;
     logBuffer->generation = 0;
@@ -36,12 +35,12 @@ IotsaLogPrinter::write(uint8_t ch) {
     logBuffer->outp = 0;
   }
   logBuffer->buffer[logBuffer->inp++] = ch;
-  if (logBuffer->inp >= BUFFER_SIZE) {
+  if (logBuffer->inp >= IOTSA_LOGGER_BUFFER_SIZE) {
     logBuffer->inp = 0;
     logBuffer->generation++;
   }
   if (logBuffer->inp == logBuffer->outp) logBuffer->outp++;
-  if (logBuffer->outp >= BUFFER_SIZE) logBuffer->outp = 0;
+  if (logBuffer->outp >= IOTSA_LOGGER_BUFFER_SIZE) logBuffer->outp = 0;
   return rv;
 };
 
@@ -64,7 +63,7 @@ IotsaLoggerMod::handler() {
   if (logBuffer->inp > logBuffer->outp) {
     server.sendContent_P((char *)logBuffer->buffer+logBuffer->outp, logBuffer->inp-logBuffer->outp);
   } else {
-    server.sendContent_P((char *)logBuffer->buffer+logBuffer->outp, BUFFER_SIZE-logBuffer->outp);
+    server.sendContent_P((char *)logBuffer->buffer+logBuffer->outp, IOTSA_LOGGER_BUFFER_SIZE-logBuffer->outp);
     if (logBuffer->inp) server.sendContent_P((char *)logBuffer->buffer, logBuffer->inp); 
   }
 }
