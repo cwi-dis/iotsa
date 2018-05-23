@@ -41,7 +41,8 @@ public:
   void setup() {}
   void serverSetup() {}
   void loop() {}
+  String info() {return "";}
 };
-#endif // IOTSA_WITH_WEB || IOTSA_WITH_PLACEHOLDERS
+#endif // IOTSA_WITH_WIFI || IOTSA_WITH_PLACEHOLDERS
 
 #endif
