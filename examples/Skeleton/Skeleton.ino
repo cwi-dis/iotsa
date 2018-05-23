@@ -17,8 +17,7 @@
 #define WITH_FILESUPLOAD  // Enable upload of static files for webserver
 #define WITH_FILESBACKUP  // Enable backup of all files including config files and webserver files
 
-IotsaWebServer server(80);
-IotsaApplication application(server, "Iotsa Skeleton Server");
+IotsaApplication application("Iotsa Skeleton Server");
 IotsaWifiMod wifiMod(application);
 
 #ifdef WITH_NTP

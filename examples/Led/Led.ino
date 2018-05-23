@@ -1,12 +1,9 @@
 //
-// Boilerplate for configurable web server (probably RESTful) running on ESP8266.
+// A "Led" server, which allows control over a single NeoPixel (color,
+// duration, on/off pattern). The led can be controlled through a web UI or
+// through REST calls (and/or, depending on Iotsa compile time options, COAP calls)
 //
-// This server includes the wifi configuration module, and optionally the
-// Over-The-Air update module (to allow uploading new code into the esp12 (or other
-// board) from the Arduino IDE.
-//
-// A "Led" module is added, which allows control over a single NeoPixel (color,
-// duration, on/off pattern).
+// This is the application that is usually shipped with new iotsa boards.
 //
 
 #include "iotsa.h"

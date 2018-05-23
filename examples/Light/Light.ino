@@ -1,11 +1,5 @@
 //
-// Boilerplate for configurable web server (probably RESTful) running on ESP8266.
-//
-// This server includes the wifi configuration module, and optionally the
-// Over-The-Air update module (to allow uploading new code into the esp12 (or other
-// board) from the Arduino IDE.
-//
-// A "light" module is added, which reads the light level with an LDR. Connect the
+// A "light" server, which reads the light level with an LDR. Connect the
 // LDR between ADC and 3.3v, with a pulldown resistor to earth (2k2 seemes to work
 // well for the LDR I had. Use a value that gets close to zero readings for darkness,
 // and needs a pretty bright light to make it go to the maximum value of 1024). 
@@ -18,8 +12,7 @@
 
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 
-IotsaWebServer server(80);
-IotsaApplication application(server, "Iotsa Light Server");
+IotsaApplication application("Iotsa Light Server");
 IotsaWifiMod wifiMod(application);
 
 #ifdef WITH_OTA

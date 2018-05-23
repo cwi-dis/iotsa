@@ -1,14 +1,8 @@
 //
-// Boilerplate for configurable web server (probably RESTful) running on ESP8266.
+// This example is used for showing the logger. It is the same as the "hello" example,
+// but also allows access to the log (which keeps limited output that has been sent to
+// the Serial serial port)
 //
-// This server includes the wifi configuration module, and optionally the
-// Over-The-Air update module (to allow uploading new code into the esp12 (or other
-// board) from the Arduino IDE.
-//
-// A "hello" module is added, which greets the user with a name settable through
-// a web form (not kept over reboots). 
-//
-// This example is used for testing the logger.
 
 #include "iotsa.h"
 #include "iotsaWifi.h"
@@ -19,8 +13,7 @@
 
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 
-IotsaWebServer server(80);
-IotsaApplication application(server, "Iotsa Logging Hello World Server");
+IotsaApplication application("Iotsa Logging Hello World Server");
 IotsaWifiMod wifiMod(application);
 IotsaLoggerMod loggerMod(application);
 

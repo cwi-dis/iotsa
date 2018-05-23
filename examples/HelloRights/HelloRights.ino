@@ -1,6 +1,4 @@
 //
-// Boilerplate for configurable web server (probably RESTful) running on ESP8266.
-//
 // This server includes the wifi configuration module, and optionally the
 // Over-The-Air update module (to allow uploading new code into the esp12 (or other
 // board) from the Arduino IDE.
@@ -105,8 +103,7 @@ void IotsaHelloMod::loop() {
 //
 // Instantiate all the objects we need.
 //
-IotsaWebServer server(80);
-IotsaApplication application(server, "Iotsa Hello World Server with API and multiple users");
+IotsaApplication application("Iotsa Hello World Server with API and multiple users");
 
 // Multi-user access module. Defaults to all access until users are added
 IotsaMultiUserMod myAuthenticator(application);  // Our authenticator module

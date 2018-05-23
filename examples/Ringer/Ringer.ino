@@ -1,12 +1,12 @@
-// A web interface to a buzzer.
+// A web interface to a buzzer. Has a web interface and a REST interface (and/or COAP interface, based on
+// iotsa configuration options)
 #include "iotsa.h"
 #include "iotsaWifi.h"
 #include "iotsaOta.h"
 
 #define PIN_ALARM 4 // GPIO4 connects to the buzzer
 
-IotsaWebServer server(80);
-IotsaApplication application(server, "Ringer Server");
+IotsaApplication application("Ringer Server");
 
 // Configure modules we need
 IotsaWifiMod wifiMod(application);  // wifi is always needed

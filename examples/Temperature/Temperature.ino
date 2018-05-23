@@ -1,12 +1,5 @@
 //
-// Boilerplate for configurable web server (probably RESTful) running on ESP8266.
-//
-// This server includes the wifi configuration module, and optionally the
-// Over-The-Air update module (to allow uploading new code into the esp12 (or other
-// board) from the Arduino IDE.
-//
-// A "temperature" module is added, which greets the user with a name settable through
-// a web form (not kept over reboots). 
+// Server that provides a web interface to a DHT21 temperature sensor.
 //
 
 #include "iotsa.h"
@@ -20,8 +13,7 @@
 
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 
-IotsaWebServer server(80);
-IotsaApplication application(server, "Iotsa Temperature Server");
+IotsaApplication application("Iotsa Temperature Server");
 IotsaWifiMod wifiMod(application);
 
 #ifdef WITH_OTA

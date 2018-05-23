@@ -1,12 +1,7 @@
 //
-// Boilerplate for configurable web server (probably RESTful) running on ESP8266.
-//
-// This server includes the wifi configuration module, and optionally the
-// Over-The-Air update module (to allow uploading new code into the esp12 (or other
-// board) from the Arduino IDE.
-//
-// A "hello" module is added, which greets the user with a name settable through
-// a web form (not kept over reboots). 
+// Functionality of this example is the same as for Hello, but it is implemented using
+// the C++ interfaces in stead of the Arduino interfaces. This makes it easier to
+// extend this version later.
 //
 
 #include "iotsa.h"
@@ -16,8 +11,7 @@
 
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 
-IotsaWebServer server(80);
-IotsaApplication application(server, "Iotsa Hello World Server");
+IotsaApplication application("Iotsa Hello World Server");
 IotsaWifiMod wifiMod(application);
 
 #ifdef WITH_OTA
