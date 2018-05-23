@@ -4,6 +4,7 @@
 #include "iotsaApi.h"
 #include "iotsaConfig.h"
 
+#ifdef IOTSA_WITH_WIFI
 #ifdef IOTSA_WITH_API
 #define IotsaWifiModBaseMod IotsaApiMod
 #else
@@ -33,5 +34,14 @@ private:
   bool haveMDNS;
   IotsaConfigMod configMod;
 };
+#elif IOTSA_WITH_PLACEHOLDERS
+class IotsaWifiMod : public IotsaMod {
+public:
+  using IotsaMod::IotsaMod;
+  void setup() {}
+  void serverSetup() {}
+  void loop() {}
+};
+#endif // IOTSA_WITH_WEB || IOTSA_WITH_PLACEHOLDERS
 
 #endif

@@ -5,6 +5,10 @@
 #define IOTSA_WITH_DEBUG
 #endif
 
+#ifndef IOTSA_WITHOUT_WIFI
+#define IOTSA_WITH_WIFI
+#endif
+
 #ifndef IOTSA_WITHOUT_HTTP
 #define IOTSA_WITH_HTTP
 #endif

@@ -5,7 +5,9 @@
 class IotsaRestApiService : public IotsaApiServiceProvider {
 public:
   IotsaRestApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth)
-  : IotsaRestApiService(_provider, _auth, app.server)
+  : provider(_provider),
+    auth(_auth),
+    server(_app.server)
   {}
   void setup(const char* path, bool get=false, bool put=false, bool post=false);
 private:
@@ -21,7 +23,7 @@ class IotsaRestApiMod : public IotsaMod, public IotsaApiProvider {
 public:
   IotsaRestApiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
   : IotsaMod(_app, _auth, early),
-    api(this, _auth, server)
+    api(this, _app, _auth)
   {}
   virtual bool getHandler(const char *path, JsonObject& reply) { return false; }
   virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }

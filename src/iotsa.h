@@ -74,12 +74,14 @@ public:
   void enableOta() { haveOTA = true; }
   bool otaEnabled() { return haveOTA; }
   IotsaStatusInterface *status;
+#ifdef IOTSA_WITH_HTTP_OR_HTTPS
+  IotsaWebServer *server;
+#endif
 protected:
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
   void webServerSetup();
   void webServerLoop();
   void webServerNotFoundHandler();
-  IotsaWebServer *server;
 #endif
 #ifdef IOTSA_WITH_WEB
   void webServerRootHandler();

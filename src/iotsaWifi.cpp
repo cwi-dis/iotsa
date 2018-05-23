@@ -13,6 +13,8 @@
 #include "iotsaConfigFile.h"
 #include "iotsaWifi.h"
 
+#ifdef IOTSA_WITH_WIFI
+
 static int privateNetworkModeReason;
 static unsigned long rebootAt;
 
@@ -245,3 +247,4 @@ void IotsaWifiMod::loop() {
 	}
   }
 }
+#endif // IOTSA_WITH_WIFI
