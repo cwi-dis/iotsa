@@ -81,6 +81,7 @@ void IotsaHelloMod::serverSetup() {
   // Setup the web server hooks for this module.
   server.on("/hello", std::bind(&IotsaHelloMod::handler, this));
   api.setup("/api/hello", true, true);
+  name = "hello";
 }
 
 String IotsaHelloMod::info() {

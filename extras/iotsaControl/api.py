@@ -106,7 +106,9 @@ class IotsaRESTProtocolHandler:
         baseURL += 'api/'
         self.baseURL = baseURL
         
-        
+    def close(self):
+        pass
+
     def get(self, endpoint, auth=None, token=None, json=None):
         return self.request('GET', endpoint, auth=auth, token=token, json=json)
         
@@ -152,9 +154,12 @@ class IotsaCOAPProtocolHandler:
         self.client = coapthon.client.helperclient.HelperClient(server=(host, port))
         
     def __del__(self):
+        self.close()
+
+    def close(self):
         if self.client:
             self.client.stop()
-        del self.client
+        self.client = None
         
     def get(self, endpoint, auth=None, token=None, json=None):
         assert auth is None
@@ -173,7 +178,7 @@ class IotsaCOAPProtocolHandler:
         endpoint = self.basePath+endpoint
         if VERBOSE: print 'COAP PUT coap://%s:%d%s' % (self.client.server[0], self.client.server[1], endpoint)
         rv = self.client.put(endpoint, json_dumps(json))
-        if VERBOSE: print 'COAP PUT returned', repr(rv.payload)
+        if VERBOSE: print 'COAP PUT returned', rv.code, repr(rv.payload)
         return json_loads(rv.payload)
         
     def post(self, endpoint, auth=None, token=None, json=None):
@@ -239,6 +244,8 @@ class IotsaDevice(IotsaConfig):
         self.close()
         
     def close(self):
+        if self.protocolHandler:
+            self.protocolHandler.close()
         self.protocolHandler = None
         self.apis = None
         
