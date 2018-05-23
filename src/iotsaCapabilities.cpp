@@ -70,7 +70,7 @@ IotsaCapabilityMod::IotsaCapabilityMod(IotsaApplication &_app, IotsaAuthenticati
 :	IotsaAuthMod(_app),
   capabilities(NULL),
 #ifdef IOTSA_WITH_API
-  api(this, _app, this, server),
+  api(this, _app, this),
 #endif
   chain(_chain),
   trustedIssuer(""),
@@ -200,7 +200,7 @@ bool IotsaCapabilityMod::allows(const char *right) {
   // If no rights fall back to username/password authentication
   return chain.allows(right);
 }
-
+#ifdef IOTSA_WITH_HTTP_OR_HTTPS
 void IotsaCapabilityMod::loadCapabilitiesFromRequest() {
 
   // Free old capabilities
@@ -274,3 +274,4 @@ void IotsaCapabilityMod::loadCapabilitiesFromRequest() {
   IFDEBUGX IotsaSerial.println(" loaded");
   capabilities = new IotsaCapability(obj, get, put, post);
 }
+#endif // IOTSA_WITH_HTTP_OR_HTTPS

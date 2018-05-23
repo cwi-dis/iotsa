@@ -6,7 +6,7 @@ IotsaMultiUserMod::IotsaMultiUserMod(IotsaApplication &_app)
   users(NULL)
 #ifdef IOTSA_WITH_API
   ,
-  api(this, _app, this, server)
+  api(this, _app, this)
 #endif
 {
 	configLoad();
@@ -219,6 +219,7 @@ void IotsaMultiUserMod::loop() {
 bool IotsaMultiUserMod::allows(const char *right) {
   // No users means everything is allowed.
   if (users == NULL) return true;
+#ifdef WITH_HTTP_OR_HTTPS
   // Otherwise we loop over all users until we find one that matches.
   IotsaUser *u = users;
   while (u) {
@@ -237,6 +238,7 @@ bool IotsaMultiUserMod::allows(const char *right) {
   server->send(401, "text/plain", "401 Unauthorized\n");
   IotsaSerial.print("Return 401 Unauthorized for right=");
   IotsaSerial.println(right);
+#endif // WITH_HTTP_OR_HTTPS
   return false;
 }
 

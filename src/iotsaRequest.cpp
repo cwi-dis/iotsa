@@ -78,6 +78,7 @@ void IotsaRequest::formHandler(String& message, String& text, String& name) {
     message += "'><br>\n";
 }
 
+#ifdef IOTSA_WITH_WEB
 bool IotsaRequest::formArgHandler(IotsaWebServer *server, String name) {
   bool any = false;
   String wtdName = name + "url";
@@ -114,6 +115,7 @@ bool IotsaRequest::formArgHandler(IotsaWebServer *server, String name) {
   }
   return any;
 }
+#endif // IOTSA_WITH_WEB
 
 bool IotsaRequest::send() {
   bool rv = true;

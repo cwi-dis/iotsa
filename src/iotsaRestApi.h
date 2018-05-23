@@ -4,13 +4,8 @@
 
 class IotsaRestApiService : public IotsaApiServiceProvider {
 public:
-  IotsaRestApiService(IotsaApiProvider* _provider, IotsaAuthenticationProvider* _auth, IotsaWebServer* _server)
-  : provider(_provider),
-    auth(_auth),
-    server(_server)
-  {}
-  IotsaRestApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth, IotsaWebServer* _server)
-  : IotsaRestApiService(_provider, _auth, _server)
+  IotsaRestApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth)
+  : IotsaRestApiService(_provider, _auth, app.server)
   {}
   void setup(const char* path, bool get=false, bool put=false, bool post=false);
 private:

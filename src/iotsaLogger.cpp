@@ -7,6 +7,7 @@ Print *iotsaOriginalSerial = &Serial;
 #include "iotsaLogger.h"
 #include "iotsaConfigFile.h"
 
+#ifdef IOTSA_WITH_HTTP_OR_HTTPS
 #define BUFFER_MAGIC 0xaddedbed
 static struct LogBuffer {
   uint32_t magic;
@@ -94,3 +95,4 @@ String IotsaLoggerMod::info() {
   String message = "<p>Built with logger. See <a href=\"/logger\">/logger</a> to see the log.</p>";
   return message;
 }
+#endif // WITH_HTTP_OR_HTTPS

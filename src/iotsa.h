@@ -3,6 +3,12 @@
 
 #include "iotsaVersion.h"
 #include "iotsaBuildOptions.h"
+#include <Print.h>
+
+#ifdef ESP32
+#else
+#include <ESP8266WiFi.h>
+#endif
 
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
 #ifdef ESP32
@@ -103,7 +109,9 @@ friend class IotsaConfigMod;
 public:
   IotsaBaseMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
   : app(_app), 
+#ifdef IOTSA_WITH_HTTP_OR_HTTPS
   	server(_app.server), 
+#endif
   	auth(_auth), 
   	nextModule(NULL)
   {
@@ -126,7 +134,9 @@ public:
 
 protected:
   IotsaApplication &app;
+#ifdef IOTSA_WITH_HTTP_OR_HTTPS
   IotsaWebServer *server;
+#endif
   IotsaAuthenticationProvider *auth;
   IotsaBaseMod *nextModule;
   String name;

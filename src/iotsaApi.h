@@ -33,9 +33,9 @@ public:
 //
 class IotsaANYApiService : public IotsaApiServiceProvider {
 public:
-  IotsaANYApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth, IotsaWebServer& _server)
-  : restService(_provider, _app, _auth, _server),
-    coapService(_provider, _app, _auth, _server)
+  IotsaANYApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth)
+  : restService(_provider, _app, _auth),
+    coapService(_provider, _app, _auth)
   {}
   void setup(const char* path, bool get=false, bool put=false, bool post=false) {
     restService.setup(path, get, put, post);
@@ -71,7 +71,7 @@ typedef IotsaRestApiService IotsaApiService;
 class IotsaNoApiService : public IotsaApiServiceProvider {
 public:
   IotsaNoApiService() {}
-  IotsaNoApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth, IotsaWebServer& _server) {}
+  IotsaNoApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth) {}
   void setup(const char* path, bool get=false, bool put=false, bool post=false) {}
 };
 

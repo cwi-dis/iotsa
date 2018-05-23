@@ -97,7 +97,9 @@ IotsaApplication::loop() {
   for (m=firstModule; m; m=m->nextModule) {
   	m->loop();
   }
+#ifdef IOTSA_WITH_HTTP_OR_HTTPS
   webServerLoop();
+#endif
 }
 
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS

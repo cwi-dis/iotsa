@@ -11,9 +11,13 @@ public:
   void configLoad(IotsaConfigFileLoad& cf, String& name);
   void configSave(IotsaConfigFileSave& cf, String& name);
   void formHandler(String& message, String& text, String& name);
+#ifdef IOTSA_WITH_WEB
   bool formArgHandler(IotsaWebServer *server, String name);
+#endif
+#ifdef IOTSA_WITH_API
   void getHandler(JsonObject& reply);
   bool putHandler(const JsonVariant& request);
+#endif
   String url;
   String sslInfo;
   String credentials;

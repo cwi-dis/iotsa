@@ -1,8 +1,6 @@
 #include "iotsaUser.h"
 #include "iotsaConfigFile.h"
 
-#undef PASSWORD_DEBUGGING	// Enables admin1/admin1 to always log in
-
 String &defaultPassword() {
   static String dftPwd;
   if (dftPwd == "") {
@@ -22,7 +20,7 @@ IotsaUserMod::IotsaUserMod(IotsaApplication &_app, const char *_username, const 
 	password(_password)
 #ifdef IOTSA_WITH_API
   ,
-	api(this, _app, this, server)
+	api(this, _app, this)
 #endif
 {
 	configLoad();
@@ -202,16 +200,10 @@ bool IotsaUserMod::allows(const char *right) {
   String &curPassword = password;
   if (curPassword == "")
   	curPassword = defaultPassword();
-  if (!server->authenticate(username.c_str(), curPassword.c_str())
-#ifdef PASSWORD_DEBUGGING
-	  && !server->authenticate("admin1", "admin1")
-#endif
-  	) {
-  	server->sendHeader("WWW-Authenticate", "Basic realm=\"Login Required\"");
-  	server->send(401, "text/plain", "401 Unauthorized\n");
-  	IotsaSerial.print("Return 401 Unauthorized for right=");
-  	IotsaSerial.println(right);
-  	return false;
+#ifdef IOTSA_WITH_HTTP_OR_HTTPS
+  if (server->authenticate(username.c_str(), curPassword.c_str())) {
+    return true;
   }
-  return true;
+#endif
+  return false;
 }

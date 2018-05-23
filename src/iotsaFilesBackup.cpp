@@ -2,6 +2,7 @@
 #include "FS.h"
 #include "iotsaFilesBackup.h"
 
+#ifdef IOTSA_WITH_WEB
 struct tarHeader {
 	char name[100];
 	char mode[8];
@@ -109,3 +110,4 @@ String IotsaFilesBackupMod::info() {
 void IotsaFilesBackupMod::loop() {
   
 }
+#endif // IOTSA_WITH_WEB

@@ -6,7 +6,9 @@ void IotsaSimpleMod::setup() {
 }
 
 void IotsaSimpleMod::serverSetup() {
+#ifdef WITH_HTTP_OR_HTTPS
   server->on(url, hfun);
+#endif
 }
 
 void IotsaSimpleMod::loop() {

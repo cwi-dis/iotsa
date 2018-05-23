@@ -5,9 +5,9 @@
 #endif
 #include "iotsaFilesUpload.h"
 
+#ifdef IOTSA_WITH_WEB
 void IotsaFilesUploadMod::setup() {
 }
-
 
 File _uploadFile;
 bool _uploadOK;
@@ -61,3 +61,4 @@ String IotsaFilesUploadMod::info() {
 void IotsaFilesUploadMod::loop() {
   
 }
+#endif // IOTSA_WITH_WEB
