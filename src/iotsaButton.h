@@ -19,10 +19,16 @@ public:
 
 typedef std::function<void(void)> callback;
 
-class IotsaButtonMod : IotsaApiMod {
+#ifdef IOTSA_WITH_API
+#define IotsaButtonModBaseMod IotsaApiMod
+#else
+#define IotsaButtonModBaseMod IotsaMod
+#endif
+
+class IotsaButtonMod : IotsaButtonModBaseMod {
 public:
   IotsaButtonMod(IotsaApplication &_app, Button* _buttons, int _nButton, IotsaAuthMod *_auth=NULL, callback _successCallback=NULL, callback _failureCallback=NULL)
-  : IotsaApiMod(_app, _auth),
+  : IotsaButtonModBaseMod(_app, _auth),
     buttons(_buttons),
     nButton(_nButton),
     successCallback(_successCallback),

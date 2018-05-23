@@ -4,10 +4,16 @@
 #include "iotsaApi.h"
 #include "iotsaConfig.h"
 
-class IotsaWifiMod : public IotsaApiMod {
+#ifdef IOTSA_WITH_API
+#define IotsaWifiModBaseMod IotsaApiMod
+#else
+#define IotsaWifiModBaseMod IotsaMod
+#endif
+
+class IotsaWifiMod : public IotsaWifiModBaseMod {
 public:
   IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL) 
-  : IotsaApiMod(_app, _auth, true),
+  : IotsaWifiModBaseMod(_app, _auth, true),
     configMod(_app, _auth)
   {}
 	void setup();

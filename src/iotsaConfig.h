@@ -3,9 +3,15 @@
 #include "iotsa.h"
 #include "iotsaApi.h"
 
-class IotsaConfigMod : public IotsaApiMod {
+#ifdef IOTSA_WITH_API
+#define IotsaConfigModBaseMod IotsaApiMod
+#else
+#define IotsaConfigModBaseMod IotsaMod
+#endif
+
+class IotsaConfigMod : public IotsaConfigModBaseMod {
 public:
-  IotsaConfigMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL) : IotsaApiMod(_app, _auth, true) {}
+  IotsaConfigMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL) : IotsaConfigModBaseMod(_app, _auth, true) {}
 	void setup();
 	void serverSetup();
 	void loop();

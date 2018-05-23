@@ -21,7 +21,9 @@ protected:
   void handler();
   String username;
   String password;
+#ifdef IOTSA_WITH_API
   IotsaApiService api;
+#endif
 };
 
 #endif

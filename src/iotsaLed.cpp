@@ -8,7 +8,7 @@
 // Helper function: get color to show current status of module.
 
 IotsaLedMod::IotsaLedMod(IotsaApplication &_app, int pin, neoPixelType t, IotsaAuthMod *_auth)
-:	IotsaApiMod(_app, _auth, true),
+:	IotsaLedModBaseMod(_app, _auth, true),
 	strip(1, pin, t),
 	rgb(0),
 	nextChangeTime(0)

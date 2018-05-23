@@ -19,8 +19,11 @@ String &defaultPassword() {
 IotsaUserMod::IotsaUserMod(IotsaApplication &_app, const char *_username, const char *_password)
 :	IotsaAuthMod(_app),
   username(_username),
-	password(_password),
+	password(_password)
+#ifdef IOTSA_WITH_API
+  ,
 	api(this, _app, this, server)
+#endif
 {
 	configLoad();
 }

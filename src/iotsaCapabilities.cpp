@@ -69,7 +69,9 @@ bool IotsaCapability::allows(const char *_obj, IotsaApiOperation verb) {
 IotsaCapabilityMod::IotsaCapabilityMod(IotsaApplication &_app, IotsaAuthenticationProvider& _chain)
 :	IotsaAuthMod(_app),
   capabilities(NULL),
+#ifdef IOTSA_WITH_API
   api(this, _app, this, server),
+#endif
   chain(_chain),
   trustedIssuer(""),
   issuerKey("")
@@ -104,6 +106,13 @@ IotsaCapabilityMod::handler() {
   message += ".<br>New key: <input name='issuerKey'><br><input type='Submit'></form></body></html>";
 
   server->send(200, "text/html", message);
+}
+
+String IotsaCapabilityMod::info() {
+  String message = "<p>Capabilities enabled.";
+  message += " See <a href=\"/capabilities\">/capabilities</a> to change settings.";
+  message += "</p>";
+  return message;
 }
 #endif // IOTSA_WITH_WEB
 
@@ -144,9 +153,13 @@ void IotsaCapabilityMod::setup() {
 }
 
 void IotsaCapabilityMod::serverSetup() {
+#ifdef IOTSA_WITH_WEB
   server->on("/capabilities", std::bind(&IotsaCapabilityMod::handler, this));
+#endif
+#ifdef IOTSA_WITH_API
   api.setup("/api/capabilities", true, true, false);
   name = "capabilities";
+#endif
 }
 
 void IotsaCapabilityMod::configLoad() {
@@ -166,13 +179,6 @@ void IotsaCapabilityMod::configSave() {
 }
 
 void IotsaCapabilityMod::loop() {
-}
-
-String IotsaCapabilityMod::info() {
-  String message = "<p>Capabilities enabled.";
-  message += " See <a href=\"/capabilities\">/capabilities</a> to change settings.";
-  message += "</p>";
-  return message;
 }
 
 bool IotsaCapabilityMod::allows(const char *obj, IotsaApiOperation verb) {

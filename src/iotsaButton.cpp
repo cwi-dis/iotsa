@@ -58,6 +58,7 @@ void IotsaButtonMod::setup() {
   configLoad();
 }
 
+#ifdef IOTSA_WITH_WEB
 void IotsaButtonMod::handler() {
   bool any = false;
 
@@ -121,6 +122,7 @@ void IotsaButtonMod::handler() {
 String IotsaButtonMod::info() {
   return "<p>See <a href='/buttons'>/buttons</a> to program URLs for button presses, <a href='/api/buttons'>/api/buttons</a> for REST interface..</a>";
 }
+#endif // IOTSA_WITH_WEB
 
 void IotsaButtonMod::loop() {
   for (int i=0; i<nButton; i++) {
@@ -146,6 +148,7 @@ void IotsaButtonMod::loop() {
   }
 }
 
+#ifdef IOTSA_WITH_API
 bool IotsaButtonMod::getHandler(const char *path, JsonObject& reply) {
   if (strcmp(path, "/api/buttons") == 0) {
     JsonArray& rv = reply.createNestedArray("buttons");
@@ -212,13 +215,18 @@ bool IotsaButtonMod::putHandler(const char *path, const JsonVariant& request, Js
   if (any) configSave();
   return any;
 }
+#endif // IOTSA_WITH_API
 
 void IotsaButtonMod::serverSetup() {
+#ifdef IOTSA_WITH_WEB
   server->on("/buttons", std::bind(&IotsaButtonMod::handler, this));
+#endif
+#ifdef IOTSA_WITH_API
   api.setup("/api/buttons", true, true);
   for(int i=0; i<nButton; i++) {
       String *p = new String("/api/buttons/" + String(i));
       api.setup(p->c_str(), true, true);
   }
   name = "buttons";
+#endif
 }

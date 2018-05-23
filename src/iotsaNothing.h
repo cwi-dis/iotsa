@@ -3,9 +3,15 @@
 #include "iotsa.h"
 #include "iotsaApi.h"
 
-class IotsaNothingMod : public IotsaApiMod {
+#ifdef IOTSA_WITH_API
+#define IotsaNothingModBaseMod IotsaApiMod
+#else
+#define IotsaNothingModBaseMod IotsaMod
+#endif
+
+class IotsaNothingMod : public IotsaNothingModBaseMod {
 public:
-  using IotsaApiMod::IotsaApiMod;
+  using IotsaNothingModBaseMod::IotsaNothingModBaseMod;
   void setup();
   void serverSetup();
   void loop();

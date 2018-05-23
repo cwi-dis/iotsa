@@ -3,8 +3,11 @@
 
 IotsaMultiUserMod::IotsaMultiUserMod(IotsaApplication &_app)
 :	IotsaAuthMod(_app),
-  users(NULL),
+  users(NULL)
+#ifdef IOTSA_WITH_API
+  ,
   api(this, _app, this, server)
+#endif
 {
 	configLoad();
 }
@@ -62,7 +65,9 @@ IotsaMultiUserMod::handler() {
       u->apiEndpoint = String("/api/users/")+String(count);
       *up = u;
       configSave();
+#ifdef IOTSA_WITH_API
       api.setup(u->apiEndpoint.c_str(), true, true);
+#endif
     }
     server->send(200, "text/plain", "OK\r\n");
     return; 
