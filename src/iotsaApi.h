@@ -3,8 +3,6 @@
 #include "iotsa.h"
 #include <ArduinoJson.h>
 
-#define IOTSA_WITH_REST
-#define IOTSA_WITH_COAP
 
 class IotsaApiProvider  {
 public:
@@ -68,6 +66,26 @@ typedef IotsaCoapApiService IotsaApiService;
 #elif defined(IOTSA_WITH_REST)
 typedef IotsaRestApiMod IotsaApiMod;
 typedef IotsaRestApiService IotsaApiService;
+#elif IOTSA_WITH_PLACEHOLDERS
+// Don't define IotsaApiMod
+class IotsaNoApiService : public IotsaApiServiceProvider {
+public:
+  IotsaNoApiService() {}
+  IotsaNoApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth, IotsaWebServer& _server) {}
+  void setup(const char* path, bool get=false, bool put=false, bool post=false) {}
+};
+
+class IotsaNoApiMod : public IotsaMod {
+public:
+  IotsaNoApiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
+  : IotsaMod(_app, _auth, early)
+  {}
+protected:
+  IotsaNoApiService api;
+};
+
+typedef IotsaNoApiMod IotsaApiMod;
+typedef IotsaNoApiService IotsaApiService;
 #else
 // Don't define IotsaApiMod
 #endif // IOTSA_WITH_REST, IOTSA_WITH_COAP
