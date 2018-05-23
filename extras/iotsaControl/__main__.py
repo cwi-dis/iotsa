@@ -50,6 +50,9 @@ class Main:
                 except requests.exceptions.HTTPError, arg:
                     print >>sys.stderr, "%s: %s: %s" % (sys.argv[0], cmd, arg)
                     sys.exit(1)
+                except api.CoapError, arg:
+                    print >>sys.stderr, "%s: %s: %s" % (sys.argv[0], cmd, arg)
+                    sys.exit(1)
         finally:
             self.close()
 

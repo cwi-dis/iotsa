@@ -3,6 +3,7 @@ import socket
 import requests
 import copy
 import coapthon.client.helperclient
+import coapthon.defines
 import urlparse
 from json import loads as json_loads
 from json import dumps as json_dumps
@@ -10,6 +11,9 @@ from json import dumps as json_dumps
 VERBOSE=False
 
 class UserIntervention(Exception):
+    pass
+
+class CoapError(Exception):
     pass
 
 class PlatformWifi:
@@ -125,7 +129,7 @@ class IotsaRESTProtocolHandler:
         url = self.baseURL + endpoint
         if VERBOSE: print 'REST %s %s' % (method, url)
         r = requests.request(method, url, auth=auth, json=json)
-        if VERBOSE: print 'REST %s returned: %s' % (method, r.text)
+        if VERBOSE: print 'REST %s returned: %s %s' % (method, r.status, r.text)
         r.raise_for_status()
         if r.text and r.text[0] == '{':
             return r.json()
@@ -161,6 +165,17 @@ class IotsaCOAPProtocolHandler:
             self.client.stop()
         self.client = None
         
+    def _raiseIfError(self, reply):
+        if reply.code >= 128:
+            codeMajor = (reply.code >> 5) & 0x07
+            codeMinor = (reply.code & 0x1f)
+            codeName = coapthon.defines.Codes.LIST.get(reply.code, None)
+            if codeName:
+                codeName = codeName.name
+            else:
+                codeName = 'unknown'
+            raise CoapError('%d.%02d %s' % (codeMajor, codeMinor, codeName))
+            
     def get(self, endpoint, auth=None, token=None, json=None):
         assert auth is None
         assert token is None
@@ -168,7 +183,8 @@ class IotsaCOAPProtocolHandler:
         endpoint = self.basePath+endpoint
         if VERBOSE: print 'COAP GET coap://%s:%d%s' % (self.client.server[0], self.client.server[1], endpoint)
         rv = self.client.get(endpoint)
-        if VERBOSE: print 'COAP GET returned', repr(rv.payload)
+        if VERBOSE: print 'COAP GET returned', rv.code, repr(rv.payload)
+        self._raiseIfError(rv)
         return json_loads(rv.payload)
         
     def put(self, endpoint, auth=None, token=None, json=None):
@@ -179,6 +195,7 @@ class IotsaCOAPProtocolHandler:
         if VERBOSE: print 'COAP PUT coap://%s:%d%s' % (self.client.server[0], self.client.server[1], endpoint)
         rv = self.client.put(endpoint, json_dumps(json))
         if VERBOSE: print 'COAP PUT returned', rv.code, repr(rv.payload)
+        self._raiseIfError(rv)
         return json_loads(rv.payload)
         
     def post(self, endpoint, auth=None, token=None, json=None):
@@ -188,7 +205,8 @@ class IotsaCOAPProtocolHandler:
         endpoint = self.basePath+endpoint
         if VERBOSE: print 'COAP POST coap://%s:%d%s' % (self.client.server[0], self.client.server[1], endpoint)
         rv = self.client.post(endpoint, json_dumps(json))
-        if VERBOSE: print 'COAP POST returned', repr(rv.payload)
+        if VERBOSE: print 'COAP POST returned', rv.code, repr(rv.payload)
+        self._raiseIfError(rv)
         return json_loads(rv.payload)
         
 HandlerForProto = {
