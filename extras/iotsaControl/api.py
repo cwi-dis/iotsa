@@ -122,7 +122,7 @@ class IotsaRESTProtocolHandler:
             headers['Authorization'] = 'Bearer '+token
         url = self.baseURL + endpoint
         if VERBOSE: print 'REST %s %s' % (method, url)
-        r = requests.get(url, auth=auth, json=json)
+        r = requests.request(method, url, auth=auth, json=json)
         if VERBOSE: print 'REST %s returned: %s' % (method, r.text)
         r.raise_for_status()
         if r.text and r.text[0] == '{':
