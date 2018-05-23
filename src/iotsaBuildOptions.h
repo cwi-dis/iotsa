@@ -13,6 +13,10 @@
 // #define IOTSA_WITH_HTTPS
 #endif
 
+#if defined(IOTSA_WITH_HTTP) || defined(IOTSA_WITH_HTTPS)
+#define IOTSA_WITH_HTTP_OR_HTTPS
+#endif
+
 #ifndef IOTSA_WITHOUT_WEB
 #define IOTSA_WITH_WEB
 #endif

@@ -8,7 +8,8 @@ IotsaMultiUserMod::IotsaMultiUserMod(IotsaApplication &_app)
 {
 	configLoad();
 }
-	
+
+#ifdef IOTSA_WITH_WEB
 void
 IotsaMultiUserMod::handler() {
   String command = server->arg("command");
@@ -85,6 +86,15 @@ IotsaMultiUserMod::handler() {
   server->send(400, "text/plain", "Unknown command");
 }
 
+String IotsaMultiUserMod::info() {
+  String message = "<p>Multiple Usernames/passwords/rights enabled.";
+  message += " See <a href=\"/users\">/users</a> to change.";
+  message += "</p>";
+  return message;
+}
+#endif // IOTSA_WITH_WEB
+
+#ifdef IOTSA_WITH_API
 bool IotsaMultiUserMod::getHandler(const char *path, JsonObject& reply) {
   if (strcmp(path, "/api/users") == 0) {
     JsonArray& usersList = reply.createNestedArray("users");
@@ -133,19 +143,24 @@ bool IotsaMultiUserMod::postHandler(const char *path, const JsonVariant& request
   }
   return anyChanged;
 }
+#endif // IOTSA_WITH_API
 
 void IotsaMultiUserMod::setup() {
   configLoad();
 }
 
 void IotsaMultiUserMod::serverSetup() {
+#ifdef IOTSA_WITH_WEB
   server->on("/users", std::bind(&IotsaMultiUserMod::handler, this));
+#endif
+#ifdef IOTSA_WITH_API
   api.setup("/api/users", true, false, true);
   name = "users";
   IotsaUser *u = users;
   while(u) {
     api.setup(u->apiEndpoint.c_str(), true, false, true);
   }
+#endif // IOTSA_WITH_API
 }
 
 void IotsaMultiUserMod::configLoad() {
@@ -194,13 +209,6 @@ void IotsaMultiUserMod::configSave() {
 }
 
 void IotsaMultiUserMod::loop() {
-}
-
-String IotsaMultiUserMod::info() {
-  String message = "<p>Multiple Usernames/passwords/rights enabled.";
-  message += " See <a href=\"/users\">/users</a> to change.";
-  message += "</p>";
-  return message;
 }
 
 bool IotsaMultiUserMod::allows(const char *right) {

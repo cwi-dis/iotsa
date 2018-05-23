@@ -5,6 +5,7 @@
 #endif
 #include "iotsaFiles.h"
 
+#ifdef IOTSA_WITH_WEB
 void IotsaFilesMod::setup() {
 }
 
@@ -132,3 +133,4 @@ String IotsaFilesMod::info() {
 void IotsaFilesMod::loop() {
   
 }
+#endif // IOTSA_WITH_WEB

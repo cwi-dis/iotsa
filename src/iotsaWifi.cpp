@@ -94,6 +94,7 @@ void IotsaWifiMod::setup() {
   if (app.status) app.status->showStatus();
 }
 
+#ifdef IOTSA_WITH_WEB
 void
 IotsaWifiMod::handler() {
   bool wrongMode = false;
@@ -140,6 +141,28 @@ IotsaWifiMod::handler() {
   }
 }
 
+String IotsaWifiMod::info() {
+  IPAddress x;
+  String message = "<p>IP address is ";
+  uint32_t ip = WiFi.localIP();
+  if (ip == 0) {
+  	ip = WiFi.softAPIP();
+  }
+  message += String(ip&0xff) + "." + String((ip>>8)&0xff) + "." + String((ip>>16)&0xff) + "." + String((ip>>24)&0xff);
+  message += ", hostname is ";
+  message += htmlEncode(iotsaConfig.hostName);
+  message += ".local. ";
+  if (iotsaConfig.wifiPrivateNetworkMode) {
+    message += " (but no mDNS on this WiFi network, so using hostname will not work). ";
+  }
+  message += "See <a href=\"/wificonfig\">/wificonfig</a> to change network parameters.</p>";
+
+  message += "</p>";
+  return message;
+}
+#endif // IOTSA_WITH_WEB
+
+#ifdef IOTSA_WITH_API
 bool IotsaWifiMod::getHandler(const char *path, JsonObject& reply) {
   reply["ssid"] = ssid;
 #if 0
@@ -166,31 +189,16 @@ bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, Json
   }
   return anyChanged;
 }
+#endif // IOTSA_WITH_API
 
 void IotsaWifiMod::serverSetup() {
+#ifdef IOTSA_WITH_WEB
   server->on("/wificonfig", std::bind(&IotsaWifiMod::handler, this));
+#endif
+#ifdef IOTSA_WITH_API
   api.setup("/api/wificonfig", true, true);
   name = "wificonfig";
-}
-
-String IotsaWifiMod::info() {
-  IPAddress x;
-  String message = "<p>IP address is ";
-  uint32_t ip = WiFi.localIP();
-  if (ip == 0) {
-  	ip = WiFi.softAPIP();
-  }
-  message += String(ip&0xff) + "." + String((ip>>8)&0xff) + "." + String((ip>>16)&0xff) + "." + String((ip>>24)&0xff);
-  message += ", hostname is ";
-  message += htmlEncode(iotsaConfig.hostName);
-  message += ".local. ";
-  if (iotsaConfig.wifiPrivateNetworkMode) {
-    message += " (but no mDNS on this WiFi network, so using hostname will not work). ";
-  }
-  message += "See <a href=\"/wificonfig\">/wificonfig</a> to change network parameters.</p>";
-
-  message += "</p>";
-  return message;
+#endif
 }
 
 void IotsaWifiMod::configLoad() {

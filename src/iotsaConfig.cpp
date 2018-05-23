@@ -140,6 +140,7 @@ void IotsaConfigMod::setup() {
   if (app.status) app.status->showStatus();
 }
 
+#ifdef IOTSA_WITH_WEB
 void
 IotsaConfigMod::handler() {
   bool anyChanged = false;
@@ -229,6 +230,28 @@ IotsaConfigMod::handler() {
   }
 }
 
+String IotsaConfigMod::info() {
+  String message;
+  if (iotsaConfig.configurationMode) {
+  	message += "<p>In configuration mode ";
+    message += modeName(iotsaConfig.configurationMode);
+    message += ", will timeout in " + String((iotsaConfig.configurationModeEndTime-millis())/1000) + " seconds.</p>";
+  } else if (iotsaConfig.nextConfigurationMode) {
+  	message += "<p>Configuration mode ";
+    message += modeName(iotsaConfig.nextConfigurationMode);
+    message += " requested, enable by rebooting within " + String((iotsaConfig.nextConfigurationModeEndTime-millis())/1000) + " seconds.</p>";
+  } else if (iotsaConfig.configurationModeEndTime) {
+  	message += "<p>Strange, no configuration mode but timeout is " + String(iotsaConfig.configurationModeEndTime-millis()) + "ms.</p>";
+  }
+  message += "<p>" + app.title + " is based on iotsa " + IOTSA_FULL_VERSION + ". See <a href=\"/config\">/config</a> to change configuration.";
+  message += "Last boot " + String((int)millis()/1000) + " seconds ago, reason ";
+  message += getBootReason();
+  message += ".</p>";
+  return message;
+}
+#endif // IOTSA_WITH_WEB
+
+#ifdef IOTSA_WITH_API
 bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   reply["hostName"] = iotsaConfig.hostName;
   reply["modeTimeout"] = iotsaConfig.configurationModeTimeout;
@@ -299,31 +322,16 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   }
   return anyChanged;
 }
+#endif // IOTSA_WITH_API
 
 void IotsaConfigMod::serverSetup() {
+#ifdef IOTSA_WITH_WEB
   server->on("/config", std::bind(&IotsaConfigMod::handler, this));
+#endif
+#ifdef IOTSA_WITH_API
   api.setup("/api/config", true, true);
   name = "config";
-}
-
-String IotsaConfigMod::info() {
-  String message;
-  if (iotsaConfig.configurationMode) {
-  	message += "<p>In configuration mode ";
-    message += modeName(iotsaConfig.configurationMode);
-    message += ", will timeout in " + String((iotsaConfig.configurationModeEndTime-millis())/1000) + " seconds.</p>";
-  } else if (iotsaConfig.nextConfigurationMode) {
-  	message += "<p>Configuration mode ";
-    message += modeName(iotsaConfig.nextConfigurationMode);
-    message += " requested, enable by rebooting within " + String((iotsaConfig.nextConfigurationModeEndTime-millis())/1000) + " seconds.</p>";
-  } else if (iotsaConfig.configurationModeEndTime) {
-  	message += "<p>Strange, no configuration mode but timeout is " + String(iotsaConfig.configurationModeEndTime-millis()) + "ms.</p>";
-  }
-  message += "<p>" + app.title + " is based on iotsa " + IOTSA_FULL_VERSION + ". See <a href=\"/config\">/config</a> to change configuration.";
-  message += "Last boot " + String((int)millis()/1000) + " seconds ago, reason ";
-  message += getBootReason();
-  message += ".</p>";
-  return message;
+#endif
 }
 
 void IotsaConfigMod::configLoad() {

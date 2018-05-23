@@ -24,7 +24,8 @@ IotsaUserMod::IotsaUserMod(IotsaApplication &_app, const char *_username, const 
 {
 	configLoad();
 }
-	
+
+#ifdef IOTSA_WITH_WEB
 void
 IotsaUserMod::handler() {
   bool anyChanged = false;
@@ -97,6 +98,23 @@ IotsaUserMod::handler() {
   server->send(200, "text/html", message);
 }
 
+String IotsaUserMod::info() {
+  String message = "<p>Usernames/passwords enabled.";
+  message += " See <a href=\"/users\">/users</a> to change.";
+  if (iotsaConfig.inConfigurationMode() && password == "") {
+  	message += "<br>Username and password are the defaults: '";
+  	message += htmlEncode(username);
+  	message += "' and '";
+  	String &dfp = defaultPassword();
+  	message += dfp;
+  	message += "'.";
+  }
+  message += "</p>";
+  return message;
+}
+#endif // IOTSA_WITH_WEB
+
+#ifdef IOTSA_WITH_API
 bool IotsaUserMod::getHandler(const char *path, JsonObject& reply) {
   if (strcmp(path, "/api/users") == 0) {
     JsonArray& users = reply.createNestedArray("users");
@@ -132,16 +150,21 @@ bool IotsaUserMod::postHandler(const char *path, const JsonVariant& request, Jso
   if (anyChanged) configSave();
   return anyChanged;
 }
+#endif // IOTSA_WITH_API
 
 void IotsaUserMod::setup() {
   configLoad();
 }
 
 void IotsaUserMod::serverSetup() {
+#ifdef IOTSA_WITH_WEB
   server->on("/users", std::bind(&IotsaUserMod::handler, this));
+#endif
+#ifdef IOTSA_WITH_API
   api.setup("/api/users", true);
   api.setup("/api/users/0", true, false, true);
   name = "users";
+#endif
 }
 
 void IotsaUserMod::configLoad() {
@@ -169,21 +192,6 @@ void IotsaUserMod::configSave() {
 }
 
 void IotsaUserMod::loop() {
-}
-
-String IotsaUserMod::info() {
-  String message = "<p>Usernames/passwords enabled.";
-  message += " See <a href=\"/users\">/users</a> to change.";
-  if (iotsaConfig.inConfigurationMode() && password == "") {
-  	message += "<br>Username and password are the defaults: '";
-  	message += htmlEncode(username);
-  	message += "' and '";
-  	String &dfp = defaultPassword();
-  	message += dfp;
-  	message += "'.";
-  }
-  message += "</p>";
-  return message;
 }
 
 bool IotsaUserMod::allows(const char *right) {

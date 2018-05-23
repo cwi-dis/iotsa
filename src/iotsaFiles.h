@@ -2,6 +2,7 @@
 #define _IOTSAFILES_H_
 #include "iotsa.h"
 
+#ifdef IOTSA_WITH_WEB
 class IotsaFilesMod : public IotsaMod {
 public:
   using IotsaMod::IotsaMod;
@@ -15,5 +16,13 @@ private:
   void notFoundHandler();
   void _listDir(String& message, const char *name);
 };
-
+#elif IOTSA_WITH_PLACEHOLDERS
+class IotsaFilesMod : public IotsaMod {
+public:
+  using IotsaMod::IotsaMod;
+  void setup() {}
+  void serverSetup() {}
+  void loop() {}
+};
+#endif // IOTSA_WITH_WEB || IOTSA_WITH_PLACEHOLDERS
 #endif

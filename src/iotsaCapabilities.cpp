@@ -76,7 +76,8 @@ IotsaCapabilityMod::IotsaCapabilityMod(IotsaApplication &_app, IotsaAuthenticati
 {
 	configLoad();
 }
-	
+
+#ifdef IOTSA_WITH_WEB
 void
 IotsaCapabilityMod::handler() {
   String _trustedIssuer = server->arg("trustedIssuer");
@@ -104,7 +105,9 @@ IotsaCapabilityMod::handler() {
 
   server->send(200, "text/html", message);
 }
+#endif // IOTSA_WITH_WEB
 
+#ifdef IOTSA_WITH_API
 bool IotsaCapabilityMod::getHandler(const char *path, JsonObject& reply) {
   if (strcmp(path, "/api/capabilities") != 0) return false;
   reply["trustedIssuer"] = trustedIssuer;
@@ -134,6 +137,7 @@ bool IotsaCapabilityMod::putHandler(const char *path, const JsonVariant& request
 bool IotsaCapabilityMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   return false;
 }
+#endif // IOTSA_WITH_API
 
 void IotsaCapabilityMod::setup() {
   configLoad();

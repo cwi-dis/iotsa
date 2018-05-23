@@ -9,18 +9,11 @@
 // Will be overridden if the iotsaLogger module is included.
 Print *iotsaOverrideSerial = &Serial;
 
-IotsaApplication::IotsaApplication(IotsaWebServer &_server, const char *_title)
-: status(NULL),
-  server(&_server), 
-  firstModule(NULL), 
-  firstEarlyModule(NULL), 
-  title(_title),
-  haveOTA(false)
-{}
-
 IotsaApplication::IotsaApplication(const char *_title)
 : status(NULL),
+#ifdef IOTSA_WITH_HTTP_OR_HTTPS
   server(new IotsaWebServer(IOTSA_WEBSERVER_PORT)),
+#endif
   firstModule(NULL), 
   firstEarlyModule(NULL), 
   title(_title),
@@ -80,13 +73,19 @@ IotsaApplication::serverSetup() {
   	m->serverSetup();
   }
 
+#ifdef IOTSA_WITH_HTTP_OR_HTTPS
   server->onNotFound(std::bind(&IotsaApplication::webServerNotFoundHandler, this));
+#endif
+#ifdef IOTSA_WITH_WEB
   server->on("/", std::bind(&IotsaApplication::webServerRootHandler, this));
+#endif
 
   for (m=firstModule; m; m=m->nextModule) {
   	m->serverSetup();
   }
+#ifdef IOTSA_WITH_HTTP_OR_HTTPS
   webServerSetup();
+#endif
 }
 
 void
@@ -101,10 +100,16 @@ IotsaApplication::loop() {
   webServerLoop();
 }
 
+#ifdef IOTSA_WITH_HTTP_OR_HTTPS
 void
 IotsaApplication::webServerSetup() {
   server->begin();
   IFDEBUG IotsaSerial.println("HTTP server started");
+}
+
+void
+IotsaApplication::webServerLoop() {
+  server->handleClient();
 }
 
 void
@@ -122,7 +127,9 @@ IotsaApplication::webServerNotFoundHandler() {
   }
   server->send(404, "text/plain", message);
 }
+#endif // IOTSA_WITH_HTTP_OR_HTTPS
 
+#ifdef IOTSA_WITH_WEB
 void
 IotsaApplication::webServerRootHandler() {
   String message = "<html><head><title>" + title + "</title></head><body><h1>" + title + "</h1>";
@@ -137,26 +144,9 @@ IotsaApplication::webServerRootHandler() {
   server->send(200, "text/html", message);
 }
 
-void
-IotsaApplication::webServerLoop() {
-  server->handleClient();
-}
-
-bool IotsaBaseMod::needsAuthentication(const char *object, IotsaApiOperation verb) { 
-  return auth ? !auth->allows(object, verb) : false; 
-}
-
-bool IotsaBaseMod::needsAuthentication(const char *right) { 
-  return auth ? !auth->allows(right) : false; 
-}
-
 String IotsaBaseMod::info() {
   // Info method that does nothing, usually overridden for IotsaMod modules
   return "";
-}
-
-void IotsaBaseMod::serverSetup() {
-  // setup method that does nothing, usually overridden for IotsaMod modules
 }
 
 String IotsaMod::htmlEncode(String data) {
@@ -176,4 +166,16 @@ String IotsaMod::htmlEncode(String data) {
   }
   return rv;
 }
+#endif // IOTSA_WITH_WEB
 
+bool IotsaBaseMod::needsAuthentication(const char *object, IotsaApiOperation verb) { 
+  return auth ? !auth->allows(object, verb) : false; 
+}
+
+bool IotsaBaseMod::needsAuthentication(const char *right) { 
+  return auth ? !auth->allows(right) : false; 
+}
+
+void IotsaBaseMod::serverSetup() {
+  // setup method that does nothing, usually overridden for IotsaMod modules
+}

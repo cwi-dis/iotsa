@@ -4,6 +4,7 @@
 #include "iotsaVersion.h"
 #include "iotsaBuildOptions.h"
 
+#ifdef IOTSA_WITH_HTTP_OR_HTTPS
 #ifdef ESP32
 #include <ESP32WebServer.h>
 typedef ESP32WebServer IotsaWebServer;
@@ -11,6 +12,8 @@ typedef ESP32WebServer IotsaWebServer;
 #include <ESP8266WebServer.h>
 typedef ESP8266WebServer IotsaWebServer;
 #endif
+#endif
+
 //
 // Global defines, changes some behaviour in the whole library
 //
@@ -52,7 +55,6 @@ class IotsaApplication {
 friend class IotsaBaseMod;
 friend class IotsaConfigMod;
 public:
-  IotsaApplication(IotsaWebServer &_server, const char *_title);
   IotsaApplication(const char *_title);
   // Explicitly disable copy constructor and assignment
   IotsaApplication(const IotsaApplication& that) = delete;
@@ -67,11 +69,15 @@ public:
   bool otaEnabled() { return haveOTA; }
   IotsaStatusInterface *status;
 protected:
+#ifdef IOTSA_WITH_HTTP_OR_HTTPS
   void webServerSetup();
   void webServerLoop();
   void webServerNotFoundHandler();
-  void webServerRootHandler();
   IotsaWebServer *server;
+#endif
+#ifdef IOTSA_WITH_WEB
+  void webServerRootHandler();
+#endif
   IotsaBaseMod *firstModule;
   IotsaBaseMod *firstEarlyModule;
   String title;
@@ -111,7 +117,9 @@ public:
 
   virtual void setup() = 0;
   virtual void loop() = 0;
+#ifdef IOTSA_WITH_WEB
   virtual String info();
+#endif
   virtual void serverSetup();
   virtual bool needsAuthentication(const char *right=NULL);
   virtual bool needsAuthentication(const char *obj, IotsaApiOperation verb);
@@ -131,10 +139,12 @@ public:
   {
   }
   IotsaMod& operator=(const IotsaMod& that) = delete;
-  virtual String info() = 0;
   virtual void serverSetup() = 0;
 
+#ifdef IOTSA_WITH_WEB
+  virtual String info() = 0;
   static String htmlEncode(String data); // Helper - convert strings to HTML-safe representation
+#endif
 
 protected:
 };

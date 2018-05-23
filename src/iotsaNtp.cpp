@@ -53,6 +53,7 @@ bool IotsaNtpMod::localIsPM()
   return localHours() >= 12;
 }
 
+#ifdef IOTSA_WITH_WEB
 void
 IotsaNtpMod::handler() {
   bool anyChanged = false;
@@ -104,6 +105,26 @@ IotsaNtpMod::handler() {
   server->send(200, "text/html", message);
 }
 
+String IotsaNtpMod::info() {
+  String message = "<p>Local time is ";
+  message += String(localHours());
+  message += ":";
+  message += String(localMinutes());
+  message += ":";
+  message += String(localSeconds());
+  message += ", timezone is ";
+#ifdef IOTSA_WITH_TIMEZONE_LIBRARY
+  message += tzDescription;
+  message += ". ";
+#else
+  message += String(minutesWestFromUtc);
+  message += " minutes west of Greenwich. ";
+#endif
+  message += "See <a href=\"/ntpconfig\">/ntpconfig</a> to change time configuration.</p>";
+  return message;
+}
+#endif // IOTSA_WITH_WEB
+
 void IotsaNtpMod::setup() {
   nextNtpRequest = millis() + 1000; // Try after 1 second
   int ok = udp.begin(NTP_PORT);
@@ -115,7 +136,7 @@ void IotsaNtpMod::setup() {
   configLoad();
 }
 
-
+#ifdef IOTSA_WITH_API
 bool IotsaNtpMod::getHandler(const char *path, JsonObject& reply) {
   reply["ntpServer"] = ntpServer;
 #ifdef IOTSA_WITH_TIMEZONE_LIBRARY
@@ -149,11 +170,16 @@ bool IotsaNtpMod::putHandler(const char *path, const JsonVariant& request, JsonO
   if (anyChanged) configSave();
   return anyChanged;
 }
+#endif // IOTSA_WITH_API
 
 void IotsaNtpMod::serverSetup() {
+#ifdef IOTSA_WITH_WEB
   server->on("/ntpconfig", std::bind(&IotsaNtpMod::handler, this));
+#endif
+#ifdef IOTSA_WITH_API
   api.setup("/api/ntpconfig", true, true);
   name = "ntpconfig";
+#endif
 }
 
 void IotsaNtpMod::configLoad() {
@@ -264,25 +290,6 @@ void IotsaNtpMod::loop() {
     utcTimeAtMillisEpoch = nowUtc - (millis() / 1000);
     IFDEBUG { IotsaSerial.print("ntp: Now(utc)="); IotsaSerial.print(utcTime()); IotsaSerial.print(" now(local)="); IotsaSerial.println(localTime()); }
   }
-}
-
-String IotsaNtpMod::info() {
-  String message = "<p>Local time is ";
-  message += String(localHours());
-  message += ":";
-  message += String(localMinutes());
-  message += ":";
-  message += String(localSeconds());
-  message += ", timezone is ";
-#ifdef IOTSA_WITH_TIMEZONE_LIBRARY
-  message += tzDescription;
-  message += ". ";
-#else
-  message += String(minutesWestFromUtc);
-  message += " minutes west of Greenwich. ";
-#endif
-  message += "See <a href=\"/ntpconfig\">/ntpconfig</a> to change time configuration.</p>";
-  return message;
 }
 
 #ifdef IOTSA_WITH_TIMEZONE_LIBRARY
