@@ -192,8 +192,9 @@ class IotsaCOAPProtocolHandler:
         assert token is None
         assert json is not None
         endpoint = self.basePath+endpoint
-        if VERBOSE: print 'COAP PUT coap://%s:%d%s' % (self.client.server[0], self.client.server[1], endpoint)
-        rv = self.client.put(endpoint, json_dumps(json))
+        data = json_dumps(json)
+        if VERBOSE: print 'COAP PUT coap://%s:%d%s %s' % (self.client.server[0], self.client.server[1], endpoint, data)
+        rv = self.client.put(endpoint, (coapthon.defines.Content_types['application/json'], data))
         if VERBOSE: print 'COAP PUT returned', rv.code, repr(rv.payload)
         self._raiseIfError(rv)
         return json_loads(rv.payload)
@@ -203,8 +204,9 @@ class IotsaCOAPProtocolHandler:
         assert token is None
         assert json is not None
         endpoint = self.basePath+endpoint
-        if VERBOSE: print 'COAP POST coap://%s:%d%s' % (self.client.server[0], self.client.server[1], endpoint)
-        rv = self.client.post(endpoint, json_dumps(json))
+        data = json_dumps(json)
+        if VERBOSE: print 'COAP POST coap://%s:%d%s' % (self.client.server[0], self.client.server[1], endpoint, data)
+        rv = self.client.post(endpoint, (coapthon.defines.Content_types['application/json'], data))
         if VERBOSE: print 'COAP POST returned', rv.code, repr(rv.payload)
         self._raiseIfError(rv)
         return json_loads(rv.payload)

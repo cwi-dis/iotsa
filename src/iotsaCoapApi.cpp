@@ -65,7 +65,8 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
     if (pkt.code == COAP_PUT) {
         IFDEBUG IotsaSerial.print("COAP-PUT api ");
         IFDEBUG IotsaSerial.println(path);
-        ok = put && pkt.type == COAP_APPLICATION_JSON;
+        ok = put;
+        // xxxjack Should look through pkt.options looking for mimetype=application/json
         if (ok) {
             char dataBuffer[pkt.payloadlen+1];
             memcpy(dataBuffer, pkt.payload, pkt.payloadlen);
@@ -86,7 +87,8 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
     if (pkt.code == COAP_POST) {
         IFDEBUG IotsaSerial.print("COAP-POST api ");
         IFDEBUG IotsaSerial.println(path);
-        ok = post && pkt.type == COAP_APPLICATION_JSON;
+        ok = post;
+        // xxxjack Should look through pkt.options looking for mimetype=application/json
         if (ok) {
             char dataBuffer[pkt.payloadlen+1];
             memcpy(dataBuffer, pkt.payload, pkt.payloadlen);
