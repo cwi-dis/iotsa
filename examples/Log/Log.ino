@@ -37,7 +37,7 @@ IotsaOtaMod otaMod(application);
 String greeting;
 
 String helloInfo() {
-  // Return some information about this module, for the main page of the web server.
+  // Return some information about this module, for the main page of the web server->
   String rv = "<p>See <a href=\"/hello\">/hello</a> for info, ";
   if (greeting == "") {
   	rv += "and to set the name to be greeted by.";
@@ -56,15 +56,15 @@ void
 helloHandler() {
   // Handles the page that is specific to the Hello module, greets the user and
   // optionally stores a new name to greet the next time.
-  if( server.hasArg("greeting")) {
-    greeting = server.arg("greeting");
+  if( server->hasArg("greeting")) {
+    greeting = server->arg("greeting");
   }
   String message = "<html><head><title>Hello Server</title></head><body><h1>Hello Server</h1>";
   message += "<p>Hello, " + IotsaMod::htmlEncode(greeting) + "!</p>";
   message += "<form method='get'>Greeting: <input name='greeting' value='";
   message += IotsaMod::htmlEncode(greeting);
   message += "'></form></body></html>";
-  server.send(200, "text/html", message);
+  server->send(200, "text/html", message);
   IotsaSerial.print("Logging Hello: handler called, greeting=");
   IotsaSerial.println(greeting);
 }

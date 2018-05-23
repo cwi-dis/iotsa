@@ -61,14 +61,14 @@ void IotsaButtonMod::setup() {
 void IotsaButtonMod::handler() {
   bool any = false;
 
-  for (uint8_t i=0; i<server.args(); i++){
+  for (uint8_t i=0; i<server->args(); i++){
     for (int j=0; j<nButton; j++) {
       if (buttons[j].req.formArgHandler(server, "button" + String(j+1))) {
           any = true;
       }
       String wtdName = "button" + String(j+1) + "on";
-      if (server.hasArg(wtdName)) {
-        String arg = server.arg(wtdName);
+      if (server->hasArg(wtdName)) {
+        String arg = server->arg(wtdName);
         if (arg == "press") {
           buttons[j].sendOnPress = true;
           buttons[j].sendOnRelease = false;
@@ -115,7 +115,7 @@ void IotsaButtonMod::handler() {
     message += "> Never<br>\n";
   }
   message += "<input type='submit'></form></body></html>";
-  server.send(200, "text/html", message);
+  server->send(200, "text/html", message);
 }
 
 String IotsaButtonMod::info() {
@@ -214,7 +214,7 @@ bool IotsaButtonMod::putHandler(const char *path, const JsonVariant& request, Js
 }
 
 void IotsaButtonMod::serverSetup() {
-  server.on("/buttons", std::bind(&IotsaButtonMod::handler, this));
+  server->on("/buttons", std::bind(&IotsaButtonMod::handler, this));
   api.setup("/api/buttons", true, true);
   for(int i=0; i<nButton; i++) {
       String *p = new String("/api/buttons/" + String(i));

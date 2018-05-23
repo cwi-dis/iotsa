@@ -33,8 +33,8 @@ IotsaUserMod::handler() {
   bool newPasswordsMatch = false;
   String newUsername;
   
-  if( server.hasArg("username")) {
-    newUsername = server.arg("username");
+  if( server->hasArg("username")) {
+    newUsername = server->arg("username");
     if (newUsername == username) {
       // No change, really.
       newUsername = "";
@@ -44,11 +44,11 @@ IotsaUserMod::handler() {
       anyChanged = true;
     }
   }
-  if( server.hasArg("password")) {
+  if( server->hasArg("password")) {
     // password authentication is checked later.
-    String pw1 = server.arg("passwd");
-    String pw2 = server.arg("again");
-    String old = server.arg("old");
+    String pw1 = server->arg("passwd");
+    String pw2 = server->arg("again");
+    String old = server->arg("old");
     oldPasswordCorrect = (old == password);
     newPasswordsMatch = (pw1 == pw2);
     if (oldPasswordCorrect && newPasswordsMatch) {
@@ -94,7 +94,7 @@ IotsaUserMod::handler() {
   message += "'><br>Repeat New Password: <input type='password' name='again' value='";
   message += "empty3";
   message += "'><br><input type='submit'></form>";
-  server.send(200, "text/html", message);
+  server->send(200, "text/html", message);
 }
 
 bool IotsaUserMod::getHandler(const char *path, JsonObject& reply) {
@@ -138,7 +138,7 @@ void IotsaUserMod::setup() {
 }
 
 void IotsaUserMod::serverSetup() {
-  server.on("/users", std::bind(&IotsaUserMod::handler, this));
+  server->on("/users", std::bind(&IotsaUserMod::handler, this));
   api.setup("/api/users", true);
   api.setup("/api/users/0", true, false, true);
   name = "users";
@@ -191,13 +191,13 @@ bool IotsaUserMod::allows(const char *right) {
   String &curPassword = password;
   if (curPassword == "")
   	curPassword = defaultPassword();
-  if (!server.authenticate(username.c_str(), curPassword.c_str())
+  if (!server->authenticate(username.c_str(), curPassword.c_str())
 #ifdef PASSWORD_DEBUGGING
-	  && !server.authenticate("admin1", "admin1")
+	  && !server->authenticate("admin1", "admin1")
 #endif
   	) {
-  	server.sendHeader("WWW-Authenticate", "Basic realm=\"Login Required\"");
-  	server.send(401, "text/plain", "401 Unauthorized\n");
+  	server->sendHeader("WWW-Authenticate", "Basic realm=\"Login Required\"");
+  	server->send(401, "text/plain", "401 Unauthorized\n");
   	IotsaSerial.print("Return 401 Unauthorized for right=");
   	IotsaSerial.println(right);
   	return false;

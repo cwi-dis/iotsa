@@ -78,35 +78,35 @@ void IotsaRequest::formHandler(String& message, String& text, String& name) {
     message += "'><br>\n";
 }
 
-bool IotsaRequest::formArgHandler(IotsaWebServer &server, String name) {
+bool IotsaRequest::formArgHandler(IotsaWebServer *server, String name) {
   bool any = false;
   String wtdName = name + "url";
-  if (server.hasArg(wtdName)) {
-    decodePercentEscape(server.arg(wtdName), url);
+  if (server->hasArg(wtdName)) {
+    decodePercentEscape(server->arg(wtdName), url);
     IFDEBUG IotsaSerial.print(wtdName);
     IFDEBUG IotsaSerial.print("=");
     IFDEBUG IotsaSerial.println(url);
     any = true;
   }
   wtdName = name + "SSL_INFO_NAME";
-  if (server.hasArg(wtdName)) {
-    decodePercentEscape(server.arg(wtdName), sslInfo);
+  if (server->hasArg(wtdName)) {
+    decodePercentEscape(server->arg(wtdName), sslInfo);
     IFDEBUG IotsaSerial.print(wtdName);
     IFDEBUG IotsaSerial.print("=");
     IFDEBUG IotsaSerial.println(sslInfo);
     any = true;
   }
   wtdName = name + "credentials";
-  if (server.hasArg(wtdName)) {
-    decodePercentEscape(server.arg(wtdName), credentials);
+  if (server->hasArg(wtdName)) {
+    decodePercentEscape(server->arg(wtdName), credentials);
     IFDEBUG IotsaSerial.print(wtdName);
     IFDEBUG IotsaSerial.print("=");
     IFDEBUG IotsaSerial.println(credentials);
     any = true;
     }
   wtdName = name + "token";
-  if (server.hasArg(wtdName)) {
-    decodePercentEscape(server.arg(wtdName), token);
+  if (server->hasArg(wtdName)) {
+    decodePercentEscape(server->arg(wtdName), token);
     IFDEBUG IotsaSerial.print(wtdName);
     IFDEBUG IotsaSerial.print("=");
     IFDEBUG IotsaSerial.println(token);

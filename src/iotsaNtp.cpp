@@ -56,21 +56,21 @@ bool IotsaNtpMod::localIsPM()
 void
 IotsaNtpMod::handler() {
   bool anyChanged = false;
-  if( server.hasArg("ntpServer")) {
+  if( server->hasArg("ntpServer")) {
     if (needsAuthentication("ntp")) return;
-    ntpServer = server.arg("ntpServer");
+    ntpServer = server->arg("ntpServer");
     anyChanged = true;
   }
 #ifdef IOTSA_WITH_TIMEZONE_LIBRARY
-	if (server.hasArg("tzDescription")) {
+	if (server->hasArg("tzDescription")) {
 		if (needsAuthentication("ntp")) return;
-		parseTimezone(server.arg("tzDescription"));
+		parseTimezone(server->arg("tzDescription"));
 		anyChanged = true;
 	}
 #else
-  if( server.hasarg("minutesWest")) {
+  if( server->hasarg("minutesWest")) {
     if (needsAuthentication("ntp")) return;
-    minutesWestFromUtc = server.arg("minuteswest").toInt();
+    minutesWestFromUtc = server->arg("minuteswest").toInt();
     anyChanged = true;
   }
 #endif
@@ -101,7 +101,7 @@ IotsaNtpMod::handler() {
   message += "'><br>";
 #endif
   message += "<input type='submit'></form>";
-  server.send(200, "text/html", message);
+  server->send(200, "text/html", message);
 }
 
 void IotsaNtpMod::setup() {
@@ -151,7 +151,7 @@ bool IotsaNtpMod::putHandler(const char *path, const JsonVariant& request, JsonO
 }
 
 void IotsaNtpMod::serverSetup() {
-  server.on("/ntpconfig", std::bind(&IotsaNtpMod::handler, this));
+  server->on("/ntpconfig", std::bind(&IotsaNtpMod::handler, this));
   api.setup("/api/ntpconfig", true, true);
   name = "ntpconfig";
 }

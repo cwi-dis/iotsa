@@ -42,11 +42,11 @@ void IotsaAlarmMod::setup() {
 void IotsaAlarmMod::handler() {
   
   String msg;
-  for (uint8_t i=0; i<server.args(); i++){
-    if (server.argName(i) == "alarm") {
-      const char *arg = server.arg(i).c_str();
+  for (uint8_t i=0; i<server->args(); i++){
+    if (server->argName(i) == "alarm") {
+      const char *arg = server->arg(i).c_str();
       if (arg && *arg) {
-        int dur = atoi(server.arg(i).c_str());
+        int dur = atoi(server->arg(i).c_str());
         if (dur) {
           alarmEndTime = millis() + dur*100;
           IotsaSerial.println("alarm on");
@@ -61,7 +61,7 @@ void IotsaAlarmMod::handler() {
   message += "<form method='get'>";
   message += "Alarm: <input name='alarm' value=''> (times 0.1 second)<br>\n";
   message += "<input type='submit'></form></body></html>";
-  server.send(200, "text/html", message);
+  server->send(200, "text/html", message);
   
 }
 
@@ -100,7 +100,7 @@ String IotsaAlarmMod::info() {
 
 void IotsaAlarmMod::serverSetup() {
   // Setup the web server hooks for this module.
-  server.on("/alarm", std::bind(&IotsaAlarmMod::handler, this));
+  server->on("/alarm", std::bind(&IotsaAlarmMod::handler, this));
   api.setup("/api/alarm", true, true);
   name = "alarm";
 }

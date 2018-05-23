@@ -11,7 +11,7 @@ IotsaMultiUserMod::IotsaMultiUserMod(IotsaApplication &_app)
 	
 void
 IotsaMultiUserMod::handler() {
-  String command = server.arg("command");
+  String command = server->arg("command");
   if (command == "") {
   
     String message = "<html><head><title>Edit users</title></head><body><h1>Edit users</h1>";
@@ -43,7 +43,7 @@ IotsaMultiUserMod::handler() {
     message += "<input type='submit' value='Add'>";
     message += "</form><hr>";
 
-    server.send(200, "text/html", message);
+    server->send(200, "text/html", message);
     return;
   }
 
@@ -51,9 +51,9 @@ IotsaMultiUserMod::handler() {
 
   if (command == "add") {
     IotsaUser *u = new IotsaUser();
-    u->username = server.arg("username");
-    u->password = server.arg("password");
-    u->rights = server.arg("rights");
+    u->username = server->arg("username");
+    u->password = server->arg("password");
+    u->rights = server->arg("rights");
     if (u->username != "") {
       IotsaUser **up = &users;
       int count;
@@ -63,26 +63,26 @@ IotsaMultiUserMod::handler() {
       configSave();
       api.setup(u->apiEndpoint.c_str(), true, true);
     }
-    server.send(200, "text/plain", "OK\r\n");
+    server->send(200, "text/plain", "OK\r\n");
     return; 
   } else
   if (command == "change") {
-    String username = server.arg("username");
+    String username = server->arg("username");
     for(IotsaUser *u=users; u; u=u->next) {
       if (u->username == username) {
-        String a = server.arg("password");
+        String a = server->arg("password");
         if (a != "") u->password = a;
-        a = server.arg("rights");
+        a = server->arg("rights");
         if (a != "") u->rights = a;
         configSave();
-        server.send(200, "text/plain", "OK\r\n");
+        server->send(200, "text/plain", "OK\r\n");
         return; 
       }
     }
-    server.send(404, "text/plain", "No such user\r\n");
+    server->send(404, "text/plain", "No such user\r\n");
     return;
   }
-  server.send(400, "text/plain", "Unknown command");
+  server->send(400, "text/plain", "Unknown command");
 }
 
 bool IotsaMultiUserMod::getHandler(const char *path, JsonObject& reply) {
@@ -139,7 +139,7 @@ void IotsaMultiUserMod::setup() {
 }
 
 void IotsaMultiUserMod::serverSetup() {
-  server.on("/users", std::bind(&IotsaMultiUserMod::handler, this));
+  server->on("/users", std::bind(&IotsaMultiUserMod::handler, this));
   api.setup("/api/users", true, false, true);
   name = "users";
   IotsaUser *u = users;
@@ -209,7 +209,7 @@ bool IotsaMultiUserMod::allows(const char *right) {
   // Otherwise we loop over all users until we find one that matches.
   IotsaUser *u = users;
   while (u) {
-    if (server.authenticate(u->username.c_str(), u->password.c_str())) {
+    if (server->authenticate(u->username.c_str(), u->password.c_str())) {
       String rightField("/");
       rightField += right;
       rightField += "/";
@@ -220,8 +220,8 @@ bool IotsaMultiUserMod::allows(const char *right) {
     }
     u = u->next;
   }
-  server.sendHeader("WWW-Authenticate", "Basic realm=\"Login Required\"");
-  server.send(401, "text/plain", "401 Unauthorized\n");
+  server->sendHeader("WWW-Authenticate", "Basic realm=\"Login Required\"");
+  server->send(401, "text/plain", "401 Unauthorized\n");
   IotsaSerial.print("Return 401 Unauthorized for right=");
   IotsaSerial.println(right);
   return false;

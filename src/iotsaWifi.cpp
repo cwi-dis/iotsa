@@ -99,17 +99,17 @@ IotsaWifiMod::handler() {
   bool wrongMode = false;
   if (needsAuthentication("config")) return;
   bool anyChanged = false;
-  if( server.hasArg("ssid")) {
+  if( server->hasArg("ssid")) {
     if (iotsaConfig.inConfigurationMode() || iotsaConfig.wifiPrivateNetworkMode) {
-      ssid = server.arg("ssid");
+      ssid = server->arg("ssid");
       anyChanged = true;
     } else {
       wrongMode = true;
     }
   }
-  if( server.hasArg("ssidPassword")) {
+  if( server->hasArg("ssidPassword")) {
     if (iotsaConfig.inConfigurationMode() || iotsaConfig.wifiPrivateNetworkMode) {
-      ssidPassword = server.arg("ssidPassword");
+      ssidPassword = server->arg("ssidPassword");
       anyChanged = true;
     } else {
       wrongMode = true;
@@ -132,7 +132,7 @@ IotsaWifiMod::handler() {
   message += htmlEncode(ssid);
   message += "'><br>Password: <input type='password' name='ssidPassword'><br><input type='submit'></form>";
   message += "</body></html>";
-  server.send(200, "text/html", message);
+  server->send(200, "text/html", message);
   if (anyChanged) {
     if (app.status) app.status->showStatus();
     IFDEBUG IotsaSerial.println("Restart in 2 seconds.");
@@ -168,7 +168,7 @@ bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, Json
 }
 
 void IotsaWifiMod::serverSetup() {
-  server.on("/wificonfig", std::bind(&IotsaWifiMod::handler, this));
+  server->on("/wificonfig", std::bind(&IotsaWifiMod::handler, this));
   api.setup("/api/wificonfig", true, true);
   name = "wificonfig";
 }

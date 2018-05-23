@@ -52,14 +52,8 @@ class IotsaApplication {
 friend class IotsaBaseMod;
 friend class IotsaConfigMod;
 public:
-  IotsaApplication(IotsaWebServer &_server, const char *_title)
-  : status(NULL),
-    server(_server), 
-    firstModule(NULL), 
-    firstEarlyModule(NULL), 
-    title(_title),
-    haveOTA(false)
-    {}
+  IotsaApplication(IotsaWebServer &_server, const char *_title);
+  IotsaApplication(const char *_title);
   // Explicitly disable copy constructor and assignment
   IotsaApplication(const IotsaApplication& that) = delete;
   IotsaApplication& operator=(const IotsaApplication& that) = delete;
@@ -77,7 +71,7 @@ protected:
   void webServerLoop();
   void webServerNotFoundHandler();
   void webServerRootHandler();
-  IotsaWebServer &server;
+  IotsaWebServer *server;
   IotsaBaseMod *firstModule;
   IotsaBaseMod *firstEarlyModule;
   String title;
@@ -124,7 +118,7 @@ public:
 
 protected:
   IotsaApplication &app;
-  IotsaWebServer &server;
+  IotsaWebServer *server;
   IotsaAuthenticationProvider *auth;
   IotsaBaseMod *nextModule;
   String name;

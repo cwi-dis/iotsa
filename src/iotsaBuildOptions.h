@@ -10,7 +10,7 @@
 #endif
 
 #ifndef IOTSA_WITHOUT_HTTPS
-#define IOTSA_WITH_HTTPS
+// #define IOTSA_WITH_HTTPS
 #endif
 
 #ifndef IOTSA_WITHOUT_WEB
@@ -26,7 +26,7 @@
 #endif
 
 #if !defined(IOTSA_WITHOUT_COAP) && !defined(IOTSA_WITHOUT_API)
-#define IOTSA_WITH_COAP
+// #define IOTSA_WITH_COAP
 #endif
 
 #ifndef IOTSA_WITHOUT_TIMEZONE_LIBRARY
@@ -34,6 +34,14 @@
 #endif
 
 // #define IOTSA_WITH_PLACEHOLDERS
+
+#ifndef IOTSA_WEBSERVER_PORT
+#ifdef IOTSA_WITH_HTTPS
+#define IOTSA_WEBSERVER_PORT 443
+#else
+#define IOTSA_WEBSERVER_PORT 80
+#endif
+#endif
 
 #ifndef IOTSA_LOGGER_BUFFER_SIZE
 #define IOTSA_LOGGER_BUFFER_SIZE 4096
@@ -44,9 +52,14 @@
 #endif
 
 // Consistency checks
+#if defined(IOTSA_WITH_HTTP) && defined(IOTSA_WITH_HTTPS)
+#error IOTSA HTTP or HTTPS can be defined, not both
+#endif
+
 #if defined(IOTSA_WITH_REST) && !(defined(IOTSA_WITH_HTTP) || defined(IOTSA_WITH_HTTPS))
 #error IOTSA REST support requires HTTP or HTTPS support
 #endif
+
 #if defined(IOTSA_WITH_WEB) && !(defined(IOTSA_WITH_HTTP) || defined(IOTSA_WITH_HTTPS))
 #error IOTSA WEB support requires HTTP or HTTPS support
 #endif
@@ -54,4 +67,5 @@
 #if defined(IOTSA_WITH_API) && !(defined(IOTSA_WITH_REST) || defined(IOTSA_WITH_COAP))
 #error IOTSA API support requires REST or COAP
 #endif
+
 #endif

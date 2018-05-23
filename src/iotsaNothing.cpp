@@ -4,9 +4,9 @@
 void
 IotsaNothingMod::handler() {
   bool anyChanged = false;
-  if( server.hasArg("argument")) {
+  if( server->hasArg("argument")) {
     if (needsAuthentication()) return;
-    argument = server.arg("argument");
+    argument = server->arg("argument");
     anyChanged = true;
   }
   if (anyChanged) configSave();
@@ -15,7 +15,7 @@ IotsaNothingMod::handler() {
   message += "<form method='get'>Argument: <input name='argument' value='";
   message += htmlEncode(argument);
   message += "'><br><input type='submit'></form>";
-  server.send(200, "text/html", message);
+  server->send(200, "text/html", message);
 }
 
 void IotsaNothingMod::setup() {
@@ -39,7 +39,7 @@ bool IotsaNothingMod::putHandler(const char *path, const JsonVariant& request, J
 }
 
 void IotsaNothingMod::serverSetup() {
-  server.on("/nothing", std::bind(&IotsaNothingMod::handler, this));
+  server->on("/nothing", std::bind(&IotsaNothingMod::handler, this));
   api.setup("/api/nothing", true, true);
   name = "nothing";
 }

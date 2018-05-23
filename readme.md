@@ -121,9 +121,9 @@ One step more functionality is provided by the [Hello](examples/Hello/Hello.ino)
 ```
 void
 helloHandler() {
-  // Parse form arguments using server.args() and server.arg(...).
+  // Parse form arguments using server->args() and server->arg(...).
   String message = "<html>...construct html page...</html>";
-  server.send(200, "text/html", message);
+  server->send(200, "text/html", message);
 }
 
 String helloInfo() {
@@ -164,7 +164,7 @@ Then you implement the 5 methods, of which only `serverSetup` needs explanation:
 ```
 void IotsaHelloMod::serverSetup() {
   // Setup the web server hooks for this module.
-  server.on("/hello", std::bind(&IotsaHelloMod::handler, this));
+  server->on("/hello", std::bind(&IotsaHelloMod::handler, this));
 }
 ```
 

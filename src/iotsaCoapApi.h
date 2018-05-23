@@ -7,7 +7,7 @@ class IotsaCoapServiceMod;
 class IotsaCoapApiService : public IotsaApiServiceProvider {
 public:
   IotsaCoapApiService(IotsaApiProvider* _provider, IotsaApplication &_app);
-  IotsaCoapApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth, IotsaWebServer& _server)
+  IotsaCoapApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth, IotsaWebServer* _server)
   : IotsaCoapApiService(_provider, _app)
   {}
   void setup(const char* path, bool get=false, bool put=false, bool post=false);

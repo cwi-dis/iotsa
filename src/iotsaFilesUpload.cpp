@@ -15,7 +15,7 @@ bool _uploadOK;
 void
 IotsaFilesUploadMod::uploadHandler() {
   if (needsAuthentication("uploadfiles")) return;
-  HTTPUpload& upload = server.upload();
+  HTTPUpload& upload = server->upload();
   _uploadOK = false;
   if(upload.status == UPLOAD_FILE_START){
     String _uploadfilename = "/data/" + upload.filename;
@@ -38,20 +38,20 @@ void
 IotsaFilesUploadMod::uploadOkHandler() {
   String message;
   if (_uploadOK) {
-    server.send(200, "text/plain", "OK");
+    server->send(200, "text/plain", "OK");
   } else {
-    server.send(200, "text/plain", "FAIL");
+    server->send(200, "text/plain", "FAIL");
   }
 }
 
 void IotsaFilesUploadMod::uploadFormHandler() {
   if (needsAuthentication("uploadfiles")) return;
   String message = "<form method='POST' action='/upload' enctype='multipart/form-data'>Select file to upload:<input type='file' name='blob'><br>Filename:<input name='filename'><br><input type='submit' value='Update'></form>";
-  server.send(200, "text/html", message);
+  server->send(200, "text/html", message);
 }
 void IotsaFilesUploadMod::serverSetup() {
-  server.on("/upload", HTTP_POST, std::bind(&IotsaFilesUploadMod::uploadOkHandler, this), std::bind(&IotsaFilesUploadMod::uploadHandler, this));
-  server.on("/upload", HTTP_GET, std::bind(&IotsaFilesUploadMod::uploadFormHandler, this));
+  server->on("/upload", HTTP_POST, std::bind(&IotsaFilesUploadMod::uploadOkHandler, this), std::bind(&IotsaFilesUploadMod::uploadHandler, this));
+  server->on("/upload", HTTP_GET, std::bind(&IotsaFilesUploadMod::uploadFormHandler, this));
 }
 
 String IotsaFilesUploadMod::info() {

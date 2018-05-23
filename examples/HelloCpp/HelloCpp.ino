@@ -53,19 +53,19 @@ void
 IotsaHelloMod::handler() {
   // Handles the page that is specific to the Hello module, greets the user and
   // optionally stores a new name to greet the next time.
-  if( server.hasArg("greeting")) {
-    greeting = server.arg("greeting");
+  if( server->hasArg("greeting")) {
+    greeting = server->arg("greeting");
   }
   String message = "<html><head><title>Hello Server</title></head><body><h1>Hello Server</h1>";
   message += "<form method='get'>Greeting: <input name='greeting' value='";
   message += htmlEncode(greeting);
   message += "'></form></body></html>";
-  server.send(200, "text/html", message);
+  server->send(200, "text/html", message);
 }
 
 void IotsaHelloMod::serverSetup() {
   // Setup the web server hooks for this module.
-  server.on("/hello", std::bind(&IotsaHelloMod::handler, this));
+  server->on("/hello", std::bind(&IotsaHelloMod::handler, this));
 }
 
 String IotsaHelloMod::info() {

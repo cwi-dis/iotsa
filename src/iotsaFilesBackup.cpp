@@ -46,11 +46,11 @@ void
 IotsaFilesBackupMod::handler() {
   if (needsAuthentication("backupfiles")) return;
 #ifdef ESP32
-  server.send(404, "text/plain", "404 Not Found: cannot list files on esp32 yet");
+  server->send(404, "text/plain", "404 Not Found: cannot list files on esp32 yet");
 #else
   IFDEBUG IotsaSerial.println("Creating backup");
-  server.setContentLength(CONTENT_LENGTH_UNKNOWN);
-  server.send(200, "application/x-tar");
+  server->setContentLength(CONTENT_LENGTH_UNKNOWN);
+  server->send(200, "application/x-tar");
   
   Dir d = SPIFFS.openDir("/");
   while (d.next()) {
@@ -81,25 +81,25 @@ IotsaFilesBackupMod::handler() {
   	memset(tarHeader->pad, '\0', 255);
   	checksum(tarHeader);
   	
-  	server.sendContent_P(buf, 512);
+  	server->sendContent_P(buf, 512);
   	// Write data
   	while (fileSize > 0) {
 	  	int curLen = fp.read((uint8_t *)buf, 512);
-	  	server.sendContent_P(buf, curLen);
+	  	server->sendContent_P(buf, curLen);
 	  	fileSize -= curLen;
 	}
 	fp.close();
   	// Write padding
   	if (filePadding) {
 	  	memset(buf, '\0', filePadding);
-  		server.sendContent_P(buf, filePadding);
+  		server->sendContent_P(buf, filePadding);
 	}
   }
 #endif
 }
 
 void IotsaFilesBackupMod::serverSetup() {
-  server.on("/backup.tar", std::bind(&IotsaFilesBackupMod::handler, this));
+  server->on("/backup.tar", std::bind(&IotsaFilesBackupMod::handler, this));
 }
 
 String IotsaFilesBackupMod::info() {

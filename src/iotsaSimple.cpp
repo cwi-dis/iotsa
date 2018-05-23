@@ -6,7 +6,7 @@ void IotsaSimpleMod::setup() {
 }
 
 void IotsaSimpleMod::serverSetup() {
-  server.on(url, hfun);
+  server->on(url, hfun);
 }
 
 void IotsaSimpleMod::loop() {

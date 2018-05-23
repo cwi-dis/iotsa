@@ -9,6 +9,24 @@
 // Will be overridden if the iotsaLogger module is included.
 Print *iotsaOverrideSerial = &Serial;
 
+IotsaApplication::IotsaApplication(IotsaWebServer &_server, const char *_title)
+: status(NULL),
+  server(&_server), 
+  firstModule(NULL), 
+  firstEarlyModule(NULL), 
+  title(_title),
+  haveOTA(false)
+{}
+
+IotsaApplication::IotsaApplication(const char *_title)
+: status(NULL),
+  server(new IotsaWebServer(IOTSA_WEBSERVER_PORT)),
+  firstModule(NULL), 
+  firstEarlyModule(NULL), 
+  title(_title),
+  haveOTA(false)
+{}
+
 void
 IotsaApplication::addMod(IotsaBaseMod *mod) {
   mod->nextModule = firstModule;
@@ -62,8 +80,8 @@ IotsaApplication::serverSetup() {
   	m->serverSetup();
   }
 
-  server.onNotFound(std::bind(&IotsaApplication::webServerNotFoundHandler, this));
-  server.on("/", std::bind(&IotsaApplication::webServerRootHandler, this));
+  server->onNotFound(std::bind(&IotsaApplication::webServerNotFoundHandler, this));
+  server->on("/", std::bind(&IotsaApplication::webServerRootHandler, this));
 
   for (m=firstModule; m; m=m->nextModule) {
   	m->serverSetup();
@@ -85,7 +103,7 @@ IotsaApplication::loop() {
 
 void
 IotsaApplication::webServerSetup() {
-  server.begin();
+  server->begin();
   IFDEBUG IotsaSerial.println("HTTP server started");
 }
 
@@ -93,16 +111,16 @@ void
 IotsaApplication::webServerNotFoundHandler() {
   String message = "File Not Found\n\n";
   message += "URI: ";
-  message += server.uri();
+  message += server->uri();
   message += "\nMethod: ";
-  message += (server.method() == HTTP_GET)?"GET":"POST";
+  message += (server->method() == HTTP_GET)?"GET":"POST";
   message += "\nArguments: ";
-  message += server.args();
+  message += server->args();
   message += "\n";
-  for (uint8_t i=0; i<server.args(); i++){
-    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+  for (uint8_t i=0; i<server->args(); i++){
+    message += " " + server->argName(i) + ": " + server->arg(i) + "\n";
   }
-  server.send(404, "text/plain", message);
+  server->send(404, "text/plain", message);
 }
 
 void
@@ -116,12 +134,12 @@ IotsaApplication::webServerRootHandler() {
     message += m->info();
   }
   message += "</body></html>";
-  server.send(200, "text/html", message);
+  server->send(200, "text/html", message);
 }
 
 void
 IotsaApplication::webServerLoop() {
-  server.handleClient();
+  server->handleClient();
 }
 
 bool IotsaBaseMod::needsAuthentication(const char *object, IotsaApiOperation verb) { 

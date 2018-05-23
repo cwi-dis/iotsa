@@ -144,23 +144,23 @@ void
 IotsaConfigMod::handler() {
   bool anyChanged = false;
   bool hostnameChanged = false;
-  if( server.hasArg("hostName")) {
-    String argValue = server.arg("hostname");
+  if( server->hasArg("hostName")) {
+    String argValue = server->arg("hostname");
     if (argValue != iotsaConfig.hostName) {
       iotsaConfig.hostName = argValue;
       anyChanged = true;
       hostnameChanged = true;
     }
   }
-  if( server.hasArg("rebootTimeout")) {
-    int newValue = server.arg("rebootTimeout").toInt();
+  if( server->hasArg("rebootTimeout")) {
+    int newValue = server->arg("rebootTimeout").toInt();
     if (newValue != iotsaConfig.configurationModeTimeout) {
       iotsaConfig.configurationModeTimeout = newValue;
       anyChanged = true;
     }
   }
-  if( server.hasArg("mode")) {
-    String argValue = server.arg("mode");
+  if( server->hasArg("mode")) {
+    String argValue = server->arg("mode");
     if (argValue != "0") {
       if (needsAuthentication("config")) return;
       iotsaConfig.nextConfigurationMode = config_mode(atoi(argValue.c_str()));
@@ -168,8 +168,8 @@ IotsaConfigMod::handler() {
       anyChanged = true;
     }
   }
-  if( server.hasArg("factoryreset") && server.hasArg("iamsure")) {
-    if (server.arg("factoryreset") == "1" && server.arg("iamsure") == "1") {
+  if( server->hasArg("factoryreset") && server->hasArg("iamsure")) {
+    if (server->arg("factoryreset") == "1" && server->arg("iamsure") == "1") {
       iotsaConfig.nextConfigurationMode = IOTSA_MODE_FACTORY_RESET;
       iotsaConfig.nextConfigurationModeEndTime = millis() + iotsaConfig.configurationModeTimeout*1000;
       anyChanged = true;
@@ -222,7 +222,7 @@ IotsaConfigMod::handler() {
   message += "<br><input name='factoryreset' type='checkbox' value='1'> Factory-reset and clear all files. <input name='iamsure' type='checkbox' value='1'> Yes, I am sure.</br>";
   message += "<input type='submit'></form>";
   message += "</body></html>";
-  server.send(200, "text/html", message);
+  server->send(200, "text/html", message);
   if (hostnameChanged) {
     IFDEBUG IotsaSerial.println("Restart in 2 seconds");
     rebootAt = millis() + 2000;
@@ -301,7 +301,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
 }
 
 void IotsaConfigMod::serverSetup() {
-  server.on("/config", std::bind(&IotsaConfigMod::handler, this));
+  server->on("/config", std::bind(&IotsaConfigMod::handler, this));
   api.setup("/api/config", true, true);
   name = "config";
 }

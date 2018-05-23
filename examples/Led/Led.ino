@@ -55,20 +55,20 @@ IotsaLedControlMod::handler() {
   int _count = 1;
   int _onDuration = 0;
   int _offDuration = 0;
-  if( server.hasArg("rgb")) {
-    _rgb = strtol(server.arg("rgb").c_str(), 0, 16);
+  if( server->hasArg("rgb")) {
+    _rgb = strtol(server->arg("rgb").c_str(), 0, 16);
     anyChanged = true;
   }
-  if( server.hasArg("onDuration")) {
-    _onDuration = server.arg("onDuration").toInt();
+  if( server->hasArg("onDuration")) {
+    _onDuration = server->arg("onDuration").toInt();
     anyChanged = true;
   }
-  if( server.hasArg("offDuration")) {
-    _offDuration = server.arg("offDuration").toInt();
+  if( server->hasArg("offDuration")) {
+    _offDuration = server->arg("offDuration").toInt();
     anyChanged = true;
   }
-  if( server.hasArg("count")) {
-    _count = server.arg("count").toInt();
+  if( server->hasArg("count")) {
+    _count = server->arg("count").toInt();
     anyChanged = true;
   }
   if (anyChanged) set(_rgb, _onDuration, _offDuration, _count);
@@ -80,7 +80,7 @@ IotsaLedControlMod::handler() {
   message += "Off time (ms): <input type='text' name='offDuration'><br>";
   message += "Repeat count: <input type='text' name='count'><br>";
   message += "<input type='submit'></form></body></html>";
-  server.send(200, "text/html", message);
+  server->send(200, "text/html", message);
 }
 
 bool IotsaLedControlMod::getHandler(const char *path, JsonObject& reply) {
@@ -107,7 +107,7 @@ bool IotsaLedControlMod::putHandler(const char *path, const JsonVariant& request
 
 void IotsaLedControlMod::serverSetup() {
   // Setup the web server hooks for this module.
-  server.on("/led", std::bind(&IotsaLedControlMod::handler, this));
+  server->on("/led", std::bind(&IotsaLedControlMod::handler, this));
   api.setup("/api/led", true, true);
   name = "led";
 }

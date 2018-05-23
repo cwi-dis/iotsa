@@ -79,18 +79,18 @@ IotsaCapabilityMod::IotsaCapabilityMod(IotsaApplication &_app, IotsaAuthenticati
 	
 void
 IotsaCapabilityMod::handler() {
-  String _trustedIssuer = server.arg("trustedIssuer");
-  String _issuerKey = server.arg("issuerKey");
+  String _trustedIssuer = server->arg("trustedIssuer");
+  String _issuerKey = server->arg("issuerKey");
   if (_trustedIssuer != "" || _issuerKey != "") {
     if (!iotsaConfig.inConfigurationMode()) {
-      server.send(401, "text/plain", "401 Unauthorized, not in configuration mode");
+      server->send(401, "text/plain", "401 Unauthorized, not in configuration mode");
       return;
     }
     if (needsAuthentication("capabilities")) return;
     if (_trustedIssuer != "") trustedIssuer = _trustedIssuer;
     if (_issuerKey != "") issuerKey = _issuerKey;
     configSave();
-    server.send(200, "text/plain", "ok\r\n");
+    server->send(200, "text/plain", "ok\r\n");
     return;
   }
   String message = "<html><head><title>Capability Authority</title></head><body><h1>Capability Authority</h1>";
@@ -102,7 +102,7 @@ IotsaCapabilityMod::handler() {
   message += String(issuerKey.length());
   message += ".<br>New key: <input name='issuerKey'><br><input type='Submit'></form></body></html>";
 
-  server.send(200, "text/html", message);
+  server->send(200, "text/html", message);
 }
 
 bool IotsaCapabilityMod::getHandler(const char *path, JsonObject& reply) {
@@ -140,7 +140,7 @@ void IotsaCapabilityMod::setup() {
 }
 
 void IotsaCapabilityMod::serverSetup() {
-  server.on("/capabilities", std::bind(&IotsaCapabilityMod::handler, this));
+  server->on("/capabilities", std::bind(&IotsaCapabilityMod::handler, this));
   api.setup("/api/capabilities", true, true, false);
   name = "capabilities";
 }
@@ -202,11 +202,11 @@ void IotsaCapabilityMod::loadCapabilitiesFromRequest() {
   if (trustedIssuer == "" || issuerKey == "") return;
 
   // Load the bearer token from the request
-  if (!server.hasHeader("Authorization")) {
+  if (!server->hasHeader("Authorization")) {
     IFDEBUGX Serial.println("No authorization header in request");
     return;
   }
-  String authHeader = server.header("Authorization");
+  String authHeader = server->header("Authorization");
   if (!authHeader.startsWith("Bearer ")) {
     IFDEBUGX Serial.println("No bearer token in request");
     return;
