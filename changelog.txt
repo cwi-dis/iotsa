@@ -1,3 +1,12 @@
+iotsa 2.0 - 24-May-2018
+
+- The API has changed in an incompatible way: you no longer need to create the IotsaWebServer object
+  yourself. The IotsaApplication constructor does this, if needed.
+- The server by-reference instance variable of application and module objects is now a pointer.
+- There are a number of compile-time flags in iotsaBuildOptions.h that enable and disable
+  various features such as REST api access, normal web access and more.
+- COAP is supported (as an alternative to, or in addition to, REST access).
+
 iotsa 1.8 - 15-Apr-2018
 
 - IotsaRequest and IotsaButton modules added.
