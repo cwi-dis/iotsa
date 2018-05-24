@@ -4,6 +4,8 @@
 // well for the LDR I had. Use a value that gets close to zero readings for darkness,
 // and needs a pretty bright light to make it go to the maximum value of 1024). 
 //
+// The light level can be read through a web user interface.
+//
 
 #include "iotsa.h"
 #include "iotsaWifi.h"

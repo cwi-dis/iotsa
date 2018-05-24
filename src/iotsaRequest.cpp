@@ -12,7 +12,7 @@
 #define SSL_INFO_NAME "fingerprint"
 #endif
 
-
+#ifdef IOTSA_WITH_WEB
 //
 // Decode percent-escaped string src.
 // If dst is NULL the result is sent to the LCD.
@@ -40,6 +40,7 @@ static void decodePercentEscape(const String &src, String &dst) {
       arg++;
     }
 }
+#endif // IOTSA_WITH_WEB
 
 void IotsaRequest::configLoad(IotsaConfigFileLoad& cf, String& name) {
     cf.get(name+"url", url, "");

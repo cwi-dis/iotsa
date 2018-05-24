@@ -1,5 +1,7 @@
 // A web interface to a buzzer. Has a web interface and a REST interface (and/or COAP interface, based on
-// iotsa configuration options)
+// iotsa configuration options).
+// The (user-centric) web interface can be disabled by building iotsa with IOTSA_WITHOUT_WEB
+//
 #include "iotsa.h"
 #include "iotsaWifi.h"
 #include "iotsaOta.h"
@@ -39,6 +41,7 @@ void IotsaAlarmMod::setup() {
   pinMode(PIN_ALARM, OUTPUT); // Trick: we configure to input so we make the pin go Hi-Z.
 }
 
+#ifdef IOTSA_WITH_WEB
 void IotsaAlarmMod::handler() {
   
   String msg;
@@ -64,6 +67,11 @@ void IotsaAlarmMod::handler() {
   server->send(200, "text/html", message);
   
 }
+
+String IotsaAlarmMod::info() {
+  return "<p>See <a href='/alarm'>/alarm</a> to use the buzzer. REST interface on <a href='/api/alarm'>/api/alarm</a>";
+}
+#endif // IOTSA_WITH_WEB
 
 bool IotsaAlarmMod::getHandler(const char *path, JsonObject& reply) {
   int dur = 0;
@@ -94,13 +102,12 @@ bool IotsaAlarmMod::putHandler(const char *path, const JsonVariant& request, Jso
   return true;
 }
 
-String IotsaAlarmMod::info() {
-  return "<p>See <a href='/alarm'>/alarm</a> to use the buzzer. REST interface on <a href='/api/alarm'>/api/alarm</a>";
-}
 
 void IotsaAlarmMod::serverSetup() {
   // Setup the web server hooks for this module.
+#ifdef IOTSA_WITH_WEB
   server->on("/alarm", std::bind(&IotsaAlarmMod::handler, this));
+#endif
   api.setup("/api/alarm", true, true);
   name = "alarm";
 }

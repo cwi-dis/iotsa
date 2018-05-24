@@ -1,7 +1,8 @@
 //
 // A "Led" server, which allows control over a single NeoPixel (color,
 // duration, on/off pattern). The led can be controlled through a web UI or
-// through REST calls (and/or, depending on Iotsa compile time options, COAP calls)
+// through REST calls (and/or, depending on Iotsa compile time options, COAP calls).
+// The web interface can be disabled by building iotsa with IOTSA_WITHOUT_WEB.
 //
 // This is the application that is usually shipped with new iotsa boards.
 //
@@ -41,7 +42,7 @@ private:
   void handler();
 };
 
-
+#ifdef IOTSA_WITH_WEB
 void
 IotsaLedControlMod::handler() {
   // Handles the page that is specific to the Led module, greets the user and
@@ -79,6 +80,13 @@ IotsaLedControlMod::handler() {
   server->send(200, "text/html", message);
 }
 
+String IotsaLedControlMod::info() {
+  // Return some information about this module, for the main page of the web server.
+  String rv = "<p>See <a href=\"/led\">/led</a> for flashing the led in a color pattern.</p>";
+  return rv;
+}
+#endif // IOTSA_WITH_WEB
+
 bool IotsaLedControlMod::getHandler(const char *path, JsonObject& reply) {
   reply["rgb"] = rgb;
   reply["onDuration"] = onDuration;
@@ -103,15 +111,11 @@ bool IotsaLedControlMod::putHandler(const char *path, const JsonVariant& request
 
 void IotsaLedControlMod::serverSetup() {
   // Setup the web server hooks for this module.
+#ifdef IOTSA_WITH_WEB
   server->on("/led", std::bind(&IotsaLedControlMod::handler, this));
+#endif // IOTSA_WITH_WEB
   api.setup("/api/led", true, true);
   name = "led";
-}
-
-String IotsaLedControlMod::info() {
-  // Return some information about this module, for the main page of the web server.
-  String rv = "<p>See <a href=\"/led\">/led</a> for flashing the led in a color pattern.</p>";
-  return rv;
 }
 
 // Instantiate the Led module, and install it in the framework

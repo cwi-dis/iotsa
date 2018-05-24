@@ -85,6 +85,8 @@ static const char* getBootReason() {
   }
   return reason;
 }
+
+#ifdef IOTSA_WITH_WEB
 static const char *modeName(config_mode mode) {
   if (mode == IOTSA_MODE_NORMAL)
     return "normal";
@@ -96,6 +98,7 @@ static const char *modeName(config_mode mode) {
     return "factory-reset";
   return "unknown";
 }
+#endif // IOTSA_WITH_WEB
 
 void IotsaConfigMod::setup() {
   configLoad();
