@@ -109,6 +109,11 @@ If you have enabled over-the-air programming <http://yourdevicename.local/config
   platformio run -t upload --upload-port yourdevicename.local
   ```
 
+- _For PlatformIO, using iotsaControl_:
+	- Build using `platformio run` or the plaformio IDE integration commands.
+	- `iotsaControl --target yourdevicename.local otaWait ota ./.pioenvs/nodemcuv2/firmware.bin`
+	- Power cycle the device when _iotsaControl_ asks you to do so.
+	
 ## General design philosophy
 
 Unlike most Arduino libraries and frameworks Iotsa does expose some of its C++ interfaces, but for simple applications you do not have to worry about this.
@@ -182,7 +187,7 @@ IotsaSimpleMod helloMod(application, "/hello", helloHandler, helloInfo);
 
 ### Another hello world application
 
-From a functionality point of view the [HelloCpp](examples/HelloCpp/HelloCpp.ino) program is identical to _Hello_, but it is structured differently, as a C++ class. This is a bit more difficult to read (when you are used to standard Arduino programming and not C++ programming) but has the advantage that the functionality can easily be reused in other servers. Actually, most standard modules (below) started their life this way.
+From a functionality point of view the [HelloCpp](examples/HelloCpp/HelloCpp.ino) program is identical to _Hello_, but it is structured differently, as a C++ class. This is a bit more difficult to read (when you are used to standard Arduino programming and not C++ programming) but has the advantage that the functionality can easily be reused in other servers. Actually, most standard modules (below) started their life this way. Also, if you want to create a device without a user interface (REST or COAP only) you should follow this pattern.
 
 You declare the class for your functionality:
 
@@ -217,6 +222,39 @@ IotsaHelloMod helloMod(application);
 
 Iotsa will now take care of calling your classes `IotsaHelloMod ::setup()`, `IotsaHelloMod ::serverSetup()` and `IotsaHelloMod ::loop()` methods at the right time without you needing to add any code to the normal `setup()` and `loop()` functions. Which means that this implementation of _Hello_ can be combined with as many other modules as you want, just by adding that 1-line declaration.
 
+### Hello World with an API
+
+If you want your server to have a programming interface (either REST to access it over HTTP/TCP or COAP to access it over UDP) you use the base class `IotsaApiMod`. You provide methods for handling _GET_, _PUT_ and _POST_ requests (only for the ones you need) and register your API endpoint in your _serverSetup_. 
+
+The [HelloApi](examples/HelloApi/HelloApi.ino) example has the full details, but here are the _GET_ and _PUT_ methods:
+
+```
+bool IotsaHelloMod::getHandler(const char *path, JsonObject& reply) {
+  reply["greeting"] = greeting;
+  return true;
+}
+
+bool IotsaHelloMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+  JsonVariant arg = request["greeting"];
+  if (arg.is<char*>()) {
+    greeting = arg.as<String>();
+    return true;
+  }
+  return false;
+}
+```
+
+And here is the modified _serverSetup_ method:
+
+```
+void IotsaHelloMod::serverSetup() {
+  // Setup the web server hooks for this module.
+  server->on("/hello", std::bind(&IotsaHelloMod::handler, this));
+  api.setup("/api/hello", true, true);
+  name = "hello";
+}
+```
+
 ### HTML encoding
 
 Strings that are interpolated into the HTML returned from the `info()` or `handler()` function must be ampersand-encoded. There is a static method in `IotsaMod` to do this for you:
@@ -227,9 +265,13 @@ String IotsaMod::htmlEncode(String data);
 
 ### Next steps
 
-The [Hello](examples/Hello/Hello.ino) and [HelloCpp](examples/HelloCpp/HelloCpp.ino) examples shows how to do basic interaction with the user (through a browser form, and through information on the how page). To use this to create an interface to some bit of sensor hardware simply add the usual code to your `setup()` and `loop()` functions, and store the sensor value that you read in your `loop()` in a global variable. Pick up the value of this variable in your handler or info function and format it in HTML. [Light](examples/Light/Light.ino) is an example program of this type.
+The [Hello](examples/Hello/Hello.ino) and [HelloCpp](examples/HelloCpp/HelloCpp.ino) examples shows how to do basic interaction with the user (through a browser form, and through information on the how page). [HelloApi](examples/HelloApi/HelloApi.ino) shows how to add an API to your service. Various types of access control are demonstrated in the [HelloUser](examples/HelloUser/HelloUser.ino), [HelloPasswd](examples/HelloPasswd/HelloPasswd.ino), [HelloRights](examples/HelloRights/HelloRights.ino) and [HelloToken](examples/HelloToken/HelloToken.ino) examples.
+
+To use this to create an interface to some bit of sensor hardware simply add the usual code to your `setup()` and `loop()` functions, and store the sensor value that you read in your `loop()` in a global variable. Pick up the value of this variable in your handler or info function and format it in HTML. [Light](examples/Light/Light.ino) and [Temperature](examples/Temperature/Temperature.ino) are example programs of this type.
 
 To interface to an actuator you present an HTML form in your handler, and store the user-supplied value in a global variable. Your `setup()` and `loop()` functions are again as usual, but in `loop()` you pick up the value from the global variable. [Led](examples/Led/Led.ino) is an example program of this type.
+
+Slightly more elaborate API examples are [Button](examples/Button/Button.ino) and [Ringer](examples/Ringer/Ringer). _Button_ waits for a button to be pressed on the device and then makes a call to a user-specifyable URL. If that URL happens to point to _Ringer_ it will in turn sound a buzzer.
 
 ## User interface and operation
 
@@ -242,7 +284,7 @@ This file declares the `IotsaApplication` and `IotsaMod` classes explained earli
 Here are the constructors of the three classes:
 
 ```
-IotsaApplication(ESP8266WebServer &_server, const char *_title);
+IotsaApplication(const char *_title);
 IotsaMod(IotsaApplication &_app, IotsaAuthMod *_auth=NULL, bool early=false);
 IotsaAuthMod(IotsaApplication &_app, IotsaAuthMod *_auth=NULL, bool early=false);
 ```
@@ -265,7 +307,9 @@ bool getHandler(const char *path, JsonObject& reply);
 bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
 bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply);
 ```
-These methods are called on incoming REST calls. The request parameter object (or array, or value) is in `request`, store results in `reply` (which is already an initialized empty object). Return `true` for success, `false` for any failure (which will not return the reply object to the caller).
+These methods are called on incoming REST or COAP calls. The request parameter object (or array, or value) is in `request`, store results in `reply` (which is already an initialized empty object). Return `true` for success, `false` for any failure (which will not return the reply object to the caller).
+
+The actual implementations are in _iotsaRestApi.h_ and _iotsaCoapApi.h_, but these are transparently renamed or combined.
 
 ### iotsaConfig.h
 
@@ -298,6 +342,8 @@ If a device has a WiFi network configured but it cannot join this network after 
 If a device is in normal WiFi mode the WiFi parameters can only be changed if the device is in configuration mode.
 
 The module also provides a REST api on `/api/wificonfig` (and this api depends on whether in configuration mode or not).
+
+The module can be disabled (by building with _IOTSA\_WITHOUT\_WIFI_) but until other network interface modules are implemented this is not very useful.
 
 ### iotsaSimple.h
 
@@ -341,15 +387,15 @@ More documentation will be forthcoming.
 
 ### iotsaFiles.h
 
-Allows read access to files stored in `/data` on the SPIFFS file system (in the flash memory chip). Could be used for a simple web server.
+Allows read access to files stored in `/data` on the SPIFFS file system (in the flash memory chip). Could be used for a simple web server. Requires _IOTSA\_WITH\_WEB_.
 
 ### iotsaFilesUpload.h
 
-Allows write access to files stored in `/data` on the SPIFFS filesystem (where _iotsaFiles_ reads from), through `POST` requests to the `/upload` URL.
+Allows write access to files stored in `/data` on the SPIFFS filesystem (where _iotsaFiles_ reads from), through `POST` requests to the `/upload` URL. Requires _IOTSA\_WITH\_WEB_.
 
 ### iotsaFilesBackup.h
 
-Creates a backup of the complete SPIFFS filesystem (including `/data` and `/config`) as a tarfile when you access URL `/backup.tar`. Can be used to clone iotsa devices.
+Creates a backup of the complete SPIFFS filesystem (including `/data` and `/config`) as a tarfile when you access URL `/backup.tar`. Can be used to clone iotsa devices. Requires _IOTSA\_WITH\_WEB_.
 
 ### iotsaLed.h
 
@@ -361,7 +407,7 @@ The module does not provide a user-visible endpoint or REST api, but can be used
 
 ### iotsaLogger.h
 
-Replaces the standard `Serial` object by an object that stores data in a memory buffer, and allows access to that memory buffer through the URL `/logger`. The buffer is tiny, 4Kb, but this allows some limited debugging over WiFi.
+Replaces the standard `Serial` object by an object that stores data in a memory buffer, and allows access to that memory buffer through the URL `/logger`. The buffer is tiny, 4Kb, but this allows some limited debugging over WiFi. Requires _IOTSA\_WITH\_HTTP_ or _IOTSA\_WITH\_HTTPS_.
 
 ### iotsaNothing.h
 
@@ -385,9 +431,10 @@ bool localIsPM();			// AM/PM indicator
 ```
 
 Provides a user interface at `/ntp` and a REST interface at `/api/ntp`.
+
 ### iotsaOta.h
 
-Allows Over-the-air reprogramming of a iotsa server. After ota-programming has been enabled the device will show up (for 5 minutes) in the Arduino IDE, menu _Tools_ -> _Port_, under the _Network Ports_ section. Select it, and press the checkmark on your sketch to upload.
+Allows Over-the-air reprogramming of a iotsa server. After ota-programming has been enabled the device will show up (for 5 minutes) in the Arduino IDE, menu _Tools_ -> _Port_, under the _Network Ports_ section. Select it, and press the checkmark on your sketch to upload. Requires _IOTSA_WITH_HTTP_ or _IOTSA_WITH_HTTPS_.
 
 ### iotsaRequest.h
 
