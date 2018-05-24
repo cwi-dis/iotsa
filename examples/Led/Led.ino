@@ -14,8 +14,7 @@
 
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 
-IotsaWebServer server(80);
-IotsaApplication application(server, "Iotsa LED Server");
+IotsaApplication application("Iotsa LED Server");
 IotsaWifiMod wifiMod(application);
 
 #ifdef WITH_OTA
