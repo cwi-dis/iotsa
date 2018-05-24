@@ -7,7 +7,7 @@ seamless integration with the [Igor home automation server](https://github.com/c
 Home page is <https://github.com/cwi-dis/iotsa>. 
 This software is licensed under the [MIT license](LICENSE.txt) by the CWI DIS group, <http://www.dis.cwi.nl>.
 
-## Installation and use
+## Installation and use for developers
 
 Iotsa can be used with both the Arduino IDE and with the PlatformIO build system (which can be used from within Atom or VSCode or from the command line). The Arduino IDE is easiest to get started with, but PlatformIO is more powerful if you want to target multiple device types, use _Git_ integration, etc.
 
@@ -34,6 +34,48 @@ $ platformio run --target upload
 On reboot, the board will first initialize the SPIFFS flash filesystem (if needed) and then create a WiFi network with a name similar to _config-iotsa1234_. Connect a device to that network and visit <http://192.168.4.1>. Configure your device name (at <http://192.168.4.1/config>) and WiFi name and password (at <http://192.168.4.1/wificonfig>), and after reboot the iotsa board should connect to your network and be visible as <http://yourdevicename.local>.
 
 When the device is running normally you can visit <http://yourdevicename.local/config> and request the device to go into configuration mode, or to do a factory reset. After requesting this you have 5 minutes to power cycle the device to make it go into configuration mode again (see previous paragraph) or do a complete factory reset. When in configuration mode you have five minutes to change the configuration (device name, WiFi name, password, maybe other parameters) before the device reverts to normal operation. The idea behind this sequence (_request configuration mode_, then _power cycle_, then _change parameters_) is that you need both network acccess and physical access before you can do a disruptive operation on the device.
+
+### Build time options
+
+A number of features of the iotsa framework can be enabled and disabled selectively at build time. These features are encoded in `iotsaBuildOptions.h`. 
+
+The general naming convention is that a feature _WIFI_ will be triggered by a define `IOTSA_WITH_WIFI`. If the _WIFI_ feature is enabled by default (which happens to be the case for _WIFI_, obviously) that can be overridden by defining `IOTSA_WITHOUT_WIFI` at compile time of the iotsa library.
+
+When using the Arduino IDE you can edit this file to change the options, by commenting out the defines for features you do not need.
+
+When using Platformio you can also use the `build_flags` in _platformio.ini_. For example, to enable COAP and disable REST:
+
+```
+	build_flags = -DIOTSA_WITHOUT_REST -DIOTSA_WITH_COAP
+```
+
+The following features are defined:
+
+- `DEBUG` Enables logging and debugging messages to the serial line. Default on.
+- `WIFI` Enables the WiFi network interface. Default on.
+- `HTTP` Enables the web server infrastructure. Default on.
+- `HTTPS` Enables the secure web server infrastructure. Default off. Exclusive with `HTTP`.
+- `WEB` Enables the user-oriented web interfaces. Default on. Requires `HTTP` or `HTTPS`.
+- `API` Enables the application-oriented interfaces. Default on. Requires `REST` or `COAP`.
+- `REST` Enables the http(s) based REST application interfaces. Default on. Requires `HTTP` or `HTTPS`.
+- `COAP` Enables the udp-based COAP application interfaces. Default off.
+
+There are a few more that are not very important, please inspect `iotsaBuildOptions.h`.
+
+## Controlling iotsa devices
+
+### iotsaControl
+
+There is a command line helper program _iotsaControl_. It will be documented here at some point. For now, install _iotsaControl_ with the following commands:
+
+```
+cd extras
+python setup.py build
+sudo python setup.py install
+```
+
+Then you can get a list of the available commands with `iotsaControl help` and a list of the available options with `iotsaControl --help`.
+
 
 ### OTA programming
 
@@ -85,8 +127,7 @@ Iotsa has two main types of objects:
 You create a global variable `application` of type `IotsaApplication` to hold the basic implementation of your service framework, plus the `ESP8266WebServer` object on which the application will serve. You also create one `IotsaWifiMod` and link it to the application so the end user can configure the WiFi network to join and such:
 
 ```
-ESP8266WebServer server(80);
-IotsaApplication application(server, "Iotsa Hello World Server");
+IotsaApplication application("Iotsa Hello World Server");
 IotsaWifiMod wifiMod(application);
 
 ```
