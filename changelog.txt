@@ -1,3 +1,7 @@
+iotsa 1.8.1 - 25-May-2018
+
+- Fixed issue with platformio not finding ESP8266HttpClient.h
+
 iotsa 1.8 - 15-Apr-2018
 
 - IotsaRequest and IotsaButton modules added.
