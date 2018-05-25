@@ -1,4 +1,4 @@
-iotsa 2.0 - 24-May-2018
+iotsa 2.0 - 25-May-2018
 
 - The API has changed in an incompatible way: you no longer need to create the IotsaWebServer object
   yourself. The IotsaApplication constructor does this, if needed.
@@ -6,6 +6,10 @@ iotsa 2.0 - 24-May-2018
 - There are a number of compile-time flags in iotsaBuildOptions.h that enable and disable
   various features such as REST api access, normal web access and more.
 - COAP is supported (as an alternative to, or in addition to, REST access).
+
+iotsa 1.8.1 - 25-May-2018
+
+- Fixed issue with platformio not finding ESP8266HttpClient.h
 
 iotsa 1.8 - 15-Apr-2018
 
