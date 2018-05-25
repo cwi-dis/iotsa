@@ -5,6 +5,10 @@
 #endif
 #include "iotsa.h"
 
+// There is an issue with the platformio library dependency finder, and it doesn't find the
+// esp8266httpclient library. This is a workaround.
+#include "iotsaRequest.h"
+
 // Initialize IotsaSerial (a define) to refer to the normal Serial.
 // Will be overridden if the iotsaLogger module is included.
 Print *iotsaOverrideSerial = &Serial;
