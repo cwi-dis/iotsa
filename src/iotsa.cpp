@@ -57,7 +57,6 @@ IotsaApplication::setup() {
   } else {
     IFDEBUG IotsaSerial.println("SPIFFS mounted");
   }
-  webServerInit();
   IotsaBaseMod *m;
   for (m=firstEarlyModule; m; m=m->nextModule) {
   	m->setup();
@@ -74,6 +73,9 @@ void
 IotsaApplication::serverSetup() {
   IotsaBaseMod *m;
 
+#ifdef IOTSA_WITH_HTTP_OR_HTTPS
+  webServerInit();
+#endif
   for (m=firstEarlyModule; m; m=m->nextModule) {
   	m->serverSetup();
   }
