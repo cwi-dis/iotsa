@@ -11,13 +11,24 @@
 #include <ESP8266WiFi.h>
 #endif
 
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
+#ifdef IOTSA_WITH_HTTP
 #ifdef ESP32
 #include <ESP32WebServer.h>
 typedef ESP32WebServer IotsaWebServer;
 #else
 #include <ESP8266WebServer.h>
 typedef ESP8266WebServer IotsaWebServer;
+#endif
+#endif
+#ifdef IOTSA_WITH_HTTPS
+#ifdef ESP32
+#include <ESP32WebServerSecure.h>
+typedef ESP32WebServer IotsaWebServer;
+typedef ESP32WebServerSecure IotsaWebServerSecure;
+#else
+#include <ESP8266WebServerSecure.h>
+typedef ESP8266WebServer IotsaWebServer;
+typedef ESP8266WebServerSecure IotsaWebServerSecure;
 #endif
 #endif
 
@@ -80,6 +91,7 @@ public:
 #endif
 protected:
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
+  void webServerInit();
   void webServerSetup();
   void webServerLoop();
   void webServerNotFoundHandler();
