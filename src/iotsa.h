@@ -23,12 +23,10 @@ typedef ESP8266WebServer IotsaWebServer;
 #ifdef IOTSA_WITH_HTTPS
 #ifdef ESP32
 #include <ESP32WebServerSecure.h>
-typedef ESP32WebServer IotsaWebServer;
-typedef ESP32WebServerSecure IotsaWebServerSecure;
+typedef ESP32WebServerSecure IotsaWebServer;
 #else
 #include <ESP8266WebServerSecure.h>
-typedef ESP8266WebServer IotsaWebServer;
-typedef ESP8266WebServerSecure IotsaWebServerSecure;
+typedef ESP8266WebServerSecure IotsaWebServer;
 #endif
 #endif
 
@@ -91,7 +89,6 @@ public:
 #endif
 protected:
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
-  void webServerInit();
   void webServerSetup();
   void webServerLoop();
   void webServerNotFoundHandler();
@@ -190,6 +187,12 @@ public:
   unsigned long nextConfigurationModeEndTime;
   String hostName;
   int configurationModeTimeout;
+#ifdef IOTSA_WITH_HTTPS
+  const uint8_t* httpsCertificate;
+  size_t httpsCertificateLength;
+  const uint8_t* httpsKey;
+  size_t httpsKeyLength;
+#endif // IOTSA_WITH_HTTPS
 
   bool inConfigurationMode() { return configurationMode == IOTSA_MODE_CONFIG; }
   uint32_t getStatusColor() {

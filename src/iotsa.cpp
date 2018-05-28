@@ -16,7 +16,7 @@ Print *iotsaOverrideSerial = &Serial;
 IotsaApplication::IotsaApplication(const char *_title)
 : status(NULL),
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
-  server(NULL),
+  server(new IotsaWebServer(IOTSA_WEBSERVER_PORT)),
 #endif
   firstModule(NULL), 
   firstEarlyModule(NULL), 
@@ -57,7 +57,6 @@ IotsaApplication::setup() {
   } else {
     IFDEBUG IotsaSerial.println("SPIFFS mounted");
   }
-  webServerInit();
   IotsaBaseMod *m;
   for (m=firstEarlyModule; m; m=m->nextModule) {
   	m->setup();
@@ -109,20 +108,21 @@ IotsaApplication::loop() {
 
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
 void
-IotsaApplication::webServerInit() {
-  int port = IOTSA_WEBSERVER_PORT;
-#ifdef IOTSA_WITH_HTTPS
-  IFDEBUG IotsaSerial.println("HTTPS configuration files missing, fallback to HTTP");
-  port = 80;
-#endif
-  server = new IotsaWebServer(port);
-  IFDEBUG IotsaSerial.println("HTTP Server created");
-}
-
-void
 IotsaApplication::webServerSetup() {
+#ifdef IOTSA_WITH_HTTPS
+  server->setServerKeyAndCert_P(
+    iotsaConfig.httpsKey,
+    iotsaConfig.httpsKeyLength,
+    iotsaConfig.httpsCertificate,
+    iotsaConfig.httpsCertificateLength
+  );
+#endif
   server->begin();
-  IFDEBUG IotsaSerial.println("HTTP(S) server started");
+#ifdef IOTSA_WITH_HTTPS
+  IFDEBUG IotsaSerial.println("HTTPS server started");
+#else
+  IFDEBUG IotsaSerial.println("HTTP server started");
+#endif
 }
 
 void
