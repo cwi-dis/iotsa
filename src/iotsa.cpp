@@ -188,6 +188,33 @@ String IotsaMod::htmlEncode(String data) {
   }
   return rv;
 }
+
+//
+// Decode percent-escaped string src.
+// 
+void IotsaMod::percentDecode(const String &src, String &dst) {
+    const char *arg = src.c_str();
+    dst = String();
+    while (*arg) {
+      char newch;
+      if (*arg == '+') newch = ' ';
+      else if (*arg == '%') {
+        arg++;
+        if (*arg >= '0' && *arg <= '9') newch = (*arg-'0') << 4;
+        if (*arg >= 'a' && *arg <= 'f') newch = (*arg-'a'+10) << 4;
+        if (*arg >= 'A' && *arg <= 'F') newch = (*arg-'A'+10) << 4;
+        arg++;
+        if (*arg == 0) break;
+        if (*arg >= '0' && *arg <= '9') newch |= (*arg-'0');
+        if (*arg >= 'a' && *arg <= 'f') newch |= (*arg-'a'+10);
+        if (*arg >= 'A' && *arg <= 'F') newch |= (*arg-'A'+10);
+      } else {
+        newch = *arg;
+      }
+      dst += newch;
+      arg++;
+    }
+}
 #endif // IOTSA_WITH_WEB
 
 bool IotsaBaseMod::needsAuthentication(const char *object, IotsaApiOperation verb) { 

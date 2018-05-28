@@ -290,11 +290,20 @@ IotsaConfigMod::handler() {
 #ifdef IOTSA_WITH_HTTPS
   if (server->hasArg("httpsKey") && server->arg("httpsKey") != "") {
     if (needsAuthentication("config")) return;
-    const char *b64Value = server->arg("httpsKey").c_str();
+    String toDecode;
+    percentDecode(server->arg("httpsKey"), toDecode);
+    const char *b64Value = toDecode.c_str();
     int b64len = strlen(b64Value);
-    char *tmpValue = (char *)malloc(base64_decode_expected_len(b64len));
+    IFDEBUG IotsaSerial.print("httpsKey base64 len=");
+    IFDEBUG IotsaSerial.println(b64len);
+    int expDecodeLen = base64_decode_expected_len(b64len);
+    IFDEBUG IotsaSerial.print("httpsKey expected len=");
+    IFDEBUG IotsaSerial.println(expDecodeLen);
+    char *tmpValue = (char *)malloc(expDecodeLen);
     if (tmpValue) {
       int decLen = base64_decode_chars(b64Value, b64len, tmpValue);
+      IFDEBUG IotsaSerial.print("httpsKey actual len=");
+      IFDEBUG IotsaSerial.println(decLen);
       if (decLen > 0) {
         iotsaConfig.httpsKey = (uint8_t *)tmpValue;
         iotsaConfig.httpsKeyLength = decLen;
@@ -309,11 +318,20 @@ IotsaConfigMod::handler() {
   }
   if (server->hasArg("httpsCertificate") && server->arg("httpsCertificate") != "") {
     if (needsAuthentication("config")) return;
-    const char *b64Value = server->arg("httpsCertificate").c_str();
+    String toDecode;
+    percentDecode(server->arg("httpsCertificate"), toDecode);
+    const char *b64Value = toDecode.c_str();
     int b64len = strlen(b64Value);
-    char *tmpValue = (char *)malloc(base64_decode_expected_len(b64len));
+    IFDEBUG IotsaSerial.print("httpsCertificate base64 len=");
+    IFDEBUG IotsaSerial.println(b64len);
+    int expDecodeLen = base64_decode_expected_len(b64len);
+    IFDEBUG IotsaSerial.print("httpsCertificate expected len=");
+    IFDEBUG IotsaSerial.println(expDecodeLen);
+    char *tmpValue = (char *)malloc(expDecodeLen);
     if (tmpValue) {
       int decLen = base64_decode_chars(b64Value, b64len, tmpValue);
+      IFDEBUG IotsaSerial.print("httpsCertificate actual len=");
+      IFDEBUG IotsaSerial.println(decLen);
       if (decLen > 0) {
        iotsaConfig.httpsCertificate = (uint8_t *)tmpValue;
        iotsaConfig.httpsCertificateLength = decLen;

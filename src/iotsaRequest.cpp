@@ -12,35 +12,6 @@
 #define SSL_INFO_NAME "fingerprint"
 #endif
 
-#ifdef IOTSA_WITH_WEB
-//
-// Decode percent-escaped string src.
-// If dst is NULL the result is sent to the LCD.
-// 
-static void decodePercentEscape(const String &src, String &dst) {
-    const char *arg = src.c_str();
-    dst = String();
-    while (*arg) {
-      char newch;
-      if (*arg == '+') newch = ' ';
-      else if (*arg == '%') {
-        arg++;
-        if (*arg >= '0' && *arg <= '9') newch = (*arg-'0') << 4;
-        if (*arg >= 'a' && *arg <= 'f') newch = (*arg-'a'+10) << 4;
-        if (*arg >= 'A' && *arg <= 'F') newch = (*arg-'A'+10) << 4;
-        arg++;
-        if (*arg == 0) break;
-        if (*arg >= '0' && *arg <= '9') newch |= (*arg-'0');
-        if (*arg >= 'a' && *arg <= 'f') newch |= (*arg-'a'+10);
-        if (*arg >= 'A' && *arg <= 'F') newch |= (*arg-'A'+10);
-      } else {
-        newch = *arg;
-      }
-      dst += newch;
-      arg++;
-    }
-}
-#endif // IOTSA_WITH_WEB
 
 void IotsaRequest::configLoad(IotsaConfigFileLoad& cf, String& name) {
     cf.get(name+"url", url, "");
@@ -84,7 +55,7 @@ bool IotsaRequest::formArgHandler(IotsaWebServer *server, String name) {
   bool any = false;
   String wtdName = name + "url";
   if (server->hasArg(wtdName)) {
-    decodePercentEscape(server->arg(wtdName), url);
+    IotsaMod::percentDecode(server->arg(wtdName), url);
     IFDEBUG IotsaSerial.print(wtdName);
     IFDEBUG IotsaSerial.print("=");
     IFDEBUG IotsaSerial.println(url);
@@ -92,7 +63,7 @@ bool IotsaRequest::formArgHandler(IotsaWebServer *server, String name) {
   }
   wtdName = name + "SSL_INFO_NAME";
   if (server->hasArg(wtdName)) {
-    decodePercentEscape(server->arg(wtdName), sslInfo);
+    IotsaMod::percentDecode(server->arg(wtdName), sslInfo);
     IFDEBUG IotsaSerial.print(wtdName);
     IFDEBUG IotsaSerial.print("=");
     IFDEBUG IotsaSerial.println(sslInfo);
@@ -100,7 +71,7 @@ bool IotsaRequest::formArgHandler(IotsaWebServer *server, String name) {
   }
   wtdName = name + "credentials";
   if (server->hasArg(wtdName)) {
-    decodePercentEscape(server->arg(wtdName), credentials);
+    IotsaMod::percentDecode(server->arg(wtdName), credentials);
     IFDEBUG IotsaSerial.print(wtdName);
     IFDEBUG IotsaSerial.print("=");
     IFDEBUG IotsaSerial.println(credentials);
@@ -108,7 +79,7 @@ bool IotsaRequest::formArgHandler(IotsaWebServer *server, String name) {
     }
   wtdName = name + "token";
   if (server->hasArg(wtdName)) {
-    decodePercentEscape(server->arg(wtdName), token);
+    IotsaMod::percentDecode(server->arg(wtdName), token);
     IFDEBUG IotsaSerial.print(wtdName);
     IFDEBUG IotsaSerial.print("=");
     IFDEBUG IotsaSerial.println(token);

@@ -166,6 +166,7 @@ public:
 #ifdef IOTSA_WITH_WEB
   virtual String info() = 0;
   static String htmlEncode(String data); // Helper - convert strings to HTML-safe representation
+  static void percentDecode(const String &src, String &dst); // Helper - convert string from url-encoded to normal
 #endif
 
 protected:
