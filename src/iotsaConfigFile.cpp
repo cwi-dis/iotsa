@@ -85,3 +85,11 @@ void IotsaConfigFileSave::put(String name, const String &value) {
   fp.print('\n');
 }
 
+void IotsaConfigFileSave::put(String name, const char *value) {
+  fp.print(name);
+  fp.print('=');
+  const char *p = value;
+  while (*p) fp.print(*p++);
+  fp.print('\n');
+}
+

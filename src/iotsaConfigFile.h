@@ -24,6 +24,7 @@ public:
   void put(String name, int value);
   void put(String name, float value);
   void put(String name, const String &value);
+  void put(String name, const char *value);
 protected:
   File fp;
 };

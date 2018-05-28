@@ -110,6 +110,10 @@ IotsaApplication::loop() {
 void
 IotsaApplication::webServerSetup() {
 #ifdef IOTSA_WITH_HTTPS
+  IFDEBUG IotsaSerial.print("Using https key len=");
+  IFDEBUG IotsaSerial.print(iotsaConfig.httpsKeyLength);
+  IFDEBUG IotsaSerial.print(", cert len=");
+  IFDEBUG IotsaSerial.println(iotsaConfig.httpsCertificateLength);
   server->setServerKeyAndCert_P(
     iotsaConfig.httpsKey,
     iotsaConfig.httpsKeyLength,
