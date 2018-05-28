@@ -92,7 +92,7 @@ class Main:
         parser.add_argument("--bearer", metavar="TOKEN", help="Add Authorization: Bearer TOKEN header line")
         parser.add_argument("--access", metavar="TOKEN", help="Add access_token=TOKEN query argument")
         parser.add_argument("--credentials", metavar="USER:PASS", help="Add Authorization: Basic header line with given credentials")
-    #    parser.add_argument("--noverify", action='store_true', help="Disable verification of https signatures")
+        parser.add_argument("--noverify", action='store_true', help="Disable verification of https signatures")
     #    parser.add_argument("--certificate", metavar='CERTFILE', help="Verify https certificates from given file")
         parser.add_argument("--compat", action="store_true", help="Compatability for old iotsa devices (ota only)")
         parser.add_argument("command", nargs="+", help="Command to run (help for list)")
@@ -138,7 +138,7 @@ class Main:
             self.args.target = all[0]
         if self.args.target:
             ok = self.wifi.selectDevice(self.args.target)
-        self.device = api.IotsaDevice(self.wifi.currentDevice(), protocol=self.args.protocol, port=self.args.port)
+        self.device = api.IotsaDevice(self.wifi.currentDevice(), protocol=self.args.protocol, port=self.args.port, noverify=self.args.noverify)
         if self.args.bearer:
             self.device.setBearerToken(self.args.bearer)
         if self.args.credentials:

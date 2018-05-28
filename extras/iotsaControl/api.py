@@ -76,14 +76,19 @@ class IotsaWifi(PlatformWifi):
         return ok
         
     def _checkDevice(self, deviceName):
-        try:
-            _ = socket.create_connection((deviceName, 80), 20)
-        except socket.timeout:
-            return False
-        except socket.gaierror:
-            print >>sys.stderr, 'Unknown host: %s' % deviceName
-            return False
-        return True
+        ports = [80, 443]
+        for port in ports:
+            try:
+                _ = socket.create_connection((deviceName, port), 20)
+            except socket.timeout:
+                return False
+            except socket.gaierror:
+                print >>sys.stderr, 'Unknown host: %s' % deviceName
+                return False
+            except socket.error:
+                continue
+            return True
+        return False
         
     def findDevices(self):
         if self._isConfigNetwork():
@@ -104,11 +109,12 @@ class IotsaWifi(PlatformWifi):
         return self.device
         
 class IotsaRESTProtocolHandler:
-    def __init__(self, baseURL):
+    def __init__(self, baseURL, noverify=False):
         if baseURL[-1] != '/':
             baseURL += '/'
         baseURL += 'api/'
         self.baseURL = baseURL
+        self.noverify = noverify
         
     def close(self):
         pass
@@ -128,7 +134,7 @@ class IotsaRESTProtocolHandler:
             headers['Authorization'] = 'Bearer '+token
         url = self.baseURL + endpoint
         if VERBOSE: print 'REST %s %s' % (method, url)
-        r = requests.request(method, url, auth=auth, json=json)
+        r = requests.request(method, url, auth=auth, json=json, verify=not self.noverify)
         if VERBOSE: print 'REST %s returned: %s %s' % (method, r.status_code, r.text)
         r.raise_for_status()
         if r.text and r.text[0] == '{':
@@ -246,7 +252,7 @@ class IotsaConfig:
             print '  %-16s %s' % (str(k)+':', v)
             
 class IotsaDevice(IotsaConfig):
-    def __init__(self, ipAddress, port=None, protocol=None):
+    def __init__(self, ipAddress, port=None, protocol=None, noverify=False):
         self.ipAddress = ipAddress
         if protocol == None: 
             protocol = 'http'
@@ -254,7 +260,7 @@ class IotsaDevice(IotsaConfig):
         if port:
             url += ':%d' % port
         HandlerClass = HandlerForProto[protocol]
-        self.protocolHandler = HandlerClass(url)
+        self.protocolHandler = HandlerClass(url, noverify=noverify)
         IotsaConfig.__init__(self, self, 'config')
         self.auth = None
         self.bearerToken = None
