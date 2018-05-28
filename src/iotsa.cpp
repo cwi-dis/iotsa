@@ -116,7 +116,7 @@ IotsaApplication::webServerInit() {
   port = 80;
 #endif
   server = new IotsaWebServer(port);
-  IFDEBUG IotsaSerial.print("HTTP Server created");
+  IFDEBUG IotsaSerial.println("HTTP Server created");
 }
 
 void
