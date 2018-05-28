@@ -554,49 +554,13 @@ void IotsaConfigMod::configLoad() {
   cf.get("rebootTimeout", iotsaConfig.configurationModeTimeout, CONFIGURATION_MODE_TIMEOUT);
   if (iotsaConfig.hostName == "") wifiDefaultHostName();
 #ifdef IOTSA_WITH_HTTPS
-  String tmp;
-  char *keyBuf = NULL;
-  char *certBuf = NULL;
-  int keyLen = 0, certLen = 0;
-  cf.get("httpsKey", tmp, "");
-  if (tmp != "") {
-    int len = tmp.length();
-    keyBuf = (char*)malloc(base64_decode_expected_len(len));
-    if (keyBuf == NULL) {
-      IFDEBUG IotsaSerial.println("malloc failed for httpsKey");
-      return;
-    }
-    keyLen = base64_decode_chars(tmp.c_str(), len, keyBuf);
-    if (keyLen <= 0) {
-      IFDEBUG IotsaSerial.println("base64 decode failed for httpsKey");
-      free(keyBuf);
-    }
+  bool ok = iotsaConfigFileLoadBinary("/config/httpsKey.der", (uint8_t **)&iotsaConfig.httpsKey, &iotsaConfig.httpsKeyLength);
+  if (ok) {
+    IFDEBUG IotsaSerial.println("Loaded /config/httpsKey.der");
   }
-  cf.get("httpsCertificate", tmp, "");
-  if (tmp != "") {
-    int len = tmp.length();
-    certBuf = (char*)malloc(base64_decode_expected_len(len));
-    if (certBuf == NULL) {
-      IFDEBUG IotsaSerial.println("malloc failed for httpsCertificate");
-      free(keyBuf);
-      return;
-    }
-    certLen = base64_decode_chars(tmp.c_str(), len, keyBuf);
-    if (certLen <= 0) {
-      IFDEBUG IotsaSerial.println("base64 decode failed for httpsCertificate");
-      free(keyBuf);
-      free(certBuf);
-    }
-  }
-  if (keyBuf && certBuf) {
-    iotsaConfig.httpsKey = (uint8_t *)keyBuf;
-    iotsaConfig.httpsKeyLength = keyLen;
-    iotsaConfig.httpsCertificate = (uint8_t *)certBuf;
-    iotsaConfig.httpsCertificateLength = certLen;
-    IFDEBUG IotsaSerial.print("Loaded https key len=");
-    IFDEBUG IotsaSerial.print(keyLen);
-    IFDEBUG IotsaSerial.print(", cert len=");
-    IFDEBUG IotsaSerial.println(certLen);
+  ok = iotsaConfigFileLoadBinary("/config/httpsCert.der", (uint8_t **)&iotsaConfig.httpsCertificate, &iotsaConfig.httpsCertificateLength);
+  if (ok) {
+    IFDEBUG IotsaSerial.println("Loaded /config/httpsCert.der");
   }
 #endif // IOTSA_WITH_HTTPS
 }
@@ -608,30 +572,10 @@ void IotsaConfigMod::configSave() {
   cf.put("rebootTimeout", iotsaConfig.configurationModeTimeout);
 #ifdef IOTSA_WITH_HTTPS
   if (iotsaConfig.httpsKey != defaultHttpsKey && iotsaConfig.httpsCertificate != defaultHttpsCertificate) {
-    char *tmp;
-    tmp = (char *)malloc(1+base64_encode_expected_len(iotsaConfig.httpsKeyLength));
-    if (tmp) {
-      int encLen = base64_encode_chars((char *)iotsaConfig.httpsKey, iotsaConfig.httpsKeyLength, tmp);
-      for (int i=0; i<encLen; i++) if (tmp[i] == '\n') tmp[i] = ' ';
-      tmp[encLen] = '\0';
-      cf.put("httpsKey", tmp);
-      IFDEBUG IotsaSerial.print("configSave: httpsKey ");
-      IFDEBUG IotsaSerial.println(tmp);
-      free(tmp);
-    }
-    tmp = (char *)malloc(1+base64_encode_expected_len(iotsaConfig.httpsCertificateLength));
-    if (tmp) {
-      int encLen = base64_encode_chars((char *)iotsaConfig.httpsCertificate, iotsaConfig.httpsCertificateLength, tmp);
-      for (int i=0; i<encLen; i++) if (tmp[i] == '\n') tmp[i] = ' ';
-      tmp[encLen] = '\0';
-      cf.put("httpsCertificate", tmp);
-      IFDEBUG IotsaSerial.print("configSave: httpsCertificate ");
-      IFDEBUG IotsaSerial.println(tmp);
-      free(tmp);
-    }
-  } else {
-    cf.put("httpsKey", "");
-    cf.put("httpsCertificate", "");
+    iotsaConfigFileSaveBinary("/config/httpsKey.der", iotsaConfig.httpsKey, iotsaConfig.httpsKeyLength);
+    IFDEBUG IotsaSerial.println("saved /config/httpsKey.der");
+    iotsaConfigFileSaveBinary("/config/httpsCert.der", iotsaConfig.httpsCertificate, iotsaConfig.httpsCertificateLength);
+    IFDEBUG IotsaSerial.println("saved /config/httpsCert.der");
   }
 #endif // IOTSA_WITH_HTTPS
   IFDEBUG IotsaSerial.println("Saved config.cfg");

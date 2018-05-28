@@ -24,8 +24,10 @@ public:
   void put(String name, int value);
   void put(String name, float value);
   void put(String name, const String &value);
-  void put(String name, const char *value);
 protected:
   File fp;
 };
+
+bool iotsaConfigFileLoadBinary(String filename, uint8_t **dataP, size_t *dataLenP);
+void iotsaConfigFileSaveBinary(String filename, const uint8_t *data, size_t dataLen);
 #endif

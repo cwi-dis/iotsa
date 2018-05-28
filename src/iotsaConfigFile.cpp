@@ -85,11 +85,36 @@ void IotsaConfigFileSave::put(String name, const String &value) {
   fp.print('\n');
 }
 
-void IotsaConfigFileSave::put(String name, const char *value) {
-  fp.print(name);
-  fp.print('=');
-  const char *p = value;
-  while (*p) fp.print(*p++);
-  fp.print('\n');
+bool iotsaConfigFileLoadBinary(String filename, uint8_t **dataP, size_t *dataLenP) {
+  File fp = SPIFFS.open(filename, "r");
+  if (!fp) return false;
+  size_t size = fp.size();
+  if (size == 0) {
+    IFDEBUG IotsaSerial.println("iotsaConfigFileLoadBinary empty file");
+    fp.close();
+    return false;
+  }
+  uint8_t *buf = (uint8_t *)malloc(size);
+  if (buf == NULL) {
+    IFDEBUG IotsaSerial.println("iotsaConfigFileLoadBinary malloc failed");
+    fp.close();
+    return false;
+  }
+  if (fp.readBytes((char *)buf, size) != size) {
+    IFDEBUG IotsaSerial.println("iotsaConfigFileLoadBinary read wrong size");
+    fp.close();
+    return false;
+  }
+  fp.close();
+  *dataP = buf;
+  *dataLenP = size;
+  return true;
 }
 
+void iotsaConfigFileSaveBinary(String filename, const uint8_t *data, size_t dataLen) {
+  File fp = SPIFFS.open(filename, "w");
+  if (fp.write(data, dataLen) != dataLen) {
+    IFDEBUG IotsaSerial.println("iotsaConfigFileSaveBinary write wrong size");    
+  }
+  fp.close();
+}
