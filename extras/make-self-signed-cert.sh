@@ -35,11 +35,11 @@ x509_extensions = x509_ext
 subjectAltName = @alternate_names
 
 [ req_distinguished_name ]
-O = iotsa
-CN = 192.168.4.1
+O = cwi-dis-iotsa-project
+CN = iotsa.local
 
 [ alternate_names ]
-DNS.1 = iotsa.local
+DNS.1 = 192.168.4.1
 EOF
 openssl req -out tls.ca_x509.req -key tls.ca_key.pem -new -config certs.conf 
 openssl req -out tls.x509_$BITS.req -key tls.key_$BITS.pem -new -config certs.conf 
@@ -50,6 +50,14 @@ openssl x509 -in tls.x509_$BITS.pem -outform DER -out tls.x509_$BITS.cer
 
 xxd -i tls.key_$BITS       | sed 's/.*{//' | sed 's/\};//' | sed 's/unsigned.*//' > "$C/key.h"
 xxd -i tls.x509_$BITS.cer  | sed 's/.*{//' | sed 's/\};//' | sed 's/unsigned.*//' > "$C/x509.h"
+echo
+echo Hex in key.h and x509.h
+echo
+echo -n 'Key: '
+base64 -i tls.key_$BITS
+echo -n 'Certificate: '
+base64 -i tls.x509_$BITS.cer
+openssl x509 -noout -fingerprint -sha256 -in tls.ca_x509.pem
 
 rm -f tls.ca_key.pem tls.key_$BITS.pem tls.key_$BITS certs.conf tls.ca_x509.req tls.x509_$BITS.req tls.ca_x509.pem tls.x509_$BITS.pem tls.srl tls.x509_$BITS.cer tls.ca_x509.cer
 
