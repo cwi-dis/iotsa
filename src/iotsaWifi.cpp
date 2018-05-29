@@ -51,12 +51,23 @@ void IotsaWifiMod::setup() {
 
       if (MDNS.begin(iotsaConfig.hostName.c_str())) {
 #ifdef ESP32
-        MDNS.addService("_http", "_tcp", 80);
-        MDNS.addService("_iotsa", "_tcp", 80);
+#define PREPU(x) "_" x
 #else
-        MDNS.addService("http", "tcp", 80);
-        MDNS.addService("iotsa", "tcp", 80);
+#define PREPU(x) x
 #endif
+#ifdef IOTSA_WITH_HTTP
+        MDNS.addService(PREPU("http"), PREPU("tcp"), 80);
+//        MDNS.addService(PREPU("iotsa._http"), PREPU("tcp"), 80);
+#endif
+#ifdef IOTSA_WITH_HTTPS
+        MDNS.addService(PREPU("https"), PREPU("tcp"), 443);
+//        MDNS.addService(PREPU("iotsa._https"), PREPU("tcp"), 443);
+#endif
+#ifdef IOTSA_WITH_COAP
+        MDNS.addService(PREPU("coap"), PREPU("udp"), 5683);
+//        MDNS.addService(PREPU("iotsa._coap"), PREPU("udp"), 5683);
+#endif
+
         IFDEBUG IotsaSerial.println("MDNS responder started");
         haveMDNS = true;
       }
