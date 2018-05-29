@@ -290,25 +290,21 @@ IotsaConfigMod::handler() {
 #ifdef IOTSA_WITH_HTTPS
   if (server->hasArg("httpsKey") && server->arg("httpsKey") != "") {
     if (needsAuthentication("config")) return;
-    String toDecode = server->arg("httpsKey");
-    IFDEBUG IotsaSerial.print("httpsKey b64=");
-    IFDEBUG IotsaSerial.println(toDecode);
-    const char *b64Value = toDecode.c_str();
+    const char *b64Value = server->arg("httpsKey").c_str();
     int b64len = strlen(b64Value);
-    IFDEBUG IotsaSerial.print("httpsKey base64 len=");
-    IFDEBUG IotsaSerial.println(b64len);
     int expDecodeLen = base64_decode_expected_len(b64len);
-    IFDEBUG IotsaSerial.print("httpsKey expected len=");
-    IFDEBUG IotsaSerial.println(expDecodeLen);
     char *tmpValue = (char *)malloc(expDecodeLen);
     if (tmpValue) {
       int decLen = base64_decode_chars(b64Value, b64len, tmpValue);
-      IFDEBUG IotsaSerial.print("httpsKey actual len=");
-      IFDEBUG IotsaSerial.println(decLen);
       if (decLen > 0) {
         iotsaConfig.httpsKey = (uint8_t *)tmpValue;
         iotsaConfig.httpsKeyLength = decLen;
-        IFDEBUG IotsaSerial.println("Decoded httpsKey");
+        IFDEBUG IotsaSerial.print("Decoded httpsKey len=");
+        IFDEBUG IotsaSerial.print(decLen);
+        IFDEBUG IotsaSerial.print("expLen=");
+        IFDEBUG IotsaSerial.print(expDecodeLen);
+        IFDEBUG IotsaSerial.print("b64len=");
+        IFDEBUG IotsaSerial.println(b64len);
         anyChanged = true;
       } else {
         IFDEBUG IotsaSerial.println("Error base64 decoding httpsKey");
@@ -319,25 +315,23 @@ IotsaConfigMod::handler() {
   }
   if (server->hasArg("httpsCertificate") && server->arg("httpsCertificate") != "") {
     if (needsAuthentication("config")) return;
-    String toDecode = server->arg("httpsCertificate");
-    IFDEBUG IotsaSerial.print("httpsCertificate b64=");
-    IFDEBUG IotsaSerial.println(toDecode);
-    const char *b64Value = toDecode.c_str();
+    const char *b64Value = server->arg("httpsCertificate").c_str();
     int b64len = strlen(b64Value);
-    IFDEBUG IotsaSerial.print("httpsCertificate base64 len=");
-    IFDEBUG IotsaSerial.println(b64len);
     int expDecodeLen = base64_decode_expected_len(b64len);
     IFDEBUG IotsaSerial.print("httpsCertificate expected len=");
     IFDEBUG IotsaSerial.println(expDecodeLen);
     char *tmpValue = (char *)malloc(expDecodeLen);
     if (tmpValue) {
       int decLen = base64_decode_chars(b64Value, b64len, tmpValue);
-      IFDEBUG IotsaSerial.print("httpsCertificate actual len=");
-      IFDEBUG IotsaSerial.println(decLen);
       if (decLen > 0) {
        iotsaConfig.httpsCertificate = (uint8_t *)tmpValue;
        iotsaConfig.httpsCertificateLength = decLen;
-       IFDEBUG IotsaSerial.println("Decoded httpsCertificate");
+        IFDEBUG IotsaSerial.print("Decoded httpsCertificate len=");
+        IFDEBUG IotsaSerial.print(decLen);
+        IFDEBUG IotsaSerial.print("expLen=");
+        IFDEBUG IotsaSerial.print(expDecodeLen);
+        IFDEBUG IotsaSerial.print("b64len=");
+        IFDEBUG IotsaSerial.println(b64len);
         anyChanged = true;
       } else {
         IFDEBUG IotsaSerial.println("Error base64 decoding httpsCertificate");
