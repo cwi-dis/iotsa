@@ -200,6 +200,7 @@ void IotsaMod::percentDecode(const String &src, String &dst) {
       if (*arg == '+') newch = ' ';
       else if (*arg == '%') {
         arg++;
+        if (*arg == 0) break;
         if (*arg >= '0' && *arg <= '9') newch = (*arg-'0') << 4;
         if (*arg >= 'a' && *arg <= 'f') newch = (*arg-'a'+10) << 4;
         if (*arg >= 'A' && *arg <= 'F') newch = (*arg-'A'+10) << 4;

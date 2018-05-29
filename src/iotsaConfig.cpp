@@ -290,8 +290,9 @@ IotsaConfigMod::handler() {
 #ifdef IOTSA_WITH_HTTPS
   if (server->hasArg("httpsKey") && server->arg("httpsKey") != "") {
     if (needsAuthentication("config")) return;
-    String toDecode;
-    percentDecode(server->arg("httpsKey"), toDecode);
+    String toDecode = server->arg("httpsKey");
+    IFDEBUG IotsaSerial.print("httpsKey b64=");
+    IFDEBUG IotsaSerial.println(toDecode);
     const char *b64Value = toDecode.c_str();
     int b64len = strlen(b64Value);
     IFDEBUG IotsaSerial.print("httpsKey base64 len=");
@@ -318,8 +319,9 @@ IotsaConfigMod::handler() {
   }
   if (server->hasArg("httpsCertificate") && server->arg("httpsCertificate") != "") {
     if (needsAuthentication("config")) return;
-    String toDecode;
-    percentDecode(server->arg("httpsCertificate"), toDecode);
+    String toDecode = server->arg("httpsCertificate");
+    IFDEBUG IotsaSerial.print("httpsCertificate b64=");
+    IFDEBUG IotsaSerial.println(toDecode);
     const char *b64Value = toDecode.c_str();
     int b64len = strlen(b64Value);
     IFDEBUG IotsaSerial.print("httpsCertificate base64 len=");

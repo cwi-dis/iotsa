@@ -36,7 +36,7 @@ subjectAltName = @alternate_names
 
 [ req_distinguished_name ]
 O = cwi-dis-iotsa-project
-CN = iotsa877be.local
+CN = iotsa87761.local
 
 [ alternate_names ]
 DNS.1 = 192.168.4.1
