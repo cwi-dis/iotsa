@@ -470,6 +470,8 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
 #endif
 #ifdef ARDUINO_VARIANT
   reply["board"] = ARDUINO_VARIANT;
+#elif defined(ARDUINO_BOARD)
+  reply["board"] = ARDUINO_BOARD;
 #endif
   reply["bootCause"] = getBootReason();
   reply["uptime"] = millis() / 1000;
