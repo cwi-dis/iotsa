@@ -22,8 +22,11 @@ typedef ESP8266WebServer IotsaWebServer;
 #endif
 #ifdef IOTSA_WITH_HTTPS
 #ifdef ESP32
-#include <ESP32WebServerSecure.h>
-typedef ESP32WebServerSecure IotsaWebServer;
+#error IOTSA_WITH_HTTPS is not supported for ESP32
+#undef IOTSA_WITH_HTTPS
+#define IOTSA_WITH_HTTP
+#include <ESP32WebServer.h>
+typedef ESP32WebServer IotsaWebServer;
 #else
 #include <ESP8266WebServerSecure.h>
 typedef ESP8266WebServerSecure IotsaWebServer;
