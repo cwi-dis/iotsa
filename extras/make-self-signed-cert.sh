@@ -18,6 +18,14 @@
 #      ....
 
 # 1024 or 512.  512 saves memory...
+case x$1 in
+x)
+	HOSTNAME=iotsa.local
+	;;
+x*)
+	HOSTNAME=$1
+	;;
+esac
 BITS=1024
 C=$PWD
 pushd /tmp
@@ -29,17 +37,11 @@ cat > certs.conf <<EOF
 [ req ]
 distinguished_name = req_distinguished_name
 prompt = no
-x509_extensions = x509_ext
-
-[ x509_ext ]
-subjectAltName = @alternate_names
 
 [ req_distinguished_name ]
 O = cwi-dis-iotsa-project
-CN = iotsa87761.local
+CN = $HOSTNAME
 
-[ alternate_names ]
-DNS.1 = 192.168.4.1
 EOF
 openssl req -out tls.ca_x509.req -key tls.ca_key.pem -new -config certs.conf 
 openssl req -out tls.x509_$BITS.req -key tls.key_$BITS.pem -new -config certs.conf 
@@ -55,8 +57,10 @@ echo Hex in key.h and x509.h
 echo
 echo -n 'Key: '
 base64 -i tls.key_$BITS
+echo
 echo -n 'Certificate: '
 base64 -i tls.x509_$BITS.cer
+echo
 openssl x509 -noout -fingerprint -sha1 -in tls.ca_x509.pem
 
 rm -f tls.ca_key.pem tls.key_$BITS.pem tls.key_$BITS certs.conf tls.ca_x509.req tls.x509_$BITS.req tls.ca_x509.pem tls.x509_$BITS.pem tls.srl tls.x509_$BITS.cer tls.ca_x509.cer
