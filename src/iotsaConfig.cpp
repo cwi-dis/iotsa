@@ -17,6 +17,7 @@
 #ifdef IOTSA_WITH_HTTPS
 #include <libb64/cdecode.h>
 #include <libb64/cencode.h>
+#include <Hash.h>
 #endif // IOTSA_WITH_HTTPS
 
 //
@@ -129,6 +130,7 @@ static const uint8_t defaultHttpsKey[] PROGMEM = {
   0x22, 0x0b, 0x3f, 0xfc, 0xd5, 0xe3, 0xd6, 0x6c, 0x5c, 0x85, 0xda, 0x5b,
   0x69, 0x28, 0xf8, 0x07, 0x20, 0x80, 0x69, 0xdf, 0x37
 };
+
 #endif
 
 String& hostName(iotsaConfig.hostName);
@@ -290,7 +292,8 @@ IotsaConfigMod::handler() {
 #ifdef IOTSA_WITH_HTTPS
   if (server->hasArg("httpsKey") && server->arg("httpsKey") != "") {
     if (needsAuthentication("config")) return;
-    const char *b64Value = server->arg("httpsKey").c_str();
+    String b64String(server->arg("httpsKey"));
+    const char *b64Value = b64String.c_str();
     int b64len = strlen(b64Value);
     int expDecodeLen = base64_decode_expected_len(b64len);
     char *tmpValue = (char *)malloc(expDecodeLen);
@@ -301,9 +304,9 @@ IotsaConfigMod::handler() {
         iotsaConfig.httpsKeyLength = decLen;
         IFDEBUG IotsaSerial.print("Decoded httpsKey len=");
         IFDEBUG IotsaSerial.print(decLen);
-        IFDEBUG IotsaSerial.print("expLen=");
+        IFDEBUG IotsaSerial.print(" expLen=");
         IFDEBUG IotsaSerial.print(expDecodeLen);
-        IFDEBUG IotsaSerial.print("b64len=");
+        IFDEBUG IotsaSerial.print(" b64len=");
         IFDEBUG IotsaSerial.println(b64len);
         anyChanged = true;
       } else {
@@ -315,7 +318,8 @@ IotsaConfigMod::handler() {
   }
   if (server->hasArg("httpsCertificate") && server->arg("httpsCertificate") != "") {
     if (needsAuthentication("config")) return;
-    const char *b64Value = server->arg("httpsCertificate").c_str();
+    String b64String(server->arg("httpsCertificate"));
+    const char *b64Value = b64String.c_str();
     int b64len = strlen(b64Value);
     int expDecodeLen = base64_decode_expected_len(b64len);
     IFDEBUG IotsaSerial.print("httpsCertificate expected len=");
@@ -328,9 +332,9 @@ IotsaConfigMod::handler() {
        iotsaConfig.httpsCertificateLength = decLen;
         IFDEBUG IotsaSerial.print("Decoded httpsCertificate len=");
         IFDEBUG IotsaSerial.print(decLen);
-        IFDEBUG IotsaSerial.print("expLen=");
+        IFDEBUG IotsaSerial.print(" expLen=");
         IFDEBUG IotsaSerial.print(expDecodeLen);
-        IFDEBUG IotsaSerial.print("b64len=");
+        IFDEBUG IotsaSerial.print(" b64len=");
         IFDEBUG IotsaSerial.println(b64len);
         anyChanged = true;
       } else {
@@ -375,10 +379,13 @@ IotsaConfigMod::handler() {
     message += " (goto configuration mode to change)</p>";
 #ifdef IOTSA_WITH_HTTPS
     if (iotsaConfig.httpsKey == defaultHttpsKey) {
-      message += "<p>Using factory-installed (not very secure) https certificate.</p>";
+      message += "<p>Using factory-installed (not very secure) https certificate, ";
     } else {
-      message += "<p>Using uploaded https certificate.</p>";
+      message += "<p>Using uploaded https certificate, ";
     }
+    message += "SHA1 hash=";
+    message += sha1(iotsaConfig.httpsCertificate, iotsaConfig.httpsCertificateLength);
+    message += ".</p>";
 #endif // IOTSA_WITH_HTTPS
   }
   message += "<form method='get'>";
@@ -388,6 +395,10 @@ IotsaConfigMod::handler() {
     message += "'><br>Configuration mode timeout: <input name='rebootTimeout' value='";
     message += String(iotsaConfig.configurationModeTimeout);
     message += "'><br>";
+#ifdef IOTSA_WITH_HTTPS
+    message += "HTTPS private key (base64 DER): <input name='httpsKey'><br>";
+    message += "HTTPS certificate (base64 DER): <input name='httpsCertificate'><br>";
+#endif
   }
 
   message += "<input name='mode' type='radio' value='0' checked> Enter normal mode after next reboot.<br>";
@@ -400,10 +411,6 @@ IotsaConfigMod::handler() {
     message += "<br>";
   }
   message += "<br><input name='factoryreset' type='checkbox' value='1'> Factory-reset and clear all files. <input name='iamsure' type='checkbox' value='1'> Yes, I am sure.<br>";
-#ifdef IOTSA_WITH_HTTPS
-  message += "<br>HTTPS private key (base64 DER): <input name='httpsKey'><br>";
-  message += "HTTPS certificate (base64 DER): <input name='httpsCertificate'><br>";
-#endif
   message += "<input type='submit'></form>";
   message += "</body></html>";
   server->send(200, "text/html", message);
@@ -451,6 +458,9 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   }
   reply["iotsaVersion"] = IOTSA_VERSION;
   reply["iotsaFullVersion"] = IOTSA_FULL_VERSION;
+#ifdef IOTSA_WITH_HTTPS
+  reply["httpsFingerprint"] = sha1(iotsaConfig.httpsCertificate, iotsaConfig.httpsCertificateLength);
+#endif
   reply["program"] = app.title;
 #ifdef IOTSA_CONFIG_PROGRAM_SOURCE
   reply["programSource"] = IOTSA_CONFIG_PROGRAM_SOURCE;
