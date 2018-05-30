@@ -8,7 +8,14 @@ import os
 import subprocess
 import machdep
 import urllib
+import socket
 
+orig_getaddrinfo = socket.getaddrinfo
+def ipv4_getaddrinfo(host, port, family=0, socktype=0, proto=0, flags=0):
+    if family == 0:
+        family = socket.AF_INET
+    return orig_getaddrinfo(host, port, family, socktype, proto, flags)
+    
 class Main:
     """Main commandline program"""
     
@@ -88,6 +95,7 @@ class Main:
         parser.add_argument("--port", action="store", metavar="PROTO", help="Port number (default depends on protocol)")
     
     #    parser.add_argument("-u", "--url", help="Base URL of the server (default: %s, environment IGORSERVER_URL)" % CONFIG.get('igor', 'url'))
+        parser.add_argument("--ipv6", action="store_true", help="Allow IPv6. Default is to monkey-patch out IPv6 addresses to work around esp8266 mDNS bug.")
         parser.add_argument("--verbose", action="store_true", help="Print what is happening")
         parser.add_argument("--bearer", metavar="TOKEN", help="Add Authorization: Bearer TOKEN header line")
         parser.add_argument("--access", metavar="TOKEN", help="Add access_token=TOKEN query argument")
@@ -99,7 +107,12 @@ class Main:
         self.args = parser.parse_args()
         api.VERBOSE=self.args.verbose
         machdep.VERBOSE=self.args.verbose
-
+        if not self.args.ipv6:
+            # Current esp8266 Arduino mDNS implementation has a problem: it replies with an IPv4 address but does not send a
+            # negative reply for the IPv6 address. This causes requests to retry the mDNS query until it times out.
+            # See https://github.com/esp8266/Arduino/issues/2110 for details.
+            # We monkey-patch getaddrinfo to look only for IPv4 addresses.
+            socket.getaddrinfo = ipv4_getaddrinfo
     def _getcmd(self):
         """Helper method to handle multiple commands"""
         if not self.cmdlist: return None
