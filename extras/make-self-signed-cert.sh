@@ -57,7 +57,7 @@ echo -n 'Key: '
 base64 -i tls.key_$BITS
 echo -n 'Certificate: '
 base64 -i tls.x509_$BITS.cer
-openssl x509 -noout -fingerprint -sha256 -in tls.ca_x509.pem
+openssl x509 -noout -fingerprint -sha1 -in tls.ca_x509.pem
 
 rm -f tls.ca_key.pem tls.key_$BITS.pem tls.key_$BITS certs.conf tls.ca_x509.req tls.x509_$BITS.req tls.ca_x509.pem tls.x509_$BITS.pem tls.srl tls.x509_$BITS.cer tls.ca_x509.cer
 
