@@ -47,7 +47,11 @@ if sys.platform in ('darwin', 'linux2'):
             self.found = []
             if VERBOSE: print 'Start mDNS browser for _iotsa._tcp.local.'
             self.zeroconf = zeroconf.Zeroconf()
-            self.browser = zeroconf.ServiceBrowser(self.zeroconf, "_iotsa._tcp.local.", self)
+            self.browsers = []
+            self.browsers.append(zeroconf.ServiceBrowser(self.zeroconf, "_iotsa._tcp.local.", self))
+            self.browsers.append(zeroconf.ServiceBrowser(self.zeroconf, "_iotsa._http._tcp.local.", self))
+            self.browsers.append(zeroconf.ServiceBrowser(self.zeroconf, "_iotsa._https._tcp.local.", self))
+            self.browsers.append(zeroconf.ServiceBrowser(self.zeroconf, "_iotsa._coap._tcp.local.", self))
         
         def remove_service(self, zc, type, name):
             pass
@@ -55,8 +59,9 @@ if sys.platform in ('darwin', 'linux2'):
         def add_service(self, zc, type, name):
             if VERBOSE: print 'Found mDNS entry for', name, 'type:', type
             info = zc.get_service_info(type, name)
-            if info.port != 80:
-                print >>sys.stderr, "%s: Ignore %s with port %s" % (sys.argv[0], name, info.port)
+            if info.server in self.found:
+                if VERBOSE:
+                    print 'Ignore duplicate mDNS entry for', info.server, 'type:', type
                 return
             self.found.append(info.server)
         
@@ -64,7 +69,7 @@ if sys.platform in ('darwin', 'linux2'):
             time.sleep(timeout)
             self.zeroconf.close()
             self.zeroconf = None
-            self.browser = None
+            self.browsers = []
             if VERBOSE: print 'Stop mDNS browsing, found', self.found
             return self.found
         
