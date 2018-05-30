@@ -50,7 +50,7 @@ class IotsaANYApiMod : public IotsaMod, public IotsaApiProvider {
 public:
   IotsaANYApiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
   : IotsaMod(_app, _auth, early),
-    api(this, _app, _auth, server)
+    api(this, _app, _auth)
   {}
   virtual bool getHandler(const char *path, JsonObject& reply) { return false; }
   virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
