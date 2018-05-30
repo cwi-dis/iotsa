@@ -55,17 +55,20 @@ void IotsaWifiMod::setup() {
 #else
 #define PREPU(x) x
 #endif
-#ifdef IOTSA_WITH_HTTP
-        MDNS.addService(PREPU("http"), PREPU("tcp"), 80);
-//        MDNS.addService(PREPU("iotsa._http"), PREPU("tcp"), 80);
-#endif
 #ifdef IOTSA_WITH_HTTPS
         MDNS.addService(PREPU("https"), PREPU("tcp"), 443);
-//        MDNS.addService(PREPU("iotsa._https"), PREPU("tcp"), 443);
+//        MDNS.addService(PREPU("iotsa._sub._https"), PREPU("tcp"), 443);
+        MDNS.addService(PREPU("iotsa"), PREPU("tcp"), 443);
+#endif
+#ifdef IOTSA_WITH_HTTP
+        MDNS.addService(PREPU("http"), PREPU("tcp"), 80);
+//        MDNS.addService(PREPU("iotsa._sub._http"), PREPU("tcp"), 80);
+        MDNS.addService(PREPU("iotsa"), PREPU("tcp"), 80);
 #endif
 #ifdef IOTSA_WITH_COAP
         MDNS.addService(PREPU("coap"), PREPU("udp"), 5683);
-//        MDNS.addService(PREPU("iotsa._coap"), PREPU("udp"), 5683);
+//        MDNS.addService(PREPU("iotsa._sub._coap"), PREPU("udp"), 5683);
+        MDNS.addService(PREPU("iotsa"), PREPU("udp"), 5683);
 #endif
 
         IFDEBUG IotsaSerial.println("MDNS responder started");
