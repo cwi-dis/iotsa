@@ -45,7 +45,8 @@
         },
         {
             "name" : "Hash",
-            "version" : ">=1.0"
+            "version" : ">=1.0",
+            "platforms" : "espressif8266"
         },
         {
             "name" : "CoAP simple library",
