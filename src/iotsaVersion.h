@@ -1,9 +1,3 @@
-#ifndef IOTSA_VERSION
-#define IOTSA_VERSION "1.7.2"
-#endif
-#ifndef IOTSA_COMMIT
+#define IOTSA_VERSION "2.0"
 #define IOTSA_COMMIT ""
-#endif
-#ifndef IOTSA_FULL_VERSION
-#define IOTSA_FULL_VERSION ("1.7.2")
-#endif
+#define IOTSA_FULL_VERSION ("2.0")
