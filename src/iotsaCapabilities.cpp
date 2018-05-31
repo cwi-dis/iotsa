@@ -182,7 +182,12 @@ void IotsaCapabilityMod::loop() {
 }
 
 bool IotsaCapabilityMod::allows(const char *obj, IotsaApiOperation verb) {
+#ifdef IOTSA_WITH_HTTP_OR_HTTPS
   loadCapabilitiesFromRequest();
+#endif
+#ifdef IOTSA_WITH_COAP
+  // Need to load capability from coap headers, somehow...
+#endif
   if (capabilities) {
     if (capabilities->allows(obj, verb)) {
       IFDEBUGX IotsaSerial.print("Capability allows operation on ");
