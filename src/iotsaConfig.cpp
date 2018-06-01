@@ -633,15 +633,15 @@ void IotsaConfigMod::loop() {
   			IFDEBUG IotsaSerial.println("Config reconnected");
   		}
   		disconnectedCount = 0;
-	} else {
-		if (disconnectedCount == 0) {
-			IFDEBUG IotsaSerial.println("Config connection lost");
-		}
-		disconnectedCount++;
-		if (disconnectedCount > 60000) {
-			IFDEBUG IotsaSerial.println("Config connection lost too long. Reboot.");
-			ESP.restart();
-		}
-	}
+    } else {
+      if (disconnectedCount == 0) {
+        IFDEBUG IotsaSerial.println("Config connection lost");
+      }
+      disconnectedCount++;
+      if (disconnectedCount > 60000) {
+        IFDEBUG IotsaSerial.println("Config connection lost too long. Reboot.");
+        ESP.restart();
+      }
+    }
   }
 }
