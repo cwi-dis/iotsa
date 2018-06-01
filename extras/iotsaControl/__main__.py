@@ -173,11 +173,7 @@ class Main:
             if not '=' in subCmd:
                 self._ungetcmd(subCmd)
                 break
-            name, rest = subCmd.split('=')
-            if type(rest) == type(()):
-                value = '='.join(rest)
-            else:
-                value = rest
+            name, value = subCmd.split('=', 1)
             self.device.set(name, value)
             anyDone = True
         if not anyDone:
