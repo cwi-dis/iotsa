@@ -61,7 +61,7 @@ bool IotsaRequest::formArgHandler(IotsaWebServer *server, String name) {
     IFDEBUG IotsaSerial.println(url);
     any = true;
   }
-  wtdName = name + "SSL_INFO_NAME";
+  wtdName = name + SSL_INFO_NAME;
   if (server->hasArg(wtdName)) {
     IotsaMod::percentDecode(server->arg(wtdName), sslInfo);
     IFDEBUG IotsaSerial.print(wtdName);
