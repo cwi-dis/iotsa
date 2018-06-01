@@ -17,7 +17,6 @@
 #ifdef IOTSA_WITH_HTTPS
 #include <libb64/cdecode.h>
 #include <libb64/cencode.h>
-#include <Hash.h>
 #endif // IOTSA_WITH_HTTPS
 
 //
@@ -266,7 +265,7 @@ IotsaConfigMod::handler() {
   bool anyChanged = false;
   bool hostnameChanged = false;
   if( server->hasArg("hostName")) {
-    String argValue = server->arg("hostname");
+    String argValue = server->arg("hostName");
     if (argValue != iotsaConfig.hostName) {
       iotsaConfig.hostName = argValue;
       anyChanged = true;
@@ -379,13 +378,10 @@ IotsaConfigMod::handler() {
     message += " (goto configuration mode to change)</p>";
 #ifdef IOTSA_WITH_HTTPS
     if (iotsaConfig.httpsKey == defaultHttpsKey) {
-      message += "<p>Using factory-installed (not very secure) https certificate, ";
+      message += "<p>Using factory-installed (not very secure) https certificate</p>";
     } else {
-      message += "<p>Using uploaded https certificate, ";
+      message += "<p>Using uploaded https certificate.</p>";
     }
-    message += "SHA1 hash=";
-    message += sha1(iotsaConfig.httpsCertificate, iotsaConfig.httpsCertificateLength);
-    message += ".</p>";
 #endif // IOTSA_WITH_HTTPS
   }
   message += "<form method='get'>";
@@ -458,9 +454,6 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   }
   reply["iotsaVersion"] = IOTSA_VERSION;
   reply["iotsaFullVersion"] = IOTSA_FULL_VERSION;
-#ifdef IOTSA_WITH_HTTPS
-  reply["httpsFingerprint"] = sha1(iotsaConfig.httpsCertificate, iotsaConfig.httpsCertificateLength);
-#endif
   reply["program"] = app.title;
 #ifdef IOTSA_CONFIG_PROGRAM_SOURCE
   reply["programSource"] = IOTSA_CONFIG_PROGRAM_SOURCE;

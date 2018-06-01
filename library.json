@@ -44,11 +44,6 @@
             "platforms" : "espressif32"
         },
         {
-            "name" : "Hash",
-            "version" : ">=1.0",
-            "platforms" : "espressif8266"
-        },
-        {
             "name" : "CoAP simple library",
             "version" : "https://github.com/jackjansen/CoAP-simple-library.git"
         }
