@@ -204,7 +204,7 @@ bool IotsaUserMod::allows(const char *right) {
   if (server->authenticate(username.c_str(), curPassword.c_str())) {
     return true;
   }
-#endif
   server->requestAuthentication();
+#endif
   return false;
 }
