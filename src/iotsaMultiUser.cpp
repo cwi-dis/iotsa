@@ -219,7 +219,7 @@ void IotsaMultiUserMod::loop() {
 bool IotsaMultiUserMod::allows(const char *right) {
   // No users means everything is allowed.
   if (users == NULL) return true;
-#ifdef WITH_HTTP_OR_HTTPS
+#ifdef IOTSA_WITH_HTTP_OR_HTTPS
   // Otherwise we loop over all users until we find one that matches.
   IotsaUser *u = users;
   while (u) {
@@ -234,10 +234,10 @@ bool IotsaMultiUserMod::allows(const char *right) {
     }
     u = u->next;
   }
-  server->sendHeader("WWW-Authenticate", "Basic realm=\"Login Required\"");
-  server->send(401, "text/plain", "401 Unauthorized\n");
+  server->requestAuthentication();
   IotsaSerial.print("Return 401 Unauthorized for right=");
   IotsaSerial.println(right);
+
 #endif // WITH_HTTP_OR_HTTPS
   return false;
 }

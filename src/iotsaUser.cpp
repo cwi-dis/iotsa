@@ -205,5 +205,6 @@ bool IotsaUserMod::allows(const char *right) {
     return true;
   }
 #endif
+  server->requestAuthentication();
   return false;
 }
