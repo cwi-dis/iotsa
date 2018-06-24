@@ -392,8 +392,8 @@ IotsaConfigMod::handler() {
     message += String(iotsaConfig.configurationModeTimeout);
     message += "'><br>";
 #ifdef IOTSA_WITH_HTTPS
-    message += "HTTPS private key (base64 DER): <input name='httpsKey'><br>";
-    message += "HTTPS certificate (base64 DER): <input name='httpsCertificate'><br>";
+    message += "HTTPS private key (base64 DER): <br><textarea name='httpsKey' rows='8' cols='60'></textarea><br>";
+    message += "HTTPS certificate (base64 DER): <br><textarea name='httpsCertificate' rows='8' cols='60'></textarea><br>";
 #endif
   }
 
@@ -506,6 +506,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   if (reqObj.containsKey("httpsKey")) {
     const char *b64Value = reqObj.get<char*>("httpsKey");
     int b64len = strlen(b64Value);
+    IFDEBUG IotsaSerial.println("req has httpsKey");
     char *tmpValue = (char *)malloc(base64_decode_expected_len(b64len));
     if (tmpValue) {
       int decodedLen = base64_decode_chars(b64Value, b64len, tmpValue);
@@ -513,6 +514,8 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
         iotsaConfig.httpsKey = (uint8_t *)tmpValue;
         iotsaConfig.httpsKeyLength = decodedLen;
         anyChanged = true;
+      } else {
+        IFDEBUG IotsaSerial.println("could not decode httpsKey");
       }
     } else {
       IFDEBUG IotsaSerial.println("httpsKey malloc failed");
@@ -521,6 +524,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   if (reqObj.containsKey("httpsCertificate")) {
     const char *b64Value = reqObj.get<char*>("httpsCertificate");
     int b64len = strlen(b64Value);
+    IFDEBUG IotsaSerial.println("req has httpsCertificate");
     char *tmpValue = (char *)malloc(base64_decode_expected_len(b64len));
     if (tmpValue) {
       int decodedLen = base64_decode_chars(b64Value, b64len, tmpValue);
@@ -528,6 +532,8 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
         iotsaConfig.httpsCertificate = (uint8_t *)tmpValue;
         iotsaConfig.httpsCertificateLength = decodedLen;
         anyChanged = true;
+      } else {
+        IFDEBUG IotsaSerial.println("could not decode httpsCertificate");
       }
     } else {
       IFDEBUG IotsaSerial.println("httpsCertificate malloc failed");
