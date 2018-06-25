@@ -114,6 +114,15 @@ IotsaApplication::webServerSetup() {
   IFDEBUG IotsaSerial.print(iotsaConfig.httpsKeyLength);
   IFDEBUG IotsaSerial.print(", cert len=");
   IFDEBUG IotsaSerial.println(iotsaConfig.httpsCertificateLength);
+#if 0
+  //xxxjack
+  for(int i=0; i<iotsaConfig.httpsCertificateLength; i++) {
+    IotsaSerial.print(pgm_read_byte(iotsaConfig.httpsCertificate+i), HEX);
+    IotsaSerial.print(' ');
+  }
+  IotsaSerial.println();
+  //xxxjack
+#endif
   server->setServerKeyAndCert_P(
     iotsaConfig.httpsKey,
     iotsaConfig.httpsKeyLength,
