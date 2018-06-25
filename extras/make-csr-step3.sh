@@ -27,21 +27,20 @@ x*)
 	;;
 esac
 
-if [ ! -f tls.$HOSTNAME.key ]; then
-	echo Certificate tls.$HOSTNAME.key not found. Did you run ./make-csr-step1.sh $1 first?
+if [ ! -f tls.$HOSTNAME.key.pem ]; then
+	echo Certificate tls.$HOSTNAME.key.pem not found. Did you run ./make-csr-step1.sh $1 first?
 	exit 1
 fi
-if [ ! -f tls.$HOSTNAME.crt ]; then
-	echo Certificate tls.$HOSTNAME.crt not found. Did you run ./make-csr-step2.sh $1 first?
+if [ ! -f tls.$HOSTNAME.crt.pem ]; then
+	echo Certificate tls.$HOSTNAME.crt.pem not found. Did you run ./make-csr-step2.sh $1 first?
 	exit 1
 fi
 
-# xxd -i tls.$HOSTNAME.key   | sed 's/.*{//' | sed 's/\};//' | sed 's/unsigned.*//' > "key.h"
-# xxd -i tls.$HOSTNAME.crt  | sed 's/.*{//' | sed 's/\};//' | sed 's/unsigned.*//' > "x509.h"
-KEY_B64=`base64 -i tls.$HOSTNAME.key`
-CRT_B64=`base64 -i tls.$HOSTNAME.crt`
-echo
-echo Hex in key.h and x509.h
+openssl rsa -in tls.$HOSTNAME.key.pem -outform DER -out tls.$HOSTNAME.key.der
+openssl x509 -in tls.$HOSTNAME.crt.pem -outform DER -out tls.$HOSTNAME.crt.der
+
+KEY_B64=`base64 -i tls.$HOSTNAME.key.der`
+CRT_B64=`base64 -i tls.$HOSTNAME.crt.der`
 echo
 echo  'Key (base64 DER): ' $KEY_B64
 echo

@@ -5,10 +5,10 @@ x)
 	exit 1
 esac
 HOSTNAME="$1"
-CSR="tls.$HOSTNAME.csr"
+CSR="tls.$HOSTNAME.csr.pem"
 CSRCONFIG="tls.$HOSTNAME.csrconfig"
 CRT="$2"
 KEY="$3"
-OUT="tls.$HOSTNAME.crt"
+OUT="tls.$HOSTNAME.crt.pem"
 
 openssl x509 -req -in $CSR -CA $CRT -CAkey $KEY -CAcreateserial -out $OUT -days 1825 -sha256 -extfile $CSRCONFIG
