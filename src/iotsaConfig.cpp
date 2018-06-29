@@ -262,21 +262,32 @@ void IotsaConfigMod::setup() {
 #ifdef IOTSA_WITH_WEB
 void
 IotsaConfigMod::handler() {
+  bool wrongMode = false;
   bool anyChanged = false;
   bool hostnameChanged = false;
   if( server->hasArg("hostName")) {
     String argValue = server->arg("hostName");
     if (argValue != iotsaConfig.hostName) {
-      iotsaConfig.hostName = argValue;
-      anyChanged = true;
-      hostnameChanged = true;
+      if (iotsaConfig.inConfigurationOrFactoryMode()) {
+        if (needsAuthentication("config")) return;
+        iotsaConfig.hostName = argValue;
+        anyChanged = true;
+        hostnameChanged = true;
+      } else {
+        wrongMode = true;
+      }
     }
   }
   if( server->hasArg("rebootTimeout")) {
     int newValue = server->arg("rebootTimeout").toInt();
     if (newValue != iotsaConfig.configurationModeTimeout) {
-      iotsaConfig.configurationModeTimeout = newValue;
-      anyChanged = true;
+      if (iotsaConfig.inConfigurationMode()) {
+        if (needsAuthentication("config")) return;
+        iotsaConfig.configurationModeTimeout = newValue;
+        anyChanged = true;
+      } else {
+        wrongMode = true;
+      }
     }
   }
   if( server->hasArg("mode")) {
@@ -290,57 +301,65 @@ IotsaConfigMod::handler() {
   }
 #ifdef IOTSA_WITH_HTTPS
   if (server->hasArg("httpsKey") && server->arg("httpsKey") != "") {
-    if (needsAuthentication("config")) return;
-    String b64String(server->arg("httpsKey"));
-    const char *b64Value = b64String.c_str();
-    int b64len = strlen(b64Value);
-    int expDecodeLen = base64_decode_expected_len(b64len);
-    char *tmpValue = (char *)malloc(expDecodeLen);
-    if (tmpValue) {
-      int decLen = base64_decode_chars(b64Value, b64len, tmpValue);
-      if (decLen > 0) {
-        newKey = (uint8_t *)tmpValue;
-        newKeyLength = decLen;
-        IFDEBUG IotsaSerial.print("Decoded httpsKey len=");
-        IFDEBUG IotsaSerial.print(decLen);
-        IFDEBUG IotsaSerial.print(" expLen=");
-        IFDEBUG IotsaSerial.print(expDecodeLen);
-        IFDEBUG IotsaSerial.print(" b64len=");
-        IFDEBUG IotsaSerial.println(b64len);
-        anyChanged = true;
+    if (iotsaConfig.inConfigurationMode()) {
+      if (needsAuthentication("config")) return;
+      String b64String(server->arg("httpsKey"));
+      const char *b64Value = b64String.c_str();
+      int b64len = strlen(b64Value);
+      int expDecodeLen = base64_decode_expected_len(b64len);
+      char *tmpValue = (char *)malloc(expDecodeLen);
+      if (tmpValue) {
+        int decLen = base64_decode_chars(b64Value, b64len, tmpValue);
+        if (decLen > 0) {
+          newKey = (uint8_t *)tmpValue;
+          newKeyLength = decLen;
+          IFDEBUG IotsaSerial.print("Decoded httpsKey len=");
+          IFDEBUG IotsaSerial.print(decLen);
+          IFDEBUG IotsaSerial.print(" expLen=");
+          IFDEBUG IotsaSerial.print(expDecodeLen);
+          IFDEBUG IotsaSerial.print(" b64len=");
+          IFDEBUG IotsaSerial.println(b64len);
+          anyChanged = true;
+        } else {
+          IFDEBUG IotsaSerial.println("Error base64 decoding httpsKey");
+        }
       } else {
-        IFDEBUG IotsaSerial.println("Error base64 decoding httpsKey");
+        IFDEBUG IotsaSerial.println("httpsKey malloc failed");
       }
     } else {
-      IFDEBUG IotsaSerial.println("httpsKey malloc failed");
+      wrongMode = true;
     }
   }
   if (server->hasArg("httpsCertificate") && server->arg("httpsCertificate") != "") {
-    if (needsAuthentication("config")) return;
-    String b64String(server->arg("httpsCertificate"));
-    const char *b64Value = b64String.c_str();
-    int b64len = strlen(b64Value);
-    int expDecodeLen = base64_decode_expected_len(b64len);
-    IFDEBUG IotsaSerial.print("httpsCertificate expected len=");
-    IFDEBUG IotsaSerial.println(expDecodeLen);
-    char *tmpValue = (char *)malloc(expDecodeLen);
-    if (tmpValue) {
-      int decLen = base64_decode_chars(b64Value, b64len, tmpValue);
-      if (decLen > 0) {
-       newCertificate = (uint8_t *)tmpValue;
-       newCertificateLength = decLen;
-        IFDEBUG IotsaSerial.print("Decoded httpsCertificate len=");
-        IFDEBUG IotsaSerial.print(decLen);
-        IFDEBUG IotsaSerial.print(" expLen=");
-        IFDEBUG IotsaSerial.print(expDecodeLen);
-        IFDEBUG IotsaSerial.print(" b64len=");
-        IFDEBUG IotsaSerial.println(b64len);
-        anyChanged = true;
+    if (iotsaConfig.inConfigurationMode()) {
+      if (needsAuthentication("config")) return;
+      String b64String(server->arg("httpsCertificate"));
+      const char *b64Value = b64String.c_str();
+      int b64len = strlen(b64Value);
+      int expDecodeLen = base64_decode_expected_len(b64len);
+      IFDEBUG IotsaSerial.print("httpsCertificate expected len=");
+      IFDEBUG IotsaSerial.println(expDecodeLen);
+      char *tmpValue = (char *)malloc(expDecodeLen);
+      if (tmpValue) {
+        int decLen = base64_decode_chars(b64Value, b64len, tmpValue);
+        if (decLen > 0) {
+        newCertificate = (uint8_t *)tmpValue;
+        newCertificateLength = decLen;
+          IFDEBUG IotsaSerial.print("Decoded httpsCertificate len=");
+          IFDEBUG IotsaSerial.print(decLen);
+          IFDEBUG IotsaSerial.print(" expLen=");
+          IFDEBUG IotsaSerial.print(expDecodeLen);
+          IFDEBUG IotsaSerial.print(" b64len=");
+          IFDEBUG IotsaSerial.println(b64len);
+          anyChanged = true;
+        } else {
+          IFDEBUG IotsaSerial.println("Error base64 decoding httpsCertificate");
+        }
       } else {
-        IFDEBUG IotsaSerial.println("Error base64 decoding httpsCertificate");
+        IFDEBUG IotsaSerial.println("httpsCertificate malloc failed");
       }
     } else {
-      IFDEBUG IotsaSerial.println("httpsCertificate malloc failed");
+      wrongMode = true;
     }
   }
 #endif // IOTSA_WITH_HTTPS
@@ -357,6 +376,9 @@ IotsaConfigMod::handler() {
 	}
 
   String message = "<html><head><title>Iotsa configuration</title></head><body><h1>Iotsa configuration</h1>";
+  if (wrongMode) {
+    message += "<p><em>Error:</em> must be in configuration mode to change some of these parameters.</p>";
+  }
   if (anyChanged) {
     message += "<p>Settings saved to EEPROM.</p>";
     if (hostnameChanged) {
@@ -489,15 +511,24 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
 
 bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
+  bool wrongMode = false;
   JsonObject& reqObj = request.as<JsonObject>();
   if (reqObj.containsKey("hostName")) {
-    iotsaConfig.hostName = reqObj.get<String>("hostName");
-    anyChanged = true;
-    reply["needsReboot"] = true;
+    if (iotsaConfig.inConfigurationOrFactoryMode()) {
+      iotsaConfig.hostName = reqObj.get<String>("hostName");
+      anyChanged = true;
+      reply["needsReboot"] = true;
+    } else {
+      wrongMode = true;
+    }
   }
   if (reqObj.containsKey("modeTimeout")) {
-    iotsaConfig.configurationModeTimeout = reqObj.get<int>("modeTimeout");
-    anyChanged = true;
+    if (iotsaConfig.inConfigurationMode()) {
+      iotsaConfig.configurationModeTimeout = reqObj.get<int>("modeTimeout");
+      anyChanged = true;
+    } else {
+      wrongMode = true;
+    }
   }
   if (reqObj.containsKey("requestedMode")) {
     iotsaConfig.nextConfigurationMode = config_mode(reqObj.get<int>("requestedMode"));
@@ -511,42 +542,53 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   }
 #ifdef IOTSA_WITH_HTTPS
   if (reqObj.containsKey("httpsKey")) {
-    const char *b64Value = reqObj.get<char*>("httpsKey");
-    int b64len = strlen(b64Value);
-    IFDEBUG IotsaSerial.println("req has httpsKey");
-    char *tmpValue = (char *)malloc(base64_decode_expected_len(b64len));
-    if (tmpValue) {
-      int decodedLen = base64_decode_chars(b64Value, b64len, tmpValue);
-      if (decodedLen > 0) {
-        newKey = (uint8_t *)tmpValue;
-        newKeyLength = decodedLen;
-        anyChanged = true;
+    if (iotsaConfig.inConfigurationMode()) {
+      const char *b64Value = reqObj.get<char*>("httpsKey");
+      int b64len = strlen(b64Value);
+      IFDEBUG IotsaSerial.println("req has httpsKey");
+      char *tmpValue = (char *)malloc(base64_decode_expected_len(b64len));
+      if (tmpValue) {
+        int decodedLen = base64_decode_chars(b64Value, b64len, tmpValue);
+        if (decodedLen > 0) {
+          newKey = (uint8_t *)tmpValue;
+          newKeyLength = decodedLen;
+          anyChanged = true;
+        } else {
+          IFDEBUG IotsaSerial.println("could not decode httpsKey");
+        }
       } else {
-        IFDEBUG IotsaSerial.println("could not decode httpsKey");
+        IFDEBUG IotsaSerial.println("httpsKey malloc failed");
       }
     } else {
-      IFDEBUG IotsaSerial.println("httpsKey malloc failed");
+      wrongMode = true;
     }
   }
   if (reqObj.containsKey("httpsCertificate")) {
-    const char *b64Value = reqObj.get<char*>("httpsCertificate");
-    int b64len = strlen(b64Value);
-    IFDEBUG IotsaSerial.println("req has httpsCertificate");
-    char *tmpValue = (char *)malloc(base64_decode_expected_len(b64len));
-    if (tmpValue) {
-      int decodedLen = base64_decode_chars(b64Value, b64len, tmpValue);
-      if (decodedLen > 0) {
-        newCertificate = (uint8_t *)tmpValue;
-        newCertificateLength = decodedLen;
-        anyChanged = true;
+    if (iotsaConfig.inConfigurationMode()) {
+      const char *b64Value = reqObj.get<char*>("httpsCertificate");
+      int b64len = strlen(b64Value);
+      IFDEBUG IotsaSerial.println("req has httpsCertificate");
+      char *tmpValue = (char *)malloc(base64_decode_expected_len(b64len));
+      if (tmpValue) {
+        int decodedLen = base64_decode_chars(b64Value, b64len, tmpValue);
+        if (decodedLen > 0) {
+          newCertificate = (uint8_t *)tmpValue;
+          newCertificateLength = decodedLen;
+          anyChanged = true;
+        } else {
+          IFDEBUG IotsaSerial.println("could not decode httpsCertificate");
+        }
       } else {
-        IFDEBUG IotsaSerial.println("could not decode httpsCertificate");
+        IFDEBUG IotsaSerial.println("httpsCertificate malloc failed");
       }
     } else {
-      IFDEBUG IotsaSerial.println("httpsCertificate malloc failed");
+      wrongMode = true;
     }
   }
 #endif // IOTSA_WITH_HTTPS
+  if (wrongMode) {
+    IFDEBUG IotsaSerial.println("Not in config mode");
+  }
   if (anyChanged) configSave();
   if (reqObj.get<bool>("reboot")) {
     IFDEBUG IotsaSerial.println("Restart in 2 seconds.");

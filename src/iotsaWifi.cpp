@@ -191,6 +191,10 @@ bool IotsaWifiMod::getHandler(const char *path, JsonObject& reply) {
 
 bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
+  if (!iotsaConfig.inConfigurationOrFactoryMode()) {
+    IFDEBUG IotsaSerial.println("Not in config mode");
+    return false;
+  }
   JsonObject& reqObj = request.as<JsonObject>();
   if (reqObj.containsKey("ssid")) {
     ssid = reqObj.get<String>("ssid");
