@@ -62,6 +62,18 @@ The following features are defined:
 
 There are a few more that are not very important, please inspect `iotsaBuildOptions.h`.
 
+## HTTPS support
+
+If a iotsa application is built with `IOTSA_WITH_HTTPS` if will initially use a builtin key and certificate. This is **NOT** secure, because the key and certificate are contained in the github source repository, and therefore known to the world.
+
+After building and flashing your software for the first time you should create a new, unique, key and certificate. There are three ways to do this, using scripts in the `extras` directory:
+
+- `extras/name-self-signed-cert.sh` creates a self-signed certificate. This can be copied into your source code (before building and flashing).
+- `extras/make-csr-step{1,2,3}.sh` these create a key and self-signed or CA-signed certificate that can be uploaded to the iotsa device using `iotsaControl`.
+- `extras/make-igor-signed-cert.sh` creates a key and certificate signed by your [Igor](https://github.com/cwi-dis/igor) CA and uploads it to your device.
+
+Note that HTTPS support here refers to iotsa as a server only, HTTPS client support (for the _iotsaButton_ and _iotsaRequest_ modules) is completely independent.
+
 ## Controlling iotsa devices
 
 ### iotsaControl
