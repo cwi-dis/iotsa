@@ -63,7 +63,9 @@ void IotsaWifiMod::setup() {
 #ifdef IOTSA_WITH_HTTP
         MDNS.addService(PREPU("http"), PREPU("tcp"), 80);
 //        MDNS.addService(PREPU("iotsa._sub._http"), PREPU("tcp"), 80);
+#ifndef IOTSA_WITH_HTTPS
         MDNS.addService(PREPU("iotsa"), PREPU("tcp"), 80);
+#endif
 #endif
 #ifdef IOTSA_WITH_COAP
         MDNS.addService(PREPU("coap"), PREPU("udp"), 5683);

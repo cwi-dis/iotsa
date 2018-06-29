@@ -11,7 +11,15 @@
 
 class IotsaConfigMod : public IotsaConfigModBaseMod {
 public:
-  IotsaConfigMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL) : IotsaConfigModBaseMod(_app, _auth, true) {}
+  IotsaConfigMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL)
+  : IotsaConfigModBaseMod(_app, _auth, true) 
+#ifdef IOTSA_WITH_HTTPS
+  , newCertificate(NULL),
+  newCertificateLength(0),
+  newKey(NULL),
+  newKeyLength(0)
+#endif // IOTSA_WITH_HTTPS
+  {}
 	void setup();
 	void serverSetup();
 	void loop();
@@ -23,6 +31,12 @@ private:
   void configLoad();
   void configSave();
   void handler();
+#ifdef IOTSA_WITH_HTTPS
+  const uint8_t* newCertificate;
+  size_t newCertificateLength;
+  const uint8_t* newKey;
+  size_t newKeyLength;
+#endif // IOTSA_WITH_HTTPS
 };
 
 #endif

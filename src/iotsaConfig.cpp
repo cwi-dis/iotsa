@@ -299,8 +299,8 @@ IotsaConfigMod::handler() {
     if (tmpValue) {
       int decLen = base64_decode_chars(b64Value, b64len, tmpValue);
       if (decLen > 0) {
-        iotsaConfig.httpsKey = (uint8_t *)tmpValue;
-        iotsaConfig.httpsKeyLength = decLen;
+        newKey = (uint8_t *)tmpValue;
+        newKeyLength = decLen;
         IFDEBUG IotsaSerial.print("Decoded httpsKey len=");
         IFDEBUG IotsaSerial.print(decLen);
         IFDEBUG IotsaSerial.print(" expLen=");
@@ -327,8 +327,8 @@ IotsaConfigMod::handler() {
     if (tmpValue) {
       int decLen = base64_decode_chars(b64Value, b64len, tmpValue);
       if (decLen > 0) {
-       iotsaConfig.httpsCertificate = (uint8_t *)tmpValue;
-       iotsaConfig.httpsCertificateLength = decLen;
+       newCertificate = (uint8_t *)tmpValue;
+       newCertificateLength = decLen;
         IFDEBUG IotsaSerial.print("Decoded httpsCertificate len=");
         IFDEBUG IotsaSerial.print(decLen);
         IFDEBUG IotsaSerial.print(" expLen=");
@@ -378,7 +378,7 @@ IotsaConfigMod::handler() {
     message += " (goto configuration mode to change)</p>";
 #ifdef IOTSA_WITH_HTTPS
     if (iotsaConfig.httpsKey == defaultHttpsKey) {
-      message += "<p>Using factory-installed (not very secure) https certificate</p>";
+      message += "<p>Using factory-installed (<b>not very secure</b>) https certificate</p>";
     } else {
       message += "<p>Using uploaded https certificate.</p>";
     }
@@ -511,8 +511,8 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
     if (tmpValue) {
       int decodedLen = base64_decode_chars(b64Value, b64len, tmpValue);
       if (decodedLen > 0) {
-        iotsaConfig.httpsKey = (uint8_t *)tmpValue;
-        iotsaConfig.httpsKeyLength = decodedLen;
+        newKey = (uint8_t *)tmpValue;
+        newKeyLength = decodedLen;
         anyChanged = true;
       } else {
         IFDEBUG IotsaSerial.println("could not decode httpsKey");
@@ -529,8 +529,8 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
     if (tmpValue) {
       int decodedLen = base64_decode_chars(b64Value, b64len, tmpValue);
       if (decodedLen > 0) {
-        iotsaConfig.httpsCertificate = (uint8_t *)tmpValue;
-        iotsaConfig.httpsCertificateLength = decodedLen;
+        newCertificate = (uint8_t *)tmpValue;
+        newCertificateLength = decodedLen;
         anyChanged = true;
       } else {
         IFDEBUG IotsaSerial.println("could not decode httpsCertificate");
@@ -596,11 +596,13 @@ void IotsaConfigMod::configSave() {
   cf.put("hostName", iotsaConfig.hostName);
   cf.put("rebootTimeout", iotsaConfig.configurationModeTimeout);
 #ifdef IOTSA_WITH_HTTPS
-  if (iotsaConfig.httpsKey != defaultHttpsKey && iotsaConfig.httpsCertificate != defaultHttpsCertificate) {
-    iotsaConfigFileSaveBinary("/config/httpsKey.der", iotsaConfig.httpsKey, iotsaConfig.httpsKeyLength);
+  if (newKey && newCertificate) {
+    iotsaConfigFileSaveBinary("/config/httpsKey.der", newKey, newKeyLength);
     IFDEBUG IotsaSerial.println("saved /config/httpsKey.der");
-    iotsaConfigFileSaveBinary("/config/httpsCert.der", iotsaConfig.httpsCertificate, iotsaConfig.httpsCertificateLength);
+    iotsaConfigFileSaveBinary("/config/httpsCert.der", newCertificate, newCertificateLength);
     IFDEBUG IotsaSerial.println("saved /config/httpsCert.der");
+  } else if (newKey || newCertificate) {
+    IFDEBUG IotsaSerial.println("Not saving key/cert unless both are set");
   }
 #endif // IOTSA_WITH_HTTPS
   IFDEBUG IotsaSerial.println("Saved config.cfg");
