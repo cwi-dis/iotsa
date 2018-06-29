@@ -60,9 +60,10 @@
 #endif
 
 // Consistency checks
-#if defined(IOTSA_WITH_HTTP) && defined(IOTSA_WITH_HTTPS)
-#error IOTSA HTTP or HTTPS can be defined, not both
-#endif
+
+//#if defined(IOTSA_WITH_HTTP) && defined(IOTSA_WITH_HTTPS)
+//#error IOTSA HTTP or HTTPS can be defined, not both
+//#endif
 
 #if defined(IOTSA_WITH_REST) && !(defined(IOTSA_WITH_HTTP) || defined(IOTSA_WITH_HTTPS))
 #error IOTSA REST support requires HTTP or HTTPS support

@@ -11,7 +11,7 @@
 #include <ESP8266WiFi.h>
 #endif
 
-#ifdef IOTSA_WITH_HTTP
+#if defined(IOTSA_WITH_HTTP) && !defined(IOTSA_WITH_HTTPS)
 #ifdef ESP32
 #include <ESP32WebServer.h>
 typedef ESP32WebServer IotsaWebServer;

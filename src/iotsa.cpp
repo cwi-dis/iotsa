@@ -13,6 +13,38 @@
 // Will be overridden if the iotsaLogger module is included.
 Print *iotsaOverrideSerial = &Serial;
 
+#if defined(IOTSA_WITH_HTTPS) && defined(IOTSA_WITH_HTTP)
+// Tiny http server which forwards to https
+class TinyForwardServer {
+public:
+  ESP8266WebServer server;
+  TinyForwardServer()
+  : server(80)
+  {
+    server.onNotFound(std::bind(&TinyForwardServer::notFound, this));
+    server.begin();
+  }
+  void notFound() {
+    String newLoc = "https://";
+    if (iotsaConfig.wifiPrivateNetworkMode) {
+      newLoc += "192.168.4.1";
+    } else {
+      newLoc += iotsaConfig.hostName;
+      newLoc += ".local";
+    }
+    newLoc += server.uri();
+    IFDEBUG IotsaSerial.print("HTTP 301 to ");
+    IFDEBUG IotsaSerial.println(newLoc);
+    server.sendHeader("Location", newLoc);
+    server.uri();
+    server.send(301, "", "");
+  }
+};
+
+static TinyForwardServer *singletonTFS;
+
+#endif // defined(IOTSA_WITH_HTTPS) && defined(IOTSA_WITH_HTTP)
+
 IotsaApplication::IotsaApplication(const char *_title)
 : status(NULL),
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
@@ -67,6 +99,10 @@ IotsaApplication::setup() {
 #ifndef ESP32
   ESP.wdtEnable(WDTO_120MS);
 #endif
+#if defined(IOTSA_WITH_HTTPS) && defined(IOTSA_WITH_HTTP)
+  if (singletonTFS == NULL)
+    singletonTFS = new TinyForwardServer();
+#endif // defined(IOTSA_WITH_HTTPS) && defined(IOTSA_WITH_HTTP)
 }
 
 void
@@ -141,6 +177,9 @@ IotsaApplication::webServerSetup() {
 void
 IotsaApplication::webServerLoop() {
   server->handleClient();
+#if defined(IOTSA_WITH_HTTPS) && defined(IOTSA_WITH_HTTP)
+  singletonTFS->server.handleClient();
+#endif
 }
 
 void
