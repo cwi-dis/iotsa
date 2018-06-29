@@ -199,6 +199,11 @@ public:
 #endif // IOTSA_WITH_HTTPS
 
   bool inConfigurationMode() { return configurationMode == IOTSA_MODE_CONFIG; }
+  bool inConfigurationOrFactoryMode() { 
+    if (configurationMode == IOTSA_MODE_CONFIG) return true;
+    if (wifiPrivateNetworkMode && configurationModeEndTime == 0) return true;
+    return false;
+  }
   uint32_t getStatusColor() {
     if (!WiFi.isConnected()) return 0x3f1f00; // Orange: not connected to WiFi
     if (configurationMode == IOTSA_MODE_FACTORY_RESET) return 0x3f0000; // Red: Factory reset mode

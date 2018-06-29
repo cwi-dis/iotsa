@@ -360,7 +360,11 @@ IotsaConfigMod::handler() {
   if (anyChanged) {
     message += "<p>Settings saved to EEPROM.</p>";
     if (hostnameChanged) {
-      message += "<p><em>Rebooting device to change hostname</em>.</p>";    
+      if (iotsaConfig.wifiPrivateNetworkMode) {
+        message += "<p>Not rebooting, so you can also change <a href='/wificonfig'>Wifi config</a>.</p>";
+      } else {
+        message += "<p><em>Rebooting device to change hostname</em>.</p>";
+      }   
     }
     if (iotsaConfig.nextConfigurationMode) {
       message += "<p><em>Special mode ";
@@ -385,10 +389,13 @@ IotsaConfigMod::handler() {
 #endif // IOTSA_WITH_HTTPS
   }
   message += "<form method='get'>";
-  if (iotsaConfig.inConfigurationMode()) {
+  if (iotsaConfig.inConfigurationOrFactoryMode()) {
     message += "Hostname: <input name='hostName' value='";
     message += htmlEncode(iotsaConfig.hostName);
-    message += "'><br>Configuration mode timeout: <input name='rebootTimeout' value='";
+    message += "'><br>";
+  }
+  if (iotsaConfig.inConfigurationMode()) {
+    message += "Configuration mode timeout: <input name='rebootTimeout' value='";
     message += String(iotsaConfig.configurationModeTimeout);
     message += "'><br>";
 #ifdef IOTSA_WITH_HTTPS
@@ -410,7 +417,7 @@ IotsaConfigMod::handler() {
   message += "<input type='submit'></form>";
   message += "</body></html>";
   server->send(200, "text/html", message);
-  if (hostnameChanged) {
+  if (hostnameChanged && !iotsaConfig.wifiPrivateNetworkMode) {
     IFDEBUG IotsaSerial.println("Restart in 2 seconds");
     rebootAt = millis() + 2000;
   }

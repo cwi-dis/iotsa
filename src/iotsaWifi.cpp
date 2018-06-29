@@ -119,7 +119,7 @@ IotsaWifiMod::handler() {
   if (needsAuthentication("config")) return;
   bool anyChanged = false;
   if( server->hasArg("ssid")) {
-    if (iotsaConfig.inConfigurationMode() || iotsaConfig.wifiPrivateNetworkMode) {
+    if (iotsaConfig.inConfigurationOrFactoryMode()) {
       ssid = server->arg("ssid");
       anyChanged = true;
     } else {
@@ -127,7 +127,7 @@ IotsaWifiMod::handler() {
     }
   }
   if( server->hasArg("ssidPassword")) {
-    if (iotsaConfig.inConfigurationMode() || iotsaConfig.wifiPrivateNetworkMode) {
+    if (iotsaConfig.inConfigurationOrFactoryMode()) {
       ssidPassword = server->arg("ssidPassword");
       anyChanged = true;
     } else {
