@@ -1,3 +1,10 @@
+iotsa 2.0.1 - 01-Jul-2018
+
+- Various changes to make https (server side) more usable, such as
+  interfacing to the Igor Certificate Authority, and forwarding http
+  requests to https. Added some scripts to help create certificates.
+- Bug fixes for some security issues (which allowed config changes when not in config mode)
+
 iotsa 2.0 - 31-May-2018
 
 - The API has changed in an incompatible way: you no longer need to create the IotsaWebServer object
