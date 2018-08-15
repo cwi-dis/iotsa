@@ -1,18 +1,6 @@
 #include "iotsaUser.h"
 #include "iotsaConfigFile.h"
 
-String &defaultPassword() {
-  static String dftPwd;
-  if (dftPwd == "") {
-#ifdef ESP32
-	  randomSeed(ESP.getEfuseMac());
-#else
-	  randomSeed(ESP.getChipId());
-#endif
-	  dftPwd = String("password") + String(random(1000));
-  }
-  return dftPwd;
-}
 
 IotsaUserMod::IotsaUserMod(IotsaApplication &_app, const char *_username, const char *_password)
 :	IotsaAuthMod(_app),
@@ -48,7 +36,7 @@ IotsaUserMod::handler() {
   }
   if( server->hasArg("password")) {
     // password authentication is checked later.
-    String pw1 = server->arg("passwd");
+    String pw1 = server->arg("password");
     String pw2 = server->arg("again");
     String old = server->arg("old");
     oldPasswordCorrect = (old == password);
@@ -65,10 +53,9 @@ IotsaUserMod::handler() {
   if (anyChanged) configSave();
   
   String message = "<html><head><title>Edit users and passwords</title></head><body><h1>Edit users and passwords</h1>";
-  if (anyChanged && newUsername != "") {
-  	message += "<p><em>Username changed.</e,></p>";
-  }
-  if (passwordChanged && anyChanged) {
+  if (anyChanged && !passwordChanged) {
+  	message += "<p><em>Username changed.</em></p>";
+  } else if (passwordChanged && anyChanged) {
   	message += "<p><em>Password has been changed.</em></p>";
   } else if (passwordChanged && !oldPasswordCorrect) {
   	message += "<p><em>Old password incorrect.</em></p>";
@@ -79,37 +66,27 @@ IotsaUserMod::handler() {
   message += "<form method='get'>Username: <input name='username' value='";
   message += htmlEncode(username);
   message += "'>";
-  message += "<br>Old Password: <input type='password' name='old' value=''";
-  message += "empty1";
-  message += "'>";
-  if (password == "") {
-    if (iotsaConfig.inConfigurationMode()) {
-      message += "<br><i>(Password not set, default is '";
-      message += defaultPassword();
-      message += "')</i>";
-    } else {
-      message += "<br><i>(Password not set, reboot in configuration mode to see default password)</i>)";
-    }
+  if (password != "") {
+    message += "<br>Old Password: <input type='password' name='old' value=''";
+    message += "";
+    message += "'>";
   }
   message += "<br>New Password: <input type='password' name='password' value='";
-  message += "empty2";
+  message += "";
   message += "'><br>Repeat New Password: <input type='password' name='again' value='";
-  message += "empty3";
+  message += "";
   message += "'><br><input type='submit'></form>";
   server->send(200, "text/html", message);
 }
 
 String IotsaUserMod::info() {
-  String message = "<p>Usernames/passwords enabled.";
-  message += " See <a href=\"/users\">/users</a> to change.";
-  if (iotsaConfig.inConfigurationMode() && password == "") {
-  	message += "<br>Username and password are the defaults: '";
-  	message += htmlEncode(username);
-  	message += "' and '";
-  	String &dfp = defaultPassword();
-  	message += dfp;
-  	message += "'.";
+  String message = "<p>Username/password protection ";
+  if (username == "" || password == "") {
+    message += "supported, but not currently enabled.";
+  } else {
+    message += "enabled.";
   }
+  message += " See <a href=\"/users\">/users</a> to change.";
   message += "</p>";
   return message;
 }
@@ -176,10 +153,6 @@ void IotsaUserMod::configLoad() {
   IotsaSerial.print(username);
   IotsaSerial.print(", password length=");
   IotsaSerial.println(password.length());
-  if (password.length() == 0) {
-    IotsaSerial.print("Default password set to ");
-    IotsaSerial.println(defaultPassword());
-  }
 }
 
 void IotsaUserMod::configSave() {
@@ -197,11 +170,10 @@ void IotsaUserMod::loop() {
 
 bool IotsaUserMod::allows(const char *right) {
   // We ignore "right", username/password grants all rights.
-  String &curPassword = password;
-  if (curPassword == "")
-  	curPassword = defaultPassword();
+  if (password == "" || username == "")
+    return true;
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
-  if (server->authenticate(username.c_str(), curPassword.c_str())) {
+  if (server->authenticate(username.c_str(), password.c_str())) {
     return true;
   }
   server->requestAuthentication();

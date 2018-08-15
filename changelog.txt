@@ -1,3 +1,7 @@
+iotsa 2.0.XXX
+
+- Got rid of default password, it provides no extra security.
+
 iotsa 2.0.1 - 01-Jul-2018
 
 - Various changes to make https (server side) more usable, such as
