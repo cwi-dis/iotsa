@@ -143,6 +143,8 @@ IotsaWifiMod::handler() {
   }
   if (wrongMode) {
     message += "<p><em>Error:</em> must be in configuration mode to change WiFi settings. See <a href='/config'>/config</a> to enable.</p>";
+  } else if(!iotsaConfig.inConfigurationOrFactoryMode()) {
+    message += "<p><i>(Note: you must be in configuration mode to change WiFi settings)</i></p>";
   }
   message += "<p>Hostname: ";
   message += htmlEncode(iotsaConfig.hostName);
