@@ -29,5 +29,5 @@ echo
 echo  'Certificate (base64 DER): ' $CRT_B64
 echo
 echo Command line:
-echo + iotsaControl --target $HOSTNAME --protocol https --noverify configWait config httpsKey="$KEY_B64" httpsCertificate="$CRT_B64" reboot=1
-iotsaControl --target $HOSTNAME --protocol https --noverify configWait config httpsKey="$KEY_B64" httpsCertificate="$CRT_B64" reboot=1
+echo + iotsaControl $IOTSA_CONTROL_ARGS --target $HOSTNAME --protocol https --noverify configWait config httpsKey="$KEY_B64" httpsCertificate="$CRT_B64" reboot=1
+iotsaControl $IOTSA_CONTROL_ARGS --target $HOSTNAME --protocol https --noverify configWait config httpsKey="$KEY_B64" httpsCertificate="$CRT_B64" reboot=1
