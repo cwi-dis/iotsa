@@ -104,7 +104,9 @@ bool IotsaUserMod::getHandler(const char *path, JsonObject& reply) {
 }
 
 bool IotsaUserMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
-  return false;
+  // PUT to /api/users is equivalent to POST /api/users/0 (because of iotsaControl issues)
+  if (strcmp(path, "/api/users") != 0) return false;
+  return postHandler("/api/users/0", request, reply);
 }
 
 bool IotsaUserMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
