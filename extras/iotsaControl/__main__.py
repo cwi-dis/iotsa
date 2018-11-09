@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 from __future__ import print_function
 from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 import argparse
 import sys
 import requests
@@ -9,7 +12,7 @@ from . import api
 import os
 import subprocess
 from . import machdep
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import socket
 
 orig_getaddrinfo = socket.getaddrinfo
@@ -18,7 +21,7 @@ def ipv4_getaddrinfo(host, port, family=0, socktype=0, proto=0, flags=0):
         family = socket.AF_INET
     return orig_getaddrinfo(host, port, family, socktype, proto, flags)
     
-class Main:
+class Main(object):
     """Main commandline program"""
     
     def __init__(self):
@@ -223,7 +226,7 @@ class Main:
         if not filename:
             print("%s: ota requires a filename or URL" % sys.argv[0], file=sys.stderr)
             sys.exit(1)
-        filename, _ = urllib.urlretrieve(filename)
+        filename, _ = urllib.request.urlretrieve(filename)
         self.loadDevice()
         ESPOTA="~/.platformio/packages/tool-espotapy/espota.py"
         ESPOTA = os.environ.get("ESPOTA", ESPOTA)

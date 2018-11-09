@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import object
 import sys
 import time
 import os
@@ -8,7 +9,7 @@ VERBOSE=False
 if sys.platform == 'darwin':
     import subprocess
     import plistlib
-    class PlatformWifi:
+    class PlatformWifi(object):
         def __init__(self):
             self.wifiInterface = os.getenv('IOTSA_WIFI', 'en2')
 
@@ -16,7 +17,7 @@ if sys.platform == 'darwin':
             if VERBOSE: print('Listing wifi networks (OSX)')
             p = subprocess.Popen('/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport --scan --xml', shell=True, stdout=subprocess.PIPE)
             data = plistlib.readPlist(p.stdout)
-            wifiNames = map(lambda d : d['SSID_STR'], data)
+            wifiNames = [d['SSID_STR'] for d in data]
             wifiNames.sort()
             if VERBOSE: print('Wifi networks found:', wifiNames)
             return wifiNames
@@ -43,7 +44,7 @@ if sys.platform == 'darwin':
 if sys.platform in ('darwin', 'linux2'):
     import zeroconf
     
-    class PlatformMDNSCollector:
+    class PlatformMDNSCollector(object):
         def __init__(self):
             self.found = []
             if VERBOSE: print('Start mDNS browser for _iotsa._tcp.local.')

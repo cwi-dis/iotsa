@@ -1,12 +1,16 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import object
 import sys
 import socket
 import requests
 import copy
 import coapthon.client.helperclient
 import coapthon.defines
-import urlparse
+import urllib.parse
 from json import loads as json_loads
 from json import dumps as json_dumps
 
@@ -18,7 +22,7 @@ class UserIntervention(Exception):
 class CoapError(Exception):
     pass
 
-class PlatformWifi:
+class PlatformWifi(object):
     """Default WiFi handling: asl the user."""
     def __init__(self):
         pass
@@ -32,7 +36,7 @@ class PlatformWifi:
     def platformCurrentWifiNetworks(self):
         return []
 
-class PlatformMDNSCollector:
+class PlatformMDNSCollector(object):
     """Default mDNS handling: ask the user"""
     def __init__(self):
         pass
@@ -110,7 +114,7 @@ class IotsaWifi(PlatformWifi):
     def currentDevice(self):
         return self.device
         
-class IotsaRESTProtocolHandler:
+class IotsaRESTProtocolHandler(object):
     def __init__(self, baseURL, noverify=False):
         if baseURL[-1] != '/':
             baseURL += '/'
@@ -143,9 +147,9 @@ class IotsaRESTProtocolHandler:
             return r.json()
         return None
 
-class IotsaCOAPProtocolHandler:
+class IotsaCOAPProtocolHandler(object):
     def __init__(self, baseURL):
-        parts = urlparse.urlparse(baseURL)
+        parts = urllib.parse.urlparse(baseURL)
         self.basePath = parts.path
         if not self.basePath:
             self.basePath = '/'
@@ -225,7 +229,7 @@ HandlerForProto = {
     'coap' : IotsaCOAPProtocolHandler,
 }
 
-class IotsaConfig:
+class IotsaConfig(object):
     def __init__(self, device, api):
         self.device = device
         self.endpoint = api
@@ -250,7 +254,7 @@ class IotsaConfig:
         
     def printStatus(self):
         print('%s:' % self.device.ipAddress)
-        for k, v in self.status.items():
+        for k, v in list(self.status.items()):
             print('  %-16s %s' % (str(k)+':', v))
             
 class IotsaDevice(IotsaConfig):
@@ -336,7 +340,7 @@ class IotsaDevice(IotsaConfig):
         for m in status.pop('modules', ['???']):
             print(m, end=' ')
         print()
-        for k, v in status.items():
+        for k, v in list(status.items()):
             print('  %-16s %s' % (k+':', v))
             
     def modeName(self, mode):

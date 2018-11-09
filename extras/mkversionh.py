@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
+from builtins import object
 import json
 import sys
 import os
@@ -8,7 +9,7 @@ import subprocess
 
 DEFINE_PAT=re.compile(r'^#define\s+(?P<name>\w+)\s+(?P<value>.*)\s+$')
 
-class VersionFile:
+class VersionFile(object):
     def __init__(self, includeFile):
         self.includeFile = includeFile
         self.defines = {}
@@ -26,7 +27,7 @@ class VersionFile:
         
     def save(self):
         fp = open(self.includeFile, 'w')
-        for name, value in self.defines.items():
+        for name, value in list(self.defines.items()):
             fp.write('#define %s %s\n' % (name, value))
             
     def get(self, key, default=None):
