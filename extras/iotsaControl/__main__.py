@@ -108,6 +108,7 @@ class Main(object):
         parser.add_argument("--credentials", metavar="USER:PASS", help="Add Authorization: Basic header line with given credentials")
         parser.add_argument("--noverify", action='store_true', help="Disable verification of https signatures")
     #    parser.add_argument("--certificate", metavar='CERTFILE', help="Verify https certificates from given file")
+        parser.add_argument('--noSystemRootCertificates', action="store_true", help='Do not use system root certificates, use REQUESTS_CA_BUNDLE or what requests package has')
         parser.add_argument("--compat", action="store_true", help="Compatability for old iotsa devices (ota only)")
         parser.add_argument("command", nargs="+", help="Command to run (help for list)")
         self.args = parser.parse_args()
@@ -119,6 +120,15 @@ class Main(object):
             # See https://github.com/esp8266/Arduino/issues/2110 for details.
             # We monkey-patch getaddrinfo to look only for IPv4 addresses.
             socket.getaddrinfo = ipv4_getaddrinfo
+        if not args.noSystemRootCertificates and not os.environ.get('REQUESTS_CA_BUNDLE', None):
+            # The requests package uses its own set of certificates, ignoring the ones the user has added to the system
+            # set. By default, override that behaviour.
+            for cf in ["/etc/ssl/certs/ca-certificates.crt", "/etc/ssl/certs/ca-certificates.crt"]:
+                if os.path.exists(cf):
+                    os.putenv('REQUESTS_CA_BUNDLE', cf)
+                    os.environ['REQUESTS_CA_BUNDLE'] = cf
+                    break
+
     def _getcmd(self):
         """Helper method to handle multiple commands"""
         if not self.cmdlist: return None
