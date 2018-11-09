@@ -4,6 +4,7 @@ See:
 https://packaging.python.org/en/latest/distributing.html
 https://github.com/pypa/sampleproject
 """
+from __future__ import unicode_literals
 
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages
@@ -13,6 +14,14 @@ from os import path
 import os
 import sys
 
+# Which CoAPthon version to use
+if sys.version_info.major == 2:
+    COAPTHON="CoAPThon"
+    ZEROCONF="zeroconf2"
+else:
+    COAPTON="CoAPThon3"
+    ZEROCONF="zeroconf"
+    
 here = path.abspath(path.dirname(__file__))
 long_description = """
 Control program (and module) for iotsa devices. Allows finding of iotsa devices on the local
@@ -78,7 +87,7 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=["requests", "zeroconf==0.19.1", "CoAPthon"],
+    install_requires=["requests", ZEROCONF, COAPTHON],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,

@@ -1,0 +1,6 @@
+requests
+zeroconf2; python_version < '3.0'
+zeroconf; python_version >= '3.0'
+CoAPthon; python_version < '3.0'
+CoAPthon3; python_version >= '3.0'
+
