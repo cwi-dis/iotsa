@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import json
 import sys
 import os
@@ -37,7 +38,7 @@ def main():
     libraryConfig = os.path.join(baseDir, 'library.json')
     version = os.path.join(baseDir, 'src', 'iotsaVersion.h')
     if not os.path.exists(libraryConfig) or not os.path.exists(version):
-        print '%s: Cannot find config files %s and %s. Must be run from iotsa source tree.'% (sys.argv[0], libraryConfig, version)
+        print('%s: Cannot find config files %s and %s. Must be run from iotsa source tree.'% (sys.argv[0], libraryConfig, version))
         sys.exit(1)
         
     vf = VersionFile(version)

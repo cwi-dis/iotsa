@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import sys
 import socket
 import requests
@@ -39,8 +41,8 @@ class PlatformMDNSCollector:
         raise UserIntervention("Please browse for mDNS services _iotsa._tcp.local")
         
 # Override the default WiFi and mDNS handling from os-dependent implementations
-from machdep import *
-import machdep
+from .machdep import *
+from . import machdep
         
 class IotsaWifi(PlatformWifi):
     def __init__(self):
@@ -83,7 +85,7 @@ class IotsaWifi(PlatformWifi):
             except socket.timeout:
                 return False
             except socket.gaierror:
-                print >>sys.stderr, 'Unknown host: %s' % deviceName
+                print('Unknown host: %s' % deviceName, file=sys.stderr)
                 return False
             except socket.error:
                 continue
@@ -133,9 +135,9 @@ class IotsaRESTProtocolHandler:
         if token:
             headers['Authorization'] = 'Bearer '+token
         url = self.baseURL + endpoint
-        if VERBOSE: print 'REST %s %s' % (method, url)
+        if VERBOSE: print('REST %s %s' % (method, url))
         r = requests.request(method, url, auth=auth, json=json, verify=not self.noverify)
-        if VERBOSE: print 'REST %s returned: %s %s' % (method, r.status_code, r.text)
+        if VERBOSE: print('REST %s returned: %s %s' % (method, r.status_code, r.text))
         r.raise_for_status()
         if r.text and r.text[0] == '{':
             return r.json()
@@ -187,9 +189,9 @@ class IotsaCOAPProtocolHandler:
         assert token is None
         assert json is None
         endpoint = self.basePath+endpoint
-        if VERBOSE: print 'COAP GET coap://%s:%d%s' % (self.client.server[0], self.client.server[1], endpoint)
+        if VERBOSE: print('COAP GET coap://%s:%d%s' % (self.client.server[0], self.client.server[1], endpoint))
         rv = self.client.get(endpoint)
-        if VERBOSE: print 'COAP GET returned', rv.code, repr(rv.payload)
+        if VERBOSE: print('COAP GET returned', rv.code, repr(rv.payload))
         self._raiseIfError(rv)
         return json_loads(rv.payload)
         
@@ -199,9 +201,9 @@ class IotsaCOAPProtocolHandler:
         assert json is not None
         endpoint = self.basePath+endpoint
         data = json_dumps(json)
-        if VERBOSE: print 'COAP PUT coap://%s:%d%s %s' % (self.client.server[0], self.client.server[1], endpoint, data)
+        if VERBOSE: print('COAP PUT coap://%s:%d%s %s' % (self.client.server[0], self.client.server[1], endpoint, data))
         rv = self.client.put(endpoint, (coapthon.defines.Content_types['application/json'], data))
-        if VERBOSE: print 'COAP PUT returned', rv.code, repr(rv.payload)
+        if VERBOSE: print('COAP PUT returned', rv.code, repr(rv.payload))
         self._raiseIfError(rv)
         return json_loads(rv.payload)
         
@@ -211,9 +213,9 @@ class IotsaCOAPProtocolHandler:
         assert json is not None
         endpoint = self.basePath+endpoint
         data = json_dumps(json)
-        if VERBOSE: print 'COAP POST coap://%s:%d%s' % (self.client.server[0], self.client.server[1], endpoint, data)
+        if VERBOSE: print('COAP POST coap://%s:%d%s' % (self.client.server[0], self.client.server[1], endpoint, data))
         rv = self.client.post(endpoint, (coapthon.defines.Content_types['application/json'], data))
-        if VERBOSE: print 'COAP POST returned', rv.code, repr(rv.payload)
+        if VERBOSE: print('COAP POST returned', rv.code, repr(rv.payload))
         self._raiseIfError(rv)
         return json_loads(rv.payload)
         
@@ -247,9 +249,9 @@ class IotsaConfig:
         self.settings[name] = value
         
     def printStatus(self):
-        print '%s:' % self.device.ipAddress
+        print('%s:' % self.device.ipAddress)
         for k, v in self.status.items():
-            print '  %-16s %s' % (str(k)+':', v)
+            print('  %-16s %s' % (str(k)+':', v))
             
 class IotsaDevice(IotsaConfig):
     def __init__(self, ipAddress, port=None, protocol=None, noverify=False):
@@ -289,53 +291,53 @@ class IotsaDevice(IotsaConfig):
         
     def printStatus(self):
         status = copy.deepcopy(self.status)
-        print '%s:' % self.device.ipAddress
-        print '  program:        ', status.pop('program', 'unknown')
-        print '  last boot:      ', 
+        print('%s:' % self.device.ipAddress)
+        print('  program:        ', status.pop('program', 'unknown'))
+        print('  last boot:      ', end=' ') 
         lastboot = status.pop('uptime')
         if not lastboot:
-            print '???',
+            print('???', end=' ')
         else:
             if lastboot <= 60:
-                print '%ds' % lastboot,
+                print('%ds' % lastboot, end=' ')
             else:
                 lastboot /= 60
                 if lastboot <= 60:
-                    print '%dm' % lastboot,
+                    print('%dm' % lastboot, end=' ')
                 else:
                     lastboot /= 60
                     if lastboot <= 24:
-                        print '%dh' % lastboot,
+                        print('%dh' % lastboot, end=' ')
                     else:
                         lastboot /= 24
-                        print '%dd' % lastboot,
+                        print('%dd' % lastboot, end=' ')
         lastreason = status.pop('bootCause')
         if lastreason:
-            print '(%s)' % lastreason,
-        print
-        print '  runmode:        ', self.modeName(status.pop('currentMode', 0)),
+            print('(%s)' % lastreason, end=' ')
+        print()
+        print('  runmode:        ', self.modeName(status.pop('currentMode', 0)), end=' ')
         timeout = status.pop('currentModeTimeout', None)
         if timeout:
-            print '(%d seconds more)' % timeout,
-        print
+            print('(%d seconds more)' % timeout, end=' ')
+        print()
         if status.pop('privateWifi', False):
-            print '     NOTE:         on private WiFi network'
+            print('     NOTE:         on private WiFi network')
         reqMode = status.pop('requestedMode', None)
         if reqMode:
-            print '  requested mode: ', self.modeName(reqMode),
+            print('  requested mode: ', self.modeName(reqMode), end=' ')
             timeout = status.pop('requestedModeTimeout', '???')
             if timeout:
-                print '(needs reboot within %s seconds)' % timeout,
-            print
-        print '  hostName:       ', status.pop('hostName', '')
+                print('(needs reboot within %s seconds)' % timeout, end=' ')
+            print()
+        print('  hostName:       ', status.pop('hostName', ''))
         iotsaVersion = status.pop('iotsaVersion', '???')
-        print '  iotsa:          ', status.pop('iotsaFullVersion', iotsaVersion)
-        print '  modules:        ',
+        print('  iotsa:          ', status.pop('iotsaFullVersion', iotsaVersion))
+        print('  modules:        ', end=' ')
         for m in status.pop('modules', ['???']):
-            print m,
-        print
+            print(m, end=' ')
+        print()
         for k, v in status.items():
-            print '  %-16s %s' % (k+':', v)
+            print('  %-16s %s' % (k+':', v))
             
     def modeName(self, mode):
         if mode is None: return 'unknown'

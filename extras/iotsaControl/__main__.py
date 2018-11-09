@@ -1,12 +1,14 @@
 #!/usr/bin/env python
+from __future__ import print_function
+from __future__ import absolute_import
 import argparse
 import sys
 import requests
 import time
-import api
+from . import api
 import os
 import subprocess
-import machdep
+from . import machdep
 import urllib
 import socket
 
@@ -45,20 +47,20 @@ class Main:
                 if not cmd: break
                 cmdName = 'cmd_' + cmd
                 if not hasattr(self, cmdName):
-                    print >>sys.stderr, "%s: unknown command %s, help for help" % (sys.argv[0], cmd)
+                    print("%s: unknown command %s, help for help" % (sys.argv[0], cmd), file=sys.stderr)
                     sys.exit(1)
                 handler = getattr(self, cmdName)
                 try:
                     handler()
-                except api.UserIntervention, arg:
-                    print >>sys.stderr, "%s: %s: user intervention required:" % (sys.argv[0], cmd)
-                    print >>sys.stderr, "%s: %s" % (sys.argv[0], arg)
+                except api.UserIntervention as arg:
+                    print("%s: %s: user intervention required:" % (sys.argv[0], cmd), file=sys.stderr)
+                    print("%s: %s" % (sys.argv[0], arg), file=sys.stderr)
                     sys.exit(2)
-                except requests.exceptions.HTTPError, arg:
-                    print >>sys.stderr, "%s: %s: %s" % (sys.argv[0], cmd, arg)
+                except requests.exceptions.HTTPError as arg:
+                    print("%s: %s: %s" % (sys.argv[0], cmd, arg), file=sys.stderr)
                     sys.exit(1)
-                except api.CoapError, arg:
-                    print >>sys.stderr, "%s: %s: %s" % (sys.argv[0], cmd, arg)
+                except api.CoapError as arg:
+                    print("%s: %s: %s" % (sys.argv[0], cmd, arg), file=sys.stderr)
                     sys.exit(1)
         finally:
             self.close()
@@ -67,13 +69,13 @@ class Main:
         """Helper method to request a specific mode and wait until the user has enabled it"""
         self.loadDevice()
         if self.device.get('currentMode') == mode:
-            print "%s: target already in mode %s" % (sys.argv[0], self.device.modeName(mode))
+            print("%s: target already in mode %s" % (sys.argv[0], self.device.modeName(mode)))
             return
         self.device.set('requestedMode', mode)
         try:
             self.device.save()
-        except api.UserIntervention, arg:
-            print >>sys.stderr, "%s: %s" % (sys.argv[0], arg)
+        except api.UserIntervention as arg:
+            print("%s: %s" % (sys.argv[0], arg), file=sys.stderr)
         while True:
             time.sleep(5)
             self.device.load()
@@ -81,9 +83,9 @@ class Main:
                 break
             reqMode = self.device.get('requestedMode', 0)
             if self.device.get('requestedMode') != mode:
-                print >>sys.stderr, "%s: target now has requestedMode %s in stead of %s?" % (sys.argv[0], self.device.modeName(reqMode), self.device.modeName(mode))
-            print >>sys.stderr, "%s: Reboot %s within %s seconds to activate mode %s" % (sys.argv[0], self.device.ipAddress, self.device.get('requestedModeTimeout', '???'), self.device.modeName(reqMode))
-        print "%s: target is now in %s mode" % (sys.argv[0], self.device.modeName(mode))
+                print("%s: target now has requestedMode %s in stead of %s?" % (sys.argv[0], self.device.modeName(reqMode), self.device.modeName(mode)), file=sys.stderr)
+            print("%s: Reboot %s within %s seconds to activate mode %s" % (sys.argv[0], self.device.ipAddress, self.device.get('requestedModeTimeout', '???'), self.device.modeName(reqMode)), file=sys.stderr)
+        print("%s: target is now in %s mode" % (sys.argv[0], self.device.modeName(mode)))
         
     def parseArgs(self):
         """Command line argument handling"""
@@ -129,7 +131,7 @@ class Main:
         if self.args.ssid:
             ok = self.wifi.selectNetwork(self.args.ssid, self.args.ssidpw)
             if not ok:
-                print >>sys.stderr, "%s: cannot select wifi network %s" % (sys.argv[0], self.args.ssid)
+                print("%s: cannot select wifi network %s" % (sys.argv[0], self.args.ssid), file=sys.stderr)
                 sys.exit(1)
         return
 
@@ -140,13 +142,13 @@ class Main:
         if not self.args.target or self.args.target == "auto":
             all = self.wifi.findDevices()
             if len(all) == 0:
-                print >>sys.stderr, "%s: no iotsa devices found" % (sys.argv[0])
+                print("%s: no iotsa devices found" % (sys.argv[0]), file=sys.stderr)
                 sys.exit(1)
             if len(all) > 1:
-                print >>sys.stderr, "%s: multiple iotsa devices:" % (sys.argv[0]),
+                print("%s: multiple iotsa devices:" % (sys.argv[0]), end=' ', file=sys.stderr)
                 for a in all:
-                    print a,
-                print
+                    print(a, end=' ')
+                print()
                 sys.exit(1)
             self.args.target = all[0]
         if self.args.target:
@@ -177,7 +179,7 @@ class Main:
             self.device.set(name, value)
             anyDone = True
         if not anyDone:
-            print >>sys.stderr, "%s: config: requires name=value [...] to set config variables" % sys.argv[0]
+            print("%s: config: requires name=value [...] to set config variables" % sys.argv[0], file=sys.stderr)
             sys.exit(1)
         self.device.save()
         
@@ -202,7 +204,7 @@ class Main:
         for name in dir(self):
             if not name.startswith('cmd_'): continue
             handler = getattr(self, name)
-            print '%-10s\t%s' % (name[4:], handler.__doc__)
+            print('%-10s\t%s' % (name[4:], handler.__doc__))
             
     def cmd_info(self):
         """Show information on current target"""
@@ -213,13 +215,13 @@ class Main:
         """List iotsa wifi networks"""
         self.loadWifi()
         networks = self.wifi.findNetworks()
-        for n in networks: print n
+        for n in networks: print(n)
         
     def cmd_ota(self):
         """Upload new firmware to target (target must be in ota mode)"""
         filename = self._getcmd()
         if not filename:
-            print >>sys.stderr, "%s: ota requires a filename or URL" % sys.argv[0]
+            print("%s: ota requires a filename or URL" % sys.argv[0], file=sys.stderr)
             sys.exit(1)
         filename, _ = urllib.urlretrieve(filename)
         self.loadDevice()
@@ -227,14 +229,14 @@ class Main:
         ESPOTA = os.environ.get("ESPOTA", ESPOTA)
         ESPOTA = os.path.expanduser(ESPOTA)
         if not os.path.exists(ESPOTA):
-            print >>sys.stderr, "%s: Not found: %s" % (sys.argv[0], ESPOTA)
-            print >>sys.stderr, "%s: Please install espota.py and optionally set ESPOTA environment variable"
+            print("%s: Not found: %s" % (sys.argv[0], ESPOTA), file=sys.stderr)
+            print("%s: Please install espota.py and optionally set ESPOTA environment variable", file=sys.stderr)
             sys.exit(1)
         #cmd = [ESPOTA, '-i', self.device.ipAddress, '-f', filename]
         cmd = '"%s" -i %s -f "%s"' % (ESPOTA, self.device.ipAddress, filename)
         status = subprocess.call(cmd, shell=True)
         if status != 0:
-            print >>sys.stderr, "%s: OTA command %s failed" % (sys.argv[0], ESPOTA)
+            print("%s: OTA command %s failed" % (sys.argv[0], ESPOTA), file=sys.stderr)
             sys.exit(1)
         
         
@@ -252,7 +254,7 @@ class Main:
         """List iotsa devices visible on current network"""
         self.loadWifi()
         targets = self.wifi.findDevices()
-        for t in targets: print t
+        for t in targets: print(t)
         
     def cmd_wifiInfo(self):
         """Show WiFi information for target"""
@@ -283,7 +285,7 @@ class Main:
             wifi.set(name, value)
             anyDone = True
         if not anyDone:
-            print >>sys.stderr, "%s: wifiConfig: requires name=value [...] to set config variables" % sys.argv[0]
+            print("%s: wifiConfig: requires name=value [...] to set config variables" % sys.argv[0], file=sys.stderr)
             sys.exit(1)
         wifi.save()
         
@@ -292,7 +294,7 @@ class Main:
         self.loadDevice()
         modName = self._getcmd()
         if not modName:
-            print >>sys.stderr, "%s: xInfo requires a module name" % sys.argv[0]
+            print("%s: xInfo requires a module name" % sys.argv[0], file=sys.stderr)
             sys.exit(1)
         ext = self.device.getApi(modName)
         ext.load()
@@ -303,7 +305,7 @@ class Main:
         self.loadDevice()
         modName = self._getcmd()
         if not modName:
-            print >>sys.stderr, "%s: xConfig requires a module name" % sys.argv[0]
+            print("%s: xConfig requires a module name" % sys.argv[0], file=sys.stderr)
             sys.exit(1)
         ext = self.device.getApi(modName)
         ext.load()
@@ -324,7 +326,7 @@ class Main:
             ext.set(name, value)
             anyDone = True
         if not anyDone:
-            print >>sys.stderr, "%s: xConfig %s: requires name=value [...] to set config variables" % sys.argv[0]
+            print("%s: xConfig %s: requires name=value [...] to set config variables" % sys.argv[0], file=sys.stderr)
             sys.exit(1)
         ext.save()
         
