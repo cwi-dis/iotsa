@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import unicode_literals
 from builtins import object
 import sys
 import time
@@ -15,7 +16,7 @@ if sys.platform == 'darwin':
 
         def platformListWifiNetworks(self):
             if VERBOSE: print('Listing wifi networks (OSX)')
-            p = subprocess.Popen('/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport --scan --xml', shell=True, stdout=subprocess.PIPE)
+            p = subprocess.Popen('/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport --scan --xml', shell=True, stdout=subprocess.PIPE, universal_newlines=True)
             data = plistlib.readPlist(p.stdout)
             wifiNames = [d['SSID_STR'] for d in data]
             wifiNames.sort()
@@ -34,7 +35,7 @@ if sys.platform == 'darwin':
         def platformCurrentWifiNetworks(self):
             if VERBOSE: print('Find current networks (OSX)')
             cmd = 'networksetup -getairportnetwork %s' % self.wifiInterface
-            p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+            p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True)
             data = p.stdout.read()
             if VERBOSE: print('Find result was:', data)
             wifiName = data.split(':')[-1]
