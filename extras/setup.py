@@ -19,7 +19,7 @@ if sys.version_info.major == 2:
     COAPTHON="CoAPThon"
     ZEROCONF="zeroconf2"
 else:
-    COAPTON="CoAPThon3"
+    COAPTHON="CoAPThon3"
     ZEROCONF="zeroconf"
     
 here = path.abspath(path.dirname(__file__))

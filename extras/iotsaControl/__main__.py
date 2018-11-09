@@ -120,7 +120,7 @@ class Main(object):
             # See https://github.com/esp8266/Arduino/issues/2110 for details.
             # We monkey-patch getaddrinfo to look only for IPv4 addresses.
             socket.getaddrinfo = ipv4_getaddrinfo
-        if not args.noSystemRootCertificates and not os.environ.get('REQUESTS_CA_BUNDLE', None):
+        if not self.args.noSystemRootCertificates and not os.environ.get('REQUESTS_CA_BUNDLE', None):
             # The requests package uses its own set of certificates, ignoring the ones the user has added to the system
             # set. By default, override that behaviour.
             for cf in ["/etc/ssl/certs/ca-certificates.crt", "/etc/ssl/certs/ca-certificates.crt"]:
