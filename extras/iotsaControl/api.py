@@ -248,7 +248,7 @@ class IotsaConfig(object):
         if self.settings:
             reply = self.device.protocolHandler.put(self.endpoint, auth=self.device.auth, token=self.device.bearerToken, json=self.settings)
             if reply and reply.get('needsReboot'):
-                msg = 'Reboot %s within %s seconds to activate mode %s' % (self.ipAddress, reply.get('requestedModeTimeout', '???'), self.modeName(reply.get('requestedMode')))
+                msg = 'Reboot %s within %s seconds to activate mode %s' % (self.device.ipAddress, reply.get('requestedModeTimeout', '???'), self.device.modeName(reply.get('requestedMode')))
                 raise UserIntervention(msg)
             
     def get(self, name, default=None):
@@ -300,7 +300,7 @@ class IotsaDevice(IotsaConfig):
         
     def printStatus(self):
         status = copy.deepcopy(self.status)
-        print('%s:' % self.device.ipAddress)
+        print('%s:' % self.ipAddress)
         print('  program:        ', status.pop('program', 'unknown'))
         print('  last boot:      ', end=' ') 
         lastboot = status.pop('uptime')
