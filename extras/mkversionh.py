@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
 from __future__ import unicode_literals
-from builtins import object
 import json
 import sys
 import os
@@ -10,7 +9,7 @@ import subprocess
 
 DEFINE_PAT=re.compile(r'^#define\s+(?P<name>\w+)\s+(?P<value>.*)\s+$')
 
-class VersionFile(object):
+class VersionFile:
     def __init__(self, includeFile):
         self.includeFile = includeFile
         self.defines = {}
@@ -49,7 +48,7 @@ def main():
     if 'version' in libraryData:
         vf.define('IOTSA_VERSION', '"'+libraryData['version']+'"')
         
-    cmd = subprocess.Popen('git rev-parse --short HEAD', shell=True, cwd=baseDir, stdout=subprocess.PIPE)
+    cmd = subprocess.Popen('git rev-parse --short HEAD', shell=True, cwd=baseDir, stdout=subprocess.PIPE, universal_newlines=True)
     commit = cmd.stdout.read().strip()
     if commit:
         vf.define('IOTSA_COMMIT', '"'+commit+'"')
