@@ -45,7 +45,7 @@ if sys.platform == 'darwin':
             wifiName = wifiName.strip()
             return [wifiName]
 
-if sys.platform in ('darwin', 'linux2'):
+if sys.platform in ('darwin', 'linux2', 'linux'):
     import zeroconf
     
     class PlatformMDNSCollector(object):
