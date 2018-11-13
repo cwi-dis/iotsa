@@ -14,7 +14,7 @@ from json import loads as json_loads
 from json import dumps as json_dumps
 
 VERBOSE=False
-WITH_COAPTHON=False
+WITH_COAPTHON=True
 if WITH_COAPTHON:
     # Coapthon is disabled for now: the current version automatically creates log
     # files and messes with the logger settings.
