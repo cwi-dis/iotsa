@@ -28,6 +28,7 @@ protected:
   File fp;
 };
 
+bool iotsaConfigFileExists(String filename);
 bool iotsaConfigFileLoadBinary(String filename, uint8_t **dataP, size_t *dataLenP);
 void iotsaConfigFileSaveBinary(String filename, const uint8_t *data, size_t dataLen);
 #endif

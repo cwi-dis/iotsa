@@ -635,13 +635,15 @@ void IotsaConfigMod::configLoad() {
   cf.get("rebootTimeout", iotsaConfig.configurationModeTimeout, CONFIGURATION_MODE_TIMEOUT);
   if (iotsaConfig.hostName == "") wifiDefaultHostName();
 #ifdef IOTSA_WITH_HTTPS
-  bool ok = iotsaConfigFileLoadBinary("/config/httpsKey.der", (uint8_t **)&iotsaConfig.httpsKey, &iotsaConfig.httpsKeyLength);
-  if (ok) {
-    IFDEBUG IotsaSerial.println("Loaded /config/httpsKey.der");
-  }
-  ok = iotsaConfigFileLoadBinary("/config/httpsCert.der", (uint8_t **)&iotsaConfig.httpsCertificate, &iotsaConfig.httpsCertificateLength);
-  if (ok) {
-    IFDEBUG IotsaSerial.println("Loaded /config/httpsCert.der");
+  if (iotsaConfigFileExists("/config/httpsKey.der") && iotsaConfigFileExists("/config/httpsCert.der")) {
+    bool ok = iotsaConfigFileLoadBinary("/config/httpsKey.der", (uint8_t **)&iotsaConfig.httpsKey, &iotsaConfig.httpsKeyLength);
+    if (ok) {
+      IFDEBUG IotsaSerial.println("Loaded /config/httpsKey.der");
+    }
+    ok = iotsaConfigFileLoadBinary("/config/httpsCert.der", (uint8_t **)&iotsaConfig.httpsCertificate, &iotsaConfig.httpsCertificateLength);
+    if (ok) {
+      IFDEBUG IotsaSerial.println("Loaded /config/httpsCert.der");
+    }
   }
 #endif // IOTSA_WITH_HTTPS
 }

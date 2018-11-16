@@ -85,6 +85,10 @@ void IotsaConfigFileSave::put(String name, const String &value) {
   fp.print('\n');
 }
 
+bool iotsaConfigFileExists(String filename) {
+  return SPIFFS.exists(filename);
+}
+
 bool iotsaConfigFileLoadBinary(String filename, uint8_t **dataP, size_t *dataLenP) {
   File fp = SPIFFS.open(filename, "r");
   if (!fp) return false;
