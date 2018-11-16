@@ -484,6 +484,13 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   reply["iotsaVersion"] = IOTSA_VERSION;
   reply["iotsaFullVersion"] = IOTSA_FULL_VERSION;
   reply["program"] = app.title;
+#ifdef IOTSA_WITH_HTTPS
+  if (iotsaConfig.httpsKey == defaultHttpsKey) {
+    reply["defaultCert"] = true;
+  } else {
+    reply["installedCert"] = true;
+  }
+#endif
 #ifdef IOTSA_CONFIG_PROGRAM_SOURCE
   reply["programSource"] = IOTSA_CONFIG_PROGRAM_SOURCE;
 #endif
