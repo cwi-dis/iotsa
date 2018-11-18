@@ -107,8 +107,14 @@ class IotsaWifi(PlatformWifi):
                 return ['192.168.4.1']
         collect = PlatformMDNSCollector()
         devices = collect.run()
-        return devices
-        #raise UserIntervention("Please use Bonjour or avahi to find WiFi devices serving _iotsa._tcp")
+        rv = []
+        # Remove final dot (.) that can be appended (certificate matching doesn't like this)
+        for d in devices:
+            if d[-1:] == '.':
+                rv.append(d[:-1])
+            else:
+                rv.append(d)
+        return rv
         
     def selectDevice(self, device):
         if self._checkDevice(device):
