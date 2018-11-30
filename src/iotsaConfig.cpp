@@ -304,6 +304,12 @@ IotsaConfigMod::handler() {
     if (iotsaConfig.inConfigurationMode()) {
       if (needsAuthentication("config")) return;
       String b64String(server->arg("httpsKey"));
+      if (b64String.startsWith("-----BEGIN RSA PRIVATE KEY-----")) {
+        // Strip DER header and footer
+        int first = b64String.indexOf('\n');
+        int last = b64String.lastIndexOf("-----END RSA PRIVATE KEY-----");
+        b64String = b64String.substring(first, last);
+      }
       const char *b64Value = b64String.c_str();
       int b64len = strlen(b64Value);
       int expDecodeLen = base64_decode_expected_len(b64len);
@@ -334,6 +340,12 @@ IotsaConfigMod::handler() {
     if (iotsaConfig.inConfigurationMode()) {
       if (needsAuthentication("config")) return;
       String b64String(server->arg("httpsCertificate"));
+      if (b64String.startsWith("-----BEGIN CERTIFICATE-----")) {
+        // Strip DER header and footer
+        int first = b64String.indexOf('\n');
+        int last = b64String.lastIndexOf("-----END CERTIFICATE-----");
+        b64String = b64String.substring(first, last);
+      }
       const char *b64Value = b64String.c_str();
       int b64len = strlen(b64Value);
       int expDecodeLen = base64_decode_expected_len(b64len);
