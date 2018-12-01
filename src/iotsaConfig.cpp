@@ -583,8 +583,8 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
       static const char *tail = "-----END RSA PRIVATE KEY-----";
       char *headPos = strstr(b64Value, head);
       char *tailPos = strstr(b64Value, tail);
-      if (headPos && tailPos) {
-        b64Value = headPos;
+      if (headPos == b64Value && tailPos) {
+        b64Value += strlen(head);
         *tailPos = '\0';
       } else {
         IFDEBUG IotsaSerial.println("req httpsKey not PEM");
@@ -616,8 +616,8 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
       static const char *tail = "-----END CERTIFICATE-----";
       char *headPos = strstr(b64Value, head);
       char *tailPos = strstr(b64Value, tail);
-      if (headPos && tailPos) {
-        b64Value = headPos;
+      if (headPos == b64Value && tailPos) {
+        b64Value += strlen(head);
         *tailPos = '\0';
       } else {
         IFDEBUG IotsaSerial.println("req httpsCertificate not PEM");
