@@ -308,7 +308,15 @@ IotsaConfigMod::handler() {
         // Strip DER header and footer
         int first = b64String.indexOf('\n');
         int last = b64String.lastIndexOf("-----END RSA PRIVATE KEY-----");
-        b64String = b64String.substring(first, last);
+        if (first >= 0 && last >= 0) {
+          b64String = b64String.substring(first, last);
+        } else {
+          IFDEBUG IotsaSerial.println("httpsKey bad format PEM");
+          b64String = "";
+        }
+      } else {
+        IFDEBUG IotsaSerial.println("httpsKey bad PEM header");
+        b64String = "";
       }
       const char *b64Value = b64String.c_str();
       int b64len = strlen(b64Value);
@@ -344,7 +352,15 @@ IotsaConfigMod::handler() {
         // Strip DER header and footer
         int first = b64String.indexOf('\n');
         int last = b64String.lastIndexOf("-----END CERTIFICATE-----");
-        b64String = b64String.substring(first, last);
+        if (first >= 0 && last >= 0) {
+          b64String = b64String.substring(first, last);
+        } else {
+          IFDEBUG IotsaSerial.println("httpsCertificate bad format PEM");
+          b64String = "";
+        }
+      } else {
+        IFDEBUG IotsaSerial.println("httpsCertificate bad PEM header");
+        b64String = "";
       }
       const char *b64Value = b64String.c_str();
       int b64len = strlen(b64Value);
@@ -355,8 +371,8 @@ IotsaConfigMod::handler() {
       if (tmpValue) {
         int decLen = base64_decode_chars(b64Value, b64len, tmpValue);
         if (decLen > 0) {
-        newCertificate = (uint8_t *)tmpValue;
-        newCertificateLength = decLen;
+          newCertificate = (uint8_t *)tmpValue;
+          newCertificateLength = decLen;
           IFDEBUG IotsaSerial.print("Decoded httpsCertificate len=");
           IFDEBUG IotsaSerial.print(decLen);
           IFDEBUG IotsaSerial.print(" expLen=");
@@ -433,8 +449,8 @@ IotsaConfigMod::handler() {
     message += String(iotsaConfig.configurationModeTimeout);
     message += "'><br>";
 #ifdef IOTSA_WITH_HTTPS
-    message += "HTTPS private key (base64 DER): <br><textarea name='httpsKey' rows='8' cols='60'></textarea><br>";
-    message += "HTTPS certificate (base64 DER): <br><textarea name='httpsCertificate' rows='8' cols='60'></textarea><br>";
+    message += "HTTPS private key (PEM): <br><textarea name='httpsKey' rows='8' cols='60'></textarea><br>";
+    message += "HTTPS certificate (PEM): <br><textarea name='httpsCertificate' rows='8' cols='60'></textarea><br>";
 #endif
   }
 
@@ -563,6 +579,17 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   if (reqObj.containsKey("httpsKey")) {
     if (iotsaConfig.inConfigurationMode()) {
       const char *b64Value = reqObj.get<char*>("httpsKey");
+      static const char *head = "-----BEGIN RSA PRIVATE KEY-----";
+      static const char *tail = "-----END RSA PRIVATE KEY-----";
+      char *headPos = strstr(b64Value, head);
+      char *tailPos = strstr(b64Value, tail);
+      if (headPos && tailPos) {
+        b64Value = headPos;
+        *tailPos = '\0';
+      } else {
+        IFDEBUG IotsaSerial.println("req httpsKey not PEM");
+        b64Value = "";
+      }
       int b64len = strlen(b64Value);
       IFDEBUG IotsaSerial.println("req has httpsKey");
       char *tmpValue = (char *)malloc(base64_decode_expected_len(b64len));
@@ -585,6 +612,17 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   if (reqObj.containsKey("httpsCertificate")) {
     if (iotsaConfig.inConfigurationMode()) {
       const char *b64Value = reqObj.get<char*>("httpsCertificate");
+      static const char *head = "-----BEGIN CERTIFICATE-----";
+      static const char *tail = "-----END CERTIFICATE-----";
+      char *headPos = strstr(b64Value, head);
+      char *tailPos = strstr(b64Value, tail);
+      if (headPos && tailPos) {
+        b64Value = headPos;
+        *tailPos = '\0';
+      } else {
+        IFDEBUG IotsaSerial.println("req httpsCertificate not PEM");
+        b64Value = "";
+      }
       int b64len = strlen(b64Value);
       IFDEBUG IotsaSerial.println("req has httpsCertificate");
       char *tmpValue = (char *)malloc(base64_decode_expected_len(b64len));
