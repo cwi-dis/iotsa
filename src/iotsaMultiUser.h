@@ -24,7 +24,7 @@ public:
   bool allows(const char *obj, IotsaApiOperation verb);
   bool getHandler(const char *path, JsonObject& reply);
   bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply);
-  virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
 protected:
   void configLoad();
   void configSave();

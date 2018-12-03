@@ -102,10 +102,13 @@ String IotsaMultiUserMod::info() {
 #ifdef IOTSA_WITH_API
 bool IotsaMultiUserMod::getHandler(const char *path, JsonObject& reply) {
   if (strcmp(path, "/api/users") == 0) {
+    reply["multi"] = true;
     JsonArray& usersList = reply.createNestedArray("users");
     for (IotsaUser *u=users; u; u=u->next) {
       JsonObject& user = usersList.createNestedObject();
       user["username"] = u->username;
+      bool hasPassword = u->password.length() > 0;
+      user["hasPassword"] = hasPassword;
       user["rights"] = u->rights;
     }
     return true;
@@ -113,12 +116,43 @@ bool IotsaMultiUserMod::getHandler(const char *path, JsonObject& reply) {
   for (IotsaUser *u=users; u; u=u->next) {
     if (strcmp(u->apiEndpoint.c_str(), path) == 0) {
       reply["username"] = u->username;
+      bool hasPassword = u->password.length() > 0;
+      reply["hasPassword"] = hasPassword;
       reply["rights"] = u->rights;
     }
   }
   return false;
 }
 
+bool IotsaMultiUserMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+  if (strncmp(path, "/api/users/", 11) != 0) return false;
+  if (!iotsaConfig.inConfigurationMode()) return false;
+  String num(path);
+  num.remove(0, 11);
+  int idx = num.toInt();
+
+  bool anyChanged = false;
+  IotsaUser *u = users;
+  while (u && idx > 0) { u = u->next; idx--; }
+  if (u == NULL) return false;
+  JsonObject& reqObj = request.as<JsonObject>();
+  if (reqObj.containsKey("username")) {
+    u->username = reqObj.get<String>("username");
+    anyChanged = true;
+  }
+  if (reqObj.containsKey("password")) {
+    u->password = reqObj.get<String>("password");
+    anyChanged = true;
+  }
+  if (reqObj.containsKey("rights")) {
+    u->rights = reqObj.get<String>("rights");
+    anyChanged = true;
+  }
+  if (anyChanged) {
+    configSave();
+  }
+  return anyChanged;
+}
 bool IotsaMultiUserMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   if (strcmp(path, "/api/users") != 0) return false;
   if (!iotsaConfig.inConfigurationMode()) return false;
@@ -163,7 +197,7 @@ void IotsaMultiUserMod::serverSetup() {
   name = "users";
   IotsaUser *u = users;
   while(u) {
-    api.setup(u->apiEndpoint.c_str(), true, false, true);
+    api.setup(u->apiEndpoint.c_str(), true, true, false);
   }
 #endif // IOTSA_WITH_API
 }

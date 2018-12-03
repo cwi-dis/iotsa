@@ -98,18 +98,20 @@ bool IotsaUserMod::getHandler(const char *path, JsonObject& reply) {
     JsonArray& users = reply.createNestedArray("users");
     JsonObject& user = users.createNestedObject();
     user["username"] = username;
+    bool hasPassword = password.length() > 0;
+    user["hasPassword"] = hasPassword;
     return true;
   }
   return false;
 }
 
-bool IotsaUserMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+bool IotsaUserMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   // PUT to /api/users is equivalent to POST /api/users/0 (because of iotsaControl issues)
   if (strcmp(path, "/api/users") != 0) return false;
-  return postHandler("/api/users/0", request, reply);
+  return putHandler("/api/users/0", request, reply);
 }
 
-bool IotsaUserMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+bool IotsaUserMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   if (strcmp(path, "/api/users/0") != 0) return false;
   if (!iotsaConfig.inConfigurationMode()) return false;
   bool anyChanged = false;
@@ -141,8 +143,8 @@ void IotsaUserMod::serverSetup() {
   server->on("/users", std::bind(&IotsaUserMod::handler, this));
 #endif
 #ifdef IOTSA_WITH_API
-  api.setup("/api/users", true);
-  api.setup("/api/users/0", true, false, true);
+  api.setup("/api/users", true, false, true);
+  api.setup("/api/users/0", true, true, false);
   name = "users";
 #endif
 }
