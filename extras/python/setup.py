@@ -29,7 +29,7 @@ of those devices and uploading new firmware over the air.
 """
 
 # Get the version number from the igor module
-VERSION="1.6"    
+VERSION="1.6.1"    
 
 setup(
     name='iotsaControl',
