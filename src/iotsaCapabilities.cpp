@@ -250,15 +250,12 @@ void IotsaCapabilityMod::loadCapabilitiesFromRequest() {
     return;
   }
 
-  // Check that the audience matches
   if (root.containsKey("aud")) {
     JsonVariant audience = root["aud"];
-    String myUrl("http://");
-    myUrl += iotsaConfig.hostName;
-    myUrl += ".local";
-    if (audience != "*" && !stringContainedIn(myUrl.c_str(), audience)) {
+    String myFullName = iotsaConfig.hostName + ".local";
+    if (audience != "*" && audience != myFullName) {
       IFDEBUGX IotsaSerial.print("Audience did not match, wtd=");
-      IFDEBUGX IotsaSerial.print(myUrl);
+      IFDEBUGX IotsaSerial.print(myFullName);
       IFDEBUGX IotsaSerial.print(", got=");
       IFDEBUGX IotsaSerial.println(audience.as<String>());
       return;
