@@ -30,8 +30,8 @@ static IotsaCapabilityObjectScope getRightFrom(const JsonVariant& arg) {
   if (!arg.is<char*>()) return IOTSA_SCOPE_NONE;
   const char *argStr = arg.as<char*>();
   if (strcmp(argStr, "self") == 0) return IOTSA_SCOPE_SELF;
-  if (strcmp(argStr, "descendent-or-self") == 0) return IOTSA_SCOPE_FULL;
-  if (strcmp(argStr, "descendent") == 0) return IOTSA_SCOPE_CHILD;
+  if (strcmp(argStr, "descendant-or-self") == 0) return IOTSA_SCOPE_FULL;
+  if (strcmp(argStr, "descendant") == 0) return IOTSA_SCOPE_CHILD;
   if (strcmp(argStr, "child") == 0) return IOTSA_SCOPE_CHILD;
   return IOTSA_SCOPE_NONE;
 }
@@ -253,7 +253,12 @@ void IotsaCapabilityMod::loadCapabilitiesFromRequest() {
   if (root.containsKey("aud")) {
     JsonVariant audience = root["aud"];
     String myFullName = iotsaConfig.hostName + ".local";
-    if (audience != "*" && audience != myFullName) {
+#ifdef IOTSA_WITH_HTTPS
+    String myUrl = "https://" + myFullName;
+#else
+    String myUrl = "http://" + myFullName;
+#endif
+    if (audience != "*" && audience != myFullName && audience != myUrl) {
       IFDEBUGX IotsaSerial.print("Audience did not match, wtd=");
       IFDEBUGX IotsaSerial.print(myFullName);
       IFDEBUGX IotsaSerial.print(", got=");
