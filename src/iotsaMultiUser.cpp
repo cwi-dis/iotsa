@@ -119,6 +119,7 @@ bool IotsaMultiUserMod::getHandler(const char *path, JsonObject& reply) {
       bool hasPassword = u->password.length() > 0;
       reply["hasPassword"] = hasPassword;
       reply["rights"] = u->rights;
+      return true;
     }
   }
   return false;
