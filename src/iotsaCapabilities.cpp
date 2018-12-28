@@ -86,7 +86,7 @@ IotsaCapabilityMod::handler() {
   String _issuerKey = server->arg("issuerKey");
   if (_trustedIssuer != "" || _issuerKey != "") {
     if (!iotsaConfig.inConfigurationMode()) {
-      server->send(401, "text/plain", "401 Unauthorized, not in configuration mode");
+      server->send(403, "text/plain", "403 Forbidden, not in configuration mode");
       return;
     }
     if (needsAuthentication("capabilities")) return;
