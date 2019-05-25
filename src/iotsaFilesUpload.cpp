@@ -9,8 +9,8 @@
 void IotsaFilesUploadMod::setup() {
 }
 
-File _uploadFile;
-bool _uploadOK;
+static File _uploadFile;
+static bool _uploadOK;
 
 void
 IotsaFilesUploadMod::uploadHandler() {

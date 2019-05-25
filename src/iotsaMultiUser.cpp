@@ -108,7 +108,7 @@ bool IotsaMultiUserMod::getHandler(const char *path, JsonObject& reply) {
       JsonObject& user = usersList.createNestedObject();
       user["username"] = u->username;
       bool hasPassword = u->password.length() > 0;
-      user["hasPassword"] = hasPassword;
+      user["has_password"] = hasPassword;
       user["rights"] = u->rights;
     }
     return true;
@@ -117,7 +117,7 @@ bool IotsaMultiUserMod::getHandler(const char *path, JsonObject& reply) {
     if (strcmp(u->apiEndpoint.c_str(), path) == 0) {
       reply["username"] = u->username;
       bool hasPassword = u->password.length() > 0;
-      reply["hasPassword"] = hasPassword;
+      reply["has_password"] = hasPassword;
       reply["rights"] = u->rights;
       return true;
     }

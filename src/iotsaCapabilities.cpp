@@ -120,7 +120,7 @@ String IotsaCapabilityMod::info() {
 bool IotsaCapabilityMod::getHandler(const char *path, JsonObject& reply) {
   if (strcmp(path, "/api/capabilities") != 0) return false;
   reply["trustedIssuer"] = trustedIssuer;
-  reply["issuerKeyLength"] = issuerKey.length();
+  reply["has_issuerKey"] = (issuerKey.length() > 0);
   return true;
 }
 

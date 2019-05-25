@@ -1,6 +1,9 @@
-iotsa 2.0.XXX
+iotsa 2.1 - 26-May-2019
 
 - Got rid of default password, it provides no extra security.
+- Allow uploading of certificate/key as DER with POST requests.
+- Write-only REST attributes now always have a "has_" boolean in the read interface to signal that they exist and are set.
+- REST read interface was made more consistent.
 
 iotsa 2.0.1 - 01-Jul-2018
 
