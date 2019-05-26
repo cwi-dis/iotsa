@@ -405,3 +405,38 @@ class IotsaDevice(object):
         if mode >= 0 and mode < len(names):
             return names[mode]
         return 'unknown-mode-%d' % mode
+        
+    def modeForName(self, name):
+        names = ['normal', 'config', 'ota', 'factoryReset']
+        return names.index(name)
+        
+    def gotoMode(self, modeName, wait=False, verbose=False):
+        mode = self.modeForName(modeName)
+        if self.config.get('currentMode') == mode:
+            if verbose: print("%s: target already in mode %s" % (sys.argv[0], self.modeName(mode)))
+            return
+        self.config.set('requestedMode', mode)
+        try:
+            self.config.save()
+        except UserIntervention as arg:
+            if verbose:
+                print("%s: %s" % (sys.argv[0], arg), file=sys.stderr)
+            else:
+                raise
+        if not wait:
+            return
+        while True:
+            time.sleep(5)
+            self.flush()
+            if self.config.get('currentMode') == mode:
+                break
+            reqMode = self.config.get('requestedMode', 0)
+            if self.config.get('requestedMode') != mode:
+                if self.verbose:
+                    print("%s: target now has requestedMode %s in stead of %s?" % (sys.argv[0], self.modeName(reqMode), self.modeName(mode)), file=sys.stderr)
+                else:
+                    raise RuntimeError("target now has requestedMode %s in stead of %s?" % (self.modeName(reqMode), self.modeName(mode)))
+            if verbose:
+                print("%s: Reboot %s within %s seconds to activate mode %s" % (sys.argv[0], self.ipAddress, self.config.get('requestedModeTimeout', '???'), self.modeName(reqMode)), file=sys.stderr)
+        if verbose:
+            print("%s: target is now in %s mode" % (sys.argv[0], self.modeName(mode)))

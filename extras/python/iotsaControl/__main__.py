@@ -69,28 +69,6 @@ class Main(object):
         finally:
             self.close()
 
-    def _configModeAndWait(self, mode):
-        """Helper method to request a specific mode and wait until the user has enabled it"""
-        self.loadDevice()
-        if self.device.config.get('currentMode') == mode:
-            print("%s: target already in mode %s" % (sys.argv[0], self.device.modeName(mode)))
-            return
-        self.device.config.set('requestedMode', mode)
-        try:
-            self.device.config.save()
-        except api.UserIntervention as arg:
-            print("%s: %s" % (sys.argv[0], arg), file=sys.stderr)
-        while True:
-            time.sleep(5)
-            self.device.flush()
-            if self.device.config.get('currentMode') == mode:
-                break
-            reqMode = self.device.config.get('requestedMode', 0)
-            if self.device.config.get('requestedMode') != mode:
-                print("%s: target now has requestedMode %s in stead of %s?" % (sys.argv[0], self.device.modeName(reqMode), self.device.modeName(mode)), file=sys.stderr)
-            print("%s: Reboot %s within %s seconds to activate mode %s" % (sys.argv[0], self.device.ipAddress, self.device.config.get('requestedModeTimeout', '???'), self.device.modeName(reqMode)), file=sys.stderr)
-        print("%s: target is now in %s mode" % (sys.argv[0], self.device.modeName(mode)))
-        
     def parseArgs(self):
         """Command line argument handling"""
         parser = argparse.ArgumentParser(description="Access Igor home automation service and other http databases")
@@ -199,18 +177,17 @@ class Main(object):
     def cmd_configMode(self):
         """Ask target to go into configuration mode"""
         self.loadDevice()
-        self.device.config.set('requestedMode', 1)
-        self.device.config.save()
+        self.device.gotoMode('config', wait=False, verbose=True)
 
     def cmd_configWait(self):
         """Ask target to go into configuration mode and wait until it is (probably after user intervention)"""
-        self._configModeAndWait(1)
+        self.loadDevice()
+        self.device.gotoMode('config', wait=True, verbose=True)
         
     def cmd_factoryReset(self):
         """Ask device to do a factory-reset"""
         self.loadDevice()
-        self.device.config.set('requestedMode', 3)
-        self.device.config.save()
+        self.device.gotoMode('factoryReset', wait=False, verbose=True)
         
     def cmd_help(self):
         """List available commands"""
@@ -256,12 +233,13 @@ class Main(object):
     def cmd_otaMode(self):
         """Ask target to go into over-the-air programming mode"""
         self.loadDevice()
-        self.device.config.set('requestedMode', 2)
-        self.device.config.save()
+        self.loadDevice()
+        self.device.gotoMode('ota', wait=False, verbose=True)
 
     def cmd_otaWait(self):
         """Ask target to go into over-the-air programming mode and wait until it is (probably after user intervention)"""
-        self._configModeAndWait(2)
+        self.loadDevice()
+        self.device.gotoMode('ota', wait=True, verbose=True)
         
     def cmd_targets(self):
         """List iotsa devices visible on current network"""
