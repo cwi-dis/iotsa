@@ -150,9 +150,16 @@ class IotsaRESTProtocolHandler(object):
         if token:
             headers['Authorization'] = 'Bearer '+token
         url = self.baseURL + endpoint
-        if VERBOSE: print('REST %s %s' % (method, url))
+        if VERBOSE: 
+            print('REST %s %s' % (method, url))
+            if auth:
+                print('auth', auth)
+            if headers:
+                print('....', headers)
+            if json:
+                print('>>>>', json)
         r = requests.request(method, url, auth=auth, json=json, verify=not self.noverify, headers=headers)
-        if VERBOSE: print('REST %s returned: %s %s' % (method, r.status_code, r.text))
+        if VERBOSE: print('<<<< status=%s reply=%s' % (r.status_code, r.text))
         r.raise_for_status()
         if r.text and r.text[0] == '{':
             return r.json()
@@ -303,6 +310,20 @@ class IotsaDevice(IotsaConfig):
         if not api in self.apis:
             self.apis[api] = IotsaConfig(self, api)
         return self.apis[api]
+        
+    def getAll(self):
+        self.load()
+        all = copy.deepcopy(self.status)
+        moduleNames = all.get('modules', [])
+        modules = {}
+        for m in moduleNames:
+            if m == 'config':
+                continue
+            api = self.getApi(m)
+            api.load()
+            modules[m] = api.status
+        all['modules'] = modules
+        return all
         
     def printStatus(self):
         status = copy.deepcopy(self.status)

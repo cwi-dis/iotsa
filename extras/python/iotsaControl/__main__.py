@@ -270,6 +270,26 @@ class Main(object):
         targets = self.wifi.findDevices()
         for t in targets: print(t)
         
+    def cmd_allInfo(self):
+        """Show all information for all modules for target"""
+        self.loadDevice()
+        all = self.device.getAll()
+        self._printall(all, 0)
+
+    def _printall(self, d, indent):
+        if  isinstance(d, dict):
+            print()
+            for k, v in d.items():
+                print('{}{}: '.format(' '*indent, k), end='')
+                self._printall(v, indent+4)
+        elif isinstance(d, list):
+            print()
+            for v in d:
+                print('{}- '.format(' '*indent), end='')
+                self._printall(v, indent+4)
+        else:
+            print(repr(d))
+
     def cmd_wifiInfo(self):
         """Show WiFi information for target"""
         self.loadDevice()
