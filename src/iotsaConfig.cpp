@@ -664,7 +664,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   return anyChanged;
 }
 #endif // IOTSA_WITH_API
-#if defined(IOTSA_WITH_WEB) || defined(IOTSA_WITH_API)
+#if defined(IOTSA_WITH_WEB)
 static File _uploadFile;
 static bool _uploadOK;
 
@@ -707,8 +707,6 @@ IotsaConfigMod::uploadOkHandler() {
 void IotsaConfigMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
   server->on("/config", std::bind(&IotsaConfigMod::handler, this));
-#endif
-#if defined(IOTSA_WITH_WEB) || defined(IOTSA_WITH_API)
   server->on("/upload", HTTP_POST, std::bind(&IotsaConfigMod::uploadOkHandler, this), std::bind(&IotsaConfigMod::uploadHandler, this));
 #endif
 #ifdef IOTSA_WITH_API
