@@ -167,11 +167,12 @@ class Main(object):
             self.args.target = all[0]
         if self.args.target:
             ok = self.wifi.selectDevice(self.args.target)
-        self.device = api.IotsaDevice(self.wifi.currentDevice(), protocol=self.args.protocol, port=self.args.port, noverify=self.args.noverify)
+        kwargs = {}
         if self.args.bearer:
-            self.device.setBearerToken(self.args.bearer)
+            kwargs['bearer'] = self.args.bearer
         if self.args.credentials:
-            self.device.setLogin(*self.args.credentials.split(':'))
+            kwargs['auth'] = self.args.credentials.split(':')
+        self.device = api.IotsaDevice(self.wifi.currentDevice(), protocol=self.args.protocol, port=self.args.port, noverify=self.args.noverify, **kwargs)
             
     def cmd_config(self):
         """Set target configuration parameters (target must be in configuration mode)"""
