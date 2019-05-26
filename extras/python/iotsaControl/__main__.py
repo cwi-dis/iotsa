@@ -89,7 +89,7 @@ class Main(object):
             if self.device.config.get('requestedMode') != mode:
                 print("%s: target now has requestedMode %s in stead of %s?" % (sys.argv[0], self.device.modeName(reqMode), self.device.modeName(mode)), file=sys.stderr)
             print("%s: Reboot %s within %s seconds to activate mode %s" % (sys.argv[0], self.device.ipAddress, self.device.config.get('requestedModeTimeout', '???'), self.device.modeName(reqMode)), file=sys.stderr)
-        print("%s: target is now in %s mode" % (sys.argv[0], self.device.config.modeName(mode)))
+        print("%s: target is now in %s mode" % (sys.argv[0], self.device.modeName(mode)))
         
     def parseArgs(self):
         """Command line argument handling"""
