@@ -72,24 +72,24 @@ class Main(object):
     def _configModeAndWait(self, mode):
         """Helper method to request a specific mode and wait until the user has enabled it"""
         self.loadDevice()
-        if self.device.get('currentMode') == mode:
+        if self.device.config.get('currentMode') == mode:
             print("%s: target already in mode %s" % (sys.argv[0], self.device.modeName(mode)))
             return
-        self.device.set('requestedMode', mode)
+        self.device.config.set('requestedMode', mode)
         try:
-            self.device.save()
+            self.device.config.save()
         except api.UserIntervention as arg:
             print("%s: %s" % (sys.argv[0], arg), file=sys.stderr)
         while True:
             time.sleep(5)
-            self.device.load()
-            if self.device.get('currentMode') == mode:
+            self.device.flush()
+            if self.device.config.get('currentMode') == mode:
                 break
-            reqMode = self.device.get('requestedMode', 0)
-            if self.device.get('requestedMode') != mode:
+            reqMode = self.device.config.get('requestedMode', 0)
+            if self.device.config.get('requestedMode') != mode:
                 print("%s: target now has requestedMode %s in stead of %s?" % (sys.argv[0], self.device.modeName(reqMode), self.device.modeName(mode)), file=sys.stderr)
-            print("%s: Reboot %s within %s seconds to activate mode %s" % (sys.argv[0], self.device.ipAddress, self.device.get('requestedModeTimeout', '???'), self.device.modeName(reqMode)), file=sys.stderr)
-        print("%s: target is now in %s mode" % (sys.argv[0], self.device.modeName(mode)))
+            print("%s: Reboot %s within %s seconds to activate mode %s" % (sys.argv[0], self.device.ipAddress, self.device.config.get('requestedModeTimeout', '???'), self.device.modeName(reqMode)), file=sys.stderr)
+        print("%s: target is now in %s mode" % (sys.argv[0], self.device.config.modeName(mode)))
         
     def parseArgs(self):
         """Command line argument handling"""
@@ -172,13 +172,11 @@ class Main(object):
             self.device.setBearerToken(self.args.bearer)
         if self.args.credentials:
             self.device.setLogin(*self.args.credentials.split(':'))
-        if not self.args.compat:
-            self.device.load()
             
     def cmd_config(self):
         """Set target configuration parameters (target must be in configuration mode)"""
         self.loadDevice()
-        if self.device.get('currentMode', 0) != 1 and not self.device.get('privateWifi', 0):
+        if self.device.config.get('currentMode', 0) != 1 and not self.device.config.get('privateWifi', 0):
             raise api.UserIntervention("Set target into configuration mode first. See configMode or configWait commands.")
         
         anyDone = False
@@ -190,18 +188,18 @@ class Main(object):
                 self._ungetcmd(subCmd)
                 break
             name, value = subCmd.split('=', 1)
-            self.device.set(name, value)
+            self.device.config.set(name, value)
             anyDone = True
         if not anyDone:
             print("%s: config: requires name=value [...] to set config variables" % sys.argv[0], file=sys.stderr)
             sys.exit(1)
-        self.device.save()
+        self.device.config.save()
         
     def cmd_configMode(self):
         """Ask target to go into configuration mode"""
         self.loadDevice()
-        self.device.set('requestedMode', 1)
-        self.device.save()
+        self.device.config.set('requestedMode', 1)
+        self.device.config.save()
 
     def cmd_configWait(self):
         """Ask target to go into configuration mode and wait until it is (probably after user intervention)"""
@@ -210,8 +208,8 @@ class Main(object):
     def cmd_factoryReset(self):
         """Ask device to do a factory-reset"""
         self.loadDevice()
-        self.device.set('requestedMode', 3)
-        self.device.save()
+        self.device.config.set('requestedMode', 3)
+        self.device.config.save()
         
     def cmd_help(self):
         """List available commands"""
@@ -257,8 +255,8 @@ class Main(object):
     def cmd_otaMode(self):
         """Ask target to go into over-the-air programming mode"""
         self.loadDevice()
-        self.device.set('requestedMode', 2)
-        self.device.save()
+        self.device.config.set('requestedMode', 2)
+        self.device.config.save()
 
     def cmd_otaWait(self):
         """Ask target to go into over-the-air programming mode and wait until it is (probably after user intervention)"""
@@ -294,14 +292,12 @@ class Main(object):
         """Show WiFi information for target"""
         self.loadDevice()
         wifi = self.device.getApi('wificonfig')
-        wifi.load()
         wifi.printStatus()
         
     def cmd_wifiConfig(self):
         """Set WiFi parameters (target must be in configuration or private WiFi mode)"""
         self.loadDevice()
         wifi = self.device.getApi('wificonfig')
-        wifi.load()
         
         anyDone = False
         while True:
@@ -331,7 +327,6 @@ class Main(object):
             print("%s: xInfo requires a module name" % sys.argv[0], file=sys.stderr)
             sys.exit(1)
         ext = self.device.getApi(modName)
-        ext.load()
         ext.printStatus()
         
     def cmd_xConfig(self):
@@ -342,7 +337,6 @@ class Main(object):
             print("%s: xConfig requires a module name" % sys.argv[0], file=sys.stderr)
             sys.exit(1)
         ext = self.device.getApi(modName)
-        ext.load()
         
         anyDone = False
         while True:

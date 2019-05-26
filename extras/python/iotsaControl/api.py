@@ -159,6 +159,8 @@ class IotsaRESTProtocolHandler(object):
             if json:
                 print('>>>>', json)
         r = requests.request(method, url, auth=auth, json=json, verify=not self.noverify, headers=headers)
+        if r.history:
+            print('Note: received redirect when accessing', url)
         if VERBOSE: print('<<<< status=%s reply=%s' % (r.status_code, r.text))
         r.raise_for_status()
         if r.text and r.text[0] == '{':
@@ -253,29 +255,39 @@ class IotsaConfig(object):
         self.endpoint = api
         self.status = {}
         self.settings = {}
+        self.didLoad = False
 
     def load(self):
+        if self.didLoad: return
         self.status = self.device.protocolHandler.get(self.endpoint, auth=self.device.auth, token=self.device.bearerToken)
+        self.didLoad = True
         
     def save(self):
         if self.settings:
+            self.device.flush()
             reply = self.device.protocolHandler.put(self.endpoint, auth=self.device.auth, token=self.device.bearerToken, json=self.settings)
             if reply and reply.get('needsReboot'):
                 msg = 'Reboot %s within %s seconds to activate mode %s' % (self.device.ipAddress, reply.get('requestedModeTimeout', '???'), self.device.modeName(reply.get('requestedMode')))
                 raise UserIntervention(msg)
             
     def get(self, name, default=None):
+        self.load()
         return self.status.get(name, default)
+        
+    def getAll(self):
+        self.load()
+        return copy.deepcopy(self.status)
         
     def set(self, name, value):
         self.settings[name] = value
         
     def printStatus(self):
+        self.load()
         print('%s:' % self.device.ipAddress)
         for k, v in list(self.status.items()):
             print('  %-16s %s' % (str(k)+':', v))
             
-class IotsaDevice(IotsaConfig):
+class IotsaDevice(object):
     def __init__(self, ipAddress, port=None, protocol=None, noverify=False):
         self.ipAddress = ipAddress
         if protocol == None: 
@@ -285,10 +297,10 @@ class IotsaDevice(IotsaConfig):
             url += ':%d' % port
         HandlerClass = HandlerForProto[protocol]
         self.protocolHandler = HandlerClass(url, noverify=noverify)
-        IotsaConfig.__init__(self, self, 'config')
+        self.config = IotsaConfig(self, 'config')
         self.auth = None
         self.bearerToken = None
-        self.apis = {}
+        self.apis = {'config' : self.config}
         
     def __del__(self):
         self.close()
@@ -299,6 +311,10 @@ class IotsaDevice(IotsaConfig):
         self.protocolHandler = None
         self.apis = None
         
+    def flush(self):
+        for a in self.apis.values():
+            a.didLoad = False
+        
     def setLogin(self, username, password):
         self.auth = (username, password)
         
@@ -306,27 +322,24 @@ class IotsaDevice(IotsaConfig):
         self.bearerToken = token
         
     def getApi(self, api):
-        if api == 'config': return self
         if not api in self.apis:
             self.apis[api] = IotsaConfig(self, api)
         return self.apis[api]
         
     def getAll(self):
-        self.load()
-        all = copy.deepcopy(self.status)
+        all = self.config.getAll()
         moduleNames = all.get('modules', [])
         modules = {}
         for m in moduleNames:
             if m == 'config':
                 continue
             api = self.getApi(m)
-            api.load()
-            modules[m] = api.status
+            modules[m] = api.getAll()
         all['modules'] = modules
         return all
         
     def printStatus(self):
-        status = copy.deepcopy(self.status)
+        status = self.config.getAll()
         print('%s:' % self.ipAddress)
         print('  program:        ', status.pop('program', 'unknown'))
         print('  last boot:      ', end=' ') 
