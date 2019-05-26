@@ -24,6 +24,9 @@ if WITH_COAPTHON:
 class UserIntervention(Exception):
     pass
 
+class IotsaError(RuntimeError):
+    pass
+    
 class CoapError(Exception):
     pass
 
@@ -154,8 +157,8 @@ class IotsaRESTProtocolHandler(object):
         url = self.baseURL + endpoint
         if VERBOSE: 
             print('REST %s %s' % (method, url))
-            if auth:
-                print('auth', auth)
+            if self.auth:
+                print('auth', self.auth)
             if headers:
                 print('....', headers)
             if json:
@@ -432,11 +435,22 @@ class IotsaDevice(object):
                 break
             reqMode = self.config.get('requestedMode', 0)
             if self.config.get('requestedMode') != mode:
-                if self.verbose:
-                    print("%s: target now has requestedMode %s in stead of %s?" % (sys.argv[0], self.modeName(reqMode), self.modeName(mode)), file=sys.stderr)
-                else:
-                    raise RuntimeError("target now has requestedMode %s in stead of %s?" % (self.modeName(reqMode), self.modeName(mode)))
+                raise IotsaError("target now has requestedMode %s in stead of %s?" % (self.modeName(reqMode), self.modeName(mode)))
             if verbose:
                 print("%s: Reboot %s within %s seconds to activate mode %s" % (sys.argv[0], self.ipAddress, self.config.get('requestedModeTimeout', '???'), self.modeName(reqMode)), file=sys.stderr)
         if verbose:
             print("%s: target is now in %s mode" % (sys.argv[0], self.modeName(mode)))
+
+    def ota(self, filename):
+        if not os.path.exists(filename):
+            filename, _ = urllib.request.urlretrieve(filename)
+        ESPOTA="~/.platformio/packages/tool-espotapy/espota.py"
+        ESPOTA = os.environ.get("ESPOTA", ESPOTA)
+        ESPOTA = os.path.expanduser(ESPOTA)
+        if not os.path.exists(ESPOTA):
+            raise IotsaError("Helper command not found: %s\nPlease install espota.py and optionally set ESPOTA environment variable" % (ESPOTA), file=sys.stderr)
+        #cmd = [ESPOTA, '-i', self.ipAddress, '-f', filename]
+        cmd = '"%s" -i %s -f "%s"' % (ESPOTA, self.ipAddress, filename)
+        status = subprocess.call(cmd, shell=True)
+        if status != 0:
+            raise IotsaError("OTA command %s failed" % (cmd), file=sys.stderr)

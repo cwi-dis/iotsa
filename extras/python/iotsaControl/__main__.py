@@ -60,6 +60,9 @@ class Main(object):
                     print("%s: %s: user intervention required:" % (sys.argv[0], cmd), file=sys.stderr)
                     print("%s: %s" % (sys.argv[0], arg), file=sys.stderr)
                     sys.exit(2)
+                except api.IotsaError as arg:
+                    print("%s: %s: %s" % (sys.argv[0], cmd, arg), file=sys.stderr)
+                    sys.exit(1)
                 except requests.exceptions.HTTPError as arg:
                     print("%s: %s: %s" % (sys.argv[0], cmd, arg), file=sys.stderr)
                     sys.exit(1)
@@ -213,22 +216,8 @@ class Main(object):
         if not filename:
             print("%s: ota requires a filename or URL" % sys.argv[0], file=sys.stderr)
             sys.exit(1)
-        filename, _ = urllib.request.urlretrieve(filename)
         self.loadDevice()
-        ESPOTA="~/.platformio/packages/tool-espotapy/espota.py"
-        ESPOTA = os.environ.get("ESPOTA", ESPOTA)
-        ESPOTA = os.path.expanduser(ESPOTA)
-        if not os.path.exists(ESPOTA):
-            print("%s: Not found: %s" % (sys.argv[0], ESPOTA), file=sys.stderr)
-            print("%s: Please install espota.py and optionally set ESPOTA environment variable", file=sys.stderr)
-            sys.exit(1)
-        #cmd = [ESPOTA, '-i', self.device.ipAddress, '-f', filename]
-        cmd = '"%s" -i %s -f "%s"' % (ESPOTA, self.device.ipAddress, filename)
-        status = subprocess.call(cmd, shell=True)
-        if status != 0:
-            print("%s: OTA command %s failed" % (sys.argv[0], ESPOTA), file=sys.stderr)
-            sys.exit(1)
-        
+        self.device.ota(filename)        
         
     def cmd_otaMode(self):
         """Ask target to go into over-the-air programming mode"""
