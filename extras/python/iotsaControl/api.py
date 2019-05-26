@@ -27,6 +27,13 @@ class UserIntervention(Exception):
 class CoapError(Exception):
     pass
 
+# We may want to try multiple times (in case of connection errors) because the device may be rebooting
+retrySession = requests.Session()
+_retry = requests.packages.urllib3.util.retry.Retry(connect=3, backoff_factor=0.5)
+adapter = requests.adapters.HTTPAdapter(max_retries=_retry)
+retrySession.mount('http://', adapter)
+retrySession.mount('https://', adapter)
+
 class PlatformWifi(object):
     """Default WiFi handling: asl the user."""
     def __init__(self):
@@ -158,7 +165,7 @@ class IotsaRESTProtocolHandler(object):
                 print('....', headers)
             if json:
                 print('>>>>', json)
-        r = requests.request(method, url, auth=auth, json=json, verify=not self.noverify, headers=headers)
+        r = retrySession.request(method, url, auth=auth, json=json, verify=not self.noverify, headers=headers)
         if r.history:
             print('Note: received redirect when accessing', url)
         if VERBOSE: print('<<<< status=%s reply=%s' % (r.status_code, r.text))
