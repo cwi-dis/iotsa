@@ -448,9 +448,9 @@ class IotsaDevice(object):
         ESPOTA = os.environ.get("ESPOTA", ESPOTA)
         ESPOTA = os.path.expanduser(ESPOTA)
         if not os.path.exists(ESPOTA):
-            raise IotsaError("Helper command not found: %s\nPlease install espota.py and optionally set ESPOTA environment variable" % (ESPOTA), file=sys.stderr)
+            raise IotsaError("Helper command not found: %s\nPlease install espota.py and optionally set ESPOTA environment variable" % (ESPOTA))
         #cmd = [ESPOTA, '-i', self.ipAddress, '-f', filename]
         cmd = '"%s" -i %s -f "%s"' % (ESPOTA, self.ipAddress, filename)
         status = subprocess.call(cmd, shell=True)
         if status != 0:
-            raise IotsaError("OTA command %s failed" % (cmd), file=sys.stderr)
+            raise IotsaError("OTA command %s failed" % (cmd))
