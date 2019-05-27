@@ -33,6 +33,19 @@ class Main(object):
     def __del__(self):
         self.close()
         
+    @classmethod
+    def _helpinfo(cls):
+        """Return available command help"""
+        # Get attributes that refer to commands 
+        names = dir(cls)
+        names = filter(lambda x: x.startswith('cmd_'), names)
+        names = sorted(names)
+        rv = []
+        for name in names:
+            handler = getattr(cls, name)
+            rv.append('%-10s\t%s' % (name[4:], handler.__doc__))
+        return '\n'.join(rv)
+
     def close(self):
         self.wifi = None
         if self.device:
@@ -74,7 +87,8 @@ class Main(object):
 
     def parseArgs(self):
         """Command line argument handling"""
-        parser = argparse.ArgumentParser(description="Access Igor home automation service and other http databases")
+        epilog = "Available commands:\n" + Main._helpinfo()
+        parser = argparse.ArgumentParser(description="Change settings or update software on iotsa devices", epilog=epilog, formatter_class=argparse.RawDescriptionHelpFormatter)
         parser.add_argument("--ssid", action="store", metavar="SSID", help="Connect to WiFi network named SSID")
         parser.add_argument("--ssidpw", action="store", metavar="password", help="WiFi password for network SSID")
         parser.add_argument("--target", "-t", action="store", metavar="IP", help="Iotsa board to operate on (use \"auto\" for automatic)")
@@ -91,7 +105,7 @@ class Main(object):
     #    parser.add_argument("--certificate", metavar='CERTFILE', help="Verify https certificates from given file")
         parser.add_argument('--noSystemRootCertificates', action="store_true", help='Do not use system root certificates, use REQUESTS_CA_BUNDLE or what requests package has')
         parser.add_argument("--compat", action="store_true", help="Compatability for old iotsa devices (ota only)")
-        parser.add_argument("command", nargs="+", help="Command to run (help for list)")
+        parser.add_argument("command", nargs="+", help="Command to run")
         self.args = parser.parse_args()
         api.VERBOSE=self.args.verbose
         machdep.VERBOSE=self.args.verbose
@@ -142,8 +156,8 @@ class Main(object):
             if len(all) > 1:
                 print("%s: multiple iotsa devices:" % (sys.argv[0]), end=' ', file=sys.stderr)
                 for a in all:
-                    print(a, end=' ')
-                print()
+                    print(a, end=' ', file=sys.stderr)
+                print(file=sys.stderr)
                 sys.exit(1)
             self.args.target = all[0]
         if self.args.target:
@@ -191,13 +205,6 @@ class Main(object):
         """Ask device to do a factory-reset"""
         self.loadDevice()
         self.device.gotoMode('factoryReset', wait=False, verbose=True)
-        
-    def cmd_help(self):
-        """List available commands"""
-        for name in dir(self):
-            if not name.startswith('cmd_'): continue
-            handler = getattr(self, name)
-            print('%-10s\t%s' % (name[4:], handler.__doc__))
             
     def cmd_info(self):
         """Show information on current target"""
