@@ -2,18 +2,22 @@
 #define _IOTSA_BUILDOPTIONS_H_
 
 #ifndef IOTSA_WITHOUT_DEBUG
+// Debug prints are enabled by default
 #define IOTSA_WITH_DEBUG
 #endif
 
 #ifndef IOTSA_WITHOUT_WIFI
+// WiFi is enabled by default
 #define IOTSA_WITH_WIFI
 #endif
 
 #ifndef IOTSA_WITHOUT_HTTP
+// http is enabled by default
 #define IOTSA_WITH_HTTP
 #endif
 
 #ifndef IOTSA_WITHOUT_HTTPS
+// https is NOT enabled by default
 // #define IOTSA_WITH_HTTPS
 #endif
 
@@ -22,22 +26,27 @@
 #endif
 
 #ifndef IOTSA_WITHOUT_WEB
+// web support (including uploads) is enabled by default
 #define IOTSA_WITH_WEB
 #endif
 
 #ifndef IOTSA_WITHOUT_API
+// Rest or Coap API is enabled by default
 #define IOTSA_WITH_API
 #endif
 
 #if !defined(IOTSA_WITHOUT_REST) && !defined(IOTSA_WITHOUT_API)
+// Rest API is enabled by default
 #define IOTSA_WITH_REST
 #endif
 
 #if !defined(IOTSA_WITHOUT_COAP) && !defined(IOTSA_WITHOUT_API)
+// Coap API is NOT enabled by default
 // #define IOTSA_WITH_COAP
 #endif
 
 #ifndef IOTSA_WITHOUT_TIMEZONE_LIBRARY
+// Timezone support is enabled in NTP module by default
 #define IOTSA_WITH_TIMEZONE_LIBRARY
 #endif
 
