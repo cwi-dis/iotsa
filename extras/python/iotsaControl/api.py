@@ -149,8 +149,9 @@ class IotsaRESTProtocolHandler(object):
     def put(self, endpoint, json=None):
         return self.request('PUT', endpoint, json=json)
         
-    def post(self, endpoint, json=None):
-        return self.request('POST', endpoint, json=json)
+    def post(self, endpoint, json=None, files=None):
+        assert files is None or json is None
+        return self.request('POST', endpoint, json=json, files=files)
         
     def request(self, method, endpoint, json=None):
         headers = {}
@@ -248,8 +249,9 @@ class IotsaCOAPProtocolHandler(object):
         self._raiseIfError(rv)
         return json_loads(rv.payload)
         
-    def post(self, endpoint, json=None):
+    def post(self, endpoint, json=None, files=None):
         assert json is not None
+        assert files is None
         endpoint = self.basePath+endpoint
         data = json_dumps(json)
         if VERBOSE: print('COAP POST coap://%s:%d%s' % (self.client.server[0], self.client.server[1], endpoint, data))
@@ -443,6 +445,9 @@ class IotsaDevice(object):
         if verbose:
             print("%s: target is now in %s mode" % (sys.argv[0], self.modeName(mode)))
 
+    def reboot(self):
+        self.protocolHandler.put('config', json={'reboot':True})
+        
     def ota(self, filename):
         if not os.path.exists(filename):
             filename, _ = urllib.request.urlretrieve(filename)
@@ -456,3 +461,23 @@ class IotsaDevice(object):
         status = subprocess.call(cmd, shell=True)
         if status != 0:
             raise IotsaError("OTA command %s failed" % (cmd))
+
+    def uploadCertificate(self, keyData, certificateData):
+        if isinstance(keyData, string) and keyData.startswith('---'):
+            keyData = keyData.splitlines()
+            keyData = keyData[1:-1]
+            keyData = '\n'.join(keyData)
+            keyData = binascii.a2b_base64(keyData)
+        if isinstance(certificateData, string) and certificateData.startswith('---'):
+            certificateData = certificateData.splitlines()
+            certificateData = certificateData[1:-1]
+            certificateData = '\n'.join(certificateData)
+            certificateData = binascii.a2b_base64(certificateData)
+        keyFile = io.BytesIO(keyData)
+        certificateFile = io.BytesIO(certificateData)
+        files = {
+            'keyFile' : ('/config/httpsKey.der', keyFile, 'application/binary'),
+            'certfile' : ('/config/httpsCert.der', certificateFile, 'application/binary')
+            }
+        self.protocolHandler.post('config', files=files)
+        

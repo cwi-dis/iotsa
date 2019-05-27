@@ -333,6 +333,33 @@ class Main(object):
             sys.exit(1)
         ext.save()
         
+    def cmd_reboot(self):
+        """Reboot the target"""
+        self.loadDevice()
+        self.device.reboot()
+        
+    def cmd_certificate(self):
+        """Install https certificate. Arguments are keyfile and certfile (in PEM or DER)"""
+        keyFilename = self._getcmd()
+        certFilename = self._getcmd()
+        if not keyFilename or not certFilename:
+            print("%s: certificate requires keyfile and certfile arguments" % sys.argv[0], file=sys.stderr)
+            sys.exit(1)
+        if keyFilename[-4:] == '.pem':
+            key = open(keyFilename, 'r').read()
+        elif keyFilename[-4:] == '.der':
+            key = open(keyFilename, 'rb').read()
+        else:
+            print("%s: certificate: keyfile must be .pem or .der" % sys.argv[0], file=sys.stderr)
+        if certFilename[-4:] == '.pem':
+            cert = open(certFilename, 'r').read()
+        elif certFilename[-4:] == '.der':
+            cert = open(certFilename, 'rb').read()
+        else:
+            print("%s: certificate: certfile must be .pem or .der" % sys.argv[0], file=sys.stderr)
+        self.loadDevice()
+        self.device.uploadCertificate(key, cert)
+        
 def main():
     m = Main()
     m.run()
