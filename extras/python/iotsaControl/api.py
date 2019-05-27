@@ -12,6 +12,8 @@ import copy
 import urllib.parse
 from json import loads as json_loads
 from json import dumps as json_dumps
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 VERBOSE=False
 WITH_COAPTHON=True
