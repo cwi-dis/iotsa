@@ -36,8 +36,21 @@ if sys.platform == 'darwin':
     import plistlib
     class PlatformWifi(object):
         def __init__(self):
-            self.wifiInterface = os.getenv('IOTSA_WIFI', 'en2')
-
+            self.wifiInterface = os.getenv('IOTSA_WIFI')
+            if not self.wifiInterface:
+                cmd = 'networksetup -listnetworkserviceorder'
+                p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True)
+                data = p.stdout.readlines()
+                for line in data:
+                    line = line.strip()
+                    searchString = '(Hardware Port: Wi-Fi, Device: '
+                    if line[:len(searchString)] == searchString and line[-1:] == ')':
+                        self.wifiInterface = line[len(searchString):-1]
+                        if VERBOSE: print('Using WiFi interface', self.wifiInterface)
+                        break
+                    else:
+                        self.wifiInterface = 'en1'
+                        
         def platformListWifiNetworks(self):
             if VERBOSE: print('Listing wifi networks (OSX)')
             p = subprocess.Popen('/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport --scan --xml', shell=True, stdout=subprocess.PIPE)
