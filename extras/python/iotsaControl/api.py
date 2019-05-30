@@ -8,6 +8,7 @@ from builtins import object
 import sys
 import copy
 import urllib.request
+import requests.exceptions
 
 from .consts import UserIntervention, IotsaError, CoapError, VERBOSE
 from .dfu import DFU
@@ -55,8 +56,9 @@ class IotsaConfig(object):
 class IotsaDevice(object):
     def __init__(self, ipAddress, port=None, protocol=None, noverify=False, bearer=None, auth=None):
         self.ipAddress = ipAddress
+        self.protocolHandler = None
         if protocol == None: 
-            protocol = 'http'
+            protocol, noverify = self._guessProtocol(ipAddress, port)
         url = '%s://%s' % (protocol, ipAddress)
         if port:
             url += ':%d' % port
@@ -70,6 +72,56 @@ class IotsaDevice(object):
     def __del__(self):
         self.close()
         
+    def _guessProtocol(self, ipAddress, port):
+        protocol = 'https'
+        noverify = False
+        url = '%s://%s' % (protocol, ipAddress)
+        if port:
+            url += ':%d' % port
+        HandlerClass = HandlerForProto[protocol]
+        ph = HandlerClass(url, noverify=noverify)
+        try:
+            ph.get('config')
+        except requests.exceptions.SSLError:
+            if VERBOSE: print("Using https protocol with --noverify")
+            return 'https', True
+        except:
+            pass
+        else:
+            if VERBOSE: print("Using https protocol")
+            return 'https', False
+            
+        protocol = 'http'
+        url = '%s://%s' % (protocol, ipAddress)
+        if port:
+            url += ':%d' % port
+        HandlerClass = HandlerForProto[protocol]
+        ph = HandlerClass(url, noverify=noverify)
+        try:
+            ph.get('config')
+        except:
+            pass
+        else:
+            if VERBOSE: print("Using http protocol")
+            return 'http', False
+            
+        protocol = 'coap'
+        url = '%s://%s' % (protocol, ipAddress)
+        if port:
+            url += ':%d' % port
+        HandlerClass = HandlerForProto[protocol]
+        ph = HandlerClass(url, noverify=noverify)
+        try:
+            ph.get('config')
+        except:
+            pass
+        else:
+            if VERBOSE: print("Using coap protocol")
+            return 'coap', False
+            
+        raise IotsaError("Cannot determine protocol to use for {}, use --protocol".format(ipAddress))
+            
+            
     def close(self):
         if self.protocolHandler:
             self.protocolHandler.close()

@@ -60,6 +60,8 @@ class IotsaRESTProtocolHandler(object):
         while True:
             try:
                 r = requests.request(method, url, auth=self.auth, json=json, verify=not self.noverify, headers=headers)
+            except requests.exceptions.SSLError:
+                raise
             except requests.exceptions.ConnectionError:
                 if retryCount > 0:
                     retryCount -= 1
