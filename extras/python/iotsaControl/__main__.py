@@ -28,6 +28,7 @@ class Main(object):
     def __init__(self):
         self.wifi = None
         self.device = None
+        self.dfu = None
         self.cmdlist = []
         
     def __del__(self):
@@ -105,6 +106,7 @@ class Main(object):
     #    parser.add_argument("--certificate", metavar='CERTFILE', help="Verify https certificates from given file")
         parser.add_argument('--noSystemRootCertificates', action="store_true", help='Do not use system root certificates, use REQUESTS_CA_BUNDLE or what requests package has')
         parser.add_argument("--compat", action="store_true", help="Compatability for old iotsa devices (ota only)")
+        parser.add_argument("--serial", metavar="TTY", help="Serial port to use for DFU commands (default: automatically select)")
         parser.add_argument("command", nargs="+", help="Command to run")
         self.args = parser.parse_args()
         api.VERBOSE=self.args.verbose
@@ -132,6 +134,12 @@ class Main(object):
     def _ungetcmd(self, cmd):
         """Helper method to handle multiple commands"""
         self.cmdlist.insert(0, cmd)
+        
+    def loadDFU(self):
+        """Load DFU driver (to allow flashing over USB or Serial Link for dead iotsa device)"""
+        if self.dfu: return
+        self.dfu = api.DFU(self.args.serial)
+        self.dfu.dfuWait()
         
     def loadWifi(self):
         """Load WiFi network (if not already done)"""
@@ -236,6 +244,25 @@ class Main(object):
         """Ask target to go into over-the-air programming mode and wait until it is (probably after user intervention)"""
         self.loadDevice()
         self.device.gotoMode('ota', wait=True, verbose=True)
+        
+    def cmd_dfuMode(self):
+        """Check whether there is a target connected in DFU mode (via USB or serial port)"""
+        self.loadDFU()
+        
+    def cmd_dfuClear(self):
+        """Completely erase flash of target connected in DFU mode (via USB or serial port)"""
+        self.loadDFU()
+        self.dfu.dfuClear()
+        
+    def cmd_dfuLoad(self):
+        """Load new firmware to target connected in DFU mode (via USB or serial port)"""
+        filename = self._getcmd()
+        if not filename:
+            print("%s: dfuLoad requires a filename or URL" % sys.argv[0], file=sys.stderr)
+            sys.exit(1)
+        self.loadDFU()
+        ok = self.dfu.dfuLoad(filename)
+        ok = self.dfu.dfuRun()
         
     def cmd_targets(self):
         """List iotsa devices visible on current network"""

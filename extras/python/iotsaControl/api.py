@@ -9,6 +9,7 @@ import sys
 import socket
 import requests
 import copy
+import esptool
 import urllib.parse
 from json import loads as json_loads
 from json import dumps as json_dumps
@@ -32,8 +33,50 @@ class IotsaError(RuntimeError):
 class CoapError(Exception):
     pass
 
+class DFU(object):
+    """Handle Resetting flash and uploading initial binary over Serial connection (or USB)"""
+    def __init__(self, port=None):
+        self.port = port
+        
+    def _run(self, cmd, args=[], nostub=False):
+        command = ["--after", "no_reset"]
+        if self.port:
+            command += ["--port", self.port]
+        if nostub:
+            command += ["--no-stub"]
+        command += [cmd]
+        command += args
+        try:
+            esptool.main(command)
+        except esptool.FatalError as e:
+            raise IotsaError(str(e))
+            
+    def dfuWait(self):
+        try:
+            self._run("chip_id", nostub=True)
+        except IotsaError:
+            print("** To use DFU mode on a iotsa device:")
+            print("   1. Connect iotsa device to serial using FTDI232 or similar interface")
+            print("   2. Ensure iotsa device is powered through normal power supply")
+            print("   3. Press-and-hold PRG button while pressing RST button")
+            raise
+        
+    def dfuClear(self):
+        self.dfuWait()
+        self._run("erase_flash")
+        
+    def dfuRun(self):
+        self.dfuWait()
+        self._run("run", nostub=True)
+        
+    def dfuLoad(self, filename):
+        self.dfuWait()
+        if not os.path.exists(filename):
+            filename, _ = urllib.request.urlretrieve(filename)
+        self._run("write_flash", args=["0", filename])
+        
 class PlatformWifi(object):
-    """Default WiFi handling: asl the user."""
+    """Default WiFi handling: ask the user."""
     def __init__(self):
         pass
 
