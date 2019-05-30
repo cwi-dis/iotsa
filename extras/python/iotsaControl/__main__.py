@@ -110,7 +110,8 @@ class Main(object):
         parser.add_argument("--serial", metavar="TTY", help="Serial port to use for DFU commands (default: automatically select)")
         parser.add_argument("command", nargs="+", help="Command to run")
         self.args = parser.parse_args()
-        consts.VERBOSE=self.args.verbose
+        if self.args.verbose:
+            consts.VERBOSE.append(True)
         if not self.args.ipv6:
             # Current esp8266 Arduino mDNS implementation has a problem: it replies with an IPv4 address but does not send a
             # negative reply for the IPv6 address. This causes requests to retry the mDNS query until it times out.
