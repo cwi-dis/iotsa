@@ -276,9 +276,12 @@ class IotsaDevice(object):
             certificateData = '\n'.join(certificateData)
             certificateData = binascii.a2b_base64(certificateData)
         keyFile = io.BytesIO(keyData)
-        certificateFile = io.BytesIO(certificateData)
         files = {
             'keyFile' : ('/config/httpsKey.der', keyFile, 'application/binary'),
+            }
+        self.protocolHandler.post('config', files=files)
+        certificateFile = io.BytesIO(certificateData)
+        files = {
             'certfile' : ('/config/httpsCert.der', certificateFile, 'application/binary')
             }
         self.protocolHandler.post('config', files=files)
