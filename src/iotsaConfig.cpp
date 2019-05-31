@@ -707,7 +707,7 @@ IotsaConfigMod::uploadOkHandler() {
 void IotsaConfigMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
   server->on("/config", std::bind(&IotsaConfigMod::handler, this));
-  server->on("/upload", HTTP_POST, std::bind(&IotsaConfigMod::uploadOkHandler, this), std::bind(&IotsaConfigMod::uploadHandler, this));
+  server->on("/config", HTTP_POST, std::bind(&IotsaConfigMod::uploadOkHandler, this), std::bind(&IotsaConfigMod::uploadHandler, this));
 #endif
 #ifdef IOTSA_WITH_API
   api.setup("/api/config", true, true);
