@@ -7,6 +7,8 @@ from builtins import str
 from builtins import object
 import sys
 import copy
+import binascii
+import io
 import urllib.request
 import requests.exceptions
 
@@ -263,12 +265,12 @@ class IotsaDevice(object):
             raise IotsaError("OTA command %s failed" % (cmd))
 
     def uploadCertificate(self, keyData, certificateData):
-        if isinstance(keyData, string) and keyData.startswith('---'):
+        if isinstance(keyData, str) and keyData.startswith('---'):
             keyData = keyData.splitlines()
             keyData = keyData[1:-1]
             keyData = '\n'.join(keyData)
             keyData = binascii.a2b_base64(keyData)
-        if isinstance(certificateData, string) and certificateData.startswith('---'):
+        if isinstance(certificateData, str) and certificateData.startswith('---'):
             certificateData = certificateData.splitlines()
             certificateData = certificateData[1:-1]
             certificateData = '\n'.join(certificateData)
