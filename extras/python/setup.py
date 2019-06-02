@@ -28,8 +28,8 @@ WiFi network or in the physical vicinity, inspecting and changing configuration
 of those devices and uploading new firmware over the air.
 """
 
-# Get the version number from the igor module
-VERSION="1.6.1"    
+# Get the version number from the iotsa module
+VERSION="2.1"    
 
 setup(
     name='iotsaControl',

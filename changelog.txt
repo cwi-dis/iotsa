@@ -1,4 +1,4 @@
-iotsa 2.1 - 26-May-2019
+iotsa 2.1 - 02-Jun-2019
 
 - Got rid of default password, it provides no extra security.
 - Allow uploading of certificate/key as DER with POST requests.
