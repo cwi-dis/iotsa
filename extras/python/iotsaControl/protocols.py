@@ -24,7 +24,6 @@ class IotsaRESTProtocolHandler(object):
     def __init__(self, baseURL, noverify=False, bearer=None, auth=None):
         if baseURL[-1] != '/':
             baseURL += '/'
-        baseURL += 'api/'
         self.baseURL = baseURL
         self.noverify = noverify
         self.bearer = bearer
@@ -47,7 +46,10 @@ class IotsaRESTProtocolHandler(object):
         headers = {}
         if self.bearer:
             headers['Authorization'] = 'Bearer '+self.bearer
-        url = self.baseURL + endpoint
+        if endpoint[:1] == '/':
+            url = self.baseURL + endpoint[1:]
+        else:
+            url = self.baseURL + 'api/' + endpoint
         if VERBOSE: 
             print('REST %s %s' % (method, url))
             if self.auth:

@@ -678,9 +678,9 @@ IotsaConfigMod::uploadHandler() {
       IFDEBUG IotsaSerial.println("Incorrect filename");
       return;
     }
-    IFDEBUG IotsaSerial.print("Uploading ");
-    IFDEBUG IotsaSerial.println(upload.filename);
     String _uploadfilename = "/config/" + upload.filename;
+    IFDEBUG IotsaSerial.print("Uploading ");
+    IFDEBUG IotsaSerial.println(_uploadfilename);
     if(SPIFFS.exists(_uploadfilename)) SPIFFS.remove(_uploadfilename);
     _uploadFile = SPIFFS.open(_uploadfilename, "w");
   } else if(upload.status == UPLOAD_FILE_WRITE){
@@ -709,7 +709,7 @@ IotsaConfigMod::uploadOkHandler() {
 void IotsaConfigMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
   server->on("/config", std::bind(&IotsaConfigMod::handler, this));
-  server->on("/config", HTTP_POST, std::bind(&IotsaConfigMod::uploadOkHandler, this), std::bind(&IotsaConfigMod::uploadHandler, this));
+  server->on("/configupload", HTTP_POST, std::bind(&IotsaConfigMod::uploadOkHandler, this), std::bind(&IotsaConfigMod::uploadHandler, this));
 #endif
 #ifdef IOTSA_WITH_API
   api.setup("/api/config", true, true);
