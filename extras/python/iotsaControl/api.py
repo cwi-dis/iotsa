@@ -6,6 +6,8 @@ standard_library.install_aliases()
 from builtins import str
 from builtins import object
 import sys
+import os
+import subprocess
 import copy
 import time
 import binascii
