@@ -678,6 +678,8 @@ IotsaConfigMod::uploadHandler() {
       IFDEBUG IotsaSerial.println("Incorrect filename");
       return;
     }
+    IFDEBUG IotsaSerial.print("Uploading ");
+    IFDEBUG IotsaSerial.println(upload.filename);
     String _uploadfilename = "/config/" + upload.filename;
     if(SPIFFS.exists(_uploadfilename)) SPIFFS.remove(_uploadfilename);
     _uploadFile = SPIFFS.open(_uploadfilename, "w");
@@ -699,7 +701,7 @@ IotsaConfigMod::uploadOkHandler() {
     server->send(200, "text/plain", "OK");
   } else {
     IFDEBUG IotsaSerial.println("upload failed");
-    server->send(200, "text/plain", "FAIL");
+    server->send(403, "text/plain", "FAIL");
   }
 }
 #endif // defined(IOTSA_WITH_WEB) || defined(IOTSA_WITH_API)
