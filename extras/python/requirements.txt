@@ -1,3 +1,4 @@
+future
 requests
 esptool
 zeroconf2; python_version < '3.0'
