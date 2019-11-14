@@ -9,8 +9,8 @@
 void IotsaFilesUploadMod::setup() {
 }
 
-File _uploadFile;
-bool _uploadOK;
+static File _uploadFile;
+static bool _uploadOK;
 
 void
 IotsaFilesUploadMod::uploadHandler() {
@@ -19,6 +19,8 @@ IotsaFilesUploadMod::uploadHandler() {
   _uploadOK = false;
   if(upload.status == UPLOAD_FILE_START){
     String _uploadfilename = "/data/" + upload.filename;
+    IFDEBUG IotsaSerial.print("Uploading ");
+    IFDEBUG IotsaSerial.println(_uploadfilename);
     if(SPIFFS.exists(_uploadfilename)) SPIFFS.remove(_uploadfilename);
     _uploadFile = SPIFFS.open(_uploadfilename, "w");
     //DBG_OUTPUT_PORT.print("Upload: START, filename: "); DBG_OUTPUT_PORT.println(upload.filename);
@@ -38,9 +40,11 @@ void
 IotsaFilesUploadMod::uploadOkHandler() {
   String message;
   if (_uploadOK) {
+    IFDEBUG IotsaSerial.println("upload ok");
     server->send(200, "text/plain", "OK");
   } else {
-    server->send(200, "text/plain", "FAIL");
+    IFDEBUG IotsaSerial.println("upload failed");
+    server->send(403, "text/plain", "FAIL");
   }
 }
 

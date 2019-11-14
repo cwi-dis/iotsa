@@ -9,12 +9,13 @@ import argparse
 import sys
 import requests
 import time
-from . import api
 import os
 import subprocess
-from . import machdep
 import urllib.request, urllib.parse, urllib.error
 import socket
+
+from . import api
+from . import consts
 
 orig_getaddrinfo = socket.getaddrinfo
 def ipv4_getaddrinfo(host, port, family=0, socktype=0, proto=0, flags=0):
@@ -28,11 +29,25 @@ class Main(object):
     def __init__(self):
         self.wifi = None
         self.device = None
+        self.dfu = None
         self.cmdlist = []
         
     def __del__(self):
         self.close()
         
+    @classmethod
+    def _helpinfo(cls):
+        """Return available command help"""
+        # Get attributes that refer to commands 
+        names = dir(cls)
+        names = filter(lambda x: x.startswith('cmd_'), names)
+        names = sorted(names)
+        rv = []
+        for name in names:
+            handler = getattr(cls, name)
+            rv.append('%-10s\t%s' % (name[4:], handler.__doc__))
+        return '\n'.join(rv)
+
     def close(self):
         self.wifi = None
         if self.device:
@@ -60,6 +75,9 @@ class Main(object):
                     print("%s: %s: user intervention required:" % (sys.argv[0], cmd), file=sys.stderr)
                     print("%s: %s" % (sys.argv[0], arg), file=sys.stderr)
                     sys.exit(2)
+                except api.IotsaError as arg:
+                    print("%s: %s: %s" % (sys.argv[0], cmd, arg), file=sys.stderr)
+                    sys.exit(1)
                 except requests.exceptions.HTTPError as arg:
                     print("%s: %s: %s" % (sys.argv[0], cmd, arg), file=sys.stderr)
                     sys.exit(1)
@@ -69,31 +87,10 @@ class Main(object):
         finally:
             self.close()
 
-    def _configModeAndWait(self, mode):
-        """Helper method to request a specific mode and wait until the user has enabled it"""
-        self.loadDevice()
-        if self.device.get('currentMode') == mode:
-            print("%s: target already in mode %s" % (sys.argv[0], self.device.modeName(mode)))
-            return
-        self.device.set('requestedMode', mode)
-        try:
-            self.device.save()
-        except api.UserIntervention as arg:
-            print("%s: %s" % (sys.argv[0], arg), file=sys.stderr)
-        while True:
-            time.sleep(5)
-            self.device.load()
-            if self.device.get('currentMode') == mode:
-                break
-            reqMode = self.device.get('requestedMode', 0)
-            if self.device.get('requestedMode') != mode:
-                print("%s: target now has requestedMode %s in stead of %s?" % (sys.argv[0], self.device.modeName(reqMode), self.device.modeName(mode)), file=sys.stderr)
-            print("%s: Reboot %s within %s seconds to activate mode %s" % (sys.argv[0], self.device.ipAddress, self.device.get('requestedModeTimeout', '???'), self.device.modeName(reqMode)), file=sys.stderr)
-        print("%s: target is now in %s mode" % (sys.argv[0], self.device.modeName(mode)))
-        
     def parseArgs(self):
         """Command line argument handling"""
-        parser = argparse.ArgumentParser(description="Access Igor home automation service and other http databases")
+        epilog = "Available commands:\n" + Main._helpinfo()
+        parser = argparse.ArgumentParser(description="Change settings or update software on iotsa devices", epilog=epilog, formatter_class=argparse.RawDescriptionHelpFormatter)
         parser.add_argument("--ssid", action="store", metavar="SSID", help="Connect to WiFi network named SSID")
         parser.add_argument("--ssidpw", action="store", metavar="password", help="WiFi password for network SSID")
         parser.add_argument("--target", "-t", action="store", metavar="IP", help="Iotsa board to operate on (use \"auto\" for automatic)")
@@ -110,10 +107,11 @@ class Main(object):
     #    parser.add_argument("--certificate", metavar='CERTFILE', help="Verify https certificates from given file")
         parser.add_argument('--noSystemRootCertificates', action="store_true", help='Do not use system root certificates, use REQUESTS_CA_BUNDLE or what requests package has')
         parser.add_argument("--compat", action="store_true", help="Compatability for old iotsa devices (ota only)")
-        parser.add_argument("command", nargs="+", help="Command to run (help for list)")
+        parser.add_argument("--serial", metavar="TTY", help="Serial port to use for DFU commands (default: automatically select)")
+        parser.add_argument("command", nargs="+", help="Command to run")
         self.args = parser.parse_args()
-        api.VERBOSE=self.args.verbose
-        machdep.VERBOSE=self.args.verbose
+        if self.args.verbose:
+            consts.VERBOSE.append(True)
         if not self.args.ipv6:
             # Current esp8266 Arduino mDNS implementation has a problem: it replies with an IPv4 address but does not send a
             # negative reply for the IPv6 address. This causes requests to retry the mDNS query until it times out.
@@ -138,6 +136,12 @@ class Main(object):
         """Helper method to handle multiple commands"""
         self.cmdlist.insert(0, cmd)
         
+    def loadDFU(self):
+        """Load DFU driver (to allow flashing over USB or Serial Link for dead iotsa device)"""
+        if self.dfu: return
+        self.dfu = api.DFU(self.args.serial)
+        self.dfu.dfuWait()
+        
     def loadWifi(self):
         """Load WiFi network (if not already done)"""
         if self.wifi: return
@@ -161,24 +165,23 @@ class Main(object):
             if len(all) > 1:
                 print("%s: multiple iotsa devices:" % (sys.argv[0]), end=' ', file=sys.stderr)
                 for a in all:
-                    print(a, end=' ')
-                print()
+                    print(a, end=' ', file=sys.stderr)
+                print(file=sys.stderr)
                 sys.exit(1)
             self.args.target = all[0]
         if self.args.target:
             ok = self.wifi.selectDevice(self.args.target)
-        self.device = api.IotsaDevice(self.wifi.currentDevice(), protocol=self.args.protocol, port=self.args.port, noverify=self.args.noverify)
+        kwargs = {}
         if self.args.bearer:
-            self.device.setBearerToken(self.args.bearer)
+            kwargs['bearer'] = self.args.bearer
         if self.args.credentials:
-            self.device.setLogin(*self.args.credentials.split(':'))
-        if not self.args.compat:
-            self.device.load()
+            kwargs['auth'] = self.args.credentials.split(':')
+        self.device = api.IotsaDevice(self.wifi.currentDevice(), protocol=self.args.protocol, port=self.args.port, noverify=self.args.noverify, **kwargs)
             
     def cmd_config(self):
         """Set target configuration parameters (target must be in configuration mode)"""
         self.loadDevice()
-        if self.device.get('currentMode', 0) != 1 and not self.device.get('privateWifi', 0):
+        if self.device.config.get('currentMode', 0) != 1 and not self.device.config.get('privateWifi', 0):
             raise api.UserIntervention("Set target into configuration mode first. See configMode or configWait commands.")
         
         anyDone = False
@@ -190,35 +193,27 @@ class Main(object):
                 self._ungetcmd(subCmd)
                 break
             name, value = subCmd.split('=', 1)
-            self.device.set(name, value)
+            self.device.config.set(name, value)
             anyDone = True
         if not anyDone:
             print("%s: config: requires name=value [...] to set config variables" % sys.argv[0], file=sys.stderr)
             sys.exit(1)
-        self.device.save()
+        self.device.config.save()
         
     def cmd_configMode(self):
         """Ask target to go into configuration mode"""
         self.loadDevice()
-        self.device.set('requestedMode', 1)
-        self.device.save()
+        self.device.gotoMode('config', wait=False, verbose=True)
 
     def cmd_configWait(self):
         """Ask target to go into configuration mode and wait until it is (probably after user intervention)"""
-        self._configModeAndWait(1)
+        self.loadDevice()
+        self.device.gotoMode('config', wait=True, verbose=True)
         
     def cmd_factoryReset(self):
         """Ask device to do a factory-reset"""
         self.loadDevice()
-        self.device.set('requestedMode', 3)
-        self.device.save()
-        
-    def cmd_help(self):
-        """List available commands"""
-        for name in dir(self):
-            if not name.startswith('cmd_'): continue
-            handler = getattr(self, name)
-            print('%-10s\t%s' % (name[4:], handler.__doc__))
+        self.device.gotoMode('factoryReset', wait=False, verbose=True)
             
     def cmd_info(self):
         """Show information on current target"""
@@ -237,32 +232,38 @@ class Main(object):
         if not filename:
             print("%s: ota requires a filename or URL" % sys.argv[0], file=sys.stderr)
             sys.exit(1)
-        filename, _ = urllib.request.urlretrieve(filename)
         self.loadDevice()
-        ESPOTA="~/.platformio/packages/tool-espotapy/espota.py"
-        ESPOTA = os.environ.get("ESPOTA", ESPOTA)
-        ESPOTA = os.path.expanduser(ESPOTA)
-        if not os.path.exists(ESPOTA):
-            print("%s: Not found: %s" % (sys.argv[0], ESPOTA), file=sys.stderr)
-            print("%s: Please install espota.py and optionally set ESPOTA environment variable", file=sys.stderr)
-            sys.exit(1)
-        #cmd = [ESPOTA, '-i', self.device.ipAddress, '-f', filename]
-        cmd = '"%s" -i %s -f "%s"' % (ESPOTA, self.device.ipAddress, filename)
-        status = subprocess.call(cmd, shell=True)
-        if status != 0:
-            print("%s: OTA command %s failed" % (sys.argv[0], ESPOTA), file=sys.stderr)
-            sys.exit(1)
-        
+        self.device.ota(filename)        
         
     def cmd_otaMode(self):
         """Ask target to go into over-the-air programming mode"""
         self.loadDevice()
-        self.device.set('requestedMode', 2)
-        self.device.save()
+        self.loadDevice()
+        self.device.gotoMode('ota', wait=False, verbose=True)
 
     def cmd_otaWait(self):
         """Ask target to go into over-the-air programming mode and wait until it is (probably after user intervention)"""
-        self._configModeAndWait(2)
+        self.loadDevice()
+        self.device.gotoMode('ota', wait=True, verbose=True)
+        
+    def cmd_dfuMode(self):
+        """Check whether there is a target connected in DFU mode (via USB or serial port)"""
+        self.loadDFU()
+        
+    def cmd_dfuClear(self):
+        """Completely erase flash of target connected in DFU mode (via USB or serial port)"""
+        self.loadDFU()
+        self.dfu.dfuClear()
+        
+    def cmd_dfuLoad(self):
+        """Load new firmware to target connected in DFU mode (via USB or serial port)"""
+        filename = self._getcmd()
+        if not filename:
+            print("%s: dfuLoad requires a filename or URL" % sys.argv[0], file=sys.stderr)
+            sys.exit(1)
+        self.loadDFU()
+        ok = self.dfu.dfuLoad(filename)
+        ok = self.dfu.dfuRun()
         
     def cmd_targets(self):
         """List iotsa devices visible on current network"""
@@ -270,18 +271,36 @@ class Main(object):
         targets = self.wifi.findDevices()
         for t in targets: print(t)
         
+    def cmd_allInfo(self):
+        """Show all information for all modules for target"""
+        self.loadDevice()
+        all = self.device.getAll()
+        self._printall(all, 0)
+
+    def _printall(self, d, indent):
+        if  isinstance(d, dict):
+            print()
+            for k, v in d.items():
+                print('{}{}: '.format(' '*indent, k), end='')
+                self._printall(v, indent+4)
+        elif isinstance(d, list):
+            print()
+            for v in d:
+                print('{}- '.format(' '*indent), end='')
+                self._printall(v, indent+4)
+        else:
+            print(repr(d))
+
     def cmd_wifiInfo(self):
         """Show WiFi information for target"""
         self.loadDevice()
         wifi = self.device.getApi('wificonfig')
-        wifi.load()
         wifi.printStatus()
         
     def cmd_wifiConfig(self):
         """Set WiFi parameters (target must be in configuration or private WiFi mode)"""
         self.loadDevice()
         wifi = self.device.getApi('wificonfig')
-        wifi.load()
         
         anyDone = False
         while True:
@@ -311,7 +330,6 @@ class Main(object):
             print("%s: xInfo requires a module name" % sys.argv[0], file=sys.stderr)
             sys.exit(1)
         ext = self.device.getApi(modName)
-        ext.load()
         ext.printStatus()
         
     def cmd_xConfig(self):
@@ -322,7 +340,6 @@ class Main(object):
             print("%s: xConfig requires a module name" % sys.argv[0], file=sys.stderr)
             sys.exit(1)
         ext = self.device.getApi(modName)
-        ext.load()
         
         anyDone = False
         while True:
@@ -343,6 +360,33 @@ class Main(object):
             print("%s: xConfig %s: requires name=value [...] to set config variables" % sys.argv[0], file=sys.stderr)
             sys.exit(1)
         ext.save()
+        
+    def cmd_reboot(self):
+        """Reboot the target"""
+        self.loadDevice()
+        self.device.reboot()
+        
+    def cmd_certificate(self):
+        """Install https certificate. Arguments are keyfile and certfile (in PEM or DER)"""
+        keyFilename = self._getcmd()
+        certFilename = self._getcmd()
+        if not keyFilename or not certFilename:
+            print("%s: certificate requires keyfile and certfile arguments" % sys.argv[0], file=sys.stderr)
+            sys.exit(1)
+        if keyFilename[-4:] == '.pem':
+            key = open(keyFilename, 'r').read()
+        elif keyFilename[-4:] == '.der':
+            key = open(keyFilename, 'rb').read()
+        else:
+            print("%s: certificate: keyfile must be .pem or .der" % sys.argv[0], file=sys.stderr)
+        if certFilename[-4:] == '.pem':
+            cert = open(certFilename, 'r').read()
+        elif certFilename[-4:] == '.der':
+            cert = open(certFilename, 'rb').read()
+        else:
+            print("%s: certificate: certfile must be .pem or .der" % sys.argv[0], file=sys.stderr)
+        self.loadDevice()
+        self.device.uploadCertificate(key, cert)
         
 def main():
     m = Main()

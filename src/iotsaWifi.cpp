@@ -185,9 +185,7 @@ String IotsaWifiMod::info() {
 #ifdef IOTSA_WITH_API
 bool IotsaWifiMod::getHandler(const char *path, JsonObject& reply) {
   reply["ssid"] = ssid;
-#if 0
-  reply["ssidPassword"] = ssidPassword;
-#endif
+  reply["has_ssidPassword"] = ssidPassword.length() > 0;
   return true;
 }
 

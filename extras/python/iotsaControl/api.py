@@ -6,239 +6,19 @@ standard_library.install_aliases()
 from builtins import str
 from builtins import object
 import sys
-import socket
-import requests
+import os
+import subprocess
 import copy
-import urllib.parse
-from json import loads as json_loads
-from json import dumps as json_dumps
+import time
+import binascii
+import io
+import urllib.request
+import requests.exceptions
 
-VERBOSE=False
-WITH_COAPTHON=True
-if WITH_COAPTHON:
-    # Coapthon is disabled for now: the current version automatically creates log
-    # files and messes with the logger settings.
-    import coapthon.client.helperclient
-    import coapthon.defines
-
-class UserIntervention(Exception):
-    pass
-
-class CoapError(Exception):
-    pass
-
-class PlatformWifi(object):
-    """Default WiFi handling: asl the user."""
-    def __init__(self):
-        pass
-
-    def platformListWifiNetworks(self):
-        raise UserIntervention("Please look for WiFi SSIDs (network names) starting with 'config-'")
-
-    def platformJoinWifiNetwork(self, ssid, password):
-        raise UserIntervention("Please join WiFi network named %s" % ssid)
-        
-    def platformCurrentWifiNetworks(self):
-        return []
-
-class PlatformMDNSCollector(object):
-    """Default mDNS handling: ask the user"""
-    def __init__(self):
-        pass
-        
-    def run(self, timeout=5):
-        raise UserIntervention("Please browse for mDNS services _iotsa._tcp.local")
-        
-# Override the default WiFi and mDNS handling from os-dependent implementations
-from .machdep import *
-from . import machdep
-        
-class IotsaWifi(PlatformWifi):
-    def __init__(self):
-        PlatformWifi.__init__(self)
-        self.ssid = None
-        self.device = None
-        
-    def findNetworks(self):
-        all = self.platformListWifiNetworks()
-        rv = []
-        for net in all:
-            if net.startswith('config-'):
-                rv.append(net)
-        return rv
-        
-    def _isNetworkSelected(self, ssid):
-        return ssid in self.platformCurrentWifiNetworks()
-
-    def _isConfigNetwork(self):
-        if self.ssid and self.ssid.startswith('config-'):
-            return True
-        for c in self.platformCurrentWifiNetworks():
-            if c.startswith('config-'):
-                return True
-        return False
-                
-    def selectNetwork(self, ssid, password=None):
-        if self._isNetworkSelected(ssid):
-            return True
-        ok = self.platformJoinWifiNetwork(ssid, password)
-        if ok:
-            self.ssid = ssid
-        return ok
-        
-    def _checkDevice(self, deviceName):
-        ports = [80, 443]
-        for port in ports:
-            try:
-                _ = socket.create_connection((deviceName, port), 20)
-            except socket.timeout:
-                return False
-            except socket.gaierror:
-                print('Unknown host: %s' % deviceName, file=sys.stderr)
-                return False
-            except socket.error:
-                continue
-            return True
-        return False
-        
-    def findDevices(self):
-        if self._isConfigNetwork():
-            if self._checkDevice('192.168.4.1'):
-                return ['192.168.4.1']
-        collect = PlatformMDNSCollector()
-        devices = collect.run()
-        rv = []
-        # Remove final dot (.) that can be appended (certificate matching doesn't like this)
-        for d in devices:
-            if d[-1:] == '.':
-                rv.append(d[:-1])
-            else:
-                rv.append(d)
-        return rv
-        
-    def selectDevice(self, device):
-        if self._checkDevice(device):
-            self.device = device
-            return True
-        return False
-        
-    def currentDevice(self):
-        return self.device
-        
-class IotsaRESTProtocolHandler(object):
-    def __init__(self, baseURL, noverify=False):
-        if baseURL[-1] != '/':
-            baseURL += '/'
-        baseURL += 'api/'
-        self.baseURL = baseURL
-        self.noverify = noverify
-        
-    def close(self):
-        pass
-
-    def get(self, endpoint, auth=None, token=None, json=None):
-        return self.request('GET', endpoint, auth=auth, token=token, json=json)
-        
-    def put(self, endpoint, auth=None, token=None, json=None):
-        return self.request('PUT', endpoint, auth=auth, token=token, json=json)
-        
-    def post(self, endpoint, auth=None, token=None, json=None):
-        return self.request('POST', endpoint, auth=auth, token=token, json=json)
-        
-    def request(self, method, endpoint, auth=None, token=None, json=None):
-        headers = {}
-        if token:
-            headers['Authorization'] = 'Bearer '+token
-        url = self.baseURL + endpoint
-        if VERBOSE: print('REST %s %s' % (method, url))
-        r = requests.request(method, url, auth=auth, json=json, verify=not self.noverify, headers=headers)
-        if VERBOSE: print('REST %s returned: %s %s' % (method, r.status_code, r.text))
-        r.raise_for_status()
-        if r.text and r.text[0] == '{':
-            return r.json()
-        return None
-
-class IotsaCOAPProtocolHandler(object):
-    def __init__(self, baseURL):
-        parts = urllib.parse.urlparse(baseURL)
-        self.basePath = parts.path
-        if not self.basePath:
-            self.basePath = '/'
-        assert not parts.params
-        assert not parts.query
-        assert not parts.fragment
-        assert parts.netloc
-        if ':' in parts.netloc:
-            host, port = parts.netloc.split(':')
-            port = int(port)
-        else:
-            host = parts.netloc
-            port = 5683
-        try:
-            host = socket.gethostbyname(host)
-        except socket.gaierror:
-            pass
-        self.client = coapthon.client.helperclient.HelperClient(server=(host, port))
-        
-    def __del__(self):
-        self.close()
-
-    def close(self):
-        if self.client:
-            self.client.stop()
-        self.client = None
-        
-    def _raiseIfError(self, reply):
-        if reply.code >= 128:
-            codeMajor = (reply.code >> 5) & 0x07
-            codeMinor = (reply.code & 0x1f)
-            codeName = coapthon.defines.Codes.LIST.get(reply.code, None)
-            if codeName:
-                codeName = codeName.name
-            else:
-                codeName = 'unknown'
-            raise CoapError('%d.%02d %s' % (codeMajor, codeMinor, codeName))
-            
-    def get(self, endpoint, auth=None, token=None, json=None):
-        assert auth is None
-        assert token is None
-        assert json is None
-        endpoint = self.basePath+endpoint
-        if VERBOSE: print('COAP GET coap://%s:%d%s' % (self.client.server[0], self.client.server[1], endpoint))
-        rv = self.client.get(endpoint)
-        if VERBOSE: print('COAP GET returned', rv.code, repr(rv.payload))
-        self._raiseIfError(rv)
-        return json_loads(rv.payload)
-        
-    def put(self, endpoint, auth=None, token=None, json=None):
-        assert auth is None
-        assert token is None
-        assert json is not None
-        endpoint = self.basePath+endpoint
-        data = json_dumps(json)
-        if VERBOSE: print('COAP PUT coap://%s:%d%s %s' % (self.client.server[0], self.client.server[1], endpoint, data))
-        rv = self.client.put(endpoint, (coapthon.defines.Content_types['application/json'], data))
-        if VERBOSE: print('COAP PUT returned', rv.code, repr(rv.payload))
-        self._raiseIfError(rv)
-        return json_loads(rv.payload)
-        
-    def post(self, endpoint, auth=None, token=None, json=None):
-        assert auth is None
-        assert token is None
-        assert json is not None
-        endpoint = self.basePath+endpoint
-        data = json_dumps(json)
-        if VERBOSE: print('COAP POST coap://%s:%d%s' % (self.client.server[0], self.client.server[1], endpoint, data))
-        rv = self.client.post(endpoint, (coapthon.defines.Content_types['application/json'], data))
-        if VERBOSE: print('COAP POST returned', rv.code, repr(rv.payload))
-        self._raiseIfError(rv)
-        return json_loads(rv.payload)
-        
-HandlerForProto = {
-    'http' : IotsaRESTProtocolHandler,
-    'https' : IotsaRESTProtocolHandler,
-    'coap' : IotsaCOAPProtocolHandler,
-}
+from .consts import UserIntervention, IotsaError, CoapError, VERBOSE
+from .dfu import DFU
+from .wifi import IotsaWifi
+from .protocols import HandlerForProto
 
 class IotsaConfig(object):
     def __init__(self, device, api):
@@ -246,51 +26,116 @@ class IotsaConfig(object):
         self.endpoint = api
         self.status = {}
         self.settings = {}
+        self.didLoad = False
 
     def load(self):
-        self.status = self.device.protocolHandler.get(self.endpoint, auth=self.device.auth, token=self.device.bearerToken)
+        if self.didLoad: return
+        self.status = self.device.protocolHandler.get(self.endpoint)
+        self.didLoad = True
         
     def save(self):
         if self.settings:
-            reply = self.device.protocolHandler.put(self.endpoint, auth=self.device.auth, token=self.device.bearerToken, json=self.settings)
+            self.device.flush()
+            reply = self.device.protocolHandler.put(self.endpoint, json=self.settings)
             if reply and reply.get('needsReboot'):
                 msg = 'Reboot %s within %s seconds to activate mode %s' % (self.device.ipAddress, reply.get('requestedModeTimeout', '???'), self.device.modeName(reply.get('requestedMode')))
                 raise UserIntervention(msg)
             
     def get(self, name, default=None):
+        self.load()
         return self.status.get(name, default)
+        
+    def getAll(self):
+        self.load()
+        return copy.deepcopy(self.status)
         
     def set(self, name, value):
         self.settings[name] = value
         
     def printStatus(self):
+        self.load()
         print('%s:' % self.device.ipAddress)
         for k, v in list(self.status.items()):
             print('  %-16s %s' % (str(k)+':', v))
             
-class IotsaDevice(IotsaConfig):
-    def __init__(self, ipAddress, port=None, protocol=None, noverify=False):
+class IotsaDevice(object):
+    def __init__(self, ipAddress, port=None, protocol=None, noverify=False, bearer=None, auth=None):
         self.ipAddress = ipAddress
+        self.protocolHandler = None
         if protocol == None: 
-            protocol = 'http'
+            protocol, noverify = self._guessProtocol(ipAddress, port)
         url = '%s://%s' % (protocol, ipAddress)
         if port:
             url += ':%d' % port
         HandlerClass = HandlerForProto[protocol]
-        self.protocolHandler = HandlerClass(url, noverify=noverify)
-        IotsaConfig.__init__(self, self, 'config')
+        self.protocolHandler = HandlerClass(url, noverify=noverify, bearer=bearer, auth=auth)
+        self.config = IotsaConfig(self, 'config')
         self.auth = None
         self.bearerToken = None
-        self.apis = {}
+        self.apis = {'config' : self.config}
         
     def __del__(self):
         self.close()
         
+    def _guessProtocol(self, ipAddress, port):
+        protocol = 'https'
+        noverify = False
+        url = '%s://%s' % (protocol, ipAddress)
+        if port:
+            url += ':%d' % port
+        HandlerClass = HandlerForProto[protocol]
+        ph = HandlerClass(url, noverify=noverify)
+        try:
+            ph.get('config')
+        except requests.exceptions.SSLError:
+            if VERBOSE: print("Using https protocol with --noverify")
+            return 'https', True
+        except:
+            pass
+        else:
+            if VERBOSE: print("Using https protocol")
+            return 'https', False
+            
+        protocol = 'http'
+        url = '%s://%s' % (protocol, ipAddress)
+        if port:
+            url += ':%d' % port
+        HandlerClass = HandlerForProto[protocol]
+        ph = HandlerClass(url, noverify=noverify)
+        try:
+            ph.get('config')
+        except:
+            pass
+        else:
+            if VERBOSE: print("Using http protocol")
+            return 'http', False
+            
+        protocol = 'coap'
+        url = '%s://%s' % (protocol, ipAddress)
+        if port:
+            url += ':%d' % port
+        HandlerClass = HandlerForProto[protocol]
+        ph = HandlerClass(url, noverify=noverify)
+        try:
+            ph.get('config')
+        except:
+            pass
+        else:
+            if VERBOSE: print("Using coap protocol")
+            return 'coap', False
+            
+        raise IotsaError("Cannot determine protocol to use for {}, use --protocol".format(ipAddress))
+            
+            
     def close(self):
         if self.protocolHandler:
             self.protocolHandler.close()
         self.protocolHandler = None
         self.apis = None
+        
+    def flush(self):
+        for a in self.apis.values():
+            a.didLoad = False
         
     def setLogin(self, username, password):
         self.auth = (username, password)
@@ -299,13 +144,24 @@ class IotsaDevice(IotsaConfig):
         self.bearerToken = token
         
     def getApi(self, api):
-        if api == 'config': return self
         if not api in self.apis:
             self.apis[api] = IotsaConfig(self, api)
         return self.apis[api]
         
+    def getAll(self):
+        all = self.config.getAll()
+        moduleNames = all.get('modules', [])
+        modules = {}
+        for m in moduleNames:
+            if m == 'config':
+                continue
+            api = self.getApi(m)
+            modules[m] = api.getAll()
+        all['modules'] = modules
+        return all
+        
     def printStatus(self):
-        status = copy.deepcopy(self.status)
+        status = self.config.getAll()
         print('%s:' % self.ipAddress)
         print('  program:        ', status.pop('program', 'unknown'))
         print('  last boot:      ', end=' ') 
@@ -361,3 +217,75 @@ class IotsaDevice(IotsaConfig):
         if mode >= 0 and mode < len(names):
             return names[mode]
         return 'unknown-mode-%d' % mode
+        
+    def modeForName(self, name):
+        names = ['normal', 'config', 'ota', 'factoryReset']
+        return names.index(name)
+        
+    def gotoMode(self, modeName, wait=False, verbose=False):
+        mode = self.modeForName(modeName)
+        if self.config.get('currentMode') == mode:
+            if verbose: print("%s: target already in mode %s" % (sys.argv[0], self.modeName(mode)))
+            return
+        self.config.set('requestedMode', mode)
+        try:
+            self.config.save()
+        except UserIntervention as arg:
+            if verbose:
+                print("%s: %s" % (sys.argv[0], arg), file=sys.stderr)
+            else:
+                raise
+        if not wait:
+            return
+        while True:
+            time.sleep(5)
+            self.flush()
+            if self.config.get('currentMode') == mode:
+                break
+            reqMode = self.config.get('requestedMode', 0)
+            if self.config.get('requestedMode') != mode:
+                raise IotsaError("target now has requestedMode %s in stead of %s?" % (self.modeName(reqMode), self.modeName(mode)))
+            if verbose:
+                print("%s: Reboot %s within %s seconds to activate mode %s" % (sys.argv[0], self.ipAddress, self.config.get('requestedModeTimeout', '???'), self.modeName(reqMode)), file=sys.stderr)
+        if verbose:
+            print("%s: target is now in %s mode" % (sys.argv[0], self.modeName(mode)))
+
+    def reboot(self):
+        self.protocolHandler.put('config', json={'reboot':True})
+        
+    def ota(self, filename):
+        if not os.path.exists(filename):
+            filename, _ = urllib.request.urlretrieve(filename)
+        ESPOTA="~/.platformio/packages/tool-espotapy/espota.py"
+        ESPOTA = os.environ.get("ESPOTA", ESPOTA)
+        ESPOTA = os.path.expanduser(ESPOTA)
+        if not os.path.exists(ESPOTA):
+            raise IotsaError("Helper command not found: %s\nPlease install espota.py and optionally set ESPOTA environment variable" % (ESPOTA))
+        #cmd = [ESPOTA, '-i', self.ipAddress, '-f', filename]
+        cmd = '"%s" -i %s -f "%s"' % (ESPOTA, self.ipAddress, filename)
+        status = subprocess.call(cmd, shell=True)
+        if status != 0:
+            raise IotsaError("OTA command %s failed" % (cmd))
+
+    def uploadCertificate(self, keyData, certificateData):
+        if isinstance(keyData, str) and keyData.startswith('---'):
+            keyData = keyData.splitlines()
+            keyData = keyData[1:-1]
+            keyData = '\n'.join(keyData)
+            keyData = binascii.a2b_base64(keyData)
+        if isinstance(certificateData, str) and certificateData.startswith('---'):
+            certificateData = certificateData.splitlines()
+            certificateData = certificateData[1:-1]
+            certificateData = '\n'.join(certificateData)
+            certificateData = binascii.a2b_base64(certificateData)
+        keyFile = io.BytesIO(keyData)
+        files = {
+            'keyFile' : ('httpsKey.der', keyFile, 'application/binary'),
+            }
+        self.protocolHandler.post('/configupload', files=files)
+        certificateFile = io.BytesIO(certificateData)
+        files = {
+            'certfile' : ('httpsCert.der', certificateFile, 'application/binary')
+            }
+        self.protocolHandler.post('/configupload', files=files)
+        

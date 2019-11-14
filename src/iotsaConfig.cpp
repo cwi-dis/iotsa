@@ -498,26 +498,22 @@ String IotsaConfigMod::info() {
 bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   reply["hostName"] = iotsaConfig.hostName;
   reply["modeTimeout"] = iotsaConfig.configurationModeTimeout;
+  reply["currentMode"] = int(iotsaConfig.configurationMode);
   if (iotsaConfig.configurationMode) {
-    reply["currentMode"] = int(iotsaConfig.configurationMode);
     reply["currentModeTimeout"] = (iotsaConfig.configurationModeEndTime - millis())/1000;
   }
-  if (iotsaConfig.wifiPrivateNetworkMode) {
-    reply["privateWifi"] = true;
-  }
+  reply["privateWifi"] = iotsaConfig.wifiPrivateNetworkMode;
+  reply["requestedMode"] = int(iotsaConfig.nextConfigurationMode);
   if (iotsaConfig.nextConfigurationMode) {
-    reply["requestedMode"] = int(iotsaConfig.nextConfigurationMode);
     reply["requestedModeTimeout"] = (iotsaConfig.nextConfigurationModeEndTime - millis())/1000;
   }
   reply["iotsaVersion"] = IOTSA_VERSION;
   reply["iotsaFullVersion"] = IOTSA_FULL_VERSION;
   reply["program"] = app.title;
 #ifdef IOTSA_WITH_HTTPS
-  if (iotsaConfig.httpsKey == defaultHttpsKey) {
-    reply["defaultCert"] = true;
-  } else {
-    reply["installedCert"] = true;
-  }
+  reply["defaultCert"] = iotsaConfig.httpsKey == defaultHttpsKey;
+  reply["has_httpsKey"] = SPIFFS.exists("/config/httpsKey.der");
+  reply["has_httpsCert"] = SPIFFS.exists("/config/httpsCert.der");
 #endif
 #ifdef IOTSA_CONFIG_PROGRAM_SOURCE
   reply["programSource"] = IOTSA_CONFIG_PROGRAM_SOURCE;
@@ -576,6 +572,17 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
     }
   }
 #ifdef IOTSA_WITH_HTTPS
+  // Set parameter defaultCert to true to remove any key/certificate
+  if (reqObj.containsKey("defaultCert") && reqObj.get<bool>("defaultCert")) {
+    if (iotsaConfig.inConfigurationMode()) {
+      SPIFFS.remove("/config/httpsKey.der");
+      SPIFFS.remove("/config/httpsCert.der");
+    } else {
+      wrongMode = true;
+    }
+  }
+  // Allow setting of https key as PEM. Note that using POST with file upload will
+  // work more often due to memory constraints and the size of keys and certificates.
   if (reqObj.containsKey("httpsKey")) {
     if (iotsaConfig.inConfigurationMode()) {
       const char *b64Value = reqObj.get<char*>("httpsKey");
@@ -609,6 +616,8 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
       wrongMode = true;
     }
   }
+  // Allow setting of https certificate as PEM. Note that using POST with file upload will
+  // work more often due to memory constraints and the size of keys and certificates.
   if (reqObj.containsKey("httpsCertificate")) {
     if (iotsaConfig.inConfigurationMode()) {
       const char *b64Value = reqObj.get<char*>("httpsCertificate");
@@ -655,10 +664,52 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   return anyChanged;
 }
 #endif // IOTSA_WITH_API
+#if defined(IOTSA_WITH_WEB)
+static File _uploadFile;
+static bool _uploadOK;
+
+void
+IotsaConfigMod::uploadHandler() {
+  if (needsAuthentication("config")) return;
+  HTTPUpload& upload = server->upload();
+  _uploadOK = false;
+  if(upload.status == UPLOAD_FILE_START){
+    if (upload.filename != "httpsKey.der" && upload.filename != "httpsCert.der") {
+      IFDEBUG IotsaSerial.println("Incorrect filename");
+      return;
+    }
+    String _uploadfilename = "/config/" + upload.filename;
+    IFDEBUG IotsaSerial.print("Uploading ");
+    IFDEBUG IotsaSerial.println(_uploadfilename);
+    if(SPIFFS.exists(_uploadfilename)) SPIFFS.remove(_uploadfilename);
+    _uploadFile = SPIFFS.open(_uploadfilename, "w");
+  } else if(upload.status == UPLOAD_FILE_WRITE){
+    if(_uploadFile) _uploadFile.write(upload.buf, upload.currentSize);
+  } else if(upload.status == UPLOAD_FILE_END){
+    if(_uploadFile) {
+        _uploadFile.close();
+        _uploadOK = true;
+    }
+  }
+}
+
+void
+IotsaConfigMod::uploadOkHandler() {
+  String message;
+  if (_uploadOK) {
+    IFDEBUG IotsaSerial.println("upload ok");
+    server->send(200, "text/plain", "OK");
+  } else {
+    IFDEBUG IotsaSerial.println("upload failed");
+    server->send(403, "text/plain", "FAIL");
+  }
+}
+#endif // defined(IOTSA_WITH_WEB) || defined(IOTSA_WITH_API)
 
 void IotsaConfigMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
   server->on("/config", std::bind(&IotsaConfigMod::handler, this));
+  server->on("/configupload", HTTP_POST, std::bind(&IotsaConfigMod::uploadOkHandler, this), std::bind(&IotsaConfigMod::uploadHandler, this));
 #endif
 #ifdef IOTSA_WITH_API
   api.setup("/api/config", true, true);
