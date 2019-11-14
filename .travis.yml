@@ -33,4 +33,4 @@ install:
 - platformio lib -g install "https://github.com/jackjansen/CoAP-simple-library.git"
 script:
 - platformio ci --lib="." --project-option="lib_ldf_mode=deep+" --board=nodemcuv2
-- platformio lib -g install "ESP32WebServer" && platformio ci --lib="." --project-option="lib_ldf_mode=deep+" --board=esp32thing
+- platformio ci --lib="." --project-option="lib_ldf_mode=deep+" --board=esp32thing
