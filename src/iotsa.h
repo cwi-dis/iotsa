@@ -13,8 +13,13 @@
 
 #if defined(IOTSA_WITH_HTTP) && !defined(IOTSA_WITH_HTTPS)
 #ifdef ESP32
+#if 1
+#include <WebServer.h>
+typedef WebServer IotsaWebServer;
+#else
 #include <ESP32WebServer.h>
 typedef ESP32WebServer IotsaWebServer;
+#endif
 #else
 #include <ESP8266WebServer.h>
 typedef ESP8266WebServer IotsaWebServer;
