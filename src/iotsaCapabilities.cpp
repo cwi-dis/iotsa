@@ -6,6 +6,7 @@
 
 #define IFDEBUGX if(1)
 
+#if 0
 // Static method to check whether a string exactly matches a Json object,
 // or is included in the Json object if it is an array.
 static bool stringContainedIn(const char *wanted, JsonVariant& got) {
@@ -24,6 +25,7 @@ static bool stringContainedIn(const char *wanted, JsonVariant& got) {
   }
   return false;
 }
+#endif
 
 // Get a scope indicator from a JSON variant
 static IotsaCapabilityObjectScope getRightFrom(const JsonVariant& arg) {
