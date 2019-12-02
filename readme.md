@@ -17,11 +17,15 @@ Download the zipfile (via <https://github.com/cwi-dis/iotsa>) and install into A
 
 Build the _Hello_ example (_File -> Examples -> iotsa -> Hello_) and flash it onto an ESP-12 or similar board.
 
+**Note:** the structure of the iotsa examples may be slightly different than what you are used to for Arduino examples: the `Hello.ino` file is basically empty, and the code is contained in the `mainHello.cpp` file, which is in a separate tab in the Arduino IDE.
+
 ### PlatformIO
 
-The _iotsa_ library should be known to the library manager, so simply adding it to your _platformio.ini_ file should do the trick. PlatformIO integration of iotsa is more recent than Arduino IDE use, so please report issues if you find them.
+The _iotsa_ library should be known to the library manager, so simply adding it to your _platformio.ini_ file should do the trick for adding the iotsa framework to your project..
 
-For platformIO each example in the _examples_ folder has its own _platform.ini_ file to build it. Open `iotsa/examples/Hello` in _VSCode_ or _Atom_ and build it, or use the command line:
+To build an example you can open the `iotsa` source directory in _VSCode_ or _Atom_ and look at the `[env:nodemcuv2-example-skeleton]` section. Replace the references to _skeleton_ with the name of the example you want to build.
+
+But: each example in the _examples_ folder also has its own _platform.ini_ file to build it. So you can also open `iotsa/examples/Hello` in _VSCode_ or _Atom_ and build it, or use the command line:
 
 ```
 $ cd iotsa/examples/Hello
