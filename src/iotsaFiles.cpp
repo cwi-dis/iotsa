@@ -33,6 +33,7 @@ IotsaFilesMod::_listDir(String& message, const char *name)
       }
        
       message += "</li>";
+      f = d.openNextFile();
   }
   message += "</ul>";
 }
