@@ -11,8 +11,8 @@ public:
 };
 
 IotsaStaticTokenMod::IotsaStaticTokenMod(IotsaApplication &_app, IotsaAuthenticationProvider &_chain)
-:	chain(_chain),
-	IotsaAuthMod(_app)
+:	IotsaAuthMod(_app),
+	chain(_chain)
 {
 	configLoad();
 }
