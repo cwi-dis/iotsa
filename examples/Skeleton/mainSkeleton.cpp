@@ -6,6 +6,7 @@
 // will allow serving of web pages and other documents, and of uploading those.
 //
 
+#include <Arduino.h>
 #include "iotsa.h"
 #include "iotsaWifi.h"
 
