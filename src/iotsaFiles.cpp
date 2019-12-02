@@ -29,7 +29,7 @@ IotsaFilesMod::_listDir(String& message, const char *name)
       	message += ":";
       	_listDir(message, f.name());
       } else {
-      	message += "(" + String(d.size()) + " bytes)";
+      	message += "(" + String(f.size()) + " bytes)";
       }
        
       message += "</li>";
