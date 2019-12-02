@@ -1,6 +1,6 @@
 # iotsa - Internet of Things server architecture
 
-This library contains a framework to easily create esp8266-based web servers that can interface to all sorts of sensors and actuators. At the moment the servers can be partially REST-compatible, more support for this will be added later, including
+This library contains a framework to easily create esp8266-based or esp32-based web servers that can interface to all sorts of sensors and actuators. The servers can be REST-compatible, and COAP-compatible, including
 seamless integration with the [Igor home automation server](https://github.com/cwi-dis/igor). 
 
 
@@ -493,6 +493,9 @@ Here are some projects that use iotsa, and that also be used as further examples
 * [iotsaDoorOpener](http://github.com/cwi-dis/iotsaDoorOpener): Operates a solenoid to open a door. On web access, or when an RFID tag (such as a keychain fob or a mifare contactless transport card) is presented. RFID cards are programmable (over the net, or using a special "learn" card). A web request can be sent to a programmable URL when a card is presented.
 * [iotsaSmartMeter](http://github.com/cwi-dis/iotsaSmartMeter): Reads electricity and gas usage of a dutch Smart Meter through the standardised P1 port and makes the data available on the net.
 * [iotsaDoorbellButton](http://github.com/cwi-dis/iotsaDoorbellButton) and [iotsaDoorbellRinger](http://github.com/cwi-dis/iotsaDoorbellRinger) are two very simple REST services that together form a door bell. 
+* [iotsaLedstrip](http://github.com/cwi-dis/iotsaLedstrip): A driver for NeoPixel or similar LED strips. This application is mainly intended to use the LED strips for lighting, so you are able to adjustcolor temperature, intensity, etc.
+* [iotsaDMXLedstrip](http://github.com/cwi-dis/iotsaDMXLedstrip): A driver for NeoPixel or similar LED strips to use for theatre lighting. The individual LEDs are controllable using the Art-Net DMX protocol, which is supported by many theatre lighting consoles or software such as the open source QLC+.
+* [iotsaDMXSensor](http://github.com/cwi-dis/iotsaDMXSensor): Reads sensor values from Estimote Bluetooth LE sensors and makes these available as DMX slider values (using DMX over Art-Net over WiFi). Can be used to input sensor values into a standard theatre lighting console or software such as QLC+.
 
 ## hardware
 
@@ -508,6 +511,8 @@ The resistors are all pullups and pulldowns, so their values are not very critic
 
 The v3 board is about 6.35x4.35cm in size, with the ESP-12 antenna sticking out
 0.5cm.
+
+There is no board for the ESP32, but iotsa is known to work with many standard esp32 boards such as the Lolin boards or the Esp32Thing.
 
 ### Case
 
