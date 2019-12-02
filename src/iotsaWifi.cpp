@@ -195,17 +195,17 @@ bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, Json
     IFDEBUG IotsaSerial.println("Not in config mode");
     return false;
   }
-  JsonObject& reqObj = request.as<JsonObject>();
+  JsonObject reqObj = request.as<JsonObject>();
   if (reqObj.containsKey("ssid")) {
-    ssid = reqObj.get<String>("ssid");
+    ssid = reqObj["ssid"].as<String>();
     anyChanged = true;
   }
   if (reqObj.containsKey("ssidPassword")) {
-    ssidPassword = reqObj.get<String>("ssidPassword");
+    ssidPassword = reqObj["ssidPassword"].as<String>();
     anyChanged = true;
   }
   if (anyChanged) configSave();
-  if (reqObj.get<bool>("reboot")) {
+  if (reqObj["reboot"]) {
     IFDEBUG IotsaSerial.println("Restart in 2 seconds.");
     rebootAt = millis() + 2000;
   }

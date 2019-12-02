@@ -130,13 +130,13 @@ bool IotsaCapabilityMod::putHandler(const char *path, const JsonVariant& request
   if (strcmp(path, "/api/capabilities") != 0) return false;
   if (!iotsaConfig.inConfigurationMode()) return false;
   bool anyChanged = false;
-  JsonObject& reqObj = request.as<JsonObject>();
+  JsonObject reqObj = request.as<JsonObject>();
   if (reqObj.containsKey("trustedIssuer")) {
-    trustedIssuer = reqObj.get<String>("trustedIssuer");
+    trustedIssuer = reqObj["trustedIssuer"].as<String>();
     anyChanged = true;
   }
   if (reqObj.containsKey("issuerKey")) {
-    issuerKey = reqObj.get<String>("issuerKey");
+    issuerKey = reqObj["issuerKey"].as<String>();
     anyChanged = true;
   }
   if (anyChanged) {
@@ -239,8 +239,9 @@ void IotsaCapabilityMod::loadCapabilitiesFromRequest() {
     IFDEBUGX IotsaSerial.println("Did not decode correctly with key");
     return;
   }
-  DynamicJsonBuffer jsonBuffer;
-  JsonObject& root = jsonBuffer.parseObject(payload);
+  DynamicJsonDocument jsonDocument(2048);
+  deserializeJson(jsonDocument, payload);
+  JsonObject root = jsonDocument.to<JsonObject>();
   
   // check that issuer matches
   String issuer = root["iss"];
@@ -268,7 +269,7 @@ void IotsaCapabilityMod::loadCapabilitiesFromRequest() {
       return;
     }
   }
-  const char *obj = root.get<char*>("obj");
+  const char *obj = root["obj"];
   IotsaCapabilityObjectScope get = getRightFrom(root["get"]);
   IotsaCapabilityObjectScope put = getRightFrom(root["put"]);
   IotsaCapabilityObjectScope post = getRightFrom(root["post"]);

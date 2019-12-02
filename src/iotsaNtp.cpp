@@ -151,19 +151,19 @@ bool IotsaNtpMod::getHandler(const char *path, JsonObject& reply) {
 
 bool IotsaNtpMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
-  JsonObject& reqObj = request.as<JsonObject>();
+  JsonObject reqObj = request.as<JsonObject>();
   if (reqObj.containsKey("ntpServer")) {
-    ntpServer = reqObj.get<String>("ntpServer");
+    ntpServer = reqObj["ntpServer"].as<String>();
     anyChanged = true;
   }
 #ifdef IOTSA_WITH_TIMEZONE_LIBRARY
   if (reqObj.containsKey("tzDescription")) {
-    ntpServer = reqObj.get<String>("tzDescription");
+    ntpServer = reqObj["tzDescription"].as<String>();
     anyChanged = true;
   }
 #else
   if (reqObj.containsKey("minutesWest")) {
-    ntpServer = reqObj.get<int>("minutesWest");
+    ntpServer = reqObj["minutesWest"];
     anyChanged = true;
   }
 #endif

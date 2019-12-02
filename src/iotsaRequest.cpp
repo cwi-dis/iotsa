@@ -92,28 +92,32 @@ bool IotsaRequest::formArgHandler(IotsaWebServer *server, String name) {
 bool IotsaRequest::send() {
   bool rv = true;
   HTTPClient http;
+  WiFiClient client;
+  BearSSL::WiFiClientSecure *secureClientPtr = NULL;
 
   if (url.startsWith("https:")) {
 #ifdef ESP32
     rv = http.begin(url, sslInfo.c_str());
 #else
-    rv = http.begin(url, sslInfo);
+    secureClientPtr = new BearSSL::WiFiClientSecure();
+    secureClientPtr->setFingerprint(sslInfo.c_str());
+
+    rv = http.begin(*secureClientPtr, url);
 #endif
   } else {
-    rv = http.begin(url);  
+    rv = http.begin(client, url);  
   }
-  if (!rv) return false;
+  if (!rv) {
+    if (secureClientPtr) delete secureClientPtr;
+    return false;
+  }
   if (token != "") {
     http.addHeader("Authorization", "Bearer " + token);
   }
 
   if (credentials != "") {
-#if 0
-    IotsaSerial.print("Credentials not yet implemented");
-#else
   	String cred64 = base64::encode(credentials);
     http.addHeader("Authorization", "Basic " + cred64);
-#endif
   }
   int code = http.GET();
   if (code >= 200 && code <= 299) {
@@ -133,6 +137,7 @@ bool IotsaRequest::send() {
     rv = false;
   }
   http.end();
+  if (secureClientPtr) delete secureClientPtr;
   return rv;
 }
 
@@ -150,19 +155,19 @@ bool IotsaRequest::putHandler(const JsonVariant& request) {
   const JsonObject& reqObj = request.as<JsonObject>();
   if (reqObj.containsKey("url")) {
     any = true;
-    url = reqObj.get<String>("url");
+    url = reqObj["url"].as<String>();
   }
   if (reqObj.containsKey(SSL_INFO_NAME)) {
     any = true;
-    sslInfo = reqObj.get<String>(SSL_INFO_NAME);
+    sslInfo = reqObj[SSL_INFO_NAME].as<String>();
   }
   if (reqObj.containsKey("credentials")) {
     any = true;
-    credentials = reqObj.get<String>("credentials");
+    credentials = reqObj["credentials"].as<String>();
   }
   if (reqObj.containsKey("token")) {
     any = true;
-    token = reqObj.get<String>("token");
+    token = reqObj["token"].as<String>();
   }
   return any;
 }

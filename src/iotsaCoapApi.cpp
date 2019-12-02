@@ -54,11 +54,11 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
         IFDEBUG IotsaSerial.println(path);
         ok = get;
         if (ok) {
-            DynamicJsonBuffer replyBuffer;
-            JsonObject& reply = replyBuffer.createObject();
+            DynamicJsonDocument replyDocument(2048);
+            JsonObject reply = replyDocument.as<JsonObject>();
             ok = provider->getHandler(path, reply);
             if (ok) {
-                reply.printTo(replyData);
+                serializeJson(replyDocument, replyData);
             }
         }
     } else
@@ -74,13 +74,15 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
 #ifdef COAP_PROTOCOL_DEBUG
             IotsaSerial.print("payload "); IotsaSerial.println(dataBuffer);
 #endif
-            DynamicJsonBuffer requestBuffer;
-            JsonObject& request = requestBuffer.parseObject(dataBuffer);
-            DynamicJsonBuffer replyBuffer;
-            JsonObject& reply = replyBuffer.createObject();
+            DynamicJsonDocument requestDocument(2048);
+            deserializeJson(requestDocument, dataBuffer);
+            DynamicJsonDocument replyDocument(2048);
+            JsonObject request = requestDocument.as<JsonObject>();
+            JsonObject reply = replyDocument.as<JsonObject>();
+
             ok = provider->putHandler(path, request, reply);
             if (ok) {
-                reply.printTo(replyData);
+                serializeJson(replyDocument, replyData);
             }
         }
     } else
@@ -96,13 +98,14 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
 #ifdef COAP_PROTOCOL_DEBUG
             IotsaSerial.print("payload "); IotsaSerial.println(dataBuffer);
 #endif
-            DynamicJsonBuffer requestBuffer;
-            JsonObject& request = requestBuffer.parseObject(dataBuffer);
-            DynamicJsonBuffer replyBuffer;
-            JsonObject& reply = replyBuffer.createObject();
+            DynamicJsonDocument requestDocument(2048);
+            deserializeJson(requestDocument, dataBuffer);
+            DynamicJsonDocument replyDocument(2048);
+            JsonObject request = requestDocument.as<JsonObject>();
+            JsonObject reply = replyDocument.as<JsonObject>();
             ok = provider->postHandler(path, request, reply);
             if (ok) {
-                reply.printTo(replyData);
+                serializeJson(replyDocument, replyData);
             }
         }
     } else {

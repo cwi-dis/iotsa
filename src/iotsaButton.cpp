@@ -151,9 +151,17 @@ void IotsaButtonMod::loop() {
 #ifdef IOTSA_WITH_API
 bool IotsaButtonMod::getHandler(const char *path, JsonObject& reply) {
   if (strcmp(path, "/api/buttons") == 0) {
+#if ARDUINOJSON_VERSION_MAJOR >= 6
+    JsonArray rv = reply.createNestedArray("buttons");
+#else
     JsonArray& rv = reply.createNestedArray("buttons");
+#endif
     for (Button *b=buttons; b<buttons+nButton; b++) {
+#if ARDUINOJSON_VERSION_MAJOR >= 6
+        JsonObject bRv = rv.createNestedObject();
+#else
         JsonObject& bRv = rv.createNestedObject();
+#endif
         b->req.getHandler(bRv);
         bRv["state"] = b->buttonState;
         bRv["onPress"] = b->sendOnPress;
@@ -178,20 +186,28 @@ bool IotsaButtonMod::putHandler(const char *path, const JsonVariant& request, Js
       if (!request.is<JsonArray>()) {
         return false;
       }
-      const JsonArray& all = request.as<JsonArray&>();
+      const JsonArray all = request.as<JsonArray>();
       for (int i=0; i<nButton; i++) {
-          const JsonVariant& r = all[i];
+          const JsonVariant r = all[i];
           if (buttons[i].req.putHandler(r)) {
               any = true;
           }
-          const JsonObject& reqObj = r.as<JsonObject&>();
+          const JsonObject reqObj = r.as<JsonObject>();
           if (reqObj.containsKey("onPress")) {
             any = true;
+#if ARDUINOJSON_VERSION_MAJOR >= 6
+            buttons[i].sendOnPress = reqObj["onPress"];
+#else
             buttons[i].sendOnPress = reqObj.get<bool>("onPress");
+#endif
           }
           if (reqObj.containsKey("onRelease")) {
             any = true;
+#if ARDUINOJSON_VERSION_MAJOR >= 6
+            buttons[i].sendOnRelease = reqObj["onRelease"];
+#else
             buttons[i].sendOnRelease = reqObj.get<bool>("onRelease");
+#endif
           }          
       }
   } else {
@@ -202,14 +218,22 @@ bool IotsaButtonMod::putHandler(const char *path, const JsonVariant& request, Js
       if (b->req.putHandler(request)) {
         any = true;
       }
-      const JsonObject& reqObj = request.as<JsonObject&>();
+      const JsonObject reqObj = request.as<JsonObject>();
       if (reqObj.containsKey("onPress")) {
         any = true;
+#if ARDUINOJSON_VERSION_MAJOR >= 6
+        buttons[idx].sendOnPress = reqObj["onPress"];
+#else
         buttons[idx].sendOnPress = reqObj.get<bool>("onPress");
+#endif
       }
       if (reqObj.containsKey("onRelease")) {
         any = true;
+#if ARDUINOJSON_VERSION_MAJOR >= 6
+        buttons[idx].sendOnRelease = reqObj["onRelease"];
+#else
         buttons[idx].sendOnRelease = reqObj.get<bool>("onRelease");
+#endif
       }          
   }
   if (any) configSave();

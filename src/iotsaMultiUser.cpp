@@ -103,9 +103,9 @@ String IotsaMultiUserMod::info() {
 bool IotsaMultiUserMod::getHandler(const char *path, JsonObject& reply) {
   if (strcmp(path, "/api/users") == 0) {
     reply["multi"] = true;
-    JsonArray& usersList = reply.createNestedArray("users");
+    JsonArray usersList = reply.createNestedArray("users");
     for (IotsaUser *u=users; u; u=u->next) {
-      JsonObject& user = usersList.createNestedObject();
+      JsonObject user = usersList.createNestedObject();
       user["username"] = u->username;
       bool hasPassword = u->password.length() > 0;
       user["has_password"] = hasPassword;
@@ -136,17 +136,17 @@ bool IotsaMultiUserMod::putHandler(const char *path, const JsonVariant& request,
   IotsaUser *u = users;
   while (u && idx > 0) { u = u->next; idx--; }
   if (u == NULL) return false;
-  JsonObject& reqObj = request.as<JsonObject>();
+  JsonObject reqObj = request.as<JsonObject>();
   if (reqObj.containsKey("username")) {
-    u->username = reqObj.get<String>("username");
+    u->username = reqObj["username"].as<String>();
     anyChanged = true;
   }
   if (reqObj.containsKey("password")) {
-    u->password = reqObj.get<String>("password");
+    u->password = reqObj["password"].as<String>();
     anyChanged = true;
   }
   if (reqObj.containsKey("rights")) {
-    u->rights = reqObj.get<String>("rights");
+    u->rights = reqObj["rights"].as<String>();
     anyChanged = true;
   }
   if (anyChanged) {
@@ -159,17 +159,17 @@ bool IotsaMultiUserMod::postHandler(const char *path, const JsonVariant& request
   if (!iotsaConfig.inConfigurationMode()) return false;
   bool anyChanged = false;
   IotsaUser *u = new IotsaUser();
-  JsonObject& reqObj = request.as<JsonObject>();
+  JsonObject reqObj = request.as<JsonObject>();
   if (reqObj.containsKey("username")) {
-    u->username = reqObj.get<String>("username");
+    u->username = reqObj["username"].as<String>();
     anyChanged = true;
   }
   if (reqObj.containsKey("password")) {
-    u->password = reqObj.get<String>("password");
+    u->password = reqObj["password"].as<String>();
     anyChanged = true;
   }
   if (reqObj.containsKey("rights")) {
-    u->rights = reqObj.get<String>("rights");
+    u->rights = reqObj["rights"].as<String>();
     anyChanged = true;
   }
   if (anyChanged) {

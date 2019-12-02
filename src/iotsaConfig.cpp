@@ -528,7 +528,7 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
 #endif
   reply["bootCause"] = getBootReason();
   reply["uptime"] = millis() / 1000;
-  JsonArray& modules = reply.createNestedArray("modules");
+  JsonArray modules = reply.createNestedArray("modules");
   for (IotsaBaseMod *m=app.firstEarlyModule; m; m=m->nextModule) {
     if (m->name != "")
       modules.add(m->name);
@@ -543,10 +543,10 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
 bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
   bool wrongMode = false;
-  JsonObject& reqObj = request.as<JsonObject>();
+  JsonObject reqObj = request.as<JsonObject>();
   if (reqObj.containsKey("hostName")) {
     if (iotsaConfig.inConfigurationOrFactoryMode()) {
-      iotsaConfig.hostName = reqObj.get<String>("hostName");
+      iotsaConfig.hostName = reqObj["hostName"].as<String>();
       anyChanged = true;
       reply["needsReboot"] = true;
     } else {
@@ -555,14 +555,14 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   }
   if (reqObj.containsKey("modeTimeout")) {
     if (iotsaConfig.inConfigurationMode()) {
-      iotsaConfig.configurationModeTimeout = reqObj.get<int>("modeTimeout");
+      iotsaConfig.configurationModeTimeout = reqObj["modeTimeout"];
       anyChanged = true;
     } else {
       wrongMode = true;
     }
   }
   if (reqObj.containsKey("requestedMode")) {
-    iotsaConfig.nextConfigurationMode = config_mode(reqObj.get<int>("requestedMode"));
+    iotsaConfig.nextConfigurationMode = config_mode(reqObj["requestedMode"].as<int>());
     anyChanged = iotsaConfig.nextConfigurationMode != config_mode(0);
     if (anyChanged) {
       iotsaConfig.nextConfigurationModeEndTime = millis() + iotsaConfig.configurationModeTimeout*1000;
@@ -573,7 +573,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   }
 #ifdef IOTSA_WITH_HTTPS
   // Set parameter defaultCert to true to remove any key/certificate
-  if (reqObj.containsKey("defaultCert") && reqObj.get<bool>("defaultCert")) {
+  if (reqObj.containsKey("defaultCert") && reqObj["defaultCert"]) {
     if (iotsaConfig.inConfigurationMode()) {
       SPIFFS.remove("/config/httpsKey.der");
       SPIFFS.remove("/config/httpsCert.der");
@@ -585,7 +585,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   // work more often due to memory constraints and the size of keys and certificates.
   if (reqObj.containsKey("httpsKey")) {
     if (iotsaConfig.inConfigurationMode()) {
-      const char *b64Value = reqObj.get<char*>("httpsKey");
+      const char *b64Value = reqObj["httpsKey"];
       static const char *head = "-----BEGIN RSA PRIVATE KEY-----";
       static const char *tail = "-----END RSA PRIVATE KEY-----";
       char *headPos = strstr(b64Value, head);
@@ -620,7 +620,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   // work more often due to memory constraints and the size of keys and certificates.
   if (reqObj.containsKey("httpsCertificate")) {
     if (iotsaConfig.inConfigurationMode()) {
-      const char *b64Value = reqObj.get<char*>("httpsCertificate");
+      const char *b64Value = reqObj["httpsCertificate"];
       static const char *head = "-----BEGIN CERTIFICATE-----";
       static const char *tail = "-----END CERTIFICATE-----";
       char *headPos = strstr(b64Value, head);
@@ -656,7 +656,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
     IFDEBUG IotsaSerial.println("Not in config mode");
   }
   if (anyChanged) configSave();
-  if (reqObj.get<bool>("reboot")) {
+  if (reqObj["reboot"]) {
     IFDEBUG IotsaSerial.println("Restart in 2 seconds.");
     rebootAt = millis() + 2000;
     anyChanged = true;

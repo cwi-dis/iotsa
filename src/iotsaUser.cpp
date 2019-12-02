@@ -95,8 +95,8 @@ String IotsaUserMod::info() {
 #ifdef IOTSA_WITH_API
 bool IotsaUserMod::getHandler(const char *path, JsonObject& reply) {
   if (strcmp(path, "/api/users") == 0) {
-    JsonArray& users = reply.createNestedArray("users");
-    JsonObject& user = users.createNestedObject();
+    JsonArray users = reply.createNestedArray("users");
+    JsonObject user = users.createNestedObject();
     user["username"] = username;
     bool hasPassword = password.length() > 0;
     user["hasPassword"] = hasPassword;
@@ -115,18 +115,18 @@ bool IotsaUserMod::putHandler(const char *path, const JsonVariant& request, Json
   if (strcmp(path, "/api/users/0") != 0) return false;
   if (!iotsaConfig.inConfigurationMode()) return false;
   bool anyChanged = false;
-  JsonObject& reqObj = request.as<JsonObject>();
+  JsonObject reqObj = request.as<JsonObject>();
   // Check old password, if a password has been set.
   if (password) {
-    String old = reqObj.get<String>("old");
+    String old = reqObj["old"].as<String>();
     if (old != password) return false;
   }
   if (reqObj.containsKey("username")) {
-    username = reqObj.get<String>("username");
+    username = reqObj["username"].as<String>();
     anyChanged = true;
   }
   if (reqObj.containsKey("password")) {
-    password = reqObj.get<String>("password");
+    password = reqObj["password"].as<String>();
     anyChanged = true;
   }
   if (anyChanged) configSave();
