@@ -16,6 +16,21 @@ struct tarHeader {
 	char pad[255];
 };
 
+#ifdef ESP32
+static addFilenames(std::vector<String>& fileList, String dirName) {
+
+}
+#else
+static void addFilenames(std::vector<String>& fileList, String dirName) {
+  Dir d = SPIFFS.openDir(dirName);
+  while (d.next()) {
+  	// Get header information
+  	String fileName(d.fileName());
+	fileList.push_back(fileName);
+  }
+}
+#endif
+
 #ifndef ESP32
 static char buf[512];
 
@@ -54,17 +69,17 @@ IotsaFilesBackupMod::handler() {
   IFDEBUG IotsaSerial.println("Creating backup");
   server->setContentLength(CONTENT_LENGTH_UNKNOWN);
   server->send(200, "application/x-tar");
-  
-  Dir d = SPIFFS.openDir("/");
-  while (d.next()) {
-  	// Get header information
-  	const String& fileName = d.fileName();
+  std::vector<String> fileNames;
+  IFDEBUG IotsaSerial.println("xxxjack new style backup");
+  addFilenames(fileNames, "/");
+  for(std::vector<String>::iterator it=fileNames.begin(); it != fileNames.end(); it++) {
+  	const String& fileName = *it;
   	IFDEBUG IotsaSerial.print("File ");
   	IFDEBUG IotsaSerial.println(fileName);
   	File fp = SPIFFS.open(fileName, "r");
   	if (!fp) continue;
   	//fileName = fileName.substring(1);
-  	size_t fileSize = d.fileSize();
+  	size_t fileSize = fp.size();
   	size_t filePadding = 512 - (fileSize & 511);
   	if (filePadding == 512) filePadding = 0;
   	IFDEBUG IotsaSerial.print("  size=");
