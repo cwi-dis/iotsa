@@ -87,8 +87,8 @@ bool IotsaAlarmMod::putHandler(const char *path, const JsonVariant& request, Jso
   if (request.is<int>()) {
     dur = request.as<int>();
   } else if (request.is<JsonObject>()) {
-    JsonObject& reqObj = request.as<JsonObject>();
-    dur = reqObj.get<int>("alarm");
+    JsonObject reqObj = request.as<JsonObject>();
+    dur = reqObj["alarm"];
   } else {
     return false;
   }
