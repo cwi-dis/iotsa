@@ -16,6 +16,7 @@ struct tarHeader {
 	char pad[255];
 };
 
+#ifndef ESP32
 static char buf[512];
 
 static void octal(char *p, int size, unsigned int value)
@@ -39,6 +40,7 @@ static void checksum(struct tarHeader *h)
 	}
 	octal(h->checksum, 7, checksum); // Note the 7 (not 8): last space remains
 }
+#endif
 
 void IotsaFilesBackupMod::setup() {
 }

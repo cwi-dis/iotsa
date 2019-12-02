@@ -244,7 +244,7 @@ void IotsaMod::percentDecode(const String &src, String &dst) {
     const char *arg = src.c_str();
     dst = String();
     while (*arg) {
-      char newch;
+      char newch = 0;
       if (*arg == '+') newch = ' ';
       else if (*arg == '%') {
         arg++;

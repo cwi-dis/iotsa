@@ -93,11 +93,16 @@ bool IotsaRequest::send() {
   bool rv = true;
   HTTPClient http;
   WiFiClient client;
+#ifdef ESP32
+  WiFiClientSecure secureClient;
+#else
   BearSSL::WiFiClientSecure *secureClientPtr = NULL;
+#endif
 
   if (url.startsWith("https:")) {
 #ifdef ESP32
-    rv = http.begin(url, sslInfo.c_str());
+    secureClient.setCACert(sslInfo.c_str());
+    rv = http.begin(secureClient, url);
 #else
     secureClientPtr = new BearSSL::WiFiClientSecure();
     secureClientPtr->setFingerprint(sslInfo.c_str());
@@ -108,7 +113,9 @@ bool IotsaRequest::send() {
     rv = http.begin(client, url);  
   }
   if (!rv) {
+#ifndef ESP32
     if (secureClientPtr) delete secureClientPtr;
+#endif
     return false;
   }
   if (token != "") {
@@ -137,7 +144,9 @@ bool IotsaRequest::send() {
     rv = false;
   }
   http.end();
+#ifndef ESP32
   if (secureClientPtr) delete secureClientPtr;
+#endif
   return rv;
 }
 
