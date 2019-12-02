@@ -1,6 +1,10 @@
 #include <Esp.h>
-#include "FS.h"
 #include "iotsaFilesBackup.h"
+#ifdef ESP32
+#include "SPIFFS.h"
+#else
+#include "FS.h"
+#endif
 
 #ifdef IOTSA_WITH_WEB
 struct tarHeader {
@@ -17,8 +21,14 @@ struct tarHeader {
 };
 
 #ifdef ESP32
-static addFilenames(std::vector<String>& fileList, String dirName) {
-
+static void addFilenames(std::vector<String>& fileList, String dirName) {
+	File root = SPIFFS.open(dirName);
+	while(1) {
+		File file = root.openNextFile();
+		if (!file) break;
+		String fileName(file.name());
+		fileList.push_back(fileName);
+	}
 }
 #else
 static void addFilenames(std::vector<String>& fileList, String dirName) {
@@ -31,7 +41,6 @@ static void addFilenames(std::vector<String>& fileList, String dirName) {
 }
 #endif
 
-#ifndef ESP32
 static char buf[512];
 
 static void octal(char *p, int size, unsigned int value)
@@ -55,7 +64,6 @@ static void checksum(struct tarHeader *h)
 	}
 	octal(h->checksum, 7, checksum); // Note the 7 (not 8): last space remains
 }
-#endif
 
 void IotsaFilesBackupMod::setup() {
 }
@@ -63,14 +71,10 @@ void IotsaFilesBackupMod::setup() {
 void
 IotsaFilesBackupMod::handler() {
   if (needsAuthentication("backupfiles")) return;
-#ifdef ESP32
-  server->send(404, "text/plain", "404 Not Found: cannot list files on esp32 yet");
-#else
   IFDEBUG IotsaSerial.println("Creating backup");
   server->setContentLength(CONTENT_LENGTH_UNKNOWN);
   server->send(200, "application/x-tar");
   std::vector<String> fileNames;
-  IFDEBUG IotsaSerial.println("xxxjack new style backup");
   addFilenames(fileNames, "/");
   for(std::vector<String>::iterator it=fileNames.begin(); it != fileNames.end(); it++) {
   	const String& fileName = *it;
@@ -113,7 +117,6 @@ IotsaFilesBackupMod::handler() {
   		server->sendContent_P(buf, filePadding);
 	}
   }
-#endif
 }
 
 void IotsaFilesBackupMod::serverSetup() {
