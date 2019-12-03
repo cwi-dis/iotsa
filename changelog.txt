@@ -1,3 +1,11 @@
+iotsa 2.2 - 03-Dec-2019
+
+- Updated to PlatformIO 4
+- newer version of esp8266 and esp32 Arduino frameworks
+- new ArduinoJson API
+- Rationalized PlatformIO/Arduino support
+- Backups and file listing implemented on esp32
+
 iotsa 2.1 - 02-Jun-2019
 
 - Got rid of default password, it provides no extra security.
