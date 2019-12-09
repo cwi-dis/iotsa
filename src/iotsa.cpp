@@ -145,6 +145,7 @@ IotsaApplication::loop() {
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
 void
 IotsaApplication::webServerSetup() {
+  if (!iotsaConfig.wifiEnabled) return;
 #ifdef IOTSA_WITH_HTTPS
   IFDEBUG IotsaSerial.print("Using https key len=");
   IFDEBUG IotsaSerial.print(iotsaConfig.httpsKeyLength);
@@ -167,6 +168,7 @@ IotsaApplication::webServerSetup() {
 
 void
 IotsaApplication::webServerLoop() {
+  if (!iotsaConfig.wifiEnabled) return;
   server->handleClient();
 #if defined(IOTSA_WITH_HTTPS) && defined(IOTSA_WITH_HTTP)
   singletonTFS->server.handleClient();

@@ -24,6 +24,7 @@
 //
 IotsaConfig iotsaConfig = {
   false,
+  false,
   IOTSA_MODE_NORMAL,
   0,
   IOTSA_MODE_NORMAL,

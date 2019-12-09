@@ -21,7 +21,7 @@ static unsigned long rebootAt;
 void IotsaWifiMod::setup() {
   configLoad();
   if (app.status) app.status->showStatus();
-
+  iotsaConfig.wifiEnabled = true;
   // Try and connect to an existing Wifi network, if known
   if (ssid.length()) {
     WiFi.mode(WIFI_STA);

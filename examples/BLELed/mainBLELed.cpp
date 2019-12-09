@@ -16,7 +16,9 @@
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 
 IotsaApplication application("Iotsa BLE LED Server");
+#ifdef IOTSA_WITH_WIFI
 IotsaWifiMod wifiMod(application);
+#endif
 
 #ifdef WITH_OTA
 #include "iotsaOta.h"
@@ -124,12 +126,14 @@ bool IotsaLedControlMod::putHandler(const char *path, const JsonVariant& request
 }
 
 void IotsaLedControlMod::serverSetup() {
+  name = "led";
   // Setup the web server hooks for this module.
 #ifdef IOTSA_WITH_WEB
   server->on("/led", std::bind(&IotsaLedControlMod::handler, this));
 #endif // IOTSA_WITH_WEB
+#ifdef IOTSA_WITH_API
   api.setup("/api/led", true, true);
-  name = "led";
+#endif
 #ifdef IOTSA_WITH_BLE
   bleApi.setup(serviceUUID, this);
   bleApi.addCharacteristic(rgbUUID, BLE_READ|BLE_WRITE);
