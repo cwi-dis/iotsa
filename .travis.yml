@@ -15,7 +15,7 @@ env:
 - IOTSA_EXAMPLE=Skeleton PLATFORMIO_CI_SRC=examples/Skeleton
 - IOTSA_EXAMPLE=Button PLATFORMIO_CI_SRC=examples/Button
 - IOTSA_EXAMPLE=Ringer PLATFORMIO_CI_SRC=examples/Ringer
-- IOTSA_EXAMPLE=BLELed PLATFORMIO_CI_SRC=examples/BLELed
+- IOTSA_EXAMPLE=BLELed PLATFORMIO_CI_SRC=examples/BLELed PLATFORMIO_CI_EXTRA_ARGS='--project-option="board_build.partitions = no_ota.csv"'
 # Build a service coap-only (no web, no http[s])
 - IOTSA_EXAMPLE=Led PLATFORMIO_CI_SRC=examples/Led PLATFORMIO_BUILD_FLAGS="-DIOTSA_WITH_COAP -DIOTSA_WITHOUT_WEB -DIOTSA_WITHOUT_REST -DIOTSA_WITHOUT_HTTP -DIOTSA_WITHOUT_HTTPS -DIOTSA_WITH_PLACEHOLDERS"
 # Build a service with both coap and rest/web
@@ -33,5 +33,5 @@ install:
 - platformio lib -g install "ArduinoJWT@~1.0.1"
 - platformio lib -g install "https://github.com/jackjansen/CoAP-simple-library.git"
 script:
-- platformio ci --lib="." --project-option="lib_ldf_mode=deep+" --board=nodemcuv2
-- platformio ci --lib="." --project-option="lib_ldf_mode=deep+" --board=esp32thing
+- platformio ci --lib="." --project-option="lib_ldf_mode=deep+" --board=nodemcuv2  $PLATFORMIO_CI_EXTRA_ARGS
+- platformio ci --lib="." --project-option="lib_ldf_mode=deep+" --board=esp32thing  $PLATFORMIO_CI_EXTRA_ARGS
