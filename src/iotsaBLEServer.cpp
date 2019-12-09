@@ -79,6 +79,8 @@ String IotsaBLEServerMod::info() {
 #endif // IOTSA_WITH_WEB
 
 BLEServer *IotsaBLEServerMod::s_server = 0;
+uint16_t IotsaBLEServerMod::adv_min = 0;
+uint16_t IotsaBLEServerMod::adv_max = 0;
 
 void IotsaBLEServerMod::createServer() {
   if (s_server) return;
@@ -105,8 +107,8 @@ bool IotsaBLEServerMod::getHandler(const char *path, JsonObject& reply) {
 }
 
 bool IotsaBLEServerMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
-  adv_min = request["adv_min"]|0;
-  adv_max = request["adv_max"]|0;
+  adv_min = request["adv_min"]|adv_min;
+  adv_max = request["adv_max"]|adv_max;
   configSave();
   return true;
 }
@@ -127,10 +129,10 @@ void IotsaBLEServerMod::configLoad() {
   pAdvertising->stop();
   IotsaConfigFileLoad cf("/config/bleserver.cfg");
   int value;
-  cf.get("adv_min", value, 0);
+  cf.get("adv_min", value, adv_min);
   adv_min = value;
   if (adv_min) pAdvertising->setMinInterval(adv_min);
-  cf.get("adv_max", value, 0);
+  cf.get("adv_max", value, adv_max);
   adv_max = value;
   if (adv_max) pAdvertising->setMaxInterval(adv_max);
   pAdvertising->start();

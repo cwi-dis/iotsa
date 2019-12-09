@@ -144,6 +144,7 @@ IotsaLedControlMod ledMod(application, NEOPIXEL_PIN);
 
 // Standard setup() method, hands off most work to the application framework
 void setup(void){
+  bleserverMod.setAdvertisingInterval(750, 3000); // Set default advertising interval to be between 0.5 and 2.0 seconds
   application.setup();
   application.serverSetup();
 }

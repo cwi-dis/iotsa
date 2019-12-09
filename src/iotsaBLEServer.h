@@ -69,6 +69,10 @@ public:
   void serverSetup();
   void loop();
   String info();
+  static void setAdvertisingInterval(uint16_t _adv_min, uint16_t _adv_max) {
+    adv_min = _adv_min;
+    adv_max = _adv_max;
+  }
 
 protected:
   bool getHandler(const char *path, JsonObject& reply);
@@ -80,8 +84,8 @@ protected:
   static void createServer();
   static BLEServer *s_server;
 
-  uint16_t adv_min = 0;
-  uint16_t adv_max = 0;
+  static uint16_t adv_min;
+  static uint16_t adv_max;
 };
 #else // IOTSA_WITH_BLE
 class IotsaBLEApiProvider {};
