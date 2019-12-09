@@ -1,3 +1,7 @@
+iotsa 2.3 - in progress
+
+- Added BLE support (esp32 only): iotsa devices can now be a Bluetooth LE server
+
 iotsa 2.2 - 03-Dec-2019
 
 - Updated to PlatformIO 4

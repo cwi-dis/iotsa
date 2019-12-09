@@ -388,6 +388,12 @@ and then repeatedly call `cf.put("name", variable)`.
 
 ## available standard modules
 
+### iotsaBLEServer.h
+
+Allows a iotsa device to export an API as a Bluetooth LE service. ESP32 only.
+Can be used with the module (which allows setting some BLE parameters such as
+advertising interval through the web or REST interface) or without it.
+
 ### iotsaButton.h
 
 A generalized module for handling buttons and switches attached to GPIO pins. Uses _iotsaRequest.h_ to enable REST calls when buttons are pressed.
@@ -479,6 +485,7 @@ has no users, and allows all rights always.
 - [Light](examples/Light/Light.ino) measures ambient light level with an LDR connected to the analog input.
 - [Temperature](examples/Temperature/Temperature.ino) measures temperature with a slightly more complicated sensor, a DHT21.
 - [Led](examples/Led/Led.ino) controls the color of a NeoPixel LED, and can set up repeating patterns. Uses _iotsaLed_ module.
+- [BLELed](examples/BLELed/BLELed.ino) controls the color of a NeoPixel LED. Can be controlled over Bluetooth LE when built for an esp32 board.
 - [Ringer](examples/Ringer/Ringer.ino) 
 - [HelloPasswd](examples/HelloPasswd/HelloPasswd.ino) The same "Hello" server, but now using a _IotsaAuthMod_ for access control (you need to provide username "admin" and password "admin" to change the greeting name). Builds with HTTPS support by default (when using platformIO).
 - [HelloUser](examples/HelloUser/HelloUser.ino) Another "Hello" server that needs authentication, but this time using _IotsaUserMod_ so the password can be changed. Builds with HTTPS support by default (when using platformIO).
