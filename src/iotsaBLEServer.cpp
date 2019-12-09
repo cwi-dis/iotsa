@@ -67,7 +67,7 @@ IotsaBLEServerMod::handler() {
   String message = "<html><head><title>BLE Server module</title></head><body><h1>BLE Server module</h1>";
   message += "<form method='get'>";
   message += "Advertising interval (min): <input type='text' name='adv_min' value='" + String(adv_min) + "'> (default: 32, unit: 0.625ms, range: 32..16384)<br>";
-  message += "Advertising interval (max): <input type='text' name='adv_max' value='" + String(adv_max) + "'> (default: 32, unit: 0.625ms, range: 32..16384)<br>";
+  message += "Advertising interval (max): <input type='text' name='adv_max' value='" + String(adv_max) + "'> (default: 64, unit: 0.625ms, range: 32..16384)<br>";
   message += "<input type='submit'></form></body></html>";
   server->send(200, "text/html", message);
 }
