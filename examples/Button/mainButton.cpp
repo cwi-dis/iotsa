@@ -11,18 +11,22 @@
 #include "iotsaButton.h"
 #include <functional>
 
-#define PIN_BUTTON 4	// GPIO4 is the pushbutton
-#define PIN_NEOPIXEL 15  // pulled-down during boot, can be used for NeoPixel afterwards
+#ifndef BUTTON_PIN
+#define BUTTON_PIN 4	// GPIO4 is the pushbutton
+#endif
+#ifndef NEOPIXEL_PIN
+#define NEOPIXEL_PIN 15  // pulled-down during boot, can be used for NeoPixel afterwards
+#endif
 
 IotsaApplication application("Button Server");
 
 // Configure modules we need
 IotsaWifiMod wifiMod(application);  // wifi is always needed
 IotsaOtaMod otaMod(application);    // we want OTA for updating the software (will not work with esp-201)
-IotsaLedMod ledMod(application, PIN_NEOPIXEL);
+IotsaLedMod ledMod(application, NEOPIXEL_PIN);
 
 Button buttons[] = {
-  Button(PIN_BUTTON, true, false)
+  Button(BUTTON_PIN, true, false)
 };
 const int nButton = sizeof(buttons) / sizeof(buttons[0]);
 callback buttonOk = std::bind(&IotsaLedMod::set, ledMod, 0x002000, 250, 0, 1);
