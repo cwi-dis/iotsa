@@ -45,6 +45,14 @@
 // #define IOTSA_WITH_COAP
 #endif
 
+
+#ifndef IOTSA_WITHOUT_BLE
+// BLE support is enabled by default on ESP32
+#ifdef ESP32
+#define IOTSA_WITH_BLE
+#endif
+#endif
+
 #ifndef IOTSA_WITHOUT_TIMEZONE_LIBRARY
 // Timezone support is enabled in NTP module by default
 #define IOTSA_WITH_TIMEZONE_LIBRARY
@@ -86,4 +94,7 @@
 #error IOTSA API support requires REST or COAP
 #endif
 
+#if defined(IOTSA_WITH_BLE) && !defined(ESP32)
+#error IOTSA BLE support only available on ESP32
+#endif
 #endif
