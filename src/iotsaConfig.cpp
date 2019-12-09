@@ -208,6 +208,8 @@ static const char *modeName(config_mode mode) {
 #endif // IOTSA_WITH_WEB
 
 void IotsaConfigMod::setup() {
+  IFDEBUG IotsaSerial.print("boot reason: ");
+  IFDEBUG IotsaSerial.println(getBootReason());
 #ifdef IOTSA_WITH_HTTPS
   iotsaConfig.httpsCertificate = defaultHttpsCertificate;
   iotsaConfig.httpsCertificateLength = sizeof(defaultHttpsCertificate);

@@ -103,6 +103,8 @@ IotsaApplication::setup() {
   if (singletonTFS == NULL)
     singletonTFS = new TinyForwardServer();
 #endif // defined(IOTSA_WITH_HTTPS) && defined(IOTSA_WITH_HTTP)
+  IFDEBUG IotsaSerial.print("hostname: ");
+  IFDEBUG IotsaSerial.println(iotsaConfig.hostName);
 }
 
 void
