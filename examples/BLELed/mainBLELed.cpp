@@ -13,7 +13,8 @@
 
 // CHANGE: Add application includes and declarations here
 
-#define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
+#undef WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
+#define WITH_BATTERY
 
 IotsaApplication application("Iotsa BLE LED Server");
 #ifdef IOTSA_WITH_WIFI
@@ -23,6 +24,11 @@ IotsaWifiMod wifiMod(application);
 #ifdef WITH_OTA
 #include "iotsaOta.h"
 IotsaOtaMod otaMod(application);
+#endif
+
+#ifdef WITH_BATTERY
+#include "iotsaBattery.h"
+IotsaBatteryMod batteryMod(application);
 #endif
 
 #include "iotsaBLEServer.h"
