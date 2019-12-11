@@ -19,11 +19,14 @@ public:
   newKey(NULL),
   newKeyLength(0)
 #endif // IOTSA_WITH_HTTPS
-  {}
+  {
+    singleton = this;
+  }
 	void setup();
 	void serverSetup();
 	void loop();
   String info();
+  static IotsaConfigMod *singleton;
 protected:
   bool getHandler(const char *path, JsonObject& reply);
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);

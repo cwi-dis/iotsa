@@ -14,6 +14,8 @@
 #include "iotsaConfigFile.h"
 #include "iotsaConfig.h"
 
+IotsaConfigMod *IotsaConfigMod::singleton = 0;
+
 #ifdef IOTSA_WITH_HTTPS
 #include <libb64/cdecode.h>
 #include <libb64/cencode.h>
@@ -779,25 +781,5 @@ void IotsaConfigMod::loop() {
     iotsaConfig.nextConfigurationMode = IOTSA_MODE_NORMAL;
     iotsaConfig.nextConfigurationModeEndTime = 0;
     configSave();
-  }
-  // xxxjack
-  if (!iotsaConfig.wifiPrivateNetworkMode) {
-  	// Should be in normal mode, check that we have WiFi
-  	static int disconnectedCount = 0;
-  	if (WiFi.status() == WL_CONNECTED) {
-  		if (disconnectedCount) {
-  			IFDEBUG IotsaSerial.println("Config reconnected");
-  		}
-  		disconnectedCount = 0;
-    } else {
-      if (disconnectedCount == 0) {
-        IFDEBUG IotsaSerial.println("Config connection lost");
-      }
-      disconnectedCount++;
-      if (disconnectedCount > 60000) {
-        IFDEBUG IotsaSerial.println("Config connection lost too long. Reboot.");
-        ESP.restart();
-      }
-    }
   }
 }

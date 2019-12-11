@@ -217,7 +217,7 @@ public:
     return false;
   }
   uint32_t getStatusColor() {
-    if (!WiFi.isConnected()) return 0x3f1f00; // Orange: not connected to WiFi
+    if (wifiEnabled && !WiFi.isConnected()) return 0x3f1f00; // Orange: not connected to WiFi
     if (configurationMode == IOTSA_MODE_FACTORY_RESET) return 0x3f0000; // Red: Factory reset mode
     if (configurationMode == IOTSA_MODE_CONFIG) return 0x3f003f;	// Magenta: user-requested configuration mode
     if (configurationMode == IOTSA_MODE_OTA) return 0x003f3f;	// Cyan: OTA mode

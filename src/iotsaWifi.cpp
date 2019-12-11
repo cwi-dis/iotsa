@@ -244,6 +244,7 @@ void IotsaWifiMod::loop() {
     IFDEBUG IotsaSerial.println("Software requested reboot.");
     ESP.restart();
   }
+  
   // xxxjack
   if (!iotsaConfig.wifiPrivateNetworkMode) {
   	// Should be in normal mode, check that we have WiFi

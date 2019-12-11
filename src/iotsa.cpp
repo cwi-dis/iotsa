@@ -4,6 +4,7 @@
 #include <SPIFFS.h>
 #endif
 #include "iotsa.h"
+#include "iotsaConfig.h"
 
 // There is an issue with the platformio library dependency finder, and it doesn't find the
 // esp8266httpclient library. This is a workaround.
@@ -54,7 +55,8 @@ IotsaApplication::IotsaApplication(const char *_title)
   firstEarlyModule(NULL), 
   title(_title),
   haveOTA(false)
-{}
+{
+}
 
 void
 IotsaApplication::addMod(IotsaBaseMod *mod) {
@@ -88,6 +90,11 @@ IotsaApplication::setup() {
     }
   } else {
     IFDEBUG IotsaSerial.println("SPIFFS mounted");
+  }
+  // Normally iotsaConfigMod is initialized by the WiFi module,
+  // but if the WiFi module isn't indluded we ensure that there is a config module anyway.
+  if (IotsaConfigMod::singleton == NULL) {
+    (void)new IotsaConfigMod(*this);
   }
   IotsaBaseMod *m;
   for (m=firstEarlyModule; m; m=m->nextModule) {
