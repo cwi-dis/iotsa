@@ -129,8 +129,10 @@ void IotsaBatteryMod::loop() {
     millisAtWakeup = millis();
     IFDEBUG IotsaSerial.print("wakeup at ");
     IFDEBUG IotsaSerial.print(millisAtWakeup);
+#ifdef ESP32
     IFDEBUG IotsaSerial.print(" reason ");
     IFDEBUG IotsaSerial.println(esp_sleep_get_wakeup_cause());
+#endif
     _readVoltages();
   }
   if (sleepMode && wakeDuration > 0 && millis() > millisAtWakeup + wakeDuration) {
@@ -149,6 +151,7 @@ void IotsaBatteryMod::loop() {
       delay(sleepDuration);
       millisAtWakeup = 0;
     } else {
+#ifdef ESP32
       IFDEBUG delay(10); // Flush serial buffer
       if (sleepDuration) {
         esp_sleep_enable_timer_wakeup(sleepDuration*1000LL);
@@ -161,11 +164,9 @@ void IotsaBatteryMod::loop() {
         millisAtWakeup = millis();
         IFDEBUG IotsaSerial.println(millisAtWakeup);
         return;
-      } else
-#ifdef ESP32
+      }
       esp_wifi_stop();
       esp_bt_controller_disable();
-#endif
       if (sleepMode == SLEEP_DEEP) {
         esp_deep_sleep_start();
       } else
@@ -176,6 +177,9 @@ void IotsaBatteryMod::loop() {
         esp_deep_sleep_start();
       }
       IFDEBUG IotsaSerial.println("esp_*_sleep_start() failed?");
+#else
+      ESP.deepSleep(sleepDuration*1000LL);
+#endif
     }
   }
 }

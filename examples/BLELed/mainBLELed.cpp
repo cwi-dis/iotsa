@@ -164,7 +164,9 @@ void setup(void){
 #ifdef PIN_DISABLESLEEP
   batteryMod.setPinDisableSleep(PIN_DISABLESLEEP);
 #endif
+#ifdef IOTSA_WITH_BLE
   bleserverMod.setAdvertisingInterval(750, 3000); // Set default advertising interval to be between 0.5 and 2.0 seconds
+#endif
   application.setup();
   application.serverSetup();
 }
