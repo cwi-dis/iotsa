@@ -11,6 +11,11 @@ IotsaBatteryMod::handler() {
     sleepDuration = server->arg("sleepDuration").toInt();
     anyChanged = true;
   }
+  if( server->hasArg("sleepMode")) {
+    if (needsAuthentication()) return;
+    sleepMode = (IotsaSleepMode)server->arg("sleepMode").toInt();
+    anyChanged = true;
+  }
   if( server->hasArg("wakeDuration")) {
     if (needsAuthentication()) return;
     wakeDuration = server->arg("wakeDuration").toInt();
@@ -20,13 +25,20 @@ IotsaBatteryMod::handler() {
 
   String message = "<html><head><title>Battery power saving module</title></head><body><h1>Battery power saving module</h1>";
   _readVoltages();
+  message += "<p>Wakeup time: " + String(millisAtBoot) + "ms<br>";
+  message += "Awake for: " + String(millis() - millisAtBoot) + "ms<br>";
+  if (sleepMode && wakeDuration) {
+    message += "Remaining awake for: " + String(millisAtBoot + wakeDuration - millis()) + "ms<br>";
+  }
   if (pinVBat > 0) {
-    message += "<p>Battery level: " + String(levelVBat) + "</p>";
+    message += "Battery level: " + String(levelVBat) + "%<br>";
   }
   if (pinVUSB > 0) {
-    message += "<p>USB voltage level: " + String(levelVUSB) + "</p>";
+    message += "USB voltage level: " + String(levelVUSB) + "%<br>";
   }
+  message += "</p>";
   message += "<form method='get'>";
+  message += "Sleep mode: <input name='sleepMode' value='" + String(sleepMode) + "'><br>";
   message += "Sleep duration: <input name='sleepDuration' value='" + String(sleepDuration) + "'><br>";
   message += "Wake duration: <input name='wakeDuration' value='" + String(wakeDuration) + "'><br>";
   message += "<input type='submit'></form>";
@@ -49,6 +61,7 @@ void IotsaBatteryMod::setup() {
 
 #ifdef IOTSA_WITH_API
 bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
+  reply["sleepMode"] = (int)sleepMode;
   reply["sleepDuration"] = sleepDuration;
   reply["wakeDuration"] = wakeDuration;
   _readVoltages();
@@ -60,6 +73,10 @@ bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
 bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
+  if (reqObj.containsKey("sleepMode")) {
+    sleepMode = (IotsaSleepMode)reqObj["sleepMode"].as<int>();
+    anyChanged = true;
+  }
   if (reqObj.containsKey("sleepDuration")) {
     sleepDuration = reqObj["sleepDuration"];
     anyChanged = true;
@@ -86,17 +103,21 @@ void IotsaBatteryMod::serverSetup() {
 void IotsaBatteryMod::configLoad() {
   IotsaConfigFileLoad cf("/config/battery.cfg");
   int value;
+  cf.get("sleepMode", value, 0);
+  sleepMode = (IotsaSleepMode)value;
   cf.get("wakeDuration", value, 0);
   wakeDuration = value;
   cf.get("sleepDuration", value, 0);
   sleepDuration = value;
- 
+  millisAtBoot = 0;
 }
 
 void IotsaBatteryMod::configSave() {
   IotsaConfigFileSave cf("/config/battery.cfg");
+  cf.put("sleepMode", (int)sleepMode);
   cf.put("wakeDuration", (int)wakeDuration);
   cf.put("sleepDuration", (int)sleepDuration);
+  millisAtBoot = 0;
 }
 
 void IotsaBatteryMod::loop() {
@@ -106,14 +127,27 @@ void IotsaBatteryMod::loop() {
     IFDEBUG IotsaSerial.println(millisAtBoot);
     _readVoltages();
   }
-  if (wakeDuration > 0 && millis() > millisAtBoot + wakeDuration) {
+  if (sleepMode && wakeDuration > 0 && millis() > millisAtBoot + wakeDuration) {
     IFDEBUG IotsaSerial.print("Going to sleep at ");
     IFDEBUG IotsaSerial.print(millis());
     IFDEBUG IotsaSerial.print(" for ");
-    IFDEBUG IotsaSerial.println(sleepDuration);
-    IFDEBUG delay(10);
-    delay(sleepDuration);
-    millisAtBoot = 0;
+    IFDEBUG IotsaSerial.print(sleepDuration);
+    IFDEBUG IotsaSerial.print(" mode ");
+    IFDEBUG IotsaSerial.println(sleepMode);
+    switch(sleepMode) {
+    case SLEEP_DELAY:
+      delay(sleepDuration);
+      millisAtBoot = 0;
+      break;
+    case SLEEP_LIGHT:
+      break;
+    case SLEEP_DEEP:
+      break;
+    case SLEEP_HIBERNATE:
+      break;
+    default:
+      break;
+    }
   }
 }
 

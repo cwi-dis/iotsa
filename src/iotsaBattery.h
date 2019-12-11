@@ -9,6 +9,14 @@
 #define IotsaBatteryModBaseMod IotsaMod
 #endif
 
+enum IotsaSleepMode : uint8_t {
+  SLEEP_NONE,
+  SLEEP_DELAY,
+  SLEEP_LIGHT,
+  SLEEP_DEEP,
+  SLEEP_HIBERNATE
+};
+
 class IotsaBatteryMod : public IotsaBatteryModBaseMod {
 public:
   using IotsaBatteryModBaseMod::IotsaBatteryModBaseMod;
@@ -25,14 +33,15 @@ protected:
   void configSave();
   void handler();
   String argument;
+  enum IotsaSleepMode sleepMode;
   uint32_t millisAtBoot = 0;
   uint32_t wakeDuration = 0;
   uint32_t sleepDuration = 0;
   void _readVoltages();
   int pinVBat = 0;
   int pinVUSB = 0;
-  int16_t levelVBat;
-  int16_t levelVUSB;
+  uint8_t levelVBat;
+  uint8_t levelVUSB;
 };
 
 #endif
