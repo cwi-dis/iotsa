@@ -15,9 +15,11 @@
 
 #undef WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 #define WITH_BATTERY
+#ifdef ESP32
 #define PIN_VBAT 36 // Undefine to disable battery voltage measurements. Use 1:1 voltage divider.
 #define PIN_VUSB 37 // Undefine to disable USB voltage measurements. Use 1:1 voltage divider.
 #define PIN_DISABLESLEEP 0 // Define as pin to disable sleep (active low to disable)
+#endif // ESP32
 
 IotsaApplication application("Iotsa BLE LED Server");
 #ifdef IOTSA_WITH_WIFI

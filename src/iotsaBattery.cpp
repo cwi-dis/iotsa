@@ -1,6 +1,10 @@
 #include "iotsa.h"
 #include "iotsaBattery.h"
 #include "iotsaConfigFile.h"
+#ifdef ESP32
+#include <esp_wifi.h>
+#include <esp_bt.h>
+#endif
 
 #ifdef IOTSA_WITH_WEB
 void
@@ -158,6 +162,10 @@ void IotsaBatteryMod::loop() {
         IFDEBUG IotsaSerial.println(millisAtWakeup);
         return;
       } else
+#ifdef ESP32
+      esp_wifi_stop();
+      esp_bt_controller_disable();
+#endif
       if (sleepMode == SLEEP_DEEP) {
         esp_deep_sleep_start();
       } else
