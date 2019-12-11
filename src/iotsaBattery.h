@@ -26,6 +26,7 @@ public:
   String info();
   void setPinVUSB(int pin) { pinVUSB = pin; }
   void setPinVBat(int pin) { pinVBat = pin; }
+  void setPinDisableSleep(int pin) { pinDisableSleep = pin; }
 protected:
   bool getHandler(const char *path, JsonObject& reply);
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
@@ -34,12 +35,13 @@ protected:
   void handler();
   String argument;
   enum IotsaSleepMode sleepMode;
-  uint32_t millisAtBoot = 0;
+  uint32_t millisAtWakeup = 0;
   uint32_t wakeDuration = 0;
   uint32_t sleepDuration = 0;
   void _readVoltages();
-  int pinVBat = 0;
-  int pinVUSB = 0;
+  int pinVBat = -1;
+  int pinVUSB = -1;
+  int pinDisableSleep = -1;
   uint8_t levelVBat;
   uint8_t levelVUSB;
 };

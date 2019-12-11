@@ -25,15 +25,15 @@ IotsaBatteryMod::handler() {
 
   String message = "<html><head><title>Battery power saving module</title></head><body><h1>Battery power saving module</h1>";
   _readVoltages();
-  message += "<p>Wakeup time: " + String(millisAtBoot) + "ms<br>";
-  message += "Awake for: " + String(millis() - millisAtBoot) + "ms<br>";
+  message += "<p>Wakeup time: " + String(millisAtWakeup) + "ms<br>";
+  message += "Awake for: " + String(millis() - millisAtWakeup) + "ms<br>";
   if (sleepMode && wakeDuration) {
-    message += "Remaining awake for: " + String(millisAtBoot + wakeDuration - millis()) + "ms<br>";
+    message += "Remaining awake for: " + String(millisAtWakeup + wakeDuration - millis()) + "ms<br>";
   }
-  if (pinVBat > 0) {
+  if (pinVBat >= 0) {
     message += "Battery level: " + String(levelVBat) + "%<br>";
   }
-  if (pinVUSB > 0) {
+  if (pinVUSB >= 0) {
     message += "USB voltage level: " + String(levelVUSB) + "%<br>";
   }
   message += "</p>";
@@ -65,8 +65,8 @@ bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
   reply["sleepDuration"] = sleepDuration;
   reply["wakeDuration"] = wakeDuration;
   _readVoltages();
-  if (pinVBat > 0) reply["levelVBat"] = levelVBat;
-  if (pinVUSB > 0) reply["levelVUSB"] = levelVUSB;
+  if (pinVBat >= 0) reply["levelVBat"] = levelVBat;
+  if (pinVUSB >= 0) reply["levelVUSB"] = levelVUSB;
   return true;
 }
 
@@ -109,7 +109,7 @@ void IotsaBatteryMod::configLoad() {
   wakeDuration = value;
   cf.get("sleepDuration", value, 0);
   sleepDuration = value;
-  millisAtBoot = 0;
+  millisAtWakeup = 0;
 }
 
 void IotsaBatteryMod::configSave() {
@@ -117,48 +117,69 @@ void IotsaBatteryMod::configSave() {
   cf.put("sleepMode", (int)sleepMode);
   cf.put("wakeDuration", (int)wakeDuration);
   cf.put("sleepDuration", (int)sleepDuration);
-  millisAtBoot = 0;
+  millisAtWakeup = 0;
 }
 
 void IotsaBatteryMod::loop() {
-  if (millisAtBoot == 0) {
-    millisAtBoot = millis();
+  if (millisAtWakeup == 0) {
+    millisAtWakeup = millis();
     IFDEBUG IotsaSerial.print("wakeup at ");
-    IFDEBUG IotsaSerial.println(millisAtBoot);
+    IFDEBUG IotsaSerial.print(millisAtWakeup);
+    IFDEBUG IotsaSerial.print(" reason ");
+    IFDEBUG IotsaSerial.println(esp_sleep_get_wakeup_cause());
     _readVoltages();
   }
-  if (sleepMode && wakeDuration > 0 && millis() > millisAtBoot + wakeDuration) {
+  if (sleepMode && wakeDuration > 0 && millis() > millisAtWakeup + wakeDuration) {
+    if (pinDisableSleep >= 0 && digitalRead(pinDisableSleep) == LOW) {
+      IFDEBUG IotsaSerial.println("Sleep canceled");
+      millisAtWakeup = millis();
+      return;
+    }
     IFDEBUG IotsaSerial.print("Going to sleep at ");
     IFDEBUG IotsaSerial.print(millis());
     IFDEBUG IotsaSerial.print(" for ");
     IFDEBUG IotsaSerial.print(sleepDuration);
     IFDEBUG IotsaSerial.print(" mode ");
     IFDEBUG IotsaSerial.println(sleepMode);
-    switch(sleepMode) {
-    case SLEEP_DELAY:
+    if(sleepMode == SLEEP_DELAY) {
       delay(sleepDuration);
-      millisAtBoot = 0;
-      break;
-    case SLEEP_LIGHT:
-      break;
-    case SLEEP_DEEP:
-      break;
-    case SLEEP_HIBERNATE:
-      break;
-    default:
-      break;
+      millisAtWakeup = 0;
+    } else {
+      IFDEBUG delay(10); // Flush serial buffer
+      if (sleepDuration) {
+        esp_sleep_enable_timer_wakeup(sleepDuration*1000LL);
+      } else {
+        // xxxjack configure other wakeup sources...
+      }
+      if (sleepMode == SLEEP_LIGHT) {
+        esp_light_sleep_start();
+        IFDEBUG IotsaSerial.print("light sleep wakup at ");
+        millisAtWakeup = millis();
+        IFDEBUG IotsaSerial.println(millisAtWakeup);
+        return;
+      } else
+      if (sleepMode == SLEEP_DEEP) {
+        esp_deep_sleep_start();
+      } else
+      if (sleepMode == SLEEP_HIBERNATE) {
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_OFF);
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_OFF);
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
+        esp_deep_sleep_start();
+      }
+      IFDEBUG IotsaSerial.println("esp_*_sleep_start() failed?");
     }
   }
 }
 
 void IotsaBatteryMod::_readVoltages() {
-    if (pinVBat > 0) {
+    if (pinVBat >= 0) {
     int level = analogRead(pinVBat);
     levelVBat = int(100*3.6*level/(2.0*4096));
     IFDEBUG IotsaSerial.print("VBat=");
     IFDEBUG IotsaSerial.println(levelVBat);
   }
-  if (pinVUSB > 0) {
+  if (pinVUSB >= 0) {
     int level = analogRead(pinVUSB);
     levelVUSB = int(100*3.3*level/(2.0*4096));
     IFDEBUG IotsaSerial.print("VUSB=");
