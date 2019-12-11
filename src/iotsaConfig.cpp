@@ -133,7 +133,9 @@ static const uint8_t defaultHttpsKey[] PROGMEM = {
 
 #endif
 
+#if 0
 String& hostName(iotsaConfig.hostName);
+#endif
 
 static unsigned long rebootAt;
 
@@ -721,23 +723,14 @@ void IotsaConfigMod::serverSetup() {
 }
 
 void IotsaConfigMod::configLoad() {
+  IotsaSerial.println("xxxjack IotsaConfigMod::configLoad");
   IotsaConfigFileLoad cf("/config/config.cfg");
   int tcm;
-  cf.get("mode", tcm, -1);
-  if (tcm == -1) {
-    // Fallback: get from wifi.cfg
-    IotsaConfigFileLoad cfcompat("/config/wifi.cfg");
-    cfcompat.get("mode", tcm, IOTSA_MODE_NORMAL);
-    iotsaConfig.configurationMode = (config_mode)tcm;
-    cfcompat.get("hostName", iotsaConfig.hostName, "");
-    cfcompat.get("rebootTimeout", iotsaConfig.configurationModeTimeout, CONFIGURATION_MODE_TIMEOUT);
-    if (iotsaConfig.hostName == "") wifiDefaultHostName();
-    return;
-  }
+  cf.get("mode", tcm, IOTSA_MODE_NORMAL);
   iotsaConfig.configurationMode = (config_mode)tcm;
   cf.get("hostName", iotsaConfig.hostName, "");
-  cf.get("rebootTimeout", iotsaConfig.configurationModeTimeout, CONFIGURATION_MODE_TIMEOUT);
   if (iotsaConfig.hostName == "") wifiDefaultHostName();
+  cf.get("rebootTimeout", iotsaConfig.configurationModeTimeout, CONFIGURATION_MODE_TIMEOUT);
 #ifdef IOTSA_WITH_HTTPS
   if (iotsaConfigFileExists("/config/httpsKey.der") && iotsaConfigFileExists("/config/httpsCert.der")) {
     bool ok = iotsaConfigFileLoadBinary("/config/httpsKey.der", (uint8_t **)&iotsaConfig.httpsKey, &iotsaConfig.httpsKeyLength);

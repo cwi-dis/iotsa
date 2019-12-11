@@ -44,8 +44,6 @@ void IotsaWifiMod::setup() {
       IFDEBUG IotsaSerial.println(ssid);
       IFDEBUG IotsaSerial.print("IP address: ");
       IFDEBUG IotsaSerial.println(WiFi.localIP());
-      IFDEBUG IotsaSerial.print("Hostname ");
-      IFDEBUG IotsaSerial.println(iotsaConfig.hostName);
       
       WiFi.setAutoReconnect(true);
 
@@ -103,7 +101,7 @@ void IotsaWifiMod::setup() {
   IFDEBUG IotsaSerial.println(WiFi.softAPIP());
 #if 0
   // Despite reports to the contrary it seems mDNS isn't working in softAP mode
-  if (MDNS.begin(hostName.c_str())) {
+  if (MDNS.begin(iotsaConfig.hostName.c_str())) {
     MDNS.addService("http", "tcp", 80);
     IFDEBUG IotsaSerial.println("MDNS responder started");
     haveMDNS = true;
