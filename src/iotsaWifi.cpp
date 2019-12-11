@@ -12,6 +12,9 @@
 #include "iotsa.h"
 #include "iotsaConfigFile.h"
 #include "iotsaWifi.h"
+#ifdef ESP32
+#include <esp_wifi.h>
+#endif
 
 #ifdef IOTSA_WITH_WIFI
 
@@ -19,6 +22,14 @@ static int privateNetworkModeReason;
 static unsigned long rebootAt;
 
 void IotsaWifiMod::setup() {
+  if (iotsaConfig.disableWifiOnBoot) {
+    IFDEBUG IotsaSerial.println("WiFi disabled");
+    WiFi.mode(WIFI_MODE_NULL);
+#ifdef ESP32
+    //esp_wifi_stop();
+#endif
+    return;
+  }
   configLoad();
   if (app.status) app.status->showStatus();
   iotsaConfig.wifiEnabled = true;
@@ -244,7 +255,7 @@ void IotsaWifiMod::loop() {
     IFDEBUG IotsaSerial.println("Software requested reboot.");
     ESP.restart();
   }
-  
+  if (!iotsaConfig.wifiEnabled) return;
   // xxxjack
   if (!iotsaConfig.wifiPrivateNetworkMode) {
   	// Should be in normal mode, check that we have WiFi

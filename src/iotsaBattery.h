@@ -14,12 +14,14 @@ enum IotsaSleepMode : uint8_t {
   SLEEP_DELAY,
   SLEEP_LIGHT,
   SLEEP_DEEP,
-  SLEEP_HIBERNATE
+  SLEEP_HIBERNATE,
+  SLEEP_HIBERNATE_NOWIFI
 };
 
 class IotsaBatteryMod : public IotsaBatteryModBaseMod {
 public:
-  using IotsaBatteryModBaseMod::IotsaBatteryModBaseMod;
+  IotsaBatteryMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL) : IotsaBatteryModBaseMod(_app, _auth, true) {}
+
   void setup();
   void serverSetup();
   void loop();
@@ -35,9 +37,12 @@ protected:
   void handler();
   String argument;
   enum IotsaSleepMode sleepMode;
+  bool useExtraWakeDuration = false;
   uint32_t millisAtWakeup = 0;
   uint32_t wakeDuration = 0;
+  uint32_t bootExtraWakeDuration = 0;
   uint32_t sleepDuration = 0;
+  uint8_t disableSleepOnUSBPower = 0;
   void _readVoltages();
   int pinVBat = -1;
   int pinVUSB = -1;
