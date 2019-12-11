@@ -19,6 +19,13 @@ IotsaBatteryMod::handler() {
   if (anyChanged) configSave();
 
   String message = "<html><head><title>Battery power saving module</title></head><body><h1>Battery power saving module</h1>";
+  _readVoltages();
+  if (pinVBat > 0) {
+    message += "<p>Battery level: " + String(levelVBat) + "</p>";
+  }
+  if (pinVUSB > 0) {
+    message += "<p>USB voltage level: " + String(levelVUSB) + "</p>";
+  }
   message += "<form method='get'>";
   message += "Sleep duration: <input name='sleepDuration' value='" + String(sleepDuration) + "'><br>";
   message += "Wake duration: <input name='wakeDuration' value='" + String(wakeDuration) + "'><br>";
@@ -44,6 +51,9 @@ void IotsaBatteryMod::setup() {
 bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
   reply["sleepDuration"] = sleepDuration;
   reply["wakeDuration"] = wakeDuration;
+  _readVoltages();
+  if (pinVBat > 0) reply["levelVBat"] = levelVBat;
+  if (pinVUSB > 0) reply["levelVUSB"] = levelVUSB;
   return true;
 }
 
@@ -94,6 +104,7 @@ void IotsaBatteryMod::loop() {
     millisAtBoot = millis();
     IFDEBUG IotsaSerial.print("wakeup at ");
     IFDEBUG IotsaSerial.println(millisAtBoot);
+    _readVoltages();
   }
   if (wakeDuration > 0 && millis() > millisAtBoot + wakeDuration) {
     IFDEBUG IotsaSerial.print("Going to sleep at ");
@@ -103,5 +114,20 @@ void IotsaBatteryMod::loop() {
     IFDEBUG delay(10);
     delay(sleepDuration);
     millisAtBoot = 0;
+  }
+}
+
+void IotsaBatteryMod::_readVoltages() {
+    if (pinVBat > 0) {
+    int level = analogRead(pinVBat);
+    levelVBat = int(100*3.6*level/(2.0*4096));
+    IFDEBUG IotsaSerial.print("VBat=");
+    IFDEBUG IotsaSerial.println(levelVBat);
+  }
+  if (pinVUSB > 0) {
+    int level = analogRead(pinVUSB);
+    levelVUSB = int(100*3.3*level/(2.0*4096));
+    IFDEBUG IotsaSerial.print("VUSB=");
+    IFDEBUG IotsaSerial.println(levelVUSB);
   }
 }

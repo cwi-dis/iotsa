@@ -15,6 +15,8 @@
 
 #undef WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 #define WITH_BATTERY
+#define PIN_VBAT 36 // Undefine to disable battery voltage measurements. Use 1:1 voltage divider.
+#define PIN_VUSB 37 // Undefine to disable USB voltage measurements. Use 1:1 voltage divider.
 
 IotsaApplication application("Iotsa BLE LED Server");
 #ifdef IOTSA_WITH_WIFI
@@ -150,6 +152,12 @@ IotsaLedControlMod ledMod(application, NEOPIXEL_PIN);
 
 // Standard setup() method, hands off most work to the application framework
 void setup(void){
+#ifdef PIN_VBAT
+  batteryMod.setPinVBat(PIN_VBAT);
+#endif
+#ifdef PIN_VUSB
+  batteryMod.setPinVUSB(PIN_VUSB);
+#endif
   bleserverMod.setAdvertisingInterval(750, 3000); // Set default advertising interval to be between 0.5 and 2.0 seconds
   application.setup();
   application.serverSetup();
