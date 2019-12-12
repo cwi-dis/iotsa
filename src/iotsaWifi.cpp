@@ -24,9 +24,10 @@ static unsigned long rebootAt;
 void IotsaWifiMod::setup() {
   if (iotsaConfig.disableWifiOnBoot) {
     IFDEBUG IotsaSerial.println("WiFi disabled");
-    WiFi.mode(WIFI_MODE_NULL);
 #ifdef ESP32
-    //esp_wifi_stop();
+    WiFi.mode(WIFI_MODE_NULL);
+#else
+    WiFi.mode(WIFI_OFF);
 #endif
     return;
   }
