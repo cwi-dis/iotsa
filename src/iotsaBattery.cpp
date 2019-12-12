@@ -43,11 +43,11 @@ IotsaBatteryMod::handler() {
 #ifdef ESP32
   message += "Wakeup reason: " + String(esp_sleep_get_wakeup_cause()) + "<br>";
 #endif
-  message += "Awake for: " + String(millis() - millisAtWakeup) + "ms<br>";
+  message += "Awake for: " + String((millis() - millisAtWakeup)/1000.0) + "s<br>";
   if (sleepMode && wakeDuration) {
     uint32_t nextSleepTime = millisAtWakeup + wakeDuration;
     if (useExtraWakeDuration) nextSleepTime += bootExtraWakeDuration;
-    message += "Remaining awake for: " + String(nextSleepTime - millis()) + "ms<br>";
+    message += "Remaining awake for: " + String((nextSleepTime - millis())/1000.0) + "s<br>";
   }
   if (pinVBat >= 0) {
     message += "Battery level: " + String(levelVBat) + "%<br>";
@@ -62,7 +62,8 @@ IotsaBatteryMod::handler() {
   message += "Wake duration: <input name='wakeDuration' value='" + String(wakeDuration) + "'><br>";
   message += "Extra wake duration after poweron/reset: <input name='bootExtraWakeDuration' value='" + String(bootExtraWakeDuration) + "'><br>";
   if (pinVUSB >= 0) {
-    message += "Only sleep when batery powered: <input name='disableSleepOnUSBPower' value='" + String(disableSleepOnUSBPower) + "'><br>";
+    message += "<input type='radio' name='disableSleepOnUSBPower' value='0'" + String(disableSleepOnUSBPower?"":" checked") + ">Sleep on USB or battery power<br>";
+    message += "<input type='radio' name='disableSleepOnUSBPower' value='1'" + String(disableSleepOnUSBPower?" checked":"") + ">Only sleep on battery power<br>";
   }
   message += "<input type='submit'></form>";
   server->send(200, "text/html", message);
