@@ -84,6 +84,7 @@ protected:
   void handler();
 
   static void createServer();
+  static void startServer();
   static BLEServer *s_server;
   static IotsaBleApiService *s_services;
 

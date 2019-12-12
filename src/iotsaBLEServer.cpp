@@ -94,10 +94,7 @@ void IotsaBLEServerMod::createServer() {
   s_server->setCallbacks(new IotsaBLEServerCallbacks());
 }
 
-void IotsaBLEServerMod::setup() {
-  createServer();
-  configLoad();
-  IFBLEDEBUG IotsaSerial.println("BLE server start advertising and services");
+void IotsaBLEServerMod::startServer() {
   // Start advertising
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->setScanResponse(true);
@@ -106,6 +103,13 @@ void IotsaBLEServerMod::setup() {
   for (IotsaBleApiService *sp = s_services; sp; sp=sp->next) {
     sp->bleService->start();
   }
+}
+
+void IotsaBLEServerMod::setup() {
+  createServer();
+  configLoad();
+  IFBLEDEBUG IotsaSerial.println("BLE server start advertising and services");
+  startServer();
 }
 
 #ifdef IOTSA_WITH_API

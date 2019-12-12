@@ -388,6 +388,10 @@ and then repeatedly call `cf.put("name", variable)`.
 
 ## available standard modules
 
+### iotsaBattery.h
+
+Allows sleeping, hibernating and shutting down WiFi of your iotsa device to conserve battery power.
+
 ### iotsaBLEServer.h
 
 Allows a iotsa device to export an API as a Bluetooth LE service. ESP32 only.
