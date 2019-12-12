@@ -1,10 +1,11 @@
 #include "iotsa.h"
 #include "iotsaBLEServer.h"
 #include "iotsaConfigFile.h"
+#include "iotsaConfig.h"
 
 #ifdef IOTSA_WITH_BLE
 
-#undef IOTSA_BLE_DEBUG
+#define IOTSA_BLE_DEBUG
 #ifdef IOTSA_BLE_DEBUG
 #define IFBLEDEBUG if(1)
 #else
@@ -79,22 +80,32 @@ String IotsaBLEServerMod::info() {
 #endif // IOTSA_WITH_WEB
 
 BLEServer *IotsaBLEServerMod::s_server = 0;
+IotsaBleApiService *IotsaBLEServerMod::s_services = NULL;
 uint16_t IotsaBLEServerMod::adv_min = 0;
 uint16_t IotsaBLEServerMod::adv_max = 0;
 
 void IotsaBLEServerMod::createServer() {
   if (s_server) return;
+  IotsaConfigMod::ensureConfigLoaded();
+  IFBLEDEBUG IotsaSerial.print("BLE hostname: ");
+  IFBLEDEBUG IotsaSerial.println(iotsaConfig.hostName.c_str());
   BLEDevice::init(iotsaConfig.hostName.c_str());
   s_server = BLEDevice::createServer();
   s_server->setCallbacks(new IotsaBLEServerCallbacks());
-  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-  pAdvertising->setScanResponse(true);
-  pAdvertising->start();
 }
 
 void IotsaBLEServerMod::setup() {
   createServer();
   configLoad();
+  IFBLEDEBUG IotsaSerial.println("BLE server start advertising and services");
+  // Start advertising
+  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  pAdvertising->setScanResponse(true);
+  pAdvertising->start();
+  // And start services
+  for (IotsaBleApiService *sp = s_services; sp; sp=sp->next) {
+    sp->bleService->start();
+  }
 }
 
 #ifdef IOTSA_WITH_API
@@ -124,7 +135,6 @@ void IotsaBLEServerMod::serverSetup() {
 
 void IotsaBLEServerMod::configLoad() {
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-  pAdvertising->stop();
   IotsaConfigFileLoad cf("/config/bleserver.cfg");
   int value;
   cf.get("adv_min", value, adv_min);
@@ -133,7 +143,6 @@ void IotsaBLEServerMod::configLoad() {
   cf.get("adv_max", value, adv_max);
   adv_max = value;
   if (adv_max) pAdvertising->setMaxInterval(adv_max);
-  pAdvertising->start();
 }
 
 void IotsaBLEServerMod::configSave() {
@@ -148,23 +157,27 @@ void IotsaBLEServerMod::configSave() {
 }
 
 void IotsaBLEServerMod::loop() {
+  static int firstLoop = 0;
+  if (firstLoop == 0) {
+    firstLoop = 1;
+    IFDEBUG IotsaSerial.println("BLE server loop");
+  }
 }
 
 void IotsaBleApiService::setup(const char* serviceUUID, IotsaBLEApiProvider *_apiProvider) {
   IotsaBLEServerMod::createServer();
+  next = IotsaBLEServerMod::s_services;
+  IotsaBLEServerMod::s_services = this;
   apiProvider = _apiProvider;
-  IFBLEDEBUG IotsaSerial.printf("ble service %s to 0x%x\n", serviceUUID, (uint32_t)apiProvider);
+  IFBLEDEBUG IotsaSerial.printf("create ble service %s to 0x%x\n", serviceUUID, (uint32_t)apiProvider);
   bleService = IotsaBLEServerMod::s_server->createService(serviceUUID);
-  bleService->start();
 
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-  pAdvertising->stop();
   pAdvertising->addServiceUUID(serviceUUID);
-  pAdvertising->start();
 }
 
 void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask) {
-  IFBLEDEBUG IotsaSerial.printf("ble characteristic %s mask %d\n", charUUID, mask);
+  IFBLEDEBUG IotsaSerial.printf("add ble characteristic %s mask %d\n", charUUID, mask);
   nCharacteristic++;
   characteristicUUIDs = (UUIDstring *)realloc((void *)characteristicUUIDs, nCharacteristic*sizeof(UUIDstring));
   bleCharacteristics = (BLECharacteristic **)realloc((void *)bleCharacteristics, nCharacteristic*sizeof(BLECharacteristic *));
@@ -172,13 +185,11 @@ void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask) {
     IotsaSerial.println("addCharacteristic out of memory");
     return;
   }
-  bleService->stop();
   BLECharacteristic *newChar = bleService->createCharacteristic(charUUID, mask);
   newChar->setCallbacks(new IotsaBLECharacteristicCallbacks(charUUID, apiProvider));
 
   characteristicUUIDs[nCharacteristic-1] = charUUID;
   bleCharacteristics[nCharacteristic-1] = newChar;
-  bleService->start();
 }
 
 void IotsaBleApiService::set(UUIDstring charUUID, const uint8_t *data, size_t size) {
@@ -187,8 +198,8 @@ void IotsaBleApiService::set(UUIDstring charUUID, const uint8_t *data, size_t si
       bleCharacteristics[i]->setValue((uint8_t *)data, size);
       return;
     }
-    IotsaSerial.println("set: unknown characteristic");
   }
+  IotsaSerial.println("set: unknown characteristic");
 }
 
 void IotsaBleApiService::set(UUIDstring charUUID, uint8_t value) {
@@ -220,8 +231,8 @@ void IotsaBleApiService::getAsBuffer(UUIDstring charUUID, uint8_t **datap, size_
       if (sizep) *sizep = value.size();
       return;
     }
-    IotsaSerial.println("set: unknown characteristic");
   }
+  IotsaSerial.println("get: unknown characteristic");
 }
 
 int IotsaBleApiService::getAsInt(UUIDstring charUUID) {

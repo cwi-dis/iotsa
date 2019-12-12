@@ -14,8 +14,6 @@
 #include "iotsaConfigFile.h"
 #include "iotsaConfig.h"
 
-IotsaConfigMod *IotsaConfigMod::singleton = 0;
-
 #ifdef IOTSA_WITH_HTTPS
 #include <libb64/cdecode.h>
 #include <libb64/cencode.h>
@@ -720,7 +718,12 @@ void IotsaConfigMod::serverSetup() {
 }
 
 void IotsaConfigMod::configLoad() {
+  configLoadStatic();
+}
+
+void IotsaConfigMod::configLoadStatic() {
   IotsaConfigFileLoad cf("/config/config.cfg");
+  iotsaConfig.configWasLoaded = true;
   int tcm;
   cf.get("mode", tcm, IOTSA_MODE_NORMAL);
   iotsaConfig.configurationMode = (config_mode)tcm;

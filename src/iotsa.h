@@ -195,6 +195,7 @@ typedef enum { IOTSA_MODE_NORMAL, IOTSA_MODE_CONFIG, IOTSA_MODE_OTA, IOTSA_MODE_
 
 class IotsaConfig {
 public:
+  bool configWasLoaded = false;
   bool wifiEnabled = false;
   bool disableWifiOnBoot = false;
   bool wifiPrivateNetworkMode = false;

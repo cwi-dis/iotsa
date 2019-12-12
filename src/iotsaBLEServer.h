@@ -33,6 +33,7 @@ public:
 };
 
 class IotsaBleApiService {
+  friend class IotsaBLEServerMod;
   typedef IotsaBLEApiProvider::UUIDstring UUIDstring;
 public:
   IotsaBleApiService(IotsaBLEServerMod *_mod=NULL)
@@ -59,6 +60,7 @@ protected:
   int nCharacteristic;
   UUIDstring  *characteristicUUIDs;
   BLECharacteristic **bleCharacteristics;
+  IotsaBleApiService *next;
 };
 
 class IotsaBLEServerMod : public IotsaBLEServerModBaseMod {
@@ -83,6 +85,7 @@ protected:
 
   static void createServer();
   static BLEServer *s_server;
+  static IotsaBleApiService *s_services;
 
   static uint16_t adv_min;
   static uint16_t adv_max;

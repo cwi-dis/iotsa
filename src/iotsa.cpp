@@ -95,10 +95,9 @@ IotsaApplication::setup() {
     IFDEBUG IotsaSerial.println("SPIFFS mounted");
   }
   // Normally iotsaConfigMod is initialized by the WiFi module,
-  // but if the WiFi module isn't indluded we ensure that there is a config module anyway.
-  if (IotsaConfigMod::singleton == NULL) {
-    (void)new IotsaConfigMod(*this);
-  }
+  // but if the WiFi module isn't indluded we ensure that the configuration file is loaded anyway.
+  IotsaConfigMod::ensureConfigLoaded();
+  
   IotsaBaseMod *m;
   for (m=firstEarlyModule; m; m=m->nextModule) {
   	m->setup();

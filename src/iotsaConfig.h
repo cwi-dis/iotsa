@@ -20,13 +20,12 @@ public:
   newKeyLength(0)
 #endif // IOTSA_WITH_HTTPS
   {
-    singleton = this;
   }
 	void setup();
 	void serverSetup();
 	void loop();
   String info();
-  static IotsaConfigMod *singleton;
+  static void ensureConfigLoaded() { if (!iotsaConfig.configWasLoaded) configLoadStatic(); };
 protected:
   bool getHandler(const char *path, JsonObject& reply);
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
@@ -34,6 +33,7 @@ protected:
   void uploadOkHandler();
 private:
   void configLoad();
+  static void configLoadStatic();
   void configSave();
   void handler();
 #ifdef IOTSA_WITH_HTTPS

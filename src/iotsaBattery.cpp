@@ -46,7 +46,7 @@ IotsaBatteryMod::handler() {
   message += "Awake for: " + String((millis() - millisAtWakeup)/1000.0) + "s<br>";
   if (sleepMode && wakeDuration) {
     uint32_t nextSleepTime = millisAtWakeup + wakeDuration;
-    if (useExtraWakeDuration) nextSleepTime += bootExtraWakeDuration;
+    if (!didWakeFromSleep) nextSleepTime += bootExtraWakeDuration;
     message += "Remaining awake for: " + String((nextSleepTime - millis())/1000.0) + "s<br>";
   }
   if (pinVBat >= 0) {
@@ -72,7 +72,10 @@ IotsaBatteryMod::handler() {
 String IotsaBatteryMod::info() {
   String message = "<p>Built with battery module. See <a href=\"/battery\">/battery</a> to change the battery power saving options.";
 #ifdef IOTSA_WITH_API
-  message += " Or access the REST interface at <a href='/api/battery'>/api/battery.";
+  message += " Or access the REST interface at <a href='/api/battery'>/api/battery</a>.";
+#endif
+#ifdef IOTSA_WITH_BLE
+  message += " Or use BLE service " + String(serviceUUID) + " on device " + iotsaConfig.hostName + ".";
 #endif
   message += "</p>";
   return message;
@@ -82,7 +85,7 @@ String IotsaBatteryMod::info() {
 void IotsaBatteryMod::setup() {
   configLoad();
 #ifdef ESP32
-  useExtraWakeDuration = (esp_sleep_get_wakeup_cause() == 0);
+  didWakeFromSleep = (esp_sleep_get_wakeup_cause() != 0);
   // If we are awaking from sleep we may want top disable WiFi
   //
   // NOTE: there is a bug in the revision 1 ESP32 hardware, which causes issues with wakeup from hibernate
@@ -91,13 +94,19 @@ void IotsaBatteryMod::setup() {
   // Various workarounds I've tried did not work.
   // See https://github.com/espressif/esp-idf/issues/494 for a description.
   //
-  if ((sleepMode == SLEEP_HIBERNATE_NOWIFI || sleepMode == SLEEP_DEEP_NOWIFI) && !useExtraWakeDuration) {
+  if ((sleepMode == SLEEP_HIBERNATE_NOWIFI || sleepMode == SLEEP_DEEP_NOWIFI) && didWakeFromSleep) {
     IFDEBUG IotsaSerial.println("Disabling wifi");
     if (iotsaConfig.wifiEnabled) {
       IFDEBUG IotsaSerial.println("Wifi already enabled?");
     }
     iotsaConfig.disableWifiOnBoot = true;
   }
+#endif
+#ifdef IOTSA_WITH_BLE
+  bleApi.setup(serviceUUID, this);
+  bleApi.addCharacteristic(levelVBatUUID, BLE_READ);
+  bleApi.addCharacteristic(levelVUSBUUID, BLE_READ);
+  bleApi.addCharacteristic(doSoftRebootUUID, BLE_WRITE);
 #endif
 }
 
@@ -143,6 +152,28 @@ bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, J
   return anyChanged;
 }
 #endif // IOTSA_WITH_API
+
+#ifdef IOTSA_WITH_BLE
+bool IotsaBatteryMod::blePutHandler(UUIDstring charUUID) {
+  if (charUUID == doSoftRebootUUID) {
+      doSoftReboot = bleApi.getAsInt(doSoftRebootUUID);
+      return true;
+  }
+  return false;
+}
+
+bool IotsaBatteryMod::bleGetHandler(UUIDstring charUUID) {
+  if (charUUID == levelVBatUUID) {
+      bleApi.set(levelVBatUUID, levelVBat);
+      return true;
+  }
+  if (charUUID == levelVUSBUUID) {
+      bleApi.set(levelVUSBUUID, levelVUSB);
+      return true;
+  }
+  return false;
+}
+#endif // IOTSA_WITH_BLE
 
 void IotsaBatteryMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
@@ -197,7 +228,7 @@ void IotsaBatteryMod::loop() {
   }
   // See for how long we want to be awake, this cycle
   int curWakeDuration = wakeDuration;
-  if (useExtraWakeDuration) curWakeDuration += bootExtraWakeDuration;
+  if (!didWakeFromSleep) curWakeDuration += bootExtraWakeDuration;
   // Now check whether we've already been awake that long
   if (sleepMode && curWakeDuration > 0 && millis() > millisAtWakeup + curWakeDuration) {
     // We have. See whether there's any reason not to go asleep.
@@ -214,6 +245,10 @@ void IotsaBatteryMod::loop() {
       IFDEBUG IotsaSerial.println("Sleep canceled");
       millisAtWakeup = millis();
       return;
+    }
+    // If a reboot has been requested (probably over BLE) we do so now.
+    if (doSoftReboot) {
+      ESP.restart();
     }
     // We go to sleep, in some form.
     IFDEBUG IotsaSerial.print("Going to sleep at ");
