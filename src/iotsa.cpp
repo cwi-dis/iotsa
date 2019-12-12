@@ -116,12 +116,12 @@ IotsaApplication::setup() {
 
 void
 IotsaApplication::serverSetup() {
+  if (!iotsaConfig.wifiEnabled) return;
   IotsaBaseMod *m;
 
   for (m=firstEarlyModule; m; m=m->nextModule) {
   	m->serverSetup();
   }
-
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
   server->onNotFound(std::bind(&IotsaApplication::webServerNotFoundHandler, this));
 #endif

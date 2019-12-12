@@ -195,21 +195,23 @@ typedef enum { IOTSA_MODE_NORMAL, IOTSA_MODE_CONFIG, IOTSA_MODE_OTA, IOTSA_MODE_
 
 class IotsaConfig {
 public:
-  bool wifiEnabled;
-  bool disableWifiOnBoot;
-  bool wifiPrivateNetworkMode;
-  config_mode configurationMode;
-  unsigned long configurationModeEndTime;
-  config_mode nextConfigurationMode;
-  unsigned long nextConfigurationModeEndTime;
-  String hostName;
-  int configurationModeTimeout;
+  bool wifiEnabled = false;
+  bool disableWifiOnBoot = false;
+  bool wifiPrivateNetworkMode = false;
+  config_mode configurationMode = IOTSA_MODE_NORMAL;
+  unsigned long configurationModeEndTime = 0;
+  config_mode nextConfigurationMode = IOTSA_MODE_NORMAL;
+  unsigned long nextConfigurationModeEndTime = 0;
+  String hostName = "";
+  int configurationModeTimeout = 0;
 #ifdef IOTSA_WITH_HTTPS
   const uint8_t* httpsCertificate;
   size_t httpsCertificateLength;
   const uint8_t* httpsKey;
   size_t httpsKeyLength;
 #endif // IOTSA_WITH_HTTPS
+  uint32_t postponeSleepMillis = 0;
+  int pauseSleepCount = 0;
 
   bool inConfigurationMode() { return configurationMode == IOTSA_MODE_CONFIG; }
   bool inConfigurationOrFactoryMode() { 
@@ -224,6 +226,21 @@ public:
     if (configurationMode == IOTSA_MODE_OTA) return 0x003f3f;	// Cyan: OTA mode
     if (wifiPrivateNetworkMode) return 0x3f3f00; // Yellow: configuration mode (not user requested)
     return 0; // Off: all ok.
+  }
+
+  void pauseSleep() { pauseSleepCount++; }
+
+  void resumeSleep() { pauseSleepCount--; }
+
+  void postponeSleep(uint32_t ms) {
+    uint32_t noSleepBefore = millis() + ms;
+    if (noSleepBefore > postponeSleepMillis) postponeSleepMillis = noSleepBefore;
+  }
+
+  bool canSleep() {
+    if (pauseSleepCount > 0) return false;
+    if (millis() > postponeSleepMillis) postponeSleepMillis = 0;
+    return postponeSleepMillis == 0;
   }
 };
 

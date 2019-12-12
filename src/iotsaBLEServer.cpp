@@ -11,17 +11,17 @@
 #define IFBLEDEBUG if(0)
 #endif
 
-#ifdef IOTSA_BLE_DEBUG
 class IotsaBLEServerCallbacks : public BLEServerCallbacks {
 	void onConnect(BLEServer* pServer) {
-    IotsaSerial.println("BLE connect\n");
+    IFBLEDEBUG IotsaSerial.println("BLE connect\n");
+    iotsaConfig.pauseSleep();
   }
 	void onDisconnect(BLEServer* pServer) {
-    IotsaSerial.println("BLE Disconnect\n");
+    IFBLEDEBUG IotsaSerial.println("BLE Disconnect\n");
+    iotsaConfig.resumeSleep();
 
   }
 };
-#endif // IOTSA_BLE_DEBUG
 
 class IotsaBLECharacteristicCallbacks : public BLECharacteristicCallbacks {
 public:
@@ -86,9 +86,7 @@ void IotsaBLEServerMod::createServer() {
   if (s_server) return;
   BLEDevice::init(iotsaConfig.hostName.c_str());
   s_server = BLEDevice::createServer();
-#ifdef IOTSA_BLE_DEBUG
   s_server->setCallbacks(new IotsaBLEServerCallbacks());
-#endif
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->setScanResponse(true);
   pAdvertising->start();

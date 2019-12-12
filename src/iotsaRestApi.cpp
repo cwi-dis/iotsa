@@ -2,6 +2,7 @@
 
 #ifdef IOTSA_WITH_REST
 void IotsaRestApiService::setup(const char* path, bool get, bool put, bool post) {
+    if (!iotsaConfig.wifiEnabled) return;
     if (get) server->on(path, HTTP_GET, std::bind(&IotsaRestApiService::_getHandlerWrapper, this, path));
     if (put) server->on(path, HTTP_PUT, std::bind(&IotsaRestApiService::_putHandlerWrapper, this, path));
     if (post) server->on(path, HTTP_POST, std::bind(&IotsaRestApiService::_postHandlerWrapper, this, path));

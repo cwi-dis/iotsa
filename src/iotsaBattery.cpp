@@ -202,6 +202,7 @@ void IotsaBatteryMod::loop() {
     if (disableSleepOnUSBPower && pinVUSB >= 0) {
       if (levelVUSB > 80) cancelSleep = true;
     }
+    
     if (cancelSleep) {
       IFDEBUG IotsaSerial.println("Sleep canceled");
       millisAtWakeup = millis();

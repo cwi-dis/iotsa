@@ -24,16 +24,7 @@ IotsaConfigMod *IotsaConfigMod::singleton = 0;
 //
 // Global variables, because other modules need them too.
 //
-IotsaConfig iotsaConfig = {
-  false,
-  false,
-  false,
-  IOTSA_MODE_NORMAL,
-  0,
-  IOTSA_MODE_NORMAL,
-  0,
-  ""
-};
+IotsaConfig iotsaConfig;
 
 #ifdef IOTSA_WITH_HTTPS
 // Default key and certificate for https service

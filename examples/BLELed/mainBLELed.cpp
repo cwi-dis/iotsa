@@ -51,6 +51,7 @@ IotsaBLEServerMod bleserverMod(application);
 class IotsaLedControlMod : public IotsaLedMod, public IotsaBLEApiProvider {
 public:
   using IotsaLedMod::IotsaLedMod;
+  void setup();
   void serverSetup();
   String info();
 protected:
@@ -145,6 +146,9 @@ void IotsaLedControlMod::serverSetup() {
 #ifdef IOTSA_WITH_API
   api.setup("/api/led", true, true);
 #endif
+}
+
+void IotsaLedControlMod::setup() {
 #ifdef IOTSA_WITH_BLE
   bleApi.setup(serviceUUID, this);
   bleApi.addCharacteristic(rgbUUID, BLE_READ|BLE_WRITE);
