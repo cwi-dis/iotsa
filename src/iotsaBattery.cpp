@@ -195,19 +195,27 @@ void IotsaBatteryMod::loop() {
 #endif
     _readVoltages();
   }
+  // See for how long we want to be awake, this cycle
   int curWakeDuration = wakeDuration;
   if (useExtraWakeDuration) curWakeDuration += bootExtraWakeDuration;
+  // Now check whether we've already been awake that long
   if (sleepMode && curWakeDuration > 0 && millis() > millisAtWakeup + curWakeDuration) {
+    // We have. See whether there's any reason not to go asleep.
+    // One reason is if the "don't go to sleep" button is being pressed, if it exists.
     bool cancelSleep = pinDisableSleep >= 0 && digitalRead(pinDisableSleep) == LOW;
+    // Another reason is if we're running on USB power and we only sleep on battery power
     if (disableSleepOnUSBPower && pinVUSB >= 0) {
       if (levelVUSB > 80) cancelSleep = true;
     }
-    
+    // A final reason is if some other module is asking for an extension of the waking period
+    if (!iotsaConfig.canSleep()) cancelSleep = true;
+    // If there is a reason not to sleep we return.
     if (cancelSleep) {
       IFDEBUG IotsaSerial.println("Sleep canceled");
       millisAtWakeup = millis();
       return;
     }
+    // We go to sleep, in some form.
     IFDEBUG IotsaSerial.print("Going to sleep at ");
     IFDEBUG IotsaSerial.print(millis());
     IFDEBUG IotsaSerial.print(" for ");
@@ -215,10 +223,12 @@ void IotsaBatteryMod::loop() {
     IFDEBUG IotsaSerial.print(" mode ");
     IFDEBUG IotsaSerial.println(sleepMode);
     if(sleepMode == SLEEP_DELAY) {
+      // This isn't really sleeping, it's just a delay. Not sure it is actually useful.
       delay(sleepDuration);
       millisAtWakeup = 0;
     } else {
 #ifdef ESP32
+      // We are going to sleep. First set the reasons for wakeup, such as a timer.
       IFDEBUG delay(10); // Flush serial buffer
       if (sleepDuration) {
         esp_sleep_enable_timer_wakeup(sleepDuration*1000LL);
@@ -226,22 +236,29 @@ void IotsaBatteryMod::loop() {
         // xxxjack configure other wakeup sources...
       }
       if (sleepMode == SLEEP_LIGHT) {
+        // Light sleep is easiest: everything remains powered just running slowly.
+        // We return here after the sleep.
         esp_light_sleep_start();
         IFDEBUG IotsaSerial.print("light sleep wakup at ");
         millisAtWakeup = millis();
         IFDEBUG IotsaSerial.println(millisAtWakeup);
         return;
       }
+      // Before sleeping we turn off the radios.
       if (iotsaConfig.wifiEnabled) esp_wifi_stop();
       esp_bt_controller_disable();
+      // For hibernation we also turn off various peripherals.
       if (sleepMode == SLEEP_HIBERNATE || sleepMode == SLEEP_HIBERNATE_NOWIFI) {
         esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_OFF);
         esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_OFF);
         esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
       }
+      // Time to go to sleep.
       esp_deep_sleep_start();
+      // We should not return here, but get a reboot later.
       IFDEBUG IotsaSerial.println("esp_*_sleep_start() failed?");
 #else
+      // For esp8266 only deep-sleep is implemented.
       ESP.deepSleep(sleepDuration*1000LL);
 #endif
     }
@@ -249,7 +266,7 @@ void IotsaBatteryMod::loop() {
 }
 
 void IotsaBatteryMod::_readVoltages() {
-    if (pinVBat >= 0) {
+  if (pinVBat >= 0) {
     int level = analogRead(pinVBat);
     levelVBat = int(100*3.6*level/(2.0*4096));
     IFDEBUG IotsaSerial.print("VBat=");
