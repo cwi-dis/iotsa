@@ -83,7 +83,18 @@ void IotsaBatteryMod::setup() {
 #ifdef ESP32
   useExtraWakeDuration = (esp_sleep_get_wakeup_cause() == 0);
   // If we are awaking from sleep we may want top disable WiFi
-  if (sleepMode == SLEEP_HIBERNATE_NOWIFI && !useExtraWakeDuration) {
+  //
+  // NOTE: there is a bug in the revision 1 ESP32 hardware, which causes issues with wakeup from hibernate
+  // to _not_ record this as a wakeup but in stead as an external reset (even though the info printed at
+  // boot time is correct). For this reason it may be better to use deep sleep in stead of hibernate.
+  // Various workarounds I've tried did not work.
+  // See https://github.com/espressif/esp-idf/issues/494 for a description.
+  //
+  if ((sleepMode == SLEEP_HIBERNATE_NOWIFI || sleepMode == SLEEP_DEEP_NOWIFI) && !useExtraWakeDuration) {
+    IFDEBUG IotsaSerial.println("Disabling wifi");
+    if (iotsaConfig.wifiEnabled) {
+      IFDEBUG IotsaSerial.println("Wifi already enabled?");
+    }
     iotsaConfig.disableWifiOnBoot = true;
   }
 #endif
@@ -221,14 +232,12 @@ void IotsaBatteryMod::loop() {
       }
       if (iotsaConfig.wifiEnabled) esp_wifi_stop();
       esp_bt_controller_disable();
-      if (sleepMode == SLEEP_DEEP) {
-        esp_deep_sleep_start();
-      } else {
+      if (sleepMode == SLEEP_HIBERNATE || sleepMode == SLEEP_HIBERNATE_NOWIFI) {
         esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_OFF);
         esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_OFF);
         esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
-        esp_deep_sleep_start();
       }
+      esp_deep_sleep_start();
       IFDEBUG IotsaSerial.println("esp_*_sleep_start() failed?");
 #else
       ESP.deepSleep(sleepDuration*1000LL);

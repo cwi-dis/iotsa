@@ -171,6 +171,9 @@ static const char* getBootReason() {
     }
 #else
   RESET_REASON r = rtc_get_reset_reason(0);
+  RESET_REASON r2 = rtc_get_reset_reason(1);
+  // Determine best reset reason
+  if (r == TG0WDT_SYS_RESET || r == RTCWDT_RTC_RESET) r = r2;
   static const char *reasons[] = {
     "0",
     "power",
