@@ -269,13 +269,13 @@ void IotsaBatteryMod::_readVoltages() {
   if (pinVBat >= 0) {
     int level = analogRead(pinVBat);
     levelVBat = int(100*3.6*level/(2.0*4096));
-    IFDEBUG IotsaSerial.print("VBat=");
-    IFDEBUG IotsaSerial.println(levelVBat);
+//    IFDEBUG IotsaSerial.print("VBat=");
+//    IFDEBUG IotsaSerial.println(levelVBat);
   }
   if (pinVUSB >= 0) {
     int level = analogRead(pinVUSB);
     levelVUSB = int(100*3.3*level/(2.0*4096));
-    IFDEBUG IotsaSerial.print("VUSB=");
-    IFDEBUG IotsaSerial.println(levelVUSB);
+//    IFDEBUG IotsaSerial.print("VUSB=");
+//    IFDEBUG IotsaSerial.println(levelVUSB);
   }
 }

@@ -74,7 +74,6 @@ bool IotsaLedControlMod::blePutHandler(UUIDstring charUUID) {
   if (charUUID == rgbUUID) {
       uint32_t _rgb = bleApi.getAsInt(rgbUUID);
       set(_rgb, 1000, 0, 0x7fff);
-      // IFDEBUG IotsaSerial.printf("xxxjack led: wrote %s value 0x%x\n", charUUID, rgb);
       return true;
   }
   IotsaSerial.println("ledControlMod: ble: write unknown uuid");
@@ -83,7 +82,6 @@ bool IotsaLedControlMod::blePutHandler(UUIDstring charUUID) {
 
 bool IotsaLedControlMod::bleGetHandler(UUIDstring charUUID) {
   if (charUUID == rgbUUID) {
-      // IFDEBUG IotsaSerial.printf("xxxjack led: read %s value 0x%x\n", charUUID, rgb);
       bleApi.set(rgbUUID, rgb);
       return true;
   }
@@ -167,9 +165,6 @@ void setup(void){
 #endif
 #ifdef PIN_DISABLESLEEP
   batteryMod.setPinDisableSleep(PIN_DISABLESLEEP);
-#endif
-#ifdef IOTSA_WITH_BLE
-  bleserverMod.setAdvertisingInterval(750, 3000); // Set default advertising interval to be between 0.5 and 2.0 seconds
 #endif
   application.setup();
   application.serverSetup();

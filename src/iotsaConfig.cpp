@@ -720,7 +720,6 @@ void IotsaConfigMod::serverSetup() {
 }
 
 void IotsaConfigMod::configLoad() {
-  IotsaSerial.println("xxxjack IotsaConfigMod::configLoad");
   IotsaConfigFileLoad cf("/config/config.cfg");
   int tcm;
   cf.get("mode", tcm, IOTSA_MODE_NORMAL);

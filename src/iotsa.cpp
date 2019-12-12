@@ -72,7 +72,10 @@ IotsaApplication::addModEarly(IotsaBaseMod *mod) {
 
 void
 IotsaApplication::setup() {
-  IFDEBUG Serial.begin(115200);
+  // xxxjack Unsure about this. We always open the Serial port,
+  // so log messages that aren't flagged with IFDEBUG always work.
+  // But this means the serial port cannot be used for other things.
+  Serial.begin(115200);
   IFDEBUG IotsaSerial.println("Serial opened");
   IFDEBUG IotsaSerial.print("Opening SPIFFS (may take long)...");
   bool ok = SPIFFS.begin();
