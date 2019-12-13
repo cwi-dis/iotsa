@@ -5,7 +5,7 @@
 
 #ifdef IOTSA_WITH_BLE
 
-#define IOTSA_BLE_DEBUG
+#undef IOTSA_BLE_DEBUG
 #ifdef IOTSA_BLE_DEBUG
 #define IFBLEDEBUG if(1)
 #else
@@ -107,24 +107,16 @@ void IotsaBLEServerMod::startServer() {
 
 bool IotsaBLEServerMod::pauseServer() {
   if (s_server) {
-#if 1
     BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
     pAdvertising->stop();
-#else
-    esp_bt_controller_disable();
-#endif
     return true;
   }
   return false;
 }
 
 void IotsaBLEServerMod::resumeServer() {
-#if 1
     BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
     pAdvertising->start();
-#else
-  startServer();
-#endif
 }
 
 void IotsaBLEServerMod::setup() {

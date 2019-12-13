@@ -58,7 +58,16 @@ IotsaBatteryMod::handler() {
   }
   message += "</p>";
   message += "<form method='get'>";
-  message += "Sleep mode: <input name='sleepMode' value='" + String(sleepMode) + "'><br>";
+  message += "Sleep mode: <select name='sleepMode' value='" + String(sleepMode) + 
+    "'><option value='0'" + String(sleepMode==SLEEP_NONE?" selected":"") + 
+    ">None</option><option value='1'" + String(sleepMode==SLEEP_DELAY?" selected":"") + 
+    ">Delay</option><option value='2'" + String(sleepMode==SLEEP_LIGHT?" selected":"") + 
+    ">Light sleep</option><option value='3'" + String(sleepMode==SLEEP_DEEP?" selected":"") + 
+    ">Deep sleep</option><option value='4'" + String(sleepMode==SLEEP_HIBERNATE?" selected":"") + 
+    ">Hibernate</option><option value='5'" + String(sleepMode==SLEEP_DEEP_NOWIFI?" selected":"") + 
+    ">Deep, no WiFi on wake</option><option value='6'" + String(sleepMode==SLEEP_HIBERNATE_NOWIFI?" selected":"") + 
+    ">Hibernate, no WiFi on wake</option><option value='7'" + String(sleepMode==SLEEP_ADAPTIVE_NOWIFI?" selected":"") + 
+    ">Adaptive light or deep, no WiFi on wake</option></select><br>";
   message += "Sleep duration: <input name='sleepDuration' value='" + String(sleepDuration) + "'><br>";
   message += "Wake duration: <input name='wakeDuration' value='" + String(wakeDuration) + "'><br>";
   message += "Extra wake duration after poweron/reset: <input name='bootExtraWakeDuration' value='" + String(bootExtraWakeDuration) + "'><br>";
