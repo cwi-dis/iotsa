@@ -1,6 +1,7 @@
 #include "iotsa.h"
 #include "iotsaBattery.h"
 #include "iotsaConfigFile.h"
+#include "iotsaBLEServer.h"
 #ifdef ESP32
 #include <esp_wifi.h>
 #include <esp_bt.h>
@@ -94,7 +95,7 @@ void IotsaBatteryMod::setup() {
   // Various workarounds I've tried did not work.
   // See https://github.com/espressif/esp-idf/issues/494 for a description.
   //
-  if ((sleepMode == SLEEP_HIBERNATE_NOWIFI || sleepMode == SLEEP_DEEP_NOWIFI) && didWakeFromSleep) {
+  if ((sleepMode == SLEEP_HIBERNATE_NOWIFI || sleepMode == SLEEP_DEEP_NOWIFI || sleepMode == SLEEP_ADAPTIVE_NOWIFI) && didWakeFromSleep) {
     IFDEBUG IotsaSerial.println("Disabling wifi");
     if (iotsaConfig.wifiEnabled) {
       IFDEBUG IotsaSerial.println("Wifi already enabled?");
@@ -157,6 +158,8 @@ bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, J
 bool IotsaBatteryMod::blePutHandler(UUIDstring charUUID) {
   if (charUUID == doSoftRebootUUID) {
       doSoftReboot = bleApi.getAsInt(doSoftRebootUUID);
+      IFDEBUG IotsaSerial.print("request reboot ");
+      IFDEBUG IotsaSerial.println(doSoftReboot);
       return true;
   }
   return false;
@@ -270,13 +273,18 @@ void IotsaBatteryMod::loop() {
       } else {
         // xxxjack configure other wakeup sources...
       }
-      if (sleepMode == SLEEP_LIGHT) {
+      if (sleepMode == SLEEP_LIGHT || (sleepMode == SLEEP_ADAPTIVE_NOWIFI && !iotsaConfig.wifiEnabled)) {
         // Light sleep is easiest: everything remains powered just running slowly.
         // We return here after the sleep.
+        bool btActive = IotsaBLEServerMod::pauseServer();
         esp_light_sleep_start();
         IFDEBUG IotsaSerial.print("light sleep wakup at ");
         millisAtWakeup = millis();
         IFDEBUG IotsaSerial.println(millisAtWakeup);
+        if (btActive) {
+          IFDEBUG IotsaSerial.println("Re-activate ble");
+          IotsaBLEServerMod::resumeServer();
+        }
         return;
       }
       // Before sleeping we turn off the radios.

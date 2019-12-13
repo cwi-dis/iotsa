@@ -17,7 +17,8 @@ enum IotsaSleepMode : uint8_t {
   SLEEP_DEEP,
   SLEEP_HIBERNATE,
   SLEEP_DEEP_NOWIFI,
-  SLEEP_HIBERNATE_NOWIFI
+  SLEEP_HIBERNATE_NOWIFI,
+  SLEEP_ADAPTIVE_NOWIFI
 };
 
 class IotsaBatteryMod : public IotsaBatteryModBaseMod, public IotsaBLEApiProvider {
