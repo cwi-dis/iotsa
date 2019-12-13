@@ -55,7 +55,7 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
         ok = get;
         if (ok) {
             DynamicJsonDocument replyDocument(2048);
-            JsonObject reply = replyDocument.as<JsonObject>();
+            JsonObject reply = replyDocument.to<JsonObject>();
             ok = provider->getHandler(path, reply);
             if (ok) {
                 serializeJson(replyDocument, replyData);
@@ -78,7 +78,7 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
             deserializeJson(requestDocument, dataBuffer);
             DynamicJsonDocument replyDocument(2048);
             JsonObject request = requestDocument.as<JsonObject>();
-            JsonObject reply = replyDocument.as<JsonObject>();
+            JsonObject reply = replyDocument.to<JsonObject>();
 
             ok = provider->putHandler(path, request, reply);
             if (ok) {
@@ -102,7 +102,7 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
             deserializeJson(requestDocument, dataBuffer);
             DynamicJsonDocument replyDocument(2048);
             JsonObject request = requestDocument.as<JsonObject>();
-            JsonObject reply = replyDocument.as<JsonObject>();
+            JsonObject reply = replyDocument.to<JsonObject>();
             ok = provider->postHandler(path, request, reply);
             if (ok) {
                 serializeJson(replyDocument, replyData);

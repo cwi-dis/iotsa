@@ -13,7 +13,7 @@ void IotsaRestApiService::_getHandlerWrapper(const char *path) {
     IFDEBUG IotsaSerial.print("GET api ");
     IFDEBUG IotsaSerial.println(path);
     DynamicJsonDocument replyDocument(2048);
-    JsonObject reply = replyDocument.as<JsonObject>();
+    JsonObject reply = replyDocument.to<JsonObject>();
     bool ok = provider->getHandler(path, reply);
     if (ok) {
         String replyData;
@@ -31,7 +31,7 @@ void IotsaRestApiService::_putHandlerWrapper(const char *path) {
     IFDEBUG IotsaSerial.print("PUT api ");
     IFDEBUG IotsaSerial.println(path);
     DynamicJsonDocument replyDocument(2048);
-    JsonObject reply = replyDocument.as<JsonObject>();
+    JsonObject reply = replyDocument.to<JsonObject>();
     DynamicJsonDocument requestDocument(2048);
     deserializeJson(requestDocument, server->arg("plain"));
     JsonObject request = requestDocument.as<JsonObject>();
@@ -52,7 +52,7 @@ void IotsaRestApiService::_postHandlerWrapper(const char *path) {
     IFDEBUG IotsaSerial.print("POST api ");
     IFDEBUG IotsaSerial.println(path);
     DynamicJsonDocument replyDocument(2048);
-    JsonObject reply = replyDocument.as<JsonObject>();
+    JsonObject reply = replyDocument.to<JsonObject>();
     DynamicJsonDocument requestDocument(2048);
     deserializeJson(requestDocument, server->arg("plain"));
     JsonObject request = requestDocument.as<JsonObject>();
