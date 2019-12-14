@@ -2,7 +2,7 @@
 #include "iotsaBLEServer.h"
 #include "iotsaConfigFile.h"
 #include "iotsaConfig.h"
-
+#include <BLE2902.h>
 #ifdef IOTSA_WITH_BLE
 
 #undef IOTSA_BLE_DEBUG
@@ -194,7 +194,7 @@ void IotsaBleApiService::setup(const char* serviceUUID, IotsaBLEApiProvider *_ap
   pAdvertising->addServiceUUID(serviceUUID);
 }
 
-void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask) {
+void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask, BLEDescriptor *d1, BLEDescriptor *d2, BLEDescriptor *d3) {
   IFBLEDEBUG IotsaSerial.printf("add ble characteristic %s mask %d\n", charUUID, mask);
   nCharacteristic++;
   characteristicUUIDs = (UUIDstring *)realloc((void *)characteristicUUIDs, nCharacteristic*sizeof(UUIDstring));
@@ -205,6 +205,9 @@ void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask) {
   }
   BLECharacteristic *newChar = bleService->createCharacteristic(charUUID, mask);
   newChar->setCallbacks(new IotsaBLECharacteristicCallbacks(charUUID, apiProvider));
+  if (d1) newChar->addDescriptor(d1);
+  if (d2) newChar->addDescriptor(d2);
+  if (d3) newChar->addDescriptor(d3);
 
   characteristicUUIDs[nCharacteristic-1] = charUUID;
   bleCharacteristics[nCharacteristic-1] = newChar;

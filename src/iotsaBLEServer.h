@@ -7,6 +7,7 @@
 #include <BLEDevice.h>
 #include <BLEUtils.h>
 #include <BLEServer.h>
+#include <BLE2904.h>
 
 #ifdef IOTSA_WITH_API
 #define IotsaBLEServerModBaseMod IotsaApiMod
@@ -18,6 +19,10 @@ typedef const char * UUIDstring;
 class IotsaBLEServerMod;
 class IotsaBLEApiProvider;
 
+class BLE2901 : public BLEDescriptor {
+public:
+  BLE2901(const char *description) : BLEDescriptor(BLEUUID((uint16_t)0x2901)) { setValue((uint8_t *)description, strlen(description)); }
+};
 
 class IotsaBLEApiProvider {
 public:
@@ -34,8 +39,8 @@ public:
 
 class IotsaBleApiService {
   friend class IotsaBLEServerMod;
-  typedef IotsaBLEApiProvider::UUIDstring UUIDstring;
 public:
+  typedef IotsaBLEApiProvider::UUIDstring UUIDstring;
   IotsaBleApiService(IotsaBLEServerMod *_mod=NULL)
   : apiProvider(NULL),
     bleService(NULL),
@@ -44,7 +49,7 @@ public:
     bleCharacteristics(NULL)
   {}
   void setup(const char* serviceUUID, IotsaBLEApiProvider *_apiProvider);
-  void addCharacteristic(UUIDstring charUUID, int mask);
+  void addCharacteristic(UUIDstring charUUID, int mask, BLEDescriptor *d1 = NULL, BLEDescriptor *d2 = NULL, BLEDescriptor *d3 = NULL);
   void set(UUIDstring charUUID, const uint8_t *data, size_t size);
   void set(UUIDstring charUUID, uint8_t value);
   void set(UUIDstring charUUID, uint16_t value);
