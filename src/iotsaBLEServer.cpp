@@ -2,8 +2,8 @@
 #include "iotsaBLEServer.h"
 #include "iotsaConfigFile.h"
 #include "iotsaConfig.h"
-#include <BLE2902.h>
 #ifdef IOTSA_WITH_BLE
+#include <BLE2902.h>
 
 #undef IOTSA_BLE_DEBUG
 #ifdef IOTSA_BLE_DEBUG
