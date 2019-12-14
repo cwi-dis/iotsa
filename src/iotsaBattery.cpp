@@ -117,12 +117,12 @@ void IotsaBatteryMod::setup() {
   static BLE2904 levelVBat2904;
   levelVBat2904.setFormat(BLE2904::FORMAT_UINT8);
   levelVBat2904.setUnit(0x27AD);
-  static BLE2901 levelVBat2901("Battery Voltage");
+  static BLE2901 levelVBat2901("Battery Level");
   bleApi.addCharacteristic(levelVBatUUID, BLE_READ, &levelVBat2904, &levelVBat2901);
   static BLE2904 levelVUSB2904;
   levelVUSB2904.setFormat(BLE2904::FORMAT_UINT8);
   levelVUSB2904.setUnit(0x27AD);
-  static BLE2901 levelVUSB2901("USB Voltage");
+  static BLE2901 levelVUSB2901("USB Voltage Level");
   bleApi.addCharacteristic(levelVUSBUUID, BLE_READ, &levelVUSB2904, &levelVUSB2901);
   static BLE2904 doSoftReboot2904;
   doSoftReboot2904.setFormat(BLE2904::FORMAT_BOOLEAN);
