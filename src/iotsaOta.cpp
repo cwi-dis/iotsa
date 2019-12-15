@@ -34,7 +34,7 @@ void otaOnError(int error) {
 }
 
 void IotsaOtaMod::setup() {
-  app.enableOta();
+  iotsaConfig.otaEnabled = true;
   if (iotsaConfig.configurationMode == IOTSA_MODE_OTA) {
 	IotsaSerial.println("OTA-update enabled");
 	ArduinoOTA.setPort(8266);

@@ -65,8 +65,6 @@ public:
   void setup();
   void serverSetup();
   void loop();
-  void enableOta() { haveOTA = true; }
-  bool otaEnabled() { return haveOTA; }
   IotsaStatusInterface *status;
 protected:
   IotsaBaseMod *firstModule;
@@ -157,6 +155,7 @@ class IotsaConfig {
 public:
   bool configWasLoaded = false;
   bool wifiEnabled = false;
+  bool otaEnabled = false;
   bool disableWifiOnBoot = false;
   bool wifiPrivateNetworkMode = false;
   config_mode configurationMode = IOTSA_MODE_NORMAL;

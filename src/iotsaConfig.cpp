@@ -456,7 +456,7 @@ IotsaConfigMod::handler() {
 
   message += "<input name='mode' type='radio' value='0' checked> Enter normal mode after next reboot.<br>";
   message += "<input name='mode' type='radio' value='1'> Enter configuration mode after next reboot.<br>";
-  if (app.otaEnabled()) {
+  if (iotsaConfig.otaEnabled) {
     message += "<input name='mode' type='radio' value='2'> Enable over-the-air update after next reboot.";
     if (iotsaConfig.wifiPrivateNetworkMode) {
       message += "(<em>Warning:</em> Enabling OTA may not work because mDNS not available on this WiFi network.)";
