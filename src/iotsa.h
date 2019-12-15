@@ -11,38 +11,7 @@
 #include <ESP8266WiFi.h>
 #endif
 
-#if defined(IOTSA_WITH_HTTP) && !defined(IOTSA_WITH_HTTPS)
-#ifdef ESP32
-#if 1
-#include <WebServer.h>
-typedef WebServer IotsaWebServer;
-#else
-#include <ESP32WebServer.h>
-typedef ESP32WebServer IotsaWebServer;
-#endif
-#else
-#include <ESP8266WebServer.h>
-typedef ESP8266WebServer IotsaWebServer;
-#endif
-#endif
-#ifdef IOTSA_WITH_HTTPS
-#ifdef ESP32
-#error IOTSA_WITH_HTTPS is not supported for ESP32
-#undef IOTSA_WITH_HTTPS
-#define IOTSA_WITH_HTTP
-#if 1
-#include <WebServer.h>
-typedef WebServer IotsaWebServer;
-#else
-// Older release of esp32 webserver, but unsure how to test for that
-#include <ESP32WebServer.h>
-typedef ESP32WebServer IotsaWebServer;
-#endif
-#else
-#include <ESP8266WebServerSecure.h>
-typedef ESP8266WebServerSecure IotsaWebServer;
-#endif
-#endif
+#include "IotsaWebServer.h"
 
 //
 // Global defines, changes some behaviour in the whole library
@@ -81,9 +50,10 @@ public:
   virtual void showStatus() = 0;
 };
 
-class IotsaApplication {
-friend class IotsaBaseMod;
-friend class IotsaConfigMod;
+class IotsaApplication : public IotsaWebServerMixin {
+  friend class IotsaBaseMod;
+  friend class IotsaConfigMod;
+  friend class IotsaWebServerMixin;
 public:
   IotsaApplication(const char *_title);
   // Explicitly disable copy constructor and assignment
@@ -98,18 +68,7 @@ public:
   void enableOta() { haveOTA = true; }
   bool otaEnabled() { return haveOTA; }
   IotsaStatusInterface *status;
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
-  IotsaWebServer *server;
-#endif
 protected:
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
-  void webServerSetup();
-  void webServerLoop();
-  void webServerNotFoundHandler();
-#endif
-#ifdef IOTSA_WITH_WEB
-  void webServerRootHandler();
-#endif
   IotsaBaseMod *firstModule;
   IotsaBaseMod *firstEarlyModule;
   String title;
@@ -130,8 +89,9 @@ public:
 };
 
 class IotsaBaseMod {
-friend class IotsaApplication;
-friend class IotsaConfigMod;
+  friend class IotsaApplication;
+  friend class IotsaConfigMod;
+  friend class IotsaWebServerMixin;
 public:
   IotsaBaseMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
   : app(_app), 
