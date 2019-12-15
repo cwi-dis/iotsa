@@ -4,7 +4,7 @@
 #include <SPIFFS.h>
 #endif
 #include "iotsa.h"
-#include "iotsaConfig.h"
+#include "iotsaConfigMod.h"
 
 // There is an issue with the platformio library dependency finder, and it doesn't find the
 // esp8266httpclient library. This is a workaround.

@@ -2,7 +2,7 @@
 #define _IOTSAWIFI_H_
 #include "iotsa.h"
 #include "iotsaApi.h"
-#include "iotsaConfig.h"
+#include "iotsaConfigMod.h"
 
 #ifdef IOTSA_WITH_WIFI
 #ifdef IOTSA_WITH_API

@@ -1,5 +1,4 @@
 #include "iotsa.h"
-#include "iotsaConfig.h"
 
 
 #if defined(IOTSA_WITH_HTTPS) && defined(IOTSA_WITH_HTTP)

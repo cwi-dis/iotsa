@@ -12,7 +12,7 @@
 
 #include "iotsa.h"
 #include "iotsaConfigFile.h"
-#include "iotsaConfig.h"
+#include "iotsaConfigMod.h"
 
 #ifdef IOTSA_WITH_HTTPS
 #include <libb64/cdecode.h>

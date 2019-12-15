@@ -1,5 +1,5 @@
-#ifndef _IOTSACONFIG_H_
-#define _IOTSACONFIG_H_
+#ifndef _IOTSACONFIGMOD_H_
+#define _IOTSACONFIGMOD_H_
 #include "iotsa.h"
 #include "iotsaApi.h"
 
