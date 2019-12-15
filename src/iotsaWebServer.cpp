@@ -34,11 +34,11 @@ static TinyForwardServer *singletonTFS;
 #endif // defined(IOTSA_WITH_HTTPS) && defined(IOTSA_WITH_HTTP)
 
 IotsaWebServerMixin::IotsaWebServerMixin(IotsaApplication* _app)
-:
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
-    server(new IotsaWebServer(IOTSA_WEBSERVER_PORT)),
-#endif
+:
+  server(new IotsaWebServer(IOTSA_WEBSERVER_PORT)),
   app(_app)
+#endif
 {
 }
 
