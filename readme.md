@@ -329,8 +329,14 @@ The actual implementations are in _iotsaRestApi.h_ and _iotsaCoapApi.h_, but the
 
 ### iotsaConfig.h
 
-Handles general configuration, factory reset and (if enabled) over-the-air programming.
-This is technically a module, but unlike other modules it is not really optional. It should _not_ be instantiated in your
+Handles the `iotsaConfig` object, which is a singleton object that contains all
+configuration information, such as hostname and which mode we are running in. You normally don't include this file, it is included through `iotsa.h`.
+
+### iotsaConfigMod.h
+
+Handles control over the `iotsaConfig` object and general configuration such as factory reset and (if enabled) over-the-air programming.
+This is technically a module, but unlike other modules it is not really optional (unless
+your iotsa board is running with WiFi disabled). It should _not_ be instantiated in your
 program, this happens automatically. This module also opens and/or initializes the SPIFFS filesystem.
 
 If the iotsa server is operating in normal (production) mode a user can access URL `/config` to request configuration mode, factory reset or ota-programming mode. The user must then turn power off and on again within 5 minutes to switch the iotsa server to its new mode, for another 5 minutes. If nothing happens during this period the server reboots and reverts to normal mode.
@@ -346,7 +352,8 @@ The module also provides a REST api on `/api/config` (and this api depends on wh
 ### iotsaWifi.h
 
 Handles WiFi configuration.
-This is technically a module, but unlike other modules it is not really optional for this release .You must instantiate it in your program.
+It is possible to build a Iotsa application without this module, but except for special use cases such as creating a Bluetooth LE only service it is not recommended.
+You must instantiate it in your program.
 
 A iotsa device can join an existing WiFi network (normal WiFi mode) or create a temporary network as an Access Point (private WiFi mode). 
 In private mode the device does not connect to a WiFi network, but in stead creates its own network (as a base station) with a name starting with "_config-_". The user can now connect a device to this network and visit `http://192.168.4.1/wificonfig`. Here it is possible to set the normal WiFi network to connect to and the password.

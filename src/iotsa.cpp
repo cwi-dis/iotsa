@@ -109,12 +109,12 @@ IotsaApplication::loop() {
 #endif
 }
 
+#ifdef IOTSA_WITH_WEB
 String IotsaBaseMod::info() {
   // Info method that does nothing, usually overridden for IotsaMod modules
   return "";
 }
 
-#ifdef IOTSA_WITH_WEB
 String IotsaMod::htmlEncode(String data) {
   const char *p = data.c_str();
   String rv = "";
