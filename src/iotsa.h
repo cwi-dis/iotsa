@@ -11,7 +11,8 @@
 #include <ESP8266WiFi.h>
 #endif
 
-#include "IotsaWebServer.h"
+#include "iotsaWebServer.h"
+#include "iotsaConfig.h"
 
 //
 // Global defines, changes some behaviour in the whole library
@@ -149,60 +150,6 @@ public:
   using IotsaMod::IotsaMod;	// Inherit constructor
 };
 
-typedef enum { IOTSA_MODE_NORMAL, IOTSA_MODE_CONFIG, IOTSA_MODE_OTA, IOTSA_MODE_FACTORY_RESET } config_mode;
-
-class IotsaConfig {
-public:
-  bool configWasLoaded = false;
-  bool wifiEnabled = false;
-  bool otaEnabled = false;
-  bool disableWifiOnBoot = false;
-  bool wifiPrivateNetworkMode = false;
-  config_mode configurationMode = IOTSA_MODE_NORMAL;
-  unsigned long configurationModeEndTime = 0;
-  config_mode nextConfigurationMode = IOTSA_MODE_NORMAL;
-  unsigned long nextConfigurationModeEndTime = 0;
-  String hostName = "";
-  int configurationModeTimeout = 0;
-#ifdef IOTSA_WITH_HTTPS
-  const uint8_t* httpsCertificate;
-  size_t httpsCertificateLength;
-  const uint8_t* httpsKey;
-  size_t httpsKeyLength;
-#endif // IOTSA_WITH_HTTPS
-  uint32_t postponeSleepMillis = 0;
-  int pauseSleepCount = 0;
-
-  bool inConfigurationMode() { return configurationMode == IOTSA_MODE_CONFIG; }
-  bool inConfigurationOrFactoryMode() { 
-    if (configurationMode == IOTSA_MODE_CONFIG) return true;
-    if (wifiPrivateNetworkMode && configurationModeEndTime == 0) return true;
-    return false;
-  }
-  uint32_t getStatusColor() {
-    if (wifiEnabled && !WiFi.isConnected()) return 0x3f1f00; // Orange: not connected to WiFi
-    if (configurationMode == IOTSA_MODE_FACTORY_RESET) return 0x3f0000; // Red: Factory reset mode
-    if (configurationMode == IOTSA_MODE_CONFIG) return 0x3f003f;	// Magenta: user-requested configuration mode
-    if (configurationMode == IOTSA_MODE_OTA) return 0x003f3f;	// Cyan: OTA mode
-    if (wifiPrivateNetworkMode) return 0x3f3f00; // Yellow: configuration mode (not user requested)
-    return 0; // Off: all ok.
-  }
-
-  void pauseSleep() { pauseSleepCount++; }
-
-  void resumeSleep() { pauseSleepCount--; }
-
-  void postponeSleep(uint32_t ms) {
-    uint32_t noSleepBefore = millis() + ms;
-    if (noSleepBefore > postponeSleepMillis) postponeSleepMillis = noSleepBefore;
-  }
-
-  bool canSleep() {
-    if (pauseSleepCount > 0) return false;
-    if (millis() > postponeSleepMillis) postponeSleepMillis = 0;
-    return postponeSleepMillis == 0;
-  }
-};
 
 extern IotsaConfig iotsaConfig;
 #endif

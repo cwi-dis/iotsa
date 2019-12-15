@@ -1,7 +1,6 @@
 #include "iotsa.h"
 #include "iotsaBLEServer.h"
 #include "iotsaConfigFile.h"
-#include "iotsaConfigMod.h"
 #ifdef IOTSA_WITH_BLE
 #include <BLE2902.h>
 
@@ -86,7 +85,7 @@ uint16_t IotsaBLEServerMod::adv_max = 0;
 
 void IotsaBLEServerMod::createServer() {
   if (s_server) return;
-  IotsaConfigMod::ensureConfigLoaded();
+  iotsaConfig.ensureConfigLoaded();
   IFBLEDEBUG IotsaSerial.print("BLE hostname: ");
   IFBLEDEBUG IotsaSerial.println(iotsaConfig.hostName.c_str());
   BLEDevice::init(iotsaConfig.hostName.c_str());

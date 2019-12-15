@@ -25,7 +25,6 @@ public:
 	void serverSetup();
 	void loop();
   String info();
-  static void ensureConfigLoaded() { if (!iotsaConfig.configWasLoaded) configLoadStatic(); };
 protected:
   bool getHandler(const char *path, JsonObject& reply);
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
@@ -33,7 +32,6 @@ protected:
   void uploadOkHandler();
 private:
   void configLoad();
-  static void configLoadStatic();
   void configSave();
   void handler();
 #ifdef IOTSA_WITH_HTTPS
