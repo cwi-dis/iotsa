@@ -100,7 +100,11 @@ IotsaFilesMod::notFoundHandler() {
 		else if(path.endsWith(".pdf")) dataType = "application/pdf";
 		else if(path.endsWith(".zip")) dataType = "application/zip";
 		else if(path.endsWith(".bin")) dataType = "application/octet-stream";
+  #ifdef CONTENT_LENGTH_UNKNOWN
 		server->streamFile(dataFile, dataType);
+  #else
+    assert(0);
+  #endif
 		dataFile.close();
 		return;
 	} else {

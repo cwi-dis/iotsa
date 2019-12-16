@@ -1,5 +1,5 @@
 #include "iotsa.h"
-
+#if 0
 
 #if defined(IOTSA_WITH_HTTPS) && defined(IOTSA_WITH_HTTP)
 // Tiny http server which forwards to https
@@ -120,3 +120,4 @@ IotsaWebServerMixin::webServerRootHandler() {
   server->send(200, "text/html", message);
 }
 #endif // IOTSA_WITH_WEB
+#endif
