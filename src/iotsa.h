@@ -11,7 +11,7 @@
 #include <ESP8266WiFi.h>
 #endif
 
-#include "iotsaE32WebServer.h"
+#include "iotsaWebServer.h"
 #include "iotsaConfig.h"
 
 //
