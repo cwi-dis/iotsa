@@ -2,40 +2,44 @@
 #define _IOTSAWEBSERVER_H_
 #include "iotsaBuildOptions.h"
 
-#if defined(IOTSA_WITH_HTTP) && !defined(IOTSA_WITH_HTTPS)
-#ifdef ESP32
-#ifdef IOTSA_WITH_ESP32HTTPSCOMPAT
+//
+// There are numerous different webserver implementations with very similar API.
+// Attempt to select the correct one to use.
+//
+#if defined(ESP32) && defined(IOTSA_WITH_ESP32COMPAT) && defined(IOTSA_WITH_HTTPS)
+#define IOTSA_WEBSERVER "esp32compatsecure"
+#include <ESPWebServerSecure.hpp>
+typedef ESPWebServer IotsaWebServer;
+
+#elif defined(ESP32) && defined(IOTSA_WITH_ESP32COMPAT) && defined(IOTSA_WITH_HTTP)
+#define IOTSA_WEBSERVER "esp32compat"
 #include <ESPWebServer.hpp>
 typedef ESPWebServer IotsaWebServer;
-#elif 1
+
+#elif defined(ESP32) && defined(IOTSA_WITH_HTTP) && 1
+#define IOTSA_WEBSERVER "esp32webserver"
 #include <WebServer.h>
 typedef WebServer IotsaWebServer;
-#else
+
+#elif defined(ESP32) && defined(IOTSA_WITH_HTTP) && 0
+#define IOTSA_WEBSERVER "esp32webserverold"
 #include <ESP32WebServer.h>
-typedef ESP32WebServer IotsaWebServer;
-#endif
-#else
-#include <ESP8266WebServer.h>
-typedef ESP8266WebServer IotsaWebServer;
-#endif
-#endif
-#ifdef IOTSA_WITH_HTTPS
-#ifdef ESP32
-#error IOTSA_WITH_HTTPS is not supported for ESP32
-#undef IOTSA_WITH_HTTPS
-#define IOTSA_WITH_HTTP
-#if 1
-#include <WebServer.h>
 typedef WebServer IotsaWebServer;
-#else
-// Older release of esp32 webserver, but unsure how to test for that
-#include <ESP32WebServer.h>
-typedef ESP32WebServer IotsaWebServer;
-#endif
-#else
+
+#elif !defined(ESP32) && defined(IOTSA_WITH_HTTPS)
+#define IOTSA_WEBSERVER "esp8266webserversecure"
 #include <ESP8266WebServerSecure.h>
 typedef axTLS::ESP8266WebServerSecure IotsaWebServer;
+
+#elif !defined(ESP32) && defined(IOTSA_WITH_HTTPS)
+#define IOTSA_WEBSERVER "esp8266webserver"
+#include <ESP8266WebServer.h>
+typedef ESP8266WebServer IotsaWebServer;
+
 #endif
+
+#if !defined(IOTSA_WEBSERVER) && defined(IOTSA_WITH_HTTP_OR_HTTPS)
+#error "Cannot determine WebServer implementation to use"
 #endif
 
 class IotsaApplication;
