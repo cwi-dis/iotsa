@@ -61,8 +61,8 @@ protected:
   bool bleGetHandler(UUIDstring charUUID);
   static constexpr UUIDstring serviceUUID = "180F";
   static constexpr UUIDstring levelVBatUUID = "2A19";
-  static constexpr UUIDstring levelVUSBUUID = "E4D98D37-250F-46E6-90A4-AB98F01A0587";
-  static constexpr UUIDstring doSoftRebootUUID = "21A2434E-44FA-4B7A-8E17-88676AF9DA0F";
+  static constexpr UUIDstring levelVUSBUUID = "E4D90002-250F-46E6-90A4-AB98F01A0587";
+  static constexpr UUIDstring doSoftRebootUUID = "E4D90003-250F-46E6-90A4-AB98F01A0587";
 #endif // IOTSA_WITH_BLE
 };
 

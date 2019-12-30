@@ -63,8 +63,8 @@ protected:
   IotsaBleApiService bleApi;
   bool blePutHandler(UUIDstring charUUID);
   bool bleGetHandler(UUIDstring charUUID);
-  static constexpr UUIDstring serviceUUID = "3B006387-1226-4A53-9D24-AFA50C0163A3";
-  static constexpr UUIDstring rgbUUID = "72BC73F7-9AF2-452D-BBFB-CE4AF53F499A";
+  static constexpr UUIDstring serviceUUID = "3B000001-1226-4A53-9D24-AFA50C0163A3";
+  static constexpr UUIDstring rgbUUID = "3B000002-1226-4A53-9D24-AFA50C0163A3";
 #endif // IOTSA_WITH_BLE
 
 };
