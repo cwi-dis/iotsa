@@ -6,7 +6,7 @@
 
 typedef std::function<bool()> ActivationCallbackType;
 
-class Input : public IotsaRequestContainer {
+class Input {
 public:
   Input(bool _actOnPress, bool _actOnRelease, bool _wake=false);
   void setCallback(ActivationCallbackType callback);
@@ -39,6 +39,7 @@ protected:
   uint32_t nextRepeat;
 };
 
+#ifdef ESP32
 class Touchpad : public Button {
 public:
   Touchpad(int _pin, bool _actOnPress, bool _actOnRelease, bool _wake=false);
@@ -50,6 +51,7 @@ protected:
   bool _getState();
   uint16_t threshold;
 };
+#endif // ESP32
 
 class RotaryEncoder : public Input {
 public:

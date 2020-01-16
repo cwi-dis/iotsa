@@ -407,7 +407,7 @@ advertising interval through the web or REST interface) or without it.
 
 ### iotsaButton.h
 
-A generalized module for handling buttons and switches attached to GPIO pins. Uses _iotsaRequest.h_ to enable REST calls when buttons are pressed.
+A generalized module for handling buttons and switches attached to GPIO pins. Uses _iotsaRequest.h_ to enable REST calls when buttons are pressed. Also see _iotsaInput.h_ with which this will eventually be integrated.
 
 ### iotsaCapabilities.h
 
@@ -429,6 +429,11 @@ Allows write access to files stored in `/data` on the SPIFFS filesystem (where _
 ### iotsaFilesBackup.h
 
 Creates a backup of the complete SPIFFS filesystem (including `/data` and `/config`) as a tarfile when you access URL `/backup.tar`. Can be used to clone iotsa devices. Requires _IOTSA\_WITH\_WEB_.
+
+### iotsaInput.h
+
+Handles buttons, rotary encoders and (on ESP32) capacitive touchpads for input. Allows
+for callbacks to be made on changes, and (on ESP32) wakeup from sleep. Will be integrated with _iotsaButton.h_ at some point in the future.
 
 ### iotsaLed.h
 

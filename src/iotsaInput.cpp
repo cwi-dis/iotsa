@@ -4,7 +4,10 @@
 
 #define DEBOUNCE_DELAY 50 // 50 ms debouncing
 
+#ifdef ESP32
 static void dummyTouchCallback() {}
+#endif // ESP32
+
 static bool anyWakeOnTouch;
 static uint64_t bitmaskButtonWakeHigh;
 static int buttonWakeLow;
@@ -16,6 +19,7 @@ void IotsaInputMod::setup() {
   for(int i=0; i<nInput; i++) {
     inputs[i]->setup();
   }
+#ifdef ESP32
   esp_err_t err;
   if (bitmaskButtonWakeHigh && buttonWakeLow && anyWakeOnTouch) {
     IotsaSerial.println("IotsaInputMod: too many incompatible wakeup sources");
@@ -40,6 +44,11 @@ void IotsaInputMod::setup() {
       if (err != ESP_OK) IotsaSerial.println("Error in ext1_wakeup LOW");
     }
   }
+#else
+  if (anyWakeOnTouch || buttonWakeLow >= 0 || bitmaskButtonWakeHigh) {
+    IotsaSerial.println("Wake-from-sleep not implemented on esp8266");
+  }
+#endif
 }
 
 void IotsaInputMod::serverSetup() {
@@ -148,7 +157,7 @@ void Button::loop() {
   }
 }
 
-
+#ifdef ESP32
 Touchpad::Touchpad(int _pin, bool _actOnPress, bool _actOnRelease, bool _wake)
 : Button(_actOnPress, _actOnRelease, _wake),
   threshold(20)
@@ -167,6 +176,7 @@ bool Touchpad::_getState() {
   if (value == 0) return false;
   return value < threshold;
 }
+#endif // ESP32
 
 RotaryEncoder::RotaryEncoder(int _pinA, int _pinB)
 : Input(true, true, false),
