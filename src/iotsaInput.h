@@ -60,9 +60,9 @@ public:
   ValueInput();
   void setVar(int& _var, int _min, int _max, int _stepSize);
   void setVar(float& _var, float _min, float _max, float _stepSize);
+  int value;
 protected:
   void _changeValue(int steps);
-  int value;
   int *intVar, intMin, intMax, intStep;
   float *floatVar, floatMin, floatMax, floatStep;
 };
