@@ -97,8 +97,8 @@ void Button::setRepeat(uint32_t _firstRepeat, uint32_t _minRepeat) {
 }
 
 void Button::bindVar(bool& _var, bool _toggle) {
-  if (!_toggle) boolVar = &_var;
-  *boolVar = pressed;
+  boolVar = &_var;
+  if (!_toggle) *boolVar = pressed;
   toggle = _toggle;
 }
 
