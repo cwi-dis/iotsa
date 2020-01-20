@@ -25,6 +25,7 @@ public:
   void setup();
   void loop();
   void setRepeat(uint32_t _firstRepeat, uint32_t _minRepeat);
+  void setVar(bool& _var);
   bool pressed;
   uint32_t duration;
 protected:
@@ -37,6 +38,7 @@ protected:
   uint32_t minRepeat;
   uint32_t curRepeat;
   uint32_t nextRepeat;
+  bool *boolVar;
 };
 
 #ifdef ESP32
@@ -53,26 +55,38 @@ protected:
 };
 #endif // ESP32
 
-class RotaryEncoder : public Input {
+class ValueInput : public Input {
+public:
+  ValueInput();
+  void setVar(int& _var, int _min, int _max, int _stepSize);
+  void setVar(float& _var, float _min, float _max, float _stepSize);
+protected:
+  void _changeValue(int steps);
+  int value;
+  int *intVar, intMin, intMax, intStep;
+  float *floatVar, floatMin, floatMax, floatStep;
+};
+
+class RotaryEncoder : public ValueInput {
 public:
   RotaryEncoder(int _pinA, int _pinB);
   void setup();
   void loop();
-  int value;
+  void setAcceleration(uint32_t _accelMillis);
   uint32_t duration;
 protected:
   int pinA;
   int pinB;
   bool pinAstate;
   uint32_t lastChangeMillis;
+  uint32_t accelMillis;
 };
 
-class UpDownButtons : public Input {
+class UpDownButtons : public ValueInput {
 public:
   UpDownButtons(Button& _up, Button& _down);
   void setup();
   void loop();
-  int value;
 protected:
   Button& up;
   Button& down;

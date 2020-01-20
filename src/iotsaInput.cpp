@@ -85,13 +85,19 @@ Button::Button(int _pin, bool _actOnPress, bool _actOnRelease, bool _wake)
   firstRepeat(0),
   minRepeat(0),
   curRepeat(0),
-  nextRepeat(0)
+  nextRepeat(0),
+  boolVar(NULL)
 {
 }
 
 void Button::setRepeat(uint32_t _firstRepeat, uint32_t _minRepeat) {
   firstRepeat = _firstRepeat;
   minRepeat = _minRepeat;
+}
+
+void Button::setVar(bool& _var) {
+  boolVar = &_var;
+  *boolVar = pressed;
 }
 
 void Button::setup() {
@@ -124,6 +130,7 @@ void Button::loop() {
   if (millis() > debounceTime + DEBOUNCE_DELAY && state != pressed) {
     // The touchpad has been in the new state for long enough for us to trust it.
     pressed = state;
+    if (boolVar) *boolVar = pressed;
     if (lastChangeMillis) {
       duration = millis() - lastChangeMillis;
     }
@@ -178,15 +185,66 @@ bool Touchpad::_getState() {
 }
 #endif // ESP32
 
-RotaryEncoder::RotaryEncoder(int _pinA, int _pinB)
+ValueInput::ValueInput()
 : Input(true, true, false),
   value(0),
+  intVar(NULL),
+  intMin(0),
+  intMax(0),
+  intStep(0),
+  floatVar(NULL),
+  floatMin(0),
+  floatMax(0),
+  floatStep(0)
+{
+}
+
+void ValueInput::setVar(int& _var, int _min, int _max, int _stepSize) {
+  intVar = &_var;
+  intMin = _min;
+  intMax = _max;
+  intStep = _stepSize;
+}
+
+void ValueInput::setVar(float& _var, float _min, float _max, float _stepSize) {
+  floatVar = &_var;
+  floatMin = _min;
+  floatMax = _max;
+  floatStep = _stepSize;
+}
+
+
+void ValueInput::_changeValue(int steps) {
+  value += steps;
+  if (intVar) {
+    *intVar += steps*intStep;
+    if (*intVar < intMin) *intVar = intMin;
+    if (*intVar > intMax) *intVar = intMax;
+  }
+  if (floatVar) {
+    *floatVar += steps*floatStep;
+    if (*floatVar < floatMin) *floatVar = floatMin;
+    if (*floatVar > floatMax) *floatVar = floatMax;
+  }
+  IFDEBUG IotsaSerial.printf("ValueInput callback increment %d value %d\n", steps, value);
+  if (activationCallback) {
+    activationCallback();
+  }
+}
+
+RotaryEncoder::RotaryEncoder(int _pinA, int _pinB)
+: ValueInput(),
   duration(0),
   pinA(_pinA),
   pinB(_pinB),
   pinAstate(false),
-  lastChangeMillis(0)
+  lastChangeMillis(0),
+  accelMillis(0)
 {
+}
+
+void RotaryEncoder::setAcceleration(uint32_t _accelMillis) {
+  accelMillis = _accelMillis;
 }
 
 void RotaryEncoder::setup() {
@@ -215,22 +273,24 @@ void RotaryEncoder::loop() {
     // If pinA changed state high read pinB to determine whether this is an increment or a decrement.
     bool pinBstate = digitalRead(pinB) == LOW;
     bool increment = pinAstate != pinBstate;
-    if (increment) {
-      value++;
-    } else {
-      value--;
+    int change = 1;
+    if (accelMillis > 0 && duration > 0) {
+      // Check if we want to do multiple steps, because the encoder was 
+      // rotated fast
+      if (duration < accelMillis) {
+        change += accelMillis / duration;
+      }
     }
-    bool doSend = (increment && actOnPress) || (!increment && actOnRelease);
-    IFDEBUG IotsaSerial.printf("RotaryEncoder callback for button pin %d,%d state %d,%d increment %d value %d duration %u\n", pinA, pinB, pinAstate, pinBstate, increment, value, duration);
-    if (doSend && activationCallback) {
-      activationCallback();
+    if (increment) {
+      _changeValue(change);
+    } else {
+      _changeValue(-change);
     }
   }
 }
 
 UpDownButtons::UpDownButtons(Button& _up, Button& _down)
-: Input(true, true, false),
-  value(0),
+: ValueInput(),
   up(_up),
   down(_down)
 {
@@ -251,14 +311,11 @@ void UpDownButtons::loop() {
 }
 
 bool UpDownButtons::_upPressed() {
-  value++;
-  IFDEBUG IotsaSerial.printf("UpDownButtons callback for button up value %d\n", value);
-  if (actOnPress && activationCallback) activationCallback();
+  _changeValue(1);
   return true;
 }
 
 bool UpDownButtons::_downPressed() {
-  value--;
-  if (actOnRelease && activationCallback) activationCallback();
+  _changeValue(-1);
   return true;
 }
