@@ -25,7 +25,7 @@ public:
   void setup();
   void loop();
   void setRepeat(uint32_t _firstRepeat, uint32_t _minRepeat);
-  void bindVar(bool& _var);
+  void bindVar(bool& _var, bool _toggle);
   bool pressed;
   uint32_t duration;
 protected:
@@ -39,6 +39,7 @@ protected:
   uint32_t curRepeat;
   uint32_t nextRepeat;
   bool *boolVar;
+  bool toggle;
 };
 
 #ifdef ESP32

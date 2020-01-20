@@ -86,7 +86,8 @@ Button::Button(int _pin, bool _actOnPress, bool _actOnRelease, bool _wake)
   minRepeat(0),
   curRepeat(0),
   nextRepeat(0),
-  boolVar(NULL)
+  boolVar(NULL),
+  toggle(false)
 {
 }
 
@@ -95,9 +96,10 @@ void Button::setRepeat(uint32_t _firstRepeat, uint32_t _minRepeat) {
   minRepeat = _minRepeat;
 }
 
-void Button::bindVar(bool& _var) {
-  boolVar = &_var;
+void Button::bindVar(bool& _var, bool _toggle) {
+  if (!_toggle) boolVar = &_var;
   *boolVar = pressed;
+  toggle = _toggle;
 }
 
 void Button::setup() {
@@ -130,7 +132,15 @@ void Button::loop() {
   if (millis() > debounceTime + DEBOUNCE_DELAY && state != pressed) {
     // The touchpad has been in the new state for long enough for us to trust it.
     pressed = state;
-    if (boolVar) *boolVar = pressed;
+    if (boolVar) {
+      if (toggle) {
+        if (pressed) {
+          *boolVar = !*boolVar;
+        }
+      } else {
+        *boolVar = pressed;
+      }
+    }
     if (lastChangeMillis) {
       duration = millis() - lastChangeMillis;
     }
