@@ -95,7 +95,7 @@ void Button::setRepeat(uint32_t _firstRepeat, uint32_t _minRepeat) {
   minRepeat = _minRepeat;
 }
 
-void Button::setVar(bool& _var) {
+void Button::bindVar(bool& _var) {
   boolVar = &_var;
   *boolVar = pressed;
 }
@@ -199,14 +199,14 @@ ValueInput::ValueInput()
 {
 }
 
-void ValueInput::setVar(int& _var, int _min, int _max, int _stepSize) {
+void ValueInput::bindVar(int& _var, int _min, int _max, int _stepSize) {
   intVar = &_var;
   intMin = _min;
   intMax = _max;
   intStep = _stepSize;
 }
 
-void ValueInput::setVar(float& _var, float _min, float _max, float _stepSize) {
+void ValueInput::bindVar(float& _var, float _min, float _max, float _stepSize) {
   floatVar = &_var;
   floatMin = _min;
   floatMax = _max;

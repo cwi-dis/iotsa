@@ -25,7 +25,7 @@ public:
   void setup();
   void loop();
   void setRepeat(uint32_t _firstRepeat, uint32_t _minRepeat);
-  void setVar(bool& _var);
+  void bindVar(bool& _var);
   bool pressed;
   uint32_t duration;
 protected:
@@ -58,8 +58,8 @@ protected:
 class ValueInput : public Input {
 public:
   ValueInput();
-  void setVar(int& _var, int _min, int _max, int _stepSize);
-  void setVar(float& _var, float _min, float _max, float _stepSize);
+  void bindVar(int& _var, int _min, int _max, int _stepSize);
+  void bindVar(float& _var, float _min, float _max, float _stepSize);
   int value;
 protected:
   void _changeValue(int steps);
