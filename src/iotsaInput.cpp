@@ -176,7 +176,7 @@ void Button::loop() {
 
 #ifdef ESP32
 Touchpad::Touchpad(int _pin, bool _actOnPress, bool _actOnRelease, bool _wake)
-: Button(pin, _actOnPress, _actOnRelease, _wake),
+: Button(_pin, _actOnPress, _actOnRelease, _wake),
   threshold(20)
 {
 }
