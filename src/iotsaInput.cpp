@@ -78,6 +78,7 @@ Button::Button(int _pin, bool _actOnPress, bool _actOnRelease, bool _wake)
 : Input(_actOnPress, _actOnRelease, _wake),
   pressed(false),
   duration(0),
+  repeatCount(0),
   pin(_pin),
   debounceState(false),
   debounceTime(0),
@@ -130,8 +131,9 @@ void Button::loop() {
   }
   debounceState = state;
   if (millis() > debounceTime + DEBOUNCE_DELAY && state != pressed) {
-    // The touchpad has been in the new state for long enough for us to trust it.
+    // The touchpad or button has been in the new state for long enough for us to trust it.
     pressed = state;
+    if (pressed) repeatCount = 0;
     if (boolVar) {
       if (toggle) {
         if (pressed) {
@@ -170,6 +172,7 @@ void Button::loop() {
       if (curRepeat < minRepeat) curRepeat = minRepeat;
     }
     nextRepeat = millis() + curRepeat;
+    repeatCount++;
     if (activationCallback) activationCallback();
   }
 }
@@ -299,15 +302,22 @@ void RotaryEncoder::loop() {
   }
 }
 
-UpDownButtons::UpDownButtons(Button& _up, Button& _down)
+UpDownButtons::UpDownButtons(Button& _up, Button& _down, bool _useState)
 : ValueInput(),
+  state(false),
   up(_up),
-  down(_down)
+  down(_down),
+  useState(_useState),
+  stateVar(NULL)
 {
   up.setCallback(std::bind(&UpDownButtons::_upPressed, this));
   down.setCallback(std::bind(&UpDownButtons::_downPressed, this));
   up.setRepeat(1000, 100);
   down.setRepeat(1000, 100);
+}
+
+void UpDownButtons::bindStateVar(bool& _var) {
+  stateVar = &_var;
 }
 
 void UpDownButtons::setup() {
@@ -321,11 +331,33 @@ void UpDownButtons::loop() {
 }
 
 bool UpDownButtons::_upPressed() {
+  if (useState) {
+    // The buttons double as on/off buttons. A short press means "on"
+    // only longer press (repeats) means "increase".
+    if (up.repeatCount == 0) {
+      state = true;
+      if (stateVar) *stateVar = true;
+      return true;
+    }
+  }
+  if (!up.pressed) return true;
   _changeValue(1);
   return true;
 }
 
 bool UpDownButtons::_downPressed() {
+  if (useState) {
+    // The buttons double as on/off buttons. A short press means "off"
+    // only longer press (repeats) means "decrease". We determine
+    // what to do at the release of the down button.
+    if (down.repeatCount == 0 && !down.pressed) {
+      // This was a release that had no repeats. Treat it as off.
+      state = false;
+      if (stateVar) *stateVar = false;
+      return true;
+    }
+  }
+  if (!down.pressed) return true;
   _changeValue(-1);
   return true;
 }

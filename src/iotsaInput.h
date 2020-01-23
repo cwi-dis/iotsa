@@ -28,6 +28,7 @@ public:
   void bindVar(bool& _var, bool _toggle);
   bool pressed;
   uint32_t duration;
+  int repeatCount;
 protected:
   virtual bool _getState();
   int pin;
@@ -85,14 +86,18 @@ protected:
 
 class UpDownButtons : public ValueInput {
 public:
-  UpDownButtons(Button& _up, Button& _down);
+  UpDownButtons(Button& _up, Button& _down, bool _useState=false);
   void setup();
   void loop();
+  void bindStateVar(bool& _var);
+  bool state;
 protected:
   Button& up;
   Button& down;
   bool _upPressed();
   bool _downPressed();
+  bool useState;
+  bool *stateVar;
 };
 
 class IotsaInputMod : public IotsaMod {
