@@ -90,6 +90,7 @@ public:
   void setup();
   void loop();
   void bindStateVar(bool& _var);
+  void setStateCallback(ActivationCallbackType callback);
   bool state;
 protected:
   Button& up;
@@ -98,6 +99,7 @@ protected:
   bool _downPressed();
   bool useState;
   bool *stateVar;
+  ActivationCallbackType stateCallback;
 };
 
 class IotsaInputMod : public IotsaMod {

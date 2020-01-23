@@ -320,6 +320,10 @@ void UpDownButtons::bindStateVar(bool& _var) {
   stateVar = &_var;
 }
 
+void UpDownButtons::setStateCallback(ActivationCallbackType callback) {
+  stateCallback = callback;
+}
+
 void UpDownButtons::setup() {
   up.setup();
   down.setup();
@@ -337,6 +341,7 @@ bool UpDownButtons::_upPressed() {
     if (up.repeatCount == 0) {
       state = true;
       if (stateVar) *stateVar = true;
+      if (stateCallback) stateCallback();
       return true;
     }
   }
@@ -354,6 +359,7 @@ bool UpDownButtons::_downPressed() {
       // This was a release that had no repeats. Treat it as off.
       state = false;
       if (stateVar) *stateVar = false;
+      if (stateCallback) stateCallback();
       return true;
     }
   }
