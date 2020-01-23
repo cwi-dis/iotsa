@@ -335,6 +335,7 @@ void UpDownButtons::loop() {
 }
 
 bool UpDownButtons::_upPressed() {
+  if (!up.pressed) return true;
   if (useState) {
     // The buttons double as on/off buttons. A short press means "on"
     // only longer press (repeats) means "increase".
@@ -345,7 +346,6 @@ bool UpDownButtons::_upPressed() {
       return true;
     }
   }
-  if (!up.pressed) return true;
   _changeValue(1);
   return true;
 }
