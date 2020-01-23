@@ -312,8 +312,8 @@ UpDownButtons::UpDownButtons(Button& _up, Button& _down, bool _useState)
 {
   up.setCallback(std::bind(&UpDownButtons::_upPressed, this));
   down.setCallback(std::bind(&UpDownButtons::_downPressed, this));
-  up.setRepeat(1000, 100);
-  down.setRepeat(1000, 100);
+  up.setRepeat(500, 100);
+  down.setRepeat(500, 100);
 }
 
 void UpDownButtons::bindStateVar(bool& _var) {
