@@ -332,13 +332,15 @@ void IotsaBatteryMod::loop() {
 void IotsaBatteryMod::_readVoltages() {
   if (pinVBat >= 0) {
     int level = analogRead(pinVBat);
-    levelVBat = int(100*3.6*level/(2.0*4096));
+    // 3.9v input would give a reading of 4095 (at the default attenuation of 11dB). We scale, so a voltage of rangeVBat gives 100%
+    levelVBat = int(100*3.9*level/(rangeVBat*4096));
+    IotsaSerial.printf("xxxjack level=%d levelVBat=%d\n", level, levelVBat);
 //    IFDEBUG IotsaSerial.print("VBat=");
 //    IFDEBUG IotsaSerial.println(levelVBat);
   }
   if (pinVUSB >= 0) {
     int level = analogRead(pinVUSB);
-    levelVUSB = int(100*3.3*level/(2.0*4096));
+    levelVUSB = int(100*3.9*level/(rangeVUSB*4096));
 //    IFDEBUG IotsaSerial.print("VUSB=");
 //    IFDEBUG IotsaSerial.println(levelVUSB);
   }

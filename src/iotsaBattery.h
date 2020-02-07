@@ -29,8 +29,8 @@ public:
   void serverSetup();
   void loop();
   String info();
-  void setPinVUSB(int pin) { pinVUSB = pin; }
-  void setPinVBat(int pin) { pinVBat = pin; }
+  void setPinVUSB(int pin, float range=2.5) { pinVUSB = pin; rangeVUSB = range; }
+  void setPinVBat(int pin, float range=1.8) { pinVBat = pin; rangeVBat = range; }
   void setPinDisableSleep(int pin) { pinDisableSleep = pin; }
 protected:
   bool getHandler(const char *path, JsonObject& reply);
@@ -50,6 +50,8 @@ protected:
   void _readVoltages();
   int pinVBat = -1;
   int pinVUSB = -1;
+  float rangeVBat = 2.5;
+  float rangeVUSB = 1.8;
   int pinDisableSleep = -1;
   uint8_t levelVBat;
   uint8_t levelVUSB;
@@ -59,8 +61,8 @@ protected:
   bool bleGetHandler(UUIDstring charUUID);
   static constexpr UUIDstring serviceUUID = "180F";
   static constexpr UUIDstring levelVBatUUID = "2A19";
-  static constexpr UUIDstring levelVUSBUUID = "E4D98D37-250F-46E6-90A4-AB98F01A0587";
-  static constexpr UUIDstring doSoftRebootUUID = "21A2434E-44FA-4B7A-8E17-88676AF9DA0F";
+  static constexpr UUIDstring levelVUSBUUID = "E4D90002-250F-46E6-90A4-AB98F01A0587";
+  static constexpr UUIDstring doSoftRebootUUID = "E4D90003-250F-46E6-90A4-AB98F01A0587";
 #endif // IOTSA_WITH_BLE
 };
 
