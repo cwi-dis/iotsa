@@ -246,7 +246,7 @@ IotsaConfigMod::handler() {
     }
 #endif // IOTSA_WITH_HTTPS
   }
-  message += "<form method='get'>";
+  message += "<form method='post'>";
   if (iotsaConfig.inConfigurationOrFactoryMode()) {
     message += "Hostname: <input name='hostName' value='";
     message += htmlEncode(iotsaConfig.hostName);
@@ -517,6 +517,7 @@ IotsaConfigMod::uploadOkHandler() {
 void IotsaConfigMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
   server->on("/config", std::bind(&IotsaConfigMod::handler, this));
+  server->on("/config", HTTP_POST, std::bind(&IotsaConfigMod::handler, this));
   server->on("/configupload", HTTP_POST, std::bind(&IotsaConfigMod::uploadOkHandler, this), std::bind(&IotsaConfigMod::uploadHandler, this));
 #endif
 #ifdef IOTSA_WITH_API
