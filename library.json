@@ -41,6 +41,10 @@
         {
             "name" : "CoAP simple library",
             "version" : "https://github.com/jackjansen/CoAP-simple-library.git"
+        },
+        {
+            "name" : "esp32_https_server_compat",
+            "version" : "https://github.com/jackjansen/esp32_https_server_compat"
         }
     ],
     "examples" : [
