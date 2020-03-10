@@ -9,7 +9,7 @@
 #if defined(ESP32) && defined(IOTSA_WITH_ESP32COMPAT) && defined(IOTSA_WITH_HTTPS)
 #define IOTSA_WEBSERVER "esp32compatsecure"
 #include <ESPWebServerSecure.hpp>
-typedef ESPWebServer IotsaWebServer;
+typedef ESPWebServerSecure IotsaWebServer;
 
 #elif defined(ESP32) && defined(IOTSA_WITH_ESP32COMPAT) && defined(IOTSA_WITH_HTTP)
 #define IOTSA_WEBSERVER "esp32compat"
