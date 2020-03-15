@@ -5,6 +5,7 @@ iotsa 2.3 - in progress
 - Fixed building of iotsa without WiFi support
 - Refactored various classes to enable wifi-less operation and different webserver implementations
 - Added IotsaInput module for handling buttons, touchpads and rotary encoders.
+- Allow use of esp32_https_server as http or https server. Enabled by default.
 
 iotsa 2.2 - 03-Dec-2019
 

@@ -43,6 +43,7 @@
             "version" : "https://github.com/jackjansen/CoAP-simple-library.git"
         },
         {
+            "platform" : "espressif32",
             "name" : "esp32_https_server_compat",
             "version" : "https://github.com/jackjansen/esp32_https_server_compat"
         }
