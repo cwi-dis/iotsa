@@ -365,6 +365,8 @@ bool UpDownButtons::_downPressed() {
     // The buttons double as on/off buttons. A short press means "off"
     // only longer press (repeats) means "decrease". We determine
     // what to do at the release of the down button.
+    // We ignore the first press.
+    if (down.pressed && down.repeatCount == 0) return true;
     if (down.repeatCount == 0 && !down.pressed) {
       // This was a release that had no repeats. Treat it as off.
       state = false;
