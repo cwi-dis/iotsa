@@ -182,9 +182,19 @@ Touchpad::Touchpad(int _pin, bool _actOnPress, bool _actOnRelease, bool _wake)
 : Button(_pin, _actOnPress, _actOnRelease, _wake),
   threshold(20)
 {
+  // Initialize threshold by taking some readings, and assuming two thirds of the minimum reading is a good threshold.
+  uint16_t minRead = touchRead(pin);
+  for (int i=0; i< 10; i++) {
+    uint16_t newRead = touchRead(pin);
+    if (newRead < minRead) minRead = newRead;
+  }
+  if (minRead > 20) {
+    threshold = minRead*2/3;
+  }
 }
 
 void Touchpad::setup() {
+  IFDEBUG IotsaSerial.printf("touch(%d): threshold=%d\n", pin, threshold);
   if (wake) {
     anyWakeOnTouch = true;
     touchAttachInterrupt(pin, dummyTouchCallback, threshold);
