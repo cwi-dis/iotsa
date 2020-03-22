@@ -180,6 +180,9 @@ void Button::loop() {
 #ifdef ESP32
 Touchpad::Touchpad(int _pin, bool _actOnPress, bool _actOnRelease, bool _wake)
 : Button(_pin, _actOnPress, _actOnRelease, _wake),
+#ifdef IOTSA_DEBUG_INPUT
+  dbg_lastValue(0),
+#endif
   threshold(20)
 {
   // Initialize threshold by taking some readings, and assuming two thirds of the minimum reading is a good threshold.
@@ -203,6 +206,9 @@ void Touchpad::setup() {
 
 bool Touchpad::_getState() {
   uint16_t value = touchRead(pin);
+#ifdef IOTSA_DEBUG_INPUT
+  dbg_lastValue = value;
+#endif
   if (value == 0) return false;
   return value < threshold;
 }

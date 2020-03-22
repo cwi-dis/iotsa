@@ -4,6 +4,8 @@
 #include "iotsaApi.h"
 #include "iotsaRequest.h"
 
+//#define IOTSA_DEBUG_INPUT
+
 typedef std::function<bool()> ActivationCallbackType;
 
 class Input {
@@ -51,8 +53,14 @@ public:
   // void loop() is used from Button
   bool pressed;
   uint32_t duration;
+#ifdef IOTSA_DEBUG_INPUT
+  uint16_t dbg_lastValue;
+#endif
 protected:
   bool _getState();
+#ifdef IOTSA_DEBUG_INPUT
+public:
+#endif
   uint16_t threshold;
 };
 #endif // ESP32
