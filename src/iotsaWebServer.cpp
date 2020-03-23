@@ -4,7 +4,7 @@
 // Tiny http server which forwards to https
 class TinyForwardServer {
 public:
-  ESP8266WebServer server;
+  IotsaHttpWebServer server;
   TinyForwardServer()
   : server(80)
   {
