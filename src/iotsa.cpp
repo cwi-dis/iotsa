@@ -86,13 +86,13 @@ IotsaApplication::serverSetup() {
   	m->serverSetup();
   }
 
+#ifdef IOTSA_WITH_HTTP_OR_HTTPS
+  webServerSetup();
+#endif
 
   for (m=firstModule; m; m=m->nextModule) {
   	m->serverSetup();
   }
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
-  webServerSetup();
-#endif
 }
 
 void

@@ -72,7 +72,9 @@ void
 IotsaFilesBackupMod::handler() {
   if (needsAuthentication("backupfiles")) return;
   IFDEBUG IotsaSerial.println("Creating backup");
+#ifdef CONTENT_LENGTH_UNKNOWN
   server->setContentLength(CONTENT_LENGTH_UNKNOWN);
+#endif
   server->send(200, "application/x-tar");
   std::vector<String> fileNames;
   addFilenames(fileNames, "/");

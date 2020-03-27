@@ -1,11 +1,10 @@
 #include "iotsa.h"
 
-
 #if defined(IOTSA_WITH_HTTPS) && defined(IOTSA_WITH_HTTP)
 // Tiny http server which forwards to https
 class TinyForwardServer {
 public:
-  ESP8266WebServer server;
+  IotsaHttpWebServer server;
   TinyForwardServer()
   : server(80)
   {
@@ -72,11 +71,8 @@ IotsaWebServerMixin::webServerSetup() {
   );
 #endif
   server->begin();
-#ifdef IOTSA_WITH_HTTPS
-  IFDEBUG IotsaSerial.println("HTTPS server started");
-#else
-  IFDEBUG IotsaSerial.println("HTTP server started");
-#endif
+  IFDEBUG IotsaSerial.print(IOTSA_WEBSERVER);
+  IFDEBUG IotsaSerial.println(" server started");
 }
 
 void

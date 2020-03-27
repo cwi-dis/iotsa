@@ -55,7 +55,9 @@ IotsaLoggerMod::IotsaLoggerMod(IotsaApplication &_app, IotsaAuthenticationProvid
 void
 IotsaLoggerMod::handler() {
   if (needsAuthentication("logger")) return;
+#ifdef CONTENT_LENGTH_UNKNOWN
   server->setContentLength(CONTENT_LENGTH_UNKNOWN);
+#endif
   server->send(200, "text/plain");
   String msg;
   msg = "log generation="+String(logBuffer->generation)+", inp="+String(logBuffer->inp)+", outp="+String(logBuffer->outp)+"\n\n";

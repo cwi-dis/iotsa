@@ -21,6 +21,10 @@
 // #define IOTSA_WITH_HTTPS
 #endif
 
+// On esp32, use esp32_https_server_compat by default, 
+// unless IOTSA_WITH_STD_ESP32WEBSERVER is defined, then use the standard WebServer.h
+// #define IOTSA_WITH_STD_ESP32WEBSERVER
+
 #if defined(IOTSA_WITH_HTTP) || defined(IOTSA_WITH_HTTPS)
 #define IOTSA_WITH_HTTP_OR_HTTPS
 #endif
