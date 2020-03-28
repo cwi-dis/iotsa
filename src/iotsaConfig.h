@@ -26,7 +26,9 @@ public:
 #endif // IOTSA_WITH_HTTPS
   uint32_t postponeSleepMillis = 0;
   int pauseSleepCount = 0;
+  uint32_t rebootAtMillis = 0;
 
+  void loop();
   void configLoad();
   void ensureConfigLoaded();
   const char* getBootReason();
@@ -41,6 +43,7 @@ public:
   void resumeSleep();
   void postponeSleep(uint32_t ms);
   bool canSleep();
+  void requestReboot(uint32_t ms);
 };
 
 extern IotsaConfig iotsaConfig;

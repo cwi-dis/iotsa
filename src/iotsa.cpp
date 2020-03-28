@@ -97,6 +97,7 @@ IotsaApplication::serverSetup() {
 
 void
 IotsaApplication::loop() {
+  iotsaConfig.loop();
   IotsaBaseMod *m;
   for (m=firstEarlyModule; m; m=m->nextModule) {
   	m->loop();

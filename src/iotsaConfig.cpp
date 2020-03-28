@@ -16,6 +16,14 @@ IotsaConfig iotsaConfig;
 #include "iotsaConfigDefaultCert512.h"
 #endif
 
+void IotsaConfig::loop() {
+  if (rebootAtMillis && millis() > rebootAtMillis) {
+    IFDEBUG IotsaSerial.println("Software requested reboot.");
+    ESP.restart();
+  }
+
+}
+
 void IotsaConfig::setDefaultHostName() {
   hostName = "iotsa";
 #ifdef ESP32
@@ -174,3 +182,8 @@ void IotsaConfig::configLoad() {
 void IotsaConfig::ensureConfigLoaded() { 
   if (!configWasLoaded) configLoad(); 
 };
+
+void IotsaConfig::requestReboot(uint32_t ms) {
+  IFDEBUG IotsaSerial.println("Restart requested");
+  rebootAtMillis = millis() + ms;
+}
