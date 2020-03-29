@@ -12,12 +12,6 @@
 typedef WebServer IotsaWebServer;
 typedef WebServer IotsaHttpWebServer;
 
-#elif !defined(ESP32) && defined(IOTSA_WITH_HTTPS) && defined(IOTSA_WITH_STD_ESP32WEBSERVER)
-#define IOTSA_WEBSERVER "esp8266webserversecure"
-#include <ESP8266WebServerSecure.h>
-typedef axTLS::ESP8266WebServerSecure IotsaWebServer;
-typedef ESP8266WebServer IotsaHttpWebServer;
-
 #elif defined(ESP32) && defined(IOTSA_WITH_HTTPS)
 #define IOTSA_WEBSERVER "esp32compatsecure"
 #include <ESPWebServerSecure.hpp>
@@ -29,6 +23,12 @@ typedef ESPWebServer IotsaHttpWebServer;
 #include <ESPWebServer.hpp>
 typedef ESPWebServer IotsaWebServer;
 typedef ESPWebServer IotsaHttpWebServer;
+
+#elif !defined(ESP32) && defined(IOTSA_WITH_HTTPS)
+#define IOTSA_WEBSERVER "esp8266webserversecure"
+#include <ESP8266WebServerSecure.h>
+typedef axTLS::ESP8266WebServerSecure IotsaWebServer;
+typedef ESP8266WebServer IotsaHttpWebServer;
 
 #elif !defined(ESP32) && defined(IOTSA_WITH_HTTP)
 #define IOTSA_WEBSERVER "esp8266webserver"
