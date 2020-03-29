@@ -53,7 +53,7 @@ void IotsaWifiMod::setup() {
   }
   if (app.status) app.status->showStatus();
   _wifiStartAP();
-#if 0
+#if 1
   _wifiStartMDNS();
 #endif
   if (app.status) app.status->showStatus();
