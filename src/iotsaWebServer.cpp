@@ -13,7 +13,7 @@ public:
   }
   void notFound() {
     String newLoc = "https://";
-    if (iotsaConfig.wifiPrivateNetworkMode) {
+    if (!iotsaConfig.mdnsEnabled) {
       newLoc += "192.168.4.1";
     } else {
       newLoc += iotsaConfig.hostName;

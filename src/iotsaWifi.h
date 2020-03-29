@@ -30,15 +30,14 @@ private:
   void handler();
 
   void _wifiCallback(system_event_id_t event, system_event_info_t info);
-  void _wifiStartStation();
+  bool _wifiStartStation();
   bool _wifiWaitStation();
   void _wifiStartStationSucceeded();
   void _wifiStartStationFailed();
-  void _wifiStartAP();
-  void _wifiStartMDNS();
+  bool _wifiStartAP();
+  bool _wifiStartMDNS();
   String ssid;
   String ssidPassword;
-  bool haveMDNS;
   IotsaConfigMod configMod;
 };
 #elif IOTSA_WITH_PLACEHOLDERS

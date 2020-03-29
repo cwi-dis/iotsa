@@ -4,14 +4,15 @@
 // Intended to be included from iotsa.h
 
 typedef enum { IOTSA_MODE_NORMAL, IOTSA_MODE_CONFIG, IOTSA_MODE_OTA, IOTSA_MODE_FACTORY_RESET } config_mode;
-
+typedef enum { IOTSA_WIFI_DISABLED, IOTSA_WIFI_FACTORY, IOTSA_WIFI_NORMAL, IOTSA_WIFI_SEARCHING, IOTSA_WIFI_NOTFOUND} iotsa_wifi_mode;
 class IotsaConfig {
 public:
   bool configWasLoaded = false;
   bool wifiEnabled = false;
   bool otaEnabled = false;
+  bool mdnsEnabled = false;
   bool disableWifiOnBoot = false;
-  bool wifiPrivateNetworkMode = false;
+  iotsa_wifi_mode wifiMode = IOTSA_WIFI_DISABLED;
   config_mode configurationMode = IOTSA_MODE_NORMAL;
   unsigned long configurationModeEndTime = 0;
   config_mode nextConfigurationMode = IOTSA_MODE_NORMAL;
