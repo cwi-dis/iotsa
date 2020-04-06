@@ -75,6 +75,7 @@ void IotsaWifiMod::_wifiGotoMode() {
     IFDEBUG IotsaSerial.printf("xxxjack wifi: startAP: mode=%d, status=%d\n", WiFi.getMode(), WiFi.status());
     _wifiStartAP(IOTSA_WIFI_FACTORY);
   } else {
+    _wifiStopAP(IOTSA_WIFI_SEARCHING);
     _wifiStartStation();
     IFDEBUG IotsaSerial.printf("xxxjack wifi: startStation: mode=%d, status=%d\n", WiFi.getMode(), WiFi.status());
   }
