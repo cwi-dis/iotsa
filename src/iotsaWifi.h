@@ -31,12 +31,16 @@ private:
 #ifdef ESP32
   void _wifiCallback(system_event_id_t event, system_event_info_t info);
 #endif
+  void _wifiGotoMode(iotsa_wifi_mode newMode);
   bool _wifiStartStation();
   bool _wifiWaitStation();
+  void _wifiStopStation();
   void _wifiStartStationSucceeded();
   void _wifiStartStationFailed();
   bool _wifiStartAP();
+  void _wifiStopAP();
   bool _wifiStartMDNS();
+  void _wifiOff();
   String ssid;
   String ssidPassword;
   IotsaConfigMod configMod;

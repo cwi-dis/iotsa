@@ -36,44 +36,57 @@ void IotsaWifiMod::setup() {
 #else
   WiFi.onEvent(_wifiStaticCallback);
 #endif
-
+  IFDEBUG IotsaSerial.printf("xxxjack wifi: boot: mode=%d, status=%d\n", WiFi.getMode(), WiFi.status());
   if (iotsaConfig.disableWifiOnBoot) {
     IFDEBUG IotsaSerial.println("WiFi disabled");
-#ifdef ESP32
-    WiFi.mode(WIFI_MODE_NULL);
-#else
     WiFi.mode(WIFI_OFF);
-#endif
     iotsaConfig.wifiMode = IOTSA_WIFI_DISABLED;
     if (app.status) app.status->showStatus();
     return;
   }
 
+
   configLoad();
   iotsaConfig.wifiEnabled = true;
+  // We can start the MDNS responder before starting the wifi.
+  _wifiStartMDNS();
   // Try and connect to an existing Wifi network, if known
   if (ssid.length()) {
-    bool ok = _wifiStartStation();
-    if (ok) ok = _wifiWaitStation();
-    if (ok) {
-      // Connection to WiFi network succeeded.
-      _wifiStartStationSucceeded();
-      return;
-    }
-    _wifiStartStationFailed();
+    _wifiGotoMode(IOTSA_WIFI_NORMAL);
   } else {
-    iotsaConfig.wifiMode = IOTSA_WIFI_FACTORY;
+    _wifiGotoMode(IOTSA_WIFI_FACTORY);
   }
-  _wifiStartAP();
-#if 1
-  _wifiStartMDNS();
-#endif
   if (app.status) app.status->showStatus();
 }
 
+void IotsaWifiMod::_wifiGotoMode(iotsa_wifi_mode newMode) {
+  if (newMode == IOTSA_WIFI_DISABLED) {
+    _wifiStopAP();
+    _wifiStopStation();
+    iotsaConfig.wifiMode = IOTSA_WIFI_DISABLED;
+  } else if (newMode == IOTSA_WIFI_FACTORY) {
+    _wifiStopStation();
+    IFDEBUG IotsaSerial.printf("xxxjack wifi: startAP: mode=%d, status=%d\n", WiFi.getMode(), WiFi.status());
+    _wifiStartAP();
+    iotsaConfig.wifiMode = IOTSA_WIFI_FACTORY;
+  } else {
+    bool ok = _wifiStartStation();
+    IFDEBUG IotsaSerial.printf("xxxjack wifi: startStation: mode=%d, status=%d\n", WiFi.getMode(), WiFi.status());
+    if (ok) ok = _wifiWaitStation();
+    IFDEBUG IotsaSerial.printf("xxxjack wifi: waitStation: mode=%d, status=%d\n", WiFi.getMode(), WiFi.status());
+    if (ok) {
+      // Connection to WiFi network succeeded.
+      _wifiStartStationSucceeded();
+    } else {
+      _wifiStartStationFailed();
+    }
+  }
+}
+
 bool IotsaWifiMod::_wifiStartStation() {
-  if (!WiFi.mode(WIFI_STA)) {
-    IotsaSerial.println("WiFi.mode(WIFI_STA) failed");
+  WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() | (int)WIFI_STA);
+  if (!WiFi.mode(newMode)) {
+    IotsaSerial.printf("WiFi.mode(WIFI_STA (%d)) failed", (int)newMode);
     return false;
   }
   wl_status_t sts = WiFi.begin(ssid.c_str(), ssidPassword.c_str());
@@ -87,6 +100,15 @@ bool IotsaWifiMod::_wifiStartStation() {
   iotsaConfig.wifiMode = IOTSA_WIFI_SEARCHING;
   if (app.status) app.status->showStatus();
   return true;
+}
+
+void IotsaWifiMod::_wifiStopStation() {
+  WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() & ~(int)WIFI_STA);
+  if (!WiFi.mode(newMode)) {
+    IotsaSerial.printf("WiFi.mode(not WIFI_STA (%d)) failed", (int)newMode);
+    return;
+  }
+  // xxxjack set iotsaConfig.wifiMode?
 }
 
 bool IotsaWifiMod::_wifiWaitStation() {
@@ -110,7 +132,7 @@ void IotsaWifiMod::_wifiStartStationSucceeded() {
   IFDEBUG IotsaSerial.println(WiFi.localIP());
   
   WiFi.setAutoReconnect(true);
-  _wifiStartMDNS();
+  /// xxxjack not needed? _wifiStartMDNS();
 }
 
 void IotsaWifiMod::_wifiStartStationFailed() {
@@ -128,10 +150,12 @@ void IotsaWifiMod::_wifiStartStationFailed() {
 
 bool IotsaWifiMod::_wifiStartAP() {
   String networkName = "config-" + iotsaConfig.hostName;
-  if (!WiFi.mode(WIFI_AP)) {
-    IotsaSerial.println("WiFi.mode(WIFI_AP) failed");
+  WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() | (int)WIFI_AP);
+  if (!WiFi.mode(newMode)) {
+    IotsaSerial.printf("WiFi.mode(WIFI_AP (%d)) failed", (int)newMode);
     return false;
   }
+
   if (!WiFi.softAP(networkName.c_str())) {
     IotsaSerial.println("WiFi.SoftAP(...) failed");
     return false;
@@ -142,10 +166,27 @@ bool IotsaWifiMod::_wifiStartAP() {
   IFDEBUG IotsaSerial.println(networkName);
   IFDEBUG IotsaSerial.print("IP address: ");
   IFDEBUG IotsaSerial.println(WiFi.softAPIP());
+  // xxxjack set iotsaConfig.wifiMode?
+  // xxxjack not needed? _wifiStartMDNS();
   return true;
 }
 
+void IotsaWifiMod::_wifiStopAP() {
+  WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() | (int)WIFI_AP);
+  if (!WiFi.mode(newMode)) {
+    IotsaSerial.printf("WiFi.mode(WIFI_AP (%d)) failed", (int)newMode);
+    return;
+  }
+  // xxxjack set iotsaConfig.wifiMode?
+}
+
+void IotsaWifiMod::_wifiOff() {
+  WiFi.mode(WIFI_OFF);
+  iotsaConfig.wifiMode = IOTSA_WIFI_DISABLED;
+}
+
 bool IotsaWifiMod::_wifiStartMDNS() {
+  // xxxjack not needed? MDNS.end();
   if (!MDNS.begin(iotsaConfig.hostName.c_str())) {
     IotsaSerial.println("MDNS.begin(...) failed");
     return false;
