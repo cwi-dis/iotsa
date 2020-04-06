@@ -30,6 +30,16 @@ static void _wifiStaticCallback(WiFiEvent_t event) {
 }
 #endif
 
+IotsaWifiMod::IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth)
+: IotsaWifiModBaseMod(_app, _auth, true),
+  configMod(_app, _auth),
+  ssid(""),
+  ssidPassword(""),
+  wantWifiModeSwitch(false),
+  searchTimeoutMillis(0)
+{
+}
+
 void IotsaWifiMod::setup() {
 #ifdef ESP32
   WiFi.onEvent(std::bind(&IotsaWifiMod::_wifiCallback, this, std::placeholders::_1, std::placeholders::_2));
@@ -42,44 +52,31 @@ void IotsaWifiMod::setup() {
     WiFi.mode(WIFI_OFF);
     iotsaConfig.wifiMode = IOTSA_WIFI_DISABLED;
     if (app.status) app.status->showStatus();
+    wantWifiModeSwitch = false;
     return;
   }
-
-
   configLoad();
   iotsaConfig.wifiEnabled = true;
-  // We can start the MDNS responder before starting the wifi.
-  _wifiStartMDNS();
-  // Try and connect to an existing Wifi network, if known
-  if (ssid.length()) {
-    _wifiGotoMode(IOTSA_WIFI_NORMAL);
-  } else {
-    _wifiGotoMode(IOTSA_WIFI_FACTORY);
-  }
-  if (app.status) app.status->showStatus();
+  _wifiGotoMode();
 }
 
-void IotsaWifiMod::_wifiGotoMode(iotsa_wifi_mode newMode) {
+void IotsaWifiMod::_wifiGotoMode() {
+  iotsa_wifi_mode newMode = IOTSA_WIFI_DISABLED;
+  if (ssid.length()) {
+    newMode = IOTSA_WIFI_NORMAL;
+  } else {
+    newMode = IOTSA_WIFI_FACTORY;
+  }
   if (newMode == IOTSA_WIFI_DISABLED) {
-    _wifiStopAP();
     _wifiStopStation();
-    iotsaConfig.wifiMode = IOTSA_WIFI_DISABLED;
+    _wifiStopAP(IOTSA_WIFI_DISABLED);
   } else if (newMode == IOTSA_WIFI_FACTORY) {
     _wifiStopStation();
     IFDEBUG IotsaSerial.printf("xxxjack wifi: startAP: mode=%d, status=%d\n", WiFi.getMode(), WiFi.status());
-    _wifiStartAP();
-    iotsaConfig.wifiMode = IOTSA_WIFI_FACTORY;
+    _wifiStartAP(IOTSA_WIFI_FACTORY);
   } else {
-    bool ok = _wifiStartStation();
+    _wifiStartStation();
     IFDEBUG IotsaSerial.printf("xxxjack wifi: startStation: mode=%d, status=%d\n", WiFi.getMode(), WiFi.status());
-    if (ok) ok = _wifiWaitStation();
-    IFDEBUG IotsaSerial.printf("xxxjack wifi: waitStation: mode=%d, status=%d\n", WiFi.getMode(), WiFi.status());
-    if (ok) {
-      // Connection to WiFi network succeeded.
-      _wifiStartStationSucceeded();
-    } else {
-      _wifiStartStationFailed();
-    }
   }
 }
 
@@ -94,10 +91,11 @@ bool IotsaWifiMod::_wifiStartStation() {
     IotsaSerial.println("WiFi.begin(...) failed");
     return false;
   }
-  WiFi.setAutoConnect(false);
-  WiFi.setAutoReconnect(false);
+  WiFi.setAutoConnect(true);
+  WiFi.setAutoReconnect(true);
   IFDEBUG IotsaSerial.println("");
   iotsaConfig.wifiMode = IOTSA_WIFI_SEARCHING;
+  searchTimeoutMillis = millis() + IOTSA_WIFI_TIMEOUT*1000;
   if (app.status) app.status->showStatus();
   return true;
 }
@@ -132,7 +130,7 @@ void IotsaWifiMod::_wifiStartStationSucceeded() {
   IFDEBUG IotsaSerial.println(WiFi.localIP());
   
   WiFi.setAutoReconnect(true);
-  /// xxxjack not needed? _wifiStartMDNS();
+  _wifiStartMDNS();
 }
 
 void IotsaWifiMod::_wifiStartStationFailed() {
@@ -148,7 +146,7 @@ void IotsaWifiMod::_wifiStartStationFailed() {
   IFDEBUG IotsaSerial.println(iotsaConfig.configurationModeEndTime);
 }
 
-bool IotsaWifiMod::_wifiStartAP() {
+bool IotsaWifiMod::_wifiStartAP(iotsa_wifi_mode mode) {
   String networkName = "config-" + iotsaConfig.hostName;
   WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() | (int)WIFI_AP);
   if (!WiFi.mode(newMode)) {
@@ -160,24 +158,24 @@ bool IotsaWifiMod::_wifiStartAP() {
     IotsaSerial.println("WiFi.SoftAP(...) failed");
     return false;
   }
-  WiFi.setAutoConnect(false);
-  WiFi.setAutoReconnect(false);
   IFDEBUG IotsaSerial.print("\nCreating softAP for network ");
   IFDEBUG IotsaSerial.println(networkName);
   IFDEBUG IotsaSerial.print("IP address: ");
   IFDEBUG IotsaSerial.println(WiFi.softAPIP());
-  // xxxjack set iotsaConfig.wifiMode?
-  // xxxjack not needed? _wifiStartMDNS();
+  iotsaConfig.wifiMode = mode;
+  if (app.status) app.status->showStatus();
+  _wifiStartMDNS();
   return true;
 }
 
-void IotsaWifiMod::_wifiStopAP() {
+void IotsaWifiMod::_wifiStopAP(iotsa_wifi_mode mode) {
   WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() | (int)WIFI_AP);
   if (!WiFi.mode(newMode)) {
     IotsaSerial.printf("WiFi.mode(WIFI_AP (%d)) failed", (int)newMode);
     return;
   }
-  // xxxjack set iotsaConfig.wifiMode?
+  if (app.status) app.status->showStatus();
+  iotsaConfig.wifiMode = mode;
 }
 
 void IotsaWifiMod::_wifiOff() {
@@ -186,7 +184,7 @@ void IotsaWifiMod::_wifiOff() {
 }
 
 bool IotsaWifiMod::_wifiStartMDNS() {
-  // xxxjack not needed? MDNS.end();
+  MDNS.end();
   if (!MDNS.begin(iotsaConfig.hostName.c_str())) {
     IotsaSerial.println("MDNS.begin(...) failed");
     return false;
@@ -336,7 +334,52 @@ void IotsaWifiMod::configSave() {
 }
 
 void IotsaWifiMod::loop() {
-
+  if (wantWifiModeSwitch) {
+    //
+    // Either setup() or saveConfig() asked to change the WiFi mode. Do so.
+    //
+    wantWifiModeSwitch = false;
+    _wifiGotoMode();
+  }
+  //
+  // Depending on the current mode, check whether we need to change
+  // it due to the current WiFi status
+  //
+  wl_status_t curStatus = WiFi.status();
+  switch(iotsaConfig.wifiMode) {
+  case IOTSA_WIFI_DISABLED:
+    if (curStatus != WL_IDLE_STATUS && curStatus != WL_NO_SHIELD) {
+      IFDEBUG IotsaSerial.printf("WiFi disabled, but status=%d\n", (int)curStatus);
+    }
+    break;
+  case IOTSA_WIFI_FACTORY:
+    break;
+  case IOTSA_WIFI_NORMAL:
+    if (curStatus != WL_CONNECTED) {
+      //
+      // Lost connection. 
+      IFDEBUG IotsaSerial.println("WiFi connection lost");
+      iotsaConfig.wifiMode = IOTSA_WIFI_SEARCHING;
+      searchTimeoutMillis = millis() + IOTSA_WIFI_TIMEOUT*1000;
+    }
+    break;
+  case IOTSA_WIFI_NOTFOUND:
+  case IOTSA_WIFI_SEARCHING:
+    if (curStatus == WL_CONNECTED) {
+      // Search succeeded, we are connected.
+      searchTimeoutMillis = 0;
+      _wifiStartStationSucceeded();
+      // The AP may be enabled or not, disabling it anyway.
+      _wifiStopAP(IOTSA_WIFI_NORMAL);
+    } else if (millis() > searchTimeoutMillis) {
+      // Search failed. Enable AP. Continue searching,
+      // but we don't need to enable the AP again.
+      searchTimeoutMillis = 0;
+      _wifiStartStationFailed();
+      _wifiStartAP(IOTSA_WIFI_NOTFOUND);
+    }
+    break;
+  }
 #ifndef ESP32
   // mDNS happens asynchronously on ESP32
   if (iotsaConfig.mdnsEnabled) MDNS.update();

@@ -13,10 +13,7 @@
 
 class IotsaWifiMod : public IotsaWifiModBaseMod {
 public:
-  IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL) 
-  : IotsaWifiModBaseMod(_app, _auth, true),
-    configMod(_app, _auth)
-  {}
+  IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL);
 	void setup();
 	void serverSetup();
 	void loop();
@@ -31,19 +28,21 @@ private:
 #ifdef ESP32
   void _wifiCallback(system_event_id_t event, system_event_info_t info);
 #endif
-  void _wifiGotoMode(iotsa_wifi_mode newMode);
+  void _wifiGotoMode();
   bool _wifiStartStation();
   bool _wifiWaitStation();
   void _wifiStopStation();
   void _wifiStartStationSucceeded();
   void _wifiStartStationFailed();
-  bool _wifiStartAP();
-  void _wifiStopAP();
+  bool _wifiStartAP(iotsa_wifi_mode mode);
+  void _wifiStopAP(iotsa_wifi_mode mode);
   bool _wifiStartMDNS();
   void _wifiOff();
+  IotsaConfigMod configMod;
   String ssid;
   String ssidPassword;
-  IotsaConfigMod configMod;
+  bool wantWifiModeSwitch;
+  unsigned long searchTimeoutMillis;
 };
 #elif IOTSA_WITH_PLACEHOLDERS
 class IotsaWifiMod : public IotsaMod {
