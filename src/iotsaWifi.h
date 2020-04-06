@@ -25,9 +25,6 @@ private:
   void configLoad();
   void configSave();
   void handler();
-#ifdef ESP32
-  void _wifiCallback(system_event_id_t event, system_event_info_t info);
-#endif
   void _wifiGotoMode();
   bool _wifiStartStation();
   bool _wifiWaitStation();

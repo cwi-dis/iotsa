@@ -20,16 +20,6 @@
 
 static int privateNetworkModeReason;
 
-#ifdef ESP32
-void IotsaWifiMod::_wifiCallback(system_event_id_t event, system_event_info_t info) {
-  IFDEBUG IotsaSerial.printf("WiFi Event %d:\n", event);
-}
-#else
-static void _wifiStaticCallback(WiFiEvent_t event) {
-  IotsaSerial.printf("WiFi Event %d:\n", (int)event);
-}
-#endif
-
 IotsaWifiMod::IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth)
 : IotsaWifiModBaseMod(_app, _auth, true),
   configMod(_app, _auth),
@@ -41,11 +31,6 @@ IotsaWifiMod::IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *
 }
 
 void IotsaWifiMod::setup() {
-#ifdef ESP32
-  WiFi.onEvent(std::bind(&IotsaWifiMod::_wifiCallback, this, std::placeholders::_1, std::placeholders::_2));
-#else
-  WiFi.onEvent(_wifiStaticCallback);
-#endif
   IFDEBUG IotsaSerial.printf("xxxjack wifi: boot: mode=%d, status=%d\n", WiFi.getMode(), WiFi.status());
   if (iotsaConfig.disableWifiOnBoot) {
     IFDEBUG IotsaSerial.println("WiFi disabled");
