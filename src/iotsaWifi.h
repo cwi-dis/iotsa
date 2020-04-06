@@ -27,7 +27,6 @@ private:
   void handler();
   void _wifiGotoMode();
   bool _wifiStartStation();
-  bool _wifiWaitStation();
   void _wifiStopStation();
   void _wifiStartStationSucceeded();
   void _wifiStartStationFailed();

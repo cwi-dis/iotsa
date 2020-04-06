@@ -31,7 +31,6 @@ IotsaWifiMod::IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *
 }
 
 void IotsaWifiMod::setup() {
-  IFDEBUG IotsaSerial.printf("xxxjack wifi: boot: mode=%d, status=%d\n", WiFi.getMode(), WiFi.status());
   if (iotsaConfig.disableWifiOnBoot) {
     IFDEBUG IotsaSerial.println("WiFi disabled");
     WiFi.mode(WIFI_OFF);
@@ -57,12 +56,10 @@ void IotsaWifiMod::_wifiGotoMode() {
     _wifiStopAP(IOTSA_WIFI_DISABLED);
   } else if (newMode == IOTSA_WIFI_FACTORY) {
     _wifiStopStation();
-    IFDEBUG IotsaSerial.printf("xxxjack wifi: startAP: mode=%d, status=%d\n", WiFi.getMode(), WiFi.status());
     _wifiStartAP(IOTSA_WIFI_FACTORY);
   } else {
     _wifiStopAP(IOTSA_WIFI_SEARCHING);
     _wifiStartStation();
-    IFDEBUG IotsaSerial.printf("xxxjack wifi: startStation: mode=%d, status=%d\n", WiFi.getMode(), WiFi.status());
   }
 }
 
@@ -72,6 +69,8 @@ bool IotsaWifiMod::_wifiStartStation() {
     IotsaSerial.printf("WiFi.mode(WIFI_STA (%d)) failed", (int)newMode);
     return false;
   }
+  IFDEBUG IotsaSerial.print("Connecting to ");
+  IFDEBUG IotsaSerial.println(ssid);
   wl_status_t sts = WiFi.begin(ssid.c_str(), ssidPassword.c_str());
   if (sts == WL_CONNECT_FAILED) {
     IotsaSerial.println("WiFi.begin(...) failed");
@@ -95,21 +94,10 @@ void IotsaWifiMod::_wifiStopStation() {
   // xxxjack set iotsaConfig.wifiMode?
 }
 
-bool IotsaWifiMod::_wifiWaitStation() {
-  // Wait for connection
-  int count = IOTSA_WIFI_TIMEOUT;
-  while (WiFi.status() != WL_CONNECTED && count > 0) {
-    delay(1000);
-    IFDEBUG IotsaSerial.print(".");
-    count--;
-  }
-  return count > 0;
-}
-
 void IotsaWifiMod::_wifiStartStationSucceeded() {
   iotsaConfig.wifiMode = IOTSA_WIFI_NORMAL;
   if (app.status) app.status->showStatus();
-  IFDEBUG IotsaSerial.println("");
+  IFDEBUG IotsaSerial.print("");
   IFDEBUG IotsaSerial.print("Connected to ");
   IFDEBUG IotsaSerial.println(ssid);
   IFDEBUG IotsaSerial.print("IP address: ");
@@ -123,13 +111,10 @@ void IotsaWifiMod::_wifiStartStationFailed() {
   iotsaConfig.wifiMode = IOTSA_WIFI_NOTFOUND;
   if (app.status) app.status->showStatus();
   privateNetworkModeReason = WiFi.status();
-  iotsaConfig.configurationModeEndTime = millis() + 1000*iotsaConfig.configurationModeTimeout;
   IFDEBUG IotsaSerial.print("Cannot join ");
   IFDEBUG IotsaSerial.print(ssid);
   IFDEBUG IotsaSerial.print(", status=");
   IFDEBUG IotsaSerial.println(privateNetworkModeReason);
-  IFDEBUG IotsaSerial.print(", retry at ");
-  IFDEBUG IotsaSerial.println(iotsaConfig.configurationModeEndTime);
 }
 
 bool IotsaWifiMod::_wifiStartAP(iotsa_wifi_mode mode) {
@@ -155,7 +140,7 @@ bool IotsaWifiMod::_wifiStartAP(iotsa_wifi_mode mode) {
 }
 
 void IotsaWifiMod::_wifiStopAP(iotsa_wifi_mode mode) {
-  WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() | (int)WIFI_AP);
+  WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() & ~(int)WIFI_AP);
   if (!WiFi.mode(newMode)) {
     IotsaSerial.printf("WiFi.mode(WIFI_AP (%d)) failed", (int)newMode);
     return;
@@ -223,9 +208,11 @@ IotsaWifiMod::handler() {
     configSave();
   }
   String message = "<html><head><title>WiFi configuration</title></head><body><h1>WiFi configuration</h1>";
+#if 0
   if (anyChanged) {
     message += "<p>Settings saved to EEPROM. <em>Rebooting device to activate new settings.</em></p>";
   }
+#endif
   if (wrongMode) {
     message += "<p><em>Error:</em> must be in configuration mode to change WiFi settings. See <a href='/config'>/config</a> to enable.</p>";
   } else if(!iotsaConfig.inConfigurationOrFactoryMode()) {
@@ -239,10 +226,13 @@ IotsaWifiMod::handler() {
   message += "'><br>Password: <input type='password' name='ssidPassword'><br><input type='submit'></form>";
   message += "</body></html>";
   server->send(200, "text/html", message);
+#if 0
+  // Reboot is no longer needed, config change handled by changing wifi on the fly
   if (anyChanged) {
     if (app.status) app.status->showStatus();
     iotsaConfig.requestReboot(2000);
   }
+#endif
 }
 
 String IotsaWifiMod::info() {
@@ -317,6 +307,7 @@ void IotsaWifiMod::configSave() {
   cf.put("ssid", ssid);
   cf.put("ssidPassword", ssidPassword);
   IFDEBUG IotsaSerial.println("Saved wifi.cfg");
+  wantWifiModeSwitch = true;
 }
 
 void IotsaWifiMod::loop() {
@@ -357,7 +348,7 @@ void IotsaWifiMod::loop() {
       _wifiStartStationSucceeded();
       // The AP may be enabled or not, disabling it anyway.
       _wifiStopAP(IOTSA_WIFI_NORMAL);
-    } else if (millis() > searchTimeoutMillis) {
+    } else if (searchTimeoutMillis != 0 && millis() > searchTimeoutMillis) {
       // Search failed. Enable AP. Continue searching,
       // but we don't need to enable the AP again.
       searchTimeoutMillis = 0;
