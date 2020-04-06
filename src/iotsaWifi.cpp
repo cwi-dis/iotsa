@@ -191,27 +191,22 @@ bool IotsaWifiMod::_wifiStartMDNS() {
     IotsaSerial.println("MDNS.begin(...) failed");
     return false;
   }
-#ifdef ESP32
-#define PREPU(x) "_" x
-#else
-#define PREPU(x) x
-#endif
 #ifdef IOTSA_WITH_HTTPS
-  MDNS.addService(PREPU("https"), PREPU("tcp"), 443);
-  // MDNS.addService(PREPU("iotsa._sub._https"), PREPU("tcp"), 443);
-  MDNS.addService(PREPU("iotsa"), PREPU("tcp"), 443);
+  MDNS.addService("https", "tcp", 443);
+  // MDNS.addService("iotsa._sub._https", "tcp", 443);
+  MDNS.addService("iotsa", "tcp", 443);
 #endif
 #ifdef IOTSA_WITH_HTTP
-  MDNS.addService(PREPU("http"), PREPU("tcp"), 80);
-  // MDNS.addService(PREPU("iotsa._sub._http"), PREPU("tcp"), 80);
+  MDNS.addService("http", "tcp", 80);
+  // MDNS.addService("iotsa._sub._http", "tcp", 80);
 #ifndef IOTSA_WITH_HTTPS
-  MDNS.addService(PREPU("iotsa"), PREPU("tcp"), 80);
+  MDNS.addService("iotsa", "tcp", 80);
 #endif
 #endif
 #ifdef IOTSA_WITH_COAP
-  MDNS.addService(PREPU("coap"), PREPU("udp"), 5683);
-  // MDNS.addService(PREPU("iotsa._sub._coap"), PREPU("udp"), 5683);
-  MDNS.addService(PREPU("iotsa"), PREPU("udp"), 5683);
+  MDNS.addService("coap", "udp", 5683);
+  // MDNS.addService("iotsa._sub._coap", "udp", 5683);
+  MDNS.addService("iotsa", "udp", 5683);
 #endif
   IFDEBUG IotsaSerial.println("MDNS responder started");
   iotsaConfig.mdnsEnabled = true;
