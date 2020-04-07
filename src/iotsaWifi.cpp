@@ -91,7 +91,7 @@ void IotsaWifiMod::_wifiStopStation() {
     IotsaSerial.printf("WiFi.mode(not WIFI_STA (%d)) failed", (int)newMode);
     return;
   }
-  // xxxjack set iotsaConfig.wifiMode?
+  IFDEBUG IotsaSerial.println("Disconnecting from WiFi network");
 }
 
 void IotsaWifiMod::_wifiStartStationSucceeded() {
@@ -111,7 +111,7 @@ void IotsaWifiMod::_wifiStartStationFailed() {
   iotsaConfig.wifiMode = IOTSA_WIFI_NOTFOUND;
   if (app.status) app.status->showStatus();
   privateNetworkModeReason = WiFi.status();
-  IFDEBUG IotsaSerial.print("Cannot join ");
+  IFDEBUG IotsaSerial.print("Cannot connect to ");
   IFDEBUG IotsaSerial.print(ssid);
   IFDEBUG IotsaSerial.print(", status=");
   IFDEBUG IotsaSerial.println(privateNetworkModeReason);
@@ -145,13 +145,16 @@ void IotsaWifiMod::_wifiStopAP(iotsa_wifi_mode mode) {
     IotsaSerial.printf("WiFi.mode(WIFI_AP (%d)) failed", (int)newMode);
     return;
   }
-  if (app.status) app.status->showStatus();
   iotsaConfig.wifiMode = mode;
+  if (app.status) app.status->showStatus();
+  IFDEBUG IotsaSerial.println("SoftAP turned off");
 }
 
 void IotsaWifiMod::_wifiOff() {
   WiFi.mode(WIFI_OFF);
   iotsaConfig.wifiMode = IOTSA_WIFI_DISABLED;
+  if (app.status) app.status->showStatus();
+  IFDEBUG IotsaSerial.println("WiFi turned off");
 }
 
 bool IotsaWifiMod::_wifiStartMDNS() {
@@ -237,7 +240,8 @@ IotsaWifiMod::handler() {
 
 String IotsaWifiMod::info() {
   IPAddress x;
-  String message = "<p>IP address is ";
+  String message = "<p>WiFi mode: " + String((int)WiFi.getMode()) + ", iotsaWifiMode: " + String((int)iotsaConfig.wifiMode) + ", WiFi status: " + String((int)WiFi.status()) + ".</p>";
+  message += "<p>IP address is ";
   uint32_t ip = WiFi.localIP();
   if (ip == 0) {
   	ip = WiFi.softAPIP();
@@ -323,6 +327,15 @@ void IotsaWifiMod::loop() {
   // it due to the current WiFi status
   //
   wl_status_t curStatus = WiFi.status();
+#if 0
+  {
+    static uint32_t last;
+    if (millis() > last + 5000) {
+      IotsaSerial.printf("WiFi.status() == %d\n", curStatus);
+      last = millis();
+    }
+  }
+#endif
   switch(iotsaConfig.wifiMode) {
   case IOTSA_WIFI_DISABLED:
     if (curStatus != WL_IDLE_STATUS && curStatus != WL_NO_SHIELD) {
@@ -352,6 +365,13 @@ void IotsaWifiMod::loop() {
       // Search failed. Enable AP. Continue searching,
       // but we don't need to enable the AP again.
       searchTimeoutMillis = 0;
+      if (curStatus == WL_IDLE_STATUS || curStatus == WL_NO_SHIELD) {
+        // Unsure why this happens, maybe only when switching from one SSID to another?
+        // We think we are searching but the WiFi thinks nothing is happening.
+        // Reboot.
+        IotsaSerial.println("WiFi unexpectedly gone idle. Rebooting...");
+        iotsaConfig.requestReboot(2000);
+      }
       _wifiStartStationFailed();
       _wifiStartAP(IOTSA_WIFI_NOTFOUND);
     }
@@ -362,25 +382,5 @@ void IotsaWifiMod::loop() {
   if (iotsaConfig.mdnsEnabled) MDNS.update();
 #endif
   if (!iotsaConfig.wifiEnabled) return;
-  // xxxjack
-  if (iotsaConfig.wifiMode == IOTSA_WIFI_NORMAL) {
-  	// Should be in normal mode, check that we have WiFi
-  	static int disconnectedCount = 0;
-  	if (WiFi.status() == WL_CONNECTED) {
-  		if (disconnectedCount) {
-  			IFDEBUG IotsaSerial.println("Wifi reconnected");
-  		}
-  		disconnectedCount = 0;
-	  } else {
-		  if (disconnectedCount == 0) {
-			  IFDEBUG IotsaSerial.println("Wifi connection lost");
-		  }
-      disconnectedCount++;
-      if (disconnectedCount > 60000) {
-        IFDEBUG IotsaSerial.println("Wifi connection lost too long. Reboot.");
-        ESP.restart();
-      }
-    }
-  }
 }
 #endif // IOTSA_WITH_WIFI
