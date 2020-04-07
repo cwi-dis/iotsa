@@ -19,8 +19,6 @@
 #include <libb64/cencode.h>
 #endif // IOTSA_WITH_HTTPS
 
-static unsigned long rebootAt;
-
 void IotsaConfigMod::setup() {
   IFDEBUG IotsaSerial.print("boot reason: ");
   IFDEBUG IotsaSerial.println(iotsaConfig.getBootReason());
@@ -218,7 +216,7 @@ IotsaConfigMod::handler() {
   if (anyChanged) {
     message += "<p>Settings saved to EEPROM.</p>";
     if (hostnameChanged) {
-      if (iotsaConfig.wifiPrivateNetworkMode) {
+      if (iotsaConfig.wifiMode == IOTSA_WIFI_FACTORY) {
         message += "<p>Not rebooting, so you can also change <a href='/wificonfig'>Wifi config</a>.</p>";
       } else {
         message += "<p><em>Rebooting device to change hostname</em>.</p>";
@@ -266,7 +264,7 @@ IotsaConfigMod::handler() {
   message += "<input name='mode' type='radio' value='1'> Enter configuration mode after next reboot.<br>";
   if (iotsaConfig.otaEnabled) {
     message += "<input name='mode' type='radio' value='2'> Enable over-the-air update after next reboot.";
-    if (iotsaConfig.wifiPrivateNetworkMode) {
+    if (iotsaConfig.mdnsEnabled) {
       message += "(<em>Warning:</em> Enabling OTA may not work because mDNS not available on this WiFi network.)";
     }
     message += "<br>";
@@ -275,9 +273,8 @@ IotsaConfigMod::handler() {
   message += "<input type='submit'></form>";
   message += "</body></html>";
   server->send(200, "text/html", message);
-  if (hostnameChanged && !iotsaConfig.wifiPrivateNetworkMode) {
-    IFDEBUG IotsaSerial.println("Restart in 2 seconds");
-    rebootAt = millis() + 2000;
+  if (hostnameChanged) {
+    iotsaConfig.requestReboot(2000);
   }
 }
 
@@ -310,7 +307,8 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   if (iotsaConfig.configurationMode) {
     reply["currentModeTimeout"] = (iotsaConfig.configurationModeEndTime - millis())/1000;
   }
-  reply["privateWifi"] = iotsaConfig.wifiPrivateNetworkMode;
+  reply["privateWifi"] = iotsaConfig.wifiMode == IOTSA_WIFI_FACTORY || iotsaConfig.wifiMode == IOTSA_WIFI_NOTFOUND;
+  reply["mdnsEnabled"] = iotsaConfig.mdnsEnabled;
   reply["requestedMode"] = int(iotsaConfig.nextConfigurationMode);
   if (iotsaConfig.nextConfigurationMode) {
     reply["requestedModeTimeout"] = (iotsaConfig.nextConfigurationModeEndTime - millis())/1000;
@@ -465,8 +463,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   }
   if (anyChanged) configSave();
   if (reqObj["reboot"]) {
-    IFDEBUG IotsaSerial.println("Restart in 2 seconds.");
-    rebootAt = millis() + 2000;
+    iotsaConfig.requestReboot(2000);
     anyChanged = true;
   }
   return anyChanged;
@@ -550,10 +547,6 @@ void IotsaConfigMod::configSave() {
 }
 
 void IotsaConfigMod::loop() {
-  if (rebootAt && millis() > rebootAt) {
-    IFDEBUG IotsaSerial.println("Software requested reboot.");
-    ESP.restart();
-  }
   if (iotsaConfig.configurationModeEndTime && millis() > iotsaConfig.configurationModeEndTime) {
     IFDEBUG IotsaSerial.println("Configuration mode timeout. reboot.");
     iotsaConfig.configurationMode = IOTSA_MODE_NORMAL;

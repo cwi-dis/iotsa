@@ -16,6 +16,14 @@ IotsaConfig iotsaConfig;
 #include "iotsaConfigDefaultCert512.h"
 #endif
 
+void IotsaConfig::loop() {
+  if (rebootAtMillis && millis() > rebootAtMillis) {
+    IFDEBUG IotsaSerial.println("Software requested reboot.");
+    ESP.restart();
+  }
+
+}
+
 void IotsaConfig::setDefaultHostName() {
   hostName = "iotsa";
 #ifdef ESP32
@@ -116,17 +124,29 @@ bool IotsaConfig::inConfigurationMode() {
 
 bool IotsaConfig::inConfigurationOrFactoryMode() { 
   if (configurationMode == IOTSA_MODE_CONFIG) return true;
-  if (wifiPrivateNetworkMode && configurationModeEndTime == 0) return true;
+  if (wifiMode == IOTSA_WIFI_FACTORY) return true;
   return false;
 }
 
 uint32_t IotsaConfig::getStatusColor() {
-  if (wifiEnabled && !WiFi.isConnected()) return 0x3f1f00; // Orange: not connected to WiFi
   if (configurationMode == IOTSA_MODE_FACTORY_RESET) return 0x3f0000; // Red: Factory reset mode
-  if (configurationMode == IOTSA_MODE_CONFIG) return 0x3f003f;	// Magenta: user-requested configuration mode
-  if (configurationMode == IOTSA_MODE_OTA) return 0x003f3f;	// Cyan: OTA mode
-  if (wifiPrivateNetworkMode) return 0x3f3f00; // Yellow: configuration mode (not user requested)
-  return 0; // Off: all ok.
+  uint32_t extraColor = 0;
+  switch(wifiMode) {
+  case IOTSA_WIFI_DISABLED:
+    return 0;
+  case IOTSA_WIFI_SEARCHING:
+    return 0x3f1f00;  // Orange: searching for WiFi
+  case IOTSA_WIFI_FACTORY:
+  case IOTSA_WIFI_NOTFOUND:
+    extraColor = 0x1f1f1f;  // Add a bit of white to the configuration mode color
+    // Pass through
+  default:
+    // Pass through
+    ;
+  }
+  if (configurationMode == IOTSA_MODE_CONFIG) return extraColor | 0x3f003f;	// Magenta: user-requested configuration mode
+  if (configurationMode == IOTSA_MODE_OTA) return extraColor | 0x003f3f;	// Cyan: OTA mode
+  return extraColor; // Off: all ok, whiteish: factory reset network
 }
 
 void IotsaConfig::pauseSleep() { 
@@ -174,3 +194,8 @@ void IotsaConfig::configLoad() {
 void IotsaConfig::ensureConfigLoaded() { 
   if (!configWasLoaded) configLoad(); 
 };
+
+void IotsaConfig::requestReboot(uint32_t ms) {
+  IFDEBUG IotsaSerial.println("Restart requested");
+  rebootAtMillis = millis() + ms;
+}
