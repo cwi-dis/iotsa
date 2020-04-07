@@ -32,7 +32,7 @@ IotsaWifiMod::IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *
 
 void IotsaWifiMod::setup() {
   if (iotsaConfig.disableWifiOnBoot) {
-    IFDEBUG IotsaSerial.println("WiFi disabled");
+    IFDEBUG IotsaSerial.println("WiFi disabled by iotsaBattery");
     WiFi.mode(WIFI_OFF);
     iotsaConfig.wifiMode = IOTSA_WIFI_DISABLED;
     if (app.status) app.status->showStatus();
@@ -381,6 +381,5 @@ void IotsaWifiMod::loop() {
   // mDNS happens asynchronously on ESP32
   if (iotsaConfig.mdnsEnabled) MDNS.update();
 #endif
-  if (!iotsaConfig.wifiEnabled) return;
 }
 #endif // IOTSA_WITH_WIFI
