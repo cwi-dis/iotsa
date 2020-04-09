@@ -108,6 +108,18 @@ IotsaApplication::loop() {
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
   webServerLoop();
 #endif
+#ifdef ESP32
+  {
+    // Print available free heap space first time we have gone through all loop() calls.
+    static bool once = false;
+    if (!once) {
+      size_t memAvail = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+      IFDEBUG IotsaSerial.print("Available heap space: ");
+      IFDEBUG IotsaSerial.println((int)memAvail);
+      once = true;
+    }
+  }
+#endif // ESP32
 }
 
 #ifdef IOTSA_WITH_WEB
