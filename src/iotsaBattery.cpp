@@ -297,15 +297,19 @@ void IotsaBatteryMod::loop() {
       if (sleepMode == SLEEP_LIGHT || (sleepMode == SLEEP_ADAPTIVE_NOWIFI && !iotsaConfig.wifiEnabled)) {
         // Light sleep is easiest: everything remains powered just running slowly.
         // We return here after the sleep.
+#ifdef IOTSA_WITH_BLE
         bool btActive = IotsaBLEServerMod::pauseServer();
+#endif
         esp_light_sleep_start();
         IFDEBUG IotsaSerial.print("light sleep wakup at ");
         millisAtWakeup = millis();
         IFDEBUG IotsaSerial.println(millisAtWakeup);
+#ifdef IOTSA_WITH_BLE
         if (btActive) {
           IFDEBUG IotsaSerial.println("Re-activate ble");
           IotsaBLEServerMod::resumeServer();
         }
+#endif
         return;
       }
       // Before sleeping we turn off the radios.
