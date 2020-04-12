@@ -36,7 +36,6 @@ install:
 - platformio lib -g install "ArduinoJson@~6.14.1"
 - platformio lib -g install "ArduinoJWT@~1.0.1"
 - platformio lib -g install "https://github.com/jackjansen/CoAP-simple-library.git"
-- platformio lib -g install "https://github.com/jackjansen/esp32_https_server_compat"
 script:
 - platformio ci --lib="." --project-option="lib_ldf_mode=deep+" --board=nodemcuv2  $PLATFORMIO_CI_EXTRA_ARGS
 - platformio ci --lib="." --project-option="lib_ldf_mode=deep+" --board=esp32thing  $PLATFORMIO_CI_EXTRA_ARGS

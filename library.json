@@ -45,7 +45,7 @@
         {
             "platform" : "espressif32",
             "name" : "esp32_https_server_compat",
-            "version" : "https://github.com/jackjansen/esp32_https_server_compat"
+            "version" : "~1.0.0"
         }
     ],
     "examples" : [
