@@ -88,6 +88,11 @@ void IotsaBLEServerMod::createServer() {
   iotsaConfig.ensureConfigLoaded();
   IFBLEDEBUG IotsaSerial.print("BLE hostname: ");
   IFBLEDEBUG IotsaSerial.println(iotsaConfig.hostName.c_str());
+  // We de-init bluetooth and release classic-mode memory, in the hope
+  // this frees some of the memory the bluedroid stack uses.
+  BLEDevice::deinit(false);
+  esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
+
   BLEDevice::init(iotsaConfig.hostName.c_str());
   s_server = BLEDevice::createServer();
   s_server->setCallbacks(new IotsaBLEServerCallbacks());

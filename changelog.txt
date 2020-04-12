@@ -1,11 +1,13 @@
 iotsa 2.3 - in progress
 
-- Added BLE support (esp32 only): iotsa devices can now be a Bluetooth LE server
+- Added BLE support (esp32 only): iotsa devices can now be a Bluetooth LE server.
 - Added IotsaBatteryMod which enables power-saving for battery-operated devices.
-- Fixed building of iotsa without WiFi support
-- Refactored various classes to enable wifi-less operation and different webserver implementations
-- Added IotsaInput module for handling buttons, touchpads and rotary encoders.
-- Allow use of esp32_https_server as http or https server. Enabled by default.
+- Fixed building of iotsa without WiFi support.
+- Refactored various classes to enable wifi-less operation and different webserver implementations.
+- Allow use of esp32_https_server_compat as http or https server (esp32 only). Enabled by default.
+- WiFi can now switch between AP en STAtion mode on the fly, and is handled in loop() so
+  boot is much faster.
+- Added IotsaInput module for handling buttons, touchpads (esp32 only) and rotary encoders.
 
 iotsa 2.2 - 03-Dec-2019
 
