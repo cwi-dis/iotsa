@@ -38,8 +38,11 @@ class IotsaConfig(object):
             self.device.flush()
             reply = self.device.protocolHandler.put(self.endpoint, json=self.settings)
             if reply and reply.get('needsReboot'):
-                msg = 'Reboot %s within %s seconds to activate mode %s' % (self.device.ipAddress, reply.get('requestedModeTimeout', '???'), self.device.modeName(reply.get('requestedMode')))
-                raise UserIntervention(msg)
+                if 'requestedModeTimeout' in reply:
+                    msg = 'Reboot %s within %s seconds to activate mode %s' % (self.device.ipAddress, reply.get('requestedModeTimeout', '???'), self.device.modeName(reply.get('requestedMode')))
+                    raise UserIntervention(msg)
+                if VERBOSE:
+                    print("config: reboot to activate new setting")
             
     def get(self, name, default=None):
         self.load()
