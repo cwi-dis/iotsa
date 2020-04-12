@@ -53,6 +53,14 @@ private:
 void
 IotsaBLEServerMod::handler() {
   bool anyChanged = false;
+  if (server->hasArg("isEnabled")) {
+    bool newIsEnabled = (bool)strtol(server->arg("isEnabled").c_str(), 0, 10);
+    if (newIsEnabled != isEnabled) {
+      isEnabled = newIsEnabled;
+      iotsaConfig.requestReboot(4000);
+      anyChanged = true;
+    }
+  }
   if( server->hasArg("adv_min")) {
     adv_min = strtol(server->arg("adv_min").c_str(), 0, 10);
     anyChanged = true;
@@ -66,6 +74,7 @@ IotsaBLEServerMod::handler() {
   
   String message = "<html><head><title>BLE Server module</title></head><body><h1>BLE Server module</h1>";
   message += "<form method='get'>";
+  message += "BLE Enabled: <input type='text' name='isEnabled' value='" + String((int)isEnabled) + "'><br>";
   message += "Advertising interval (min): <input type='text' name='adv_min' value='" + String(adv_min) + "'> (default: 32, unit: 0.625ms, range: 32..16384)<br>";
   message += "Advertising interval (max): <input type='text' name='adv_max' value='" + String(adv_max) + "'> (default: 64, unit: 0.625ms, range: 32..16384)<br>";
   message += "<input type='submit'></form></body></html>";
@@ -73,7 +82,9 @@ IotsaBLEServerMod::handler() {
 }
 
 String IotsaBLEServerMod::info() {
-  String message = "<p>Built with BLE server module. See <a href=\"/bleserver\">/bleserver</a> to change settings.</p>";
+  String message = "<p>Built with BLE server module";
+  if (!isEnabled) message += " (currently disabled)";
+  message += ". See <a href=\"/bleserver\">/bleserver</a> to change settings.</p>";
   return message;
 }
 #endif // IOTSA_WITH_WEB
@@ -124,20 +135,32 @@ void IotsaBLEServerMod::resumeServer() {
 }
 
 void IotsaBLEServerMod::setup() {
+  isEnabled = true;
   createServer();
   configLoad();
+  if (!isEnabled) {
+    BLEDevice::deinit(false);
+    esp_bt_mem_release(ESP_BT_MODE_BTDM);
+    return;
+  }
+
   IFBLEDEBUG IotsaSerial.println("BLE server start advertising and services");
   startServer();
 }
 
 #ifdef IOTSA_WITH_API
 bool IotsaBLEServerMod::getHandler(const char *path, JsonObject& reply) {
+  reply["isEnabled"] = isEnabled;
   reply["adv_min"] = adv_min;
   reply["adv_max"] = adv_max;
   return true;
 }
 
 bool IotsaBLEServerMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+  if (request.containsKey("isEnabled") && request["isEnabled"] != isEnabled) {
+    isEnabled = request["isEnabled"];
+    iotsaConfig.requestReboot(4000);
+  }
   adv_min = request["adv_min"]|adv_min;
   adv_max = request["adv_max"]|adv_max;
   configSave();
@@ -159,6 +182,8 @@ void IotsaBLEServerMod::configLoad() {
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   IotsaConfigFileLoad cf("/config/bleserver.cfg");
   int value;
+  cf.get("isEnabled", value, 1);
+  isEnabled = (bool)value;
   cf.get("adv_min", value, adv_min);
   adv_min = value;
   if (adv_min) pAdvertising->setMinInterval(adv_min);
@@ -168,14 +193,17 @@ void IotsaBLEServerMod::configLoad() {
 }
 
 void IotsaBLEServerMod::configSave() {
-  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-  pAdvertising->stop();
   IotsaConfigFileSave cf("/config/bleserver.cfg");
+  cf.put("isEnabled", (int)isEnabled);
   cf.put("adv_min", adv_min);
   cf.put("adv_max", adv_max);
-  if (adv_min) pAdvertising->setMinInterval(adv_min);
-  if (adv_max) pAdvertising->setMaxInterval(adv_max);
-  pAdvertising->start();
+  if (BLEDevice::getInitialized()) {
+    BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+    pAdvertising->stop();
+    if (adv_min) pAdvertising->setMinInterval(adv_min);
+    if (adv_max) pAdvertising->setMaxInterval(adv_max);
+    pAdvertising->start();
+  }
 }
 
 void IotsaBLEServerMod::loop() {
