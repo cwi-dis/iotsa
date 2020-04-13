@@ -114,6 +114,7 @@ class IotsaDevice(object):
             return 'http', False
             
         protocol = 'coap'
+        noverify = True
         url = '%s://%s' % (protocol, ipAddress)
         if port:
             url += ':%d' % port

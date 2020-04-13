@@ -82,9 +82,11 @@ class IotsaRESTProtocolHandler(object):
 
 class IotsaCOAPProtocolHandler(object):
     def __init__(self, baseURL, bearer=None, noverify=None, auth=None):
-        assert bearer is None
-        assert noverify is None
-        assert auth is None
+        self.client = None
+        if bearer:
+            raise CoapError("bearer not supported for coap")
+        if auth:
+            raise CoapError("auth not supported for coap")
         parts = urllib.parse.urlparse(baseURL)
         self.basePath = parts.path
         if not self.basePath:
