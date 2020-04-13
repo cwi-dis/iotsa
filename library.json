@@ -40,7 +40,7 @@
         },
         {
             "name" : "CoAP simple library",
-            "version" : "https://github.com/jackjansen/CoAP-simple-library.git"
+            "version" : "https://github.com/jackjansen/CoAP-simple-library.git#exp-jack-cpp-integration"
         },
         {
             "platform" : "espressif32",

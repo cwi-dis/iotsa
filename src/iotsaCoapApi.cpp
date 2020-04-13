@@ -1,7 +1,7 @@
 #include "iotsaApi.h"
 #ifdef IOTSA_WITH_COAP
 #include <WiFiUdp.h>
-#include <coap.h>
+#include <coap-simple.h>
 
 #define COAP_PROTOCOL_DEBUG
 
