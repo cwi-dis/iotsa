@@ -10,7 +10,7 @@ import socket
 import time
 import urllib.parse
 import urllib.request
-import json
+import json as jsonmod
 import coapthon.client.helperclient
 import coapthon.defines
 import requests
@@ -116,6 +116,8 @@ class IotsaCOAPProtocolHandler(object):
         self.client = None
         
     def _raiseIfError(self, reply):
+        if not reply:
+            raise CoapError("reply is None")
         if reply.code >= 128:
             codeMajor = (reply.code >> 5) & 0x07
             codeMinor = (reply.code & 0x1f)
@@ -131,30 +133,30 @@ class IotsaCOAPProtocolHandler(object):
         endpoint = self.basePath+endpoint
         if VERBOSE: print('COAP GET coap://%s:%d%s' % (self.client.server[0], self.client.server[1], endpoint))
         rv = self.client.get(endpoint)
-        if VERBOSE: print('COAP GET returned', rv.code, repr(rv.payload))
         self._raiseIfError(rv)
-        return json.loads(rv.payload)
+        if VERBOSE: print('COAP GET returned', rv.code, len(rv.payload), repr(rv.payload))
+        return jsonmod.loads(rv.payload)
         
     def put(self, endpoint, json=None):
         assert json is not None
         endpoint = self.basePath+endpoint
-        data = json.dumps(json)
+        data = jsonmod.dumps(json)
         if VERBOSE: print('COAP PUT coap://%s:%d%s %s' % (self.client.server[0], self.client.server[1], endpoint, data))
         rv = self.client.put(endpoint, (coapthon.defines.Content_types['application/json'], data))
-        if VERBOSE: print('COAP PUT returned', rv.code, repr(rv.payload))
         self._raiseIfError(rv)
-        return json.loads(rv.payload)
+        if VERBOSE: print('COAP PUT returned', rv.code, repr(rv.payload))
+        return jsonmod.loads(rv.payload)
         
     def post(self, endpoint, json=None, files=None):
         assert json is not None
         assert files is None
         endpoint = self.basePath+endpoint
-        data = json.dumps(json)
+        data = jsonmod.dumps(json)
         if VERBOSE: print('COAP POST coap://%s:%d%s' % (self.client.server[0], self.client.server[1], endpoint, data))
         rv = self.client.post(endpoint, (coapthon.defines.Content_types['application/json'], data))
-        if VERBOSE: print('COAP POST returned', rv.code, repr(rv.payload))
         self._raiseIfError(rv)
-        return json.loads(rv.payload)
+        if VERBOSE: print('COAP POST returned', rv.code, repr(rv.payload))
+        return jsonmod.loads(rv.payload)
         
 HandlerForProto = {
     'http' : IotsaRESTProtocolHandler,
