@@ -118,15 +118,15 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
         IotsaSerial.print("replyData "); IotsaSerial.println(replyData);
         IotsaSerial.print("replyLen "); IotsaSerial.println(replyData.length());
 #endif
-        int rv = coap->sendResponse(ip, port, pkt.messageid, replyData.c_str(), replyData.length(), COAP_CONTENT, COAP_APPLICATION_JSON, NULL, 0);
+        int rv = coap->sendResponse(ip, port, pkt.messageid, replyData.c_str(), replyData.length(), COAP_CONTENT, COAP_APPLICATION_JSON, pkt.token, pkt.tokenlen);
         if (rv) {
             IFDEBUG IotsaSerial.println("-> OK");
         } else {
-            coap->sendResponse(ip, port, pkt.messageid, NULL, 0, COAP_INTERNAL_SERVER_ERROR, COAP_NONE, NULL, 0);
+            coap->sendResponse(ip, port, pkt.messageid, NULL, 0, COAP_INTERNAL_SERVER_ERROR, COAP_NONE, pkt.token, pkt.tokenlen);
             IotsaSerial.println("-> xmitReplyError");
         }
     } else {
-        coap->sendResponse(ip, port, pkt.messageid, NULL, 0, COAP_BAD_REQUEST, COAP_NONE, NULL, 0);
+        coap->sendResponse(ip, port, pkt.messageid, NULL, 0, COAP_BAD_REQUEST, COAP_NONE, pkt.token, pkt.tokenlen);
         IFDEBUG IotsaSerial.println("-> ERR");
     }
     delay(2000); // xxxjack
