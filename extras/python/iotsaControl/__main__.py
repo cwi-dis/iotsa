@@ -76,13 +76,13 @@ class Main(object):
                     print("%s: %s" % (sys.argv[0], arg), file=sys.stderr)
                     sys.exit(2)
                 except api.IotsaError as arg:
-                    print("%s: %s: %s" % (sys.argv[0], cmd, arg), file=sys.stderr)
+                    print("%s: %s: IotsaError %s" % (sys.argv[0], cmd, arg), file=sys.stderr)
                     sys.exit(1)
                 except requests.exceptions.HTTPError as arg:
-                    print("%s: %s: %s" % (sys.argv[0], cmd, arg), file=sys.stderr)
+                    print("%s: %s: HTTPError %s" % (sys.argv[0], cmd, arg), file=sys.stderr)
                     sys.exit(1)
                 except api.CoapError as arg:
-                    print("%s: %s: %s" % (sys.argv[0], cmd, arg), file=sys.stderr)
+                    print("%s: %s: CoapError %s" % (sys.argv[0], cmd, arg), file=sys.stderr)
                     sys.exit(1)
         finally:
             self.close()
