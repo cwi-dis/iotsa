@@ -30,13 +30,13 @@ install:
 - python --version
 - pip --version
 - platformio --version
+script:
 - platformio lib -g install "Adafruit NeoPixel@~1.3.5"
 - platformio lib -g install "Time@>=1.6"
 - platformio lib -g install "Timezone@~1.2.4"
 - platformio lib -g install "ArduinoJson@~6.14.1"
 - platformio lib -g install "ArduinoJWT@~1.0.1"
 - platformio lib -g install "CoAP simple library@~1.3.19"
-- platformio lib -g install "esp32_https_server_compat@~1.0.0"
-script:
 - platformio ci --lib="." --project-option="lib_ldf_mode=deep+" --board=nodemcuv2  $PLATFORMIO_CI_EXTRA_ARGS
+- platformio lib -g install "esp32_https_server_compat@~1.0.0"
 - platformio ci --lib="." --project-option="lib_ldf_mode=deep+" --board=esp32thing  $PLATFORMIO_CI_EXTRA_ARGS
