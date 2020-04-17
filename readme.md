@@ -1,5 +1,7 @@
 # iotsa - Internet of Things server architecture
 
+[![Build Status](https://travis-ci.org/cwi-dis/iotsa.svg?branch=master)](https://travis-ci.org/cwi-dis/iotsa)
+
 This library contains a framework to easily create esp8266-based or esp32-based web servers that can interface to all sorts of sensors and actuators. The servers can be REST-compatible, and COAP-compatible, including
 seamless integration with the [Igor home automation server](https://github.com/cwi-dis/igor). 
 
