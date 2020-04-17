@@ -11,7 +11,7 @@ This software is licensed under the [MIT license](LICENSE.txt) by the CWI DIS gr
 
 ## Installation and use for developers
 
-Iotsa can be used with both the Arduino IDE and with the PlatformIO build system (which can be used from within Atom or VSCode or from the command line). The Arduino IDE is easiest to get started with, but PlatformIO is more powerful if you want to target multiple device types, use _Git_ integration, etc.
+Iotsa can be used with both the [Arduino IDE](https://www.arduino.cc/en/main/software) and with the [PlatformIO](https://platformio.org) build system (which can be used from within Atom or VSCode or from the command line). The Arduino IDE is easiest to get started with, but PlatformIO is more powerful if you want to target multiple device types, use _Git_ integration, etc.
 
 ### Arduino IDE
 
@@ -23,7 +23,7 @@ Build the _Hello_ example (_File -> Examples -> iotsa -> Hello_) and flash it on
 
 ### PlatformIO
 
-The _iotsa_ library should be known to the library manager, so simply adding it to your _platformio.ini_ file should do the trick for adding the iotsa framework to your project..
+The _iotsa_ library is known to the PlatformIO library manager, so simply adding it to your _platformio.ini_ file should do the trick for adding the iotsa framework to your project..
 
 To build an example you can open the `iotsa` source directory in _VSCode_ or _Atom_ and look at the `[env:nodemcuv2-example-skeleton]` section. Replace the references to _skeleton_ with the name of the example you want to build.
 
@@ -65,6 +65,7 @@ The following features are defined:
 - `API` Enables the application-oriented interfaces. Default on. Requires `REST` or `COAP`.
 - `REST` Enables the http(s) based REST application interfaces. Default on. Requires `HTTP` or `HTTPS`.
 - `COAP` Enables the udp-based COAP application interfaces. Default off.
+- `BLE` Enables Bluetooth LE application interface (esp32 only). Default off.
 
 There are a few more that are not very important, please inspect `iotsaBuildOptions.h`.
 
@@ -407,6 +408,9 @@ Allows a iotsa device to export an API as a Bluetooth LE service. ESP32 only.
 Can be used with the module (which allows setting some BLE parameters such as
 advertising interval through the web or REST interface) or without it.
 
+*Note*: the current Bluetooth LE implementation uses a _lot_ of RAM, about 160KB. Therefore when you use Bluetooth you are probably not able
+to use OTA, HTTPS and various other features. This is expected to be addressed in a future version of the ESP32 Arduino framework.
+
 Note that this file can be included if BLE is not supported (such as on an esp8266), in which case it will only declare an empty class `iotsaBLEApiProvider`. This helps a bit with `#ifdef`.
 
 ### iotsaButton.h
@@ -543,7 +547,8 @@ The resistors are all pullups and pulldowns, so their values are not very critic
 The v3 board is about 6.35x4.35cm in size, with the ESP-12 antenna sticking out
 0.5cm.
 
-There is no board for the ESP32, but iotsa is known to work with many standard esp32 boards such as the Lolin boards or the Esp32Thing.
+There is no board for the ESP32, but iotsa is known to work with many standard esp32 boards such as the Lolin boards or the Esp32Thing. There
+are too many different esp32 boards with different features sets that are useful for different projects...
 
 ### Case
 

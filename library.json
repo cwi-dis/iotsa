@@ -1,6 +1,6 @@
 {
     "name" : "iotsa",
-    "version" : "2.2",
+    "version" : "2.4",
     "description" : "Library/application framework that allows easy creation of web servers and REST servers. Optional modules provide access control, clock synchronisation, over-the-air programming, static document storage and retrieval and more. Add your own modules to access hardware.",
     "keywords" : "web, http, rest, wifi",
     "authors" : {

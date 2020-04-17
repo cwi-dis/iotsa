@@ -1,4 +1,4 @@
-iotsa 2.3 - in progress
+iotsa 2.4 - 18-Apr-2020
 
 - Added BLE support (esp32 only): iotsa devices can now be a Bluetooth LE server.
 - Added IotsaBatteryMod which enables power-saving for battery-operated devices.
@@ -8,6 +8,7 @@ iotsa 2.3 - in progress
 - WiFi can now switch between AP en STAtion mode on the fly, and is handled in loop() so
   boot is much faster.
 - Added IotsaInput module for handling buttons, touchpads (esp32 only) and rotary encoders.
+- Versioning scheme changed: even minor numbers are stable, odd numbers are work-in-progress.
 
 iotsa 2.2 - 03-Dec-2019
 
