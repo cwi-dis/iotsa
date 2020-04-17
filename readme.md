@@ -405,6 +405,8 @@ Allows a iotsa device to export an API as a Bluetooth LE service. ESP32 only.
 Can be used with the module (which allows setting some BLE parameters such as
 advertising interval through the web or REST interface) or without it.
 
+Note that this file can be included if BLE is not supported (such as on an esp8266), in which case it will only declare an empty class `iotsaBLEApiProvider`. This helps a bit with `#ifdef`.
+
 ### iotsaButton.h
 
 A generalized module for handling buttons and switches attached to GPIO pins. Uses _iotsaRequest.h_ to enable REST calls when buttons are pressed. Also see _iotsaInput.h_ with which this will eventually be integrated.
