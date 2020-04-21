@@ -225,9 +225,14 @@ IotsaConfigMod::handler() {
     if (iotsaConfig.nextConfigurationMode) {
       message += "<p><em>Special mode ";
       message += iotsaConfig.modeName(iotsaConfig.nextConfigurationMode);
-      message += " requested. Power cycle within ";
+      message += " has been requested. Enable within ";
       message += String((iotsaConfig.nextConfigurationModeEndTime - millis())/1000);
-      message += " seconds to activate.</em></p>";
+      message += " seconds by power cycling";
+      if (iotsaConfig.rcmInteractionDescription) {
+        message += " or ";
+        message += iotsaConfig.rcmInteractionDescription;
+      }
+      message += ".</em></p>";
     }
   }
   if (!iotsaConfig.inConfigurationMode()) {
@@ -285,9 +290,16 @@ String IotsaConfigMod::info() {
     message += iotsaConfig.modeName(iotsaConfig.configurationMode);
     message += ", will timeout in " + String((iotsaConfig.configurationModeEndTime-millis())/1000) + " seconds.</p>";
   } else if (iotsaConfig.nextConfigurationMode) {
-  	message += "<p>Configuration mode ";
+    message += "<p>Special mode ";
     message += iotsaConfig.modeName(iotsaConfig.nextConfigurationMode);
-    message += " requested, enable by rebooting within " + String((iotsaConfig.nextConfigurationModeEndTime-millis())/1000) + " seconds.</p>";
+    message += " has been requested. Enable within ";
+    message += String((iotsaConfig.nextConfigurationModeEndTime - millis())/1000);
+    message += " seconds by power cycling";
+    if (iotsaConfig.rcmInteractionDescription) {
+      message += " or ";
+      message += iotsaConfig.rcmInteractionDescription;
+    }
+    message += ".</p>";
   } else if (iotsaConfig.configurationModeEndTime) {
   	message += "<p>Strange, no configuration mode but timeout is " + String(iotsaConfig.configurationModeEndTime-millis()) + "ms.</p>";
   }

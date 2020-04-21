@@ -128,6 +128,18 @@ bool IotsaConfig::inConfigurationOrFactoryMode() {
   return false;
 }
 
+void IotsaConfig::extendConfigurationMode() {
+  iotsaConfig.configurationModeEndTime = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
+}
+
+void IotsaConfig::allowRequestedConfigurationMode() {
+  IotsaSerial.println("xxxjack allowRequestedConfigurationMode not implemented");
+}
+
+void IotsaConfig::allowRCMDescription(const char *_rcmInteractionDescription) {
+  rcmInteractionDescription = _rcmInteractionDescription;
+}
+
 uint32_t IotsaConfig::getStatusColor() {
   if (configurationMode == IOTSA_MODE_FACTORY_RESET) return 0x3f0000; // Red: Factory reset mode
   uint32_t extraColor = 0;

@@ -17,9 +17,7 @@ void otaOnProgress(unsigned int progress, unsigned int total) {
   IFDEBUG IotsaSerial.print("ota: got data ");
   IFDEBUG IotsaSerial.print(progress*100/total);
   IFDEBUG IotsaSerial.println("%");
-  if (millis() > iotsaConfig.configurationModeEndTime - 1000*CONFIGURATION_MODE_TIMEOUT) {
-	  iotsaConfig.configurationModeEndTime = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
-  }
+  iotsaConfig.extendConfigurationMode();
   optFeedWatchdog();
 }
 
@@ -59,7 +57,12 @@ String IotsaOtaMod::info() {
   if (iotsaConfig.configurationMode == IOTSA_MODE_OTA) {
     rv = "<p>Over the air (OTA) programming is enabled, will timeout in " + String((iotsaConfig.configurationModeEndTime - millis())/1000) + " seconds.</p>";
   } else if (iotsaConfig.nextConfigurationMode == IOTSA_MODE_OTA) {
-  	rv = "<p>Over the air (OTA) programming has been requested. Power cycle within " + String((iotsaConfig.nextConfigurationModeEndTime - millis())/1000) + " seconds to enable.</p>";
+  	rv = "<p>Over the air (OTA) programming has been requested. Enable within " + String((iotsaConfig.nextConfigurationModeEndTime - millis())/1000) + " seconds by power cycling";
+    if (iotsaConfig.rcmInteractionDescription) {
+      rv += " or ";
+      rv += iotsaConfig.rcmInteractionDescription;
+    }
+    rv += ".</p>";
   } else {
     rv = "<p>Over the air (OTA) programming possible, visit <a href=\"/config\">/config</a> to enable.</p>";
   }
