@@ -1,3 +1,7 @@
+iotsa 2.4.1 - 23-Apr-2020
+
+- Version number reported was wrong. Fixed.
+
 iotsa 2.4 - 18-Apr-2020
 
 - Added BLE support (esp32 only): iotsa devices can now be a Bluetooth LE server.
