@@ -1,3 +1,3 @@
-#define IOTSA_VERSION "2.4"
-#define IOTSA_COMMIT "064dde5"
-#define IOTSA_FULL_VERSION ("2.4""@""064dde5")
+#define IOTSA_VERSION "2.5"
+#define IOTSA_COMMIT "1639f9e"
+#define IOTSA_FULL_VERSION ("2.5""@""1639f9e")
