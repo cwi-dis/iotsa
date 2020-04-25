@@ -26,10 +26,10 @@ void IotsaConfigMod::setup() {
   configLoad();
   if (app.status) app.status->showStatus();
   if (iotsaConfig.configurationMode) {
-  	IFDEBUG IotsaSerial.println("tmpConfigMode, re-saving config.cfg without it");
+  	IFDEBUG IotsaSerial.println("configurationMode, re-saving config.cfg without it");
   	configSave();
     iotsaConfig.configurationModeEndTime = millis() + 1000*iotsaConfig.configurationModeTimeout;
-    IFDEBUG IotsaSerial.print("tempConfigMode=");
+    IFDEBUG IotsaSerial.print("configurationMode=");
     IFDEBUG IotsaSerial.print((int)iotsaConfig.configurationMode);
     IFDEBUG IotsaSerial.print(", timeout at ");
     IFDEBUG IotsaSerial.println(iotsaConfig.configurationModeEndTime);
@@ -49,12 +49,13 @@ void IotsaConfigMod::setup() {
 #endif
   if (badReason && iotsaConfig.configurationMode != IOTSA_MODE_NORMAL) {
     iotsaConfig.configurationMode = IOTSA_MODE_NORMAL;
-    IFDEBUG IotsaSerial.print("tmpConfigMode not honoured because of reset reason:");
+    iotsaConfig.configurationModeEndTime = 0;
+    IFDEBUG IotsaSerial.print("configurationMode not honoured because of reset reason:");
     IFDEBUG IotsaSerial.println(reason);
   }
   // If factory reset is requested format the Flash and reboot
   if (iotsaConfig.configurationMode == IOTSA_MODE_FACTORY_RESET) {
-  	IFDEBUG IotsaSerial.println("Factory-reset requested");
+  	IFDEBUG IotsaSerial.println("configurationMode: Factory-reset");
   	delay(1000);
   	IFDEBUG IotsaSerial.println("Formatting SPIFFS...");
   	SPIFFS.format();
@@ -87,7 +88,7 @@ IotsaConfigMod::handler() {
   if( server->hasArg("rebootTimeout")) {
     int newValue = server->arg("rebootTimeout").toInt();
     if (newValue != iotsaConfig.configurationModeTimeout) {
-      if (iotsaConfig.inConfigurationMode()) {
+      if (iotsaConfig.inConfigurationMode(true)) {
         if (needsAuthentication("config")) return;
         iotsaConfig.configurationModeTimeout = newValue;
         anyChanged = true;
@@ -107,7 +108,7 @@ IotsaConfigMod::handler() {
   }
 #ifdef IOTSA_WITH_HTTPS
   if (server->hasArg("httpsKey") && server->arg("httpsKey") != "") {
-    if (iotsaConfig.inConfigurationMode()) {
+    if (iotsaConfig.inConfigurationMode(true)) {
       if (needsAuthentication("config")) return;
       String b64String(server->arg("httpsKey"));
       if (b64String.startsWith("-----BEGIN RSA PRIVATE KEY-----")) {
@@ -151,7 +152,7 @@ IotsaConfigMod::handler() {
     }
   }
   if (server->hasArg("httpsCertificate") && server->arg("httpsCertificate") != "") {
-    if (iotsaConfig.inConfigurationMode()) {
+    if (iotsaConfig.inConfigurationMode(true)) {
       if (needsAuthentication("config")) return;
       String b64String(server->arg("httpsCertificate"));
       if (b64String.startsWith("-----BEGIN CERTIFICATE-----")) {
@@ -541,10 +542,12 @@ void IotsaConfigMod::configLoad() {
 
 
 void IotsaConfigMod::configSave() {
+  iotsaConfig.configSave();
   IotsaConfigFileSave cf("/config/config.cfg");
   cf.put("mode", iotsaConfig.nextConfigurationMode); // Note: nextConfigurationMode, which will be read as configurationMode
   cf.put("hostName", iotsaConfig.hostName);
   cf.put("rebootTimeout", iotsaConfig.configurationModeTimeout);
+  IFDEBUG IotsaSerial.println("Saved config.cfg");
 #ifdef IOTSA_WITH_HTTPS
   if (newKey && newCertificate) {
     iotsaConfigFileSaveBinary("/config/httpsKey.der", newKey, newKeyLength);
@@ -555,16 +558,13 @@ void IotsaConfigMod::configSave() {
     IFDEBUG IotsaSerial.println("Not saving key/cert unless both are set");
   }
 #endif // IOTSA_WITH_HTTPS
-  IFDEBUG IotsaSerial.println("Saved config.cfg");
 }
 
 void IotsaConfigMod::loop() {
   if (iotsaConfig.configurationModeEndTime && millis() > iotsaConfig.configurationModeEndTime) {
     iotsaConfig.endConfigurationMode();
-    ESP.restart();
   }
   if (iotsaConfig.nextConfigurationModeEndTime && millis() > iotsaConfig.nextConfigurationModeEndTime) {
     iotsaConfig.endConfigurationMode();
-    configSave();
   }
 }

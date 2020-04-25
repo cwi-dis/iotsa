@@ -118,8 +118,10 @@ const char *IotsaConfig::modeName(config_mode mode) {
   return "unknown";
 }
 
-bool IotsaConfig::inConfigurationMode() { 
-  return configurationMode == IOTSA_MODE_CONFIG; 
+bool IotsaConfig::inConfigurationMode(bool extend) { 
+  bool ok = configurationMode == IOTSA_MODE_CONFIG;
+  if (ok && extend) extendConfigurationMode();
+  return ok;
 }
 
 bool IotsaConfig::inConfigurationOrFactoryMode() { 
@@ -129,19 +131,37 @@ bool IotsaConfig::inConfigurationOrFactoryMode() {
 }
 
 void IotsaConfig::extendConfigurationMode() {
-  iotsaConfig.configurationModeEndTime = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
+  IFDEBUG IotsaSerial.println("Configuration mode extended");
+  configurationModeEndTime = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
 }
 
 void IotsaConfig::endConfigurationMode() {
-  iotsaConfig.configurationMode = IOTSA_MODE_NORMAL;
-  iotsaConfig.configurationModeEndTime = 0;
-  iotsaConfig.nextConfigurationMode = IOTSA_MODE_NORMAL;
-  iotsaConfig.nextConfigurationModeEndTime = 0;
-  // xxxjack need to tell wifi
+  IFDEBUG IotsaSerial.println("Configuration mode ended");
+  configurationMode = IOTSA_MODE_NORMAL;
+  configurationModeEndTime = 0;
+  nextConfigurationMode = IOTSA_MODE_NORMAL;
+  nextConfigurationModeEndTime = 0;
+  configSave();
+  wantWifiModeSwitch = true; // need to tell wifi
+}
+
+void IotsaConfig::beginConfigurationMode() {
+  IFDEBUG IotsaSerial.println("Configuration mode entered");
+  configurationMode = IOTSA_MODE_CONFIG;
+  configurationModeEndTime = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
+  // No need to tell wifi (or save config): this call is done only by the
+  // WiFi module when switching from factory mode to having a WiFi.
 }
 
 void IotsaConfig::allowRequestedConfigurationMode() {
-  IotsaSerial.println("xxxjack allowRequestedConfigurationMode not implemented");
+  if (nextConfigurationMode == configurationMode) return;
+  IFDEBUG IotsaSerial.print("Switching configurationMode to ");
+  IFDEBUG IotsaSerial.println(nextConfigurationMode);
+  configurationMode = nextConfigurationMode;
+  configurationModeEndTime = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
+  nextConfigurationMode = IOTSA_MODE_NORMAL;
+  nextConfigurationModeEndTime = 0;
+  wantWifiModeSwitch = true; // need to tell wifi
 }
 
 void IotsaConfig::allowRCMDescription(const char *_rcmInteractionDescription) {
@@ -211,6 +231,14 @@ void IotsaConfig::configLoad() {
 #endif // IOTSA_WITH_HTTPS
 }
 
+void IotsaConfig::configSave() {
+  IotsaConfigFileSave cf("/config/config.cfg");
+  cf.put("mode", nextConfigurationMode); // Note: nextConfigurationMode, which will be read as configurationMode
+  cf.put("hostName", hostName);
+  cf.put("rebootTimeout", configurationModeTimeout);
+  // Key/cert are saved in iotsaConfigMod
+  IFDEBUG IotsaSerial.println("Saved config.cfg");
+}
 void IotsaConfig::ensureConfigLoaded() { 
   if (!configWasLoaded) configLoad(); 
 };

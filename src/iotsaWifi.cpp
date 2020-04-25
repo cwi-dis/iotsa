@@ -25,7 +25,6 @@ IotsaWifiMod::IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *
   configMod(_app, _auth),
   ssid(""),
   ssidPassword(""),
-  wantWifiModeSwitch(false),
   searchTimeoutMillis(0)
 {
 }
@@ -36,7 +35,7 @@ void IotsaWifiMod::setup() {
     WiFi.mode(WIFI_OFF);
     iotsaConfig.wifiMode = IOTSA_WIFI_DISABLED;
     if (app.status) app.status->showStatus();
-    wantWifiModeSwitch = false;
+    iotsaConfig.wantWifiModeSwitch = false;
     return;
   }
   configLoad();
@@ -58,7 +57,16 @@ void IotsaWifiMod::_wifiGotoMode() {
     _wifiStopStation();
     _wifiStartAP(IOTSA_WIFI_FACTORY);
   } else {
-    _wifiStopAP(IOTSA_WIFI_SEARCHING);
+    if (iotsaConfig.inConfigurationMode()) {
+      // In configuration mode we want both AP and STA
+      if ((int)WiFi.getMode() & (int)WIFI_AP) {
+        ; // Already in AP mode. Leave it so.
+      } else {
+        _wifiStartAP(IOTSA_WIFI_SEARCHING);
+      }
+    } else {
+      _wifiStopAP(IOTSA_WIFI_SEARCHING);
+    }
     _wifiStartStation();
   }
 }
@@ -311,15 +319,20 @@ void IotsaWifiMod::configSave() {
   cf.put("ssid", ssid);
   cf.put("ssidPassword", ssidPassword);
   IFDEBUG IotsaSerial.println("Saved wifi.cfg");
-  wantWifiModeSwitch = true;
+  // If we were in factory mode enable config mode (so we keep the AP)
+  if (iotsaConfig.wifiMode == IOTSA_WIFI_FACTORY) {
+    iotsaConfig.beginConfigurationMode();
+  }
+  // And we always want to connect to the new SSID as STA.
+  iotsaConfig.wantWifiModeSwitch = true;
 }
 
 void IotsaWifiMod::loop() {
-  if (wantWifiModeSwitch) {
+  if (iotsaConfig.wantWifiModeSwitch) {
     //
-    // Either setup() or saveConfig() asked to change the WiFi mode. Do so.
+    // Either setup() or saveConfig() or configuration mode change asked to change the WiFi mode. Do so.
     //
-    wantWifiModeSwitch = false;
+    iotsaConfig.wantWifiModeSwitch = false;
     _wifiGotoMode();
   }
   //
@@ -359,8 +372,10 @@ void IotsaWifiMod::loop() {
       // Search succeeded, we are connected.
       searchTimeoutMillis = 0;
       _wifiStartStationSucceeded();
-      // The AP may be enabled or not, disabling it anyway.
-      _wifiStopAP(IOTSA_WIFI_NORMAL);
+      // The AP may be enabled or not, disabling it anyway, unless we are in configuration mode
+      if (!iotsaConfig.inConfigurationMode()) {
+        _wifiStopAP(IOTSA_WIFI_NORMAL);
+      }
     } else if (searchTimeoutMillis != 0 && millis() > searchTimeoutMillis) {
       // Search failed. Enable AP. Continue searching,
       // but we don't need to enable the AP again.

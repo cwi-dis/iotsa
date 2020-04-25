@@ -87,7 +87,7 @@ IotsaCapabilityMod::handler() {
   String _trustedIssuer = server->arg("trustedIssuer");
   String _issuerKey = server->arg("issuerKey");
   if (_trustedIssuer != "" || _issuerKey != "") {
-    if (!iotsaConfig.inConfigurationMode()) {
+    if (!iotsaConfig.inConfigurationMode(true)) {
       server->send(403, "text/plain", "403 Forbidden, not in configuration mode");
       return;
     }

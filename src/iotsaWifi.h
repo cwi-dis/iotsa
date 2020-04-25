@@ -37,7 +37,6 @@ private:
   IotsaConfigMod configMod;
   String ssid;
   String ssidPassword;
-  bool wantWifiModeSwitch;
   unsigned long searchTimeoutMillis;
 };
 #elif IOTSA_WITH_PLACEHOLDERS

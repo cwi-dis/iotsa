@@ -13,6 +13,7 @@ private:
   bool configWasLoaded = false;
   bool otaEnabled = false;
   iotsa_wifi_mode wifiMode = IOTSA_WIFI_DISABLED;
+  bool wantWifiModeSwitch = false;
   config_mode configurationMode = IOTSA_MODE_NORMAL;
   unsigned long configurationModeEndTime = 0;
   config_mode nextConfigurationMode = IOTSA_MODE_NORMAL;
@@ -21,6 +22,8 @@ private:
   uint32_t postponeSleepMillis = 0;
   int pauseSleepCount = 0;
   uint32_t rebootAtMillis = 0;
+  void beginConfigurationMode();
+  void endConfigurationMode();
 public:
   bool wifiEnabled = false;
   String hostName = "";
@@ -37,16 +40,16 @@ public:
 public:
   void loop();
   void configLoad();
+  void configSave();
   void ensureConfigLoaded();
   const char* getBootReason();
   const char *modeName(config_mode mode);
   void setDefaultHostName();
   void setDefaultCertificate();
   bool usingDefaultCertificate();
-  bool inConfigurationMode();
+  bool inConfigurationMode(bool extend=false);
   bool inConfigurationOrFactoryMode();
   void extendConfigurationMode();
-  void endConfigurationMode();
   void allowRequestedConfigurationMode();
   void allowRCMDescription(const char *_rcmInteractionDescription);
   uint32_t getStatusColor();
