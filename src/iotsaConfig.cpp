@@ -1,6 +1,7 @@
 #include "iotsa.h"
 #include "iotsaConfigFile.h"
 
+#include <SPIFFS.h>
 #ifdef ESP32
 #include <esp_log.h>
 #include <rom/rtc.h>
@@ -153,6 +154,16 @@ void IotsaConfig::beginConfigurationMode() {
   // WiFi module when switching from factory mode to having a WiFi.
 }
 
+void IotsaConfig::factoryReset() {
+    IFDEBUG IotsaSerial.println("configurationMode: Factory-reset");
+  	delay(1000);
+  	IFDEBUG IotsaSerial.println("Formatting SPIFFS...");
+  	SPIFFS.format();
+  	IFDEBUG IotsaSerial.println("Format done, rebooting.");
+  	delay(2000);
+  	ESP.restart();
+}
+
 void IotsaConfig::allowRequestedConfigurationMode() {
   if (nextConfigurationMode == configurationMode) return;
   IFDEBUG IotsaSerial.print("Switching configurationMode to ");
@@ -161,6 +172,7 @@ void IotsaConfig::allowRequestedConfigurationMode() {
   configurationModeEndTime = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
   nextConfigurationMode = IOTSA_MODE_NORMAL;
   nextConfigurationModeEndTime = 0;
+  if (configurationMode == IOTSA_MODE_FACTORY_RESET) factoryReset();
   wantWifiModeSwitch = true; // need to tell wifi
 }
 

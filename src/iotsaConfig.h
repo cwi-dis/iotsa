@@ -24,6 +24,7 @@ private:
   uint32_t rebootAtMillis = 0;
   void beginConfigurationMode();
   void endConfigurationMode();
+  void factoryReset();
 public:
   bool wifiEnabled = false;
   String hostName = "";
