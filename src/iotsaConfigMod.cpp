@@ -290,7 +290,7 @@ String IotsaConfigMod::info() {
   } else if (iotsaConfig.configurationModeEndTime) {
   	message += "<p>Strange, no configuration mode but timeout is " + String(iotsaConfig.configurationModeEndTime-millis()) + "ms.</p>";
   }
-  message += "<p>" + app.title + " is based on iotsa " + IOTSA_FULL_VERSION + ". See <a href=\"/config\">/config</a> to change configuration.";
+  message += "<p>" + app.title + " is based on iotsa " + IOTSA_FULL_VERSION + ". See <a href=\"/config\">/config</a> to change configuration.<br>";
   message += "Last boot " + String((int)millis()/1000) + " seconds ago, reason ";
   message += iotsaConfig.getBootReason();
   message += ".</p>";
