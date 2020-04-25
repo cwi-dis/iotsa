@@ -132,6 +132,14 @@ void IotsaConfig::extendConfigurationMode() {
   iotsaConfig.configurationModeEndTime = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
 }
 
+void IotsaConfig::endConfigurationMode() {
+  iotsaConfig.configurationMode = IOTSA_MODE_NORMAL;
+  iotsaConfig.configurationModeEndTime = 0;
+  iotsaConfig.nextConfigurationMode = IOTSA_MODE_NORMAL;
+  iotsaConfig.nextConfigurationModeEndTime = 0;
+  // xxxjack need to tell wifi
+}
+
 void IotsaConfig::allowRequestedConfigurationMode() {
   IotsaSerial.println("xxxjack allowRequestedConfigurationMode not implemented");
 }

@@ -46,6 +46,7 @@ public:
   bool inConfigurationMode();
   bool inConfigurationOrFactoryMode();
   void extendConfigurationMode();
+  void endConfigurationMode();
   void allowRequestedConfigurationMode();
   void allowRCMDescription(const char *_rcmInteractionDescription);
   uint32_t getStatusColor();

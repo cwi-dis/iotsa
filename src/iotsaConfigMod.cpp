@@ -560,15 +560,11 @@ void IotsaConfigMod::configSave() {
 
 void IotsaConfigMod::loop() {
   if (iotsaConfig.configurationModeEndTime && millis() > iotsaConfig.configurationModeEndTime) {
-    IFDEBUG IotsaSerial.println("Configuration mode timeout. reboot.");
-    iotsaConfig.configurationMode = IOTSA_MODE_NORMAL;
-    iotsaConfig.configurationModeEndTime = 0;
+    iotsaConfig.endConfigurationMode();
     ESP.restart();
   }
   if (iotsaConfig.nextConfigurationModeEndTime && millis() > iotsaConfig.nextConfigurationModeEndTime) {
-    IFDEBUG IotsaSerial.println("Next configuration mode timeout. Clearing.");
-    iotsaConfig.nextConfigurationMode = IOTSA_MODE_NORMAL;
-    iotsaConfig.nextConfigurationModeEndTime = 0;
+    iotsaConfig.endConfigurationMode();
     configSave();
   }
 }
