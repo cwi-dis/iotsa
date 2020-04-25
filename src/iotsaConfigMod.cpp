@@ -55,13 +55,7 @@ void IotsaConfigMod::setup() {
   }
   // If factory reset is requested format the Flash and reboot
   if (iotsaConfig.configurationMode == IOTSA_MODE_FACTORY_RESET) {
-  	IFDEBUG IotsaSerial.println("configurationMode: Factory-reset");
-  	delay(1000);
-  	IFDEBUG IotsaSerial.println("Formatting SPIFFS...");
-  	SPIFFS.format();
-  	IFDEBUG IotsaSerial.println("Format done, rebooting.");
-  	delay(2000);
-  	ESP.restart();
+    iotsaConfig.factoryReset();
   }
   if (app.status) app.status->showStatus();
 }
@@ -215,13 +209,9 @@ IotsaConfigMod::handler() {
     message += "<p><em>Error:</em> must be in configuration mode to change some of these parameters.</p>";
   }
   if (anyChanged) {
-    message += "<p>Settings saved to EEPROM.</p>";
+    message += "<p>Settings saved to Flash.</p>";
     if (hostnameChanged) {
-      if (iotsaConfig.wifiMode == IOTSA_WIFI_FACTORY) {
-        message += "<p>Not rebooting, so you can also change <a href='/wificonfig'>Wifi config</a>.</p>";
-      } else {
-        message += "<p><em>Rebooting device to change hostname</em>.</p>";
-      }   
+      message += "<p><em>Rebooting device to change hostname</em>.</p>";
     }
     if (iotsaConfig.nextConfigurationMode) {
       message += "<p><em>Special mode ";
@@ -269,11 +259,7 @@ IotsaConfigMod::handler() {
   message += "<input name='mode' type='radio' value='0' checked> Enter normal mode after next reboot.<br>";
   message += "<input name='mode' type='radio' value='1'> Enter configuration mode after next reboot.<br>";
   if (iotsaConfig.otaEnabled) {
-    message += "<input name='mode' type='radio' value='2'> Enable over-the-air update after next reboot.";
-    if (iotsaConfig.mdnsEnabled) {
-      message += "(<em>Warning:</em> Enabling OTA may not work because mDNS not available on this WiFi network.)";
-    }
-    message += "<br>";
+    message += "<input name='mode' type='radio' value='2'> Enable over-the-air update after next reboot.<br>";
   }
   message += "<br><input name='factoryreset' type='checkbox' value='1'> Factory-reset and clear all files. <input name='iamsure' type='checkbox' value='1'> Yes, I am sure.<br>";
   message += "<input type='submit'></form>";
