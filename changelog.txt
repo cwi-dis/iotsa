@@ -1,6 +1,8 @@
 iotsa 2.5 - development
 
 - Start of a development branch with odd version numbers
+- Various changes to configuration mode: can now be enabled (by the iotsa program) with other
+  interaction than reboot. AP enabled while in configuration mode.
 
 iotsa 2.4.1 - 23-Apr-2020
 
