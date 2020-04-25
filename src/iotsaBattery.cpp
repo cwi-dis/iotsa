@@ -262,6 +262,8 @@ void IotsaBatteryMod::loop() {
     if (disableSleepOnUSBPower && pinVUSB >= 0) {
       if (levelVUSB > 80) cancelSleep = true;
     }
+    // Another reason is that we are in configuration mode
+    if (iotsaConfig.inConfigurationMode()) cancelSleep = true;
     // A final reason is if some other module is asking for an extension of the waking period
     if (!iotsaConfig.canSleep()) cancelSleep = true;
     // If there is a reason not to sleep we return.
@@ -324,7 +326,7 @@ void IotsaBatteryMod::loop() {
       // Time to go to sleep.
       esp_deep_sleep_start();
       // We should not return here, but get a reboot later.
-      IFDEBUG IotsaSerial.println("esp_*_sleep_start() failed?");
+      IFDEBUG IotsaSerial.println("esp_deep_sleep_start() failed?");
 #else
       // For esp8266 only deep-sleep is implemented.
       ESP.deepSleep(sleepDuration*1000LL);
