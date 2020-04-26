@@ -1,11 +1,12 @@
 #include "iotsa.h"
 #include "iotsaConfigFile.h"
 
-#include <SPIFFS.h>
 #ifdef ESP32
+#include <SPIFFS.h>
 #include <esp_log.h>
 #include <rom/rtc.h>
 #endif
+#include <FS.h>
 
 //
 // Global variable initialization
