@@ -32,6 +32,7 @@ public:
   void setPinVUSB(int pin, float range=2.5) { pinVUSB = pin; rangeVUSB = range; }
   void setPinVBat(int pin, float range=1.8) { pinVBat = pin; rangeVBat = range; }
   void setPinDisableSleep(int pin) { pinDisableSleep = pin; }
+  void allowBLEConfigModeSwitch();
 protected:
   bool getHandler(const char *path, JsonObject& reply);
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
@@ -41,7 +42,8 @@ protected:
   String argument;
   enum IotsaSleepMode sleepMode;
   bool didWakeFromSleep = false;
-  bool doSoftReboot = false;
+  int doSoftReboot = 0;
+  bool bleConfigModeSwitchAllowed = false;
   uint32_t millisAtWakeup = 0;
   uint32_t wakeDuration = 0;
   uint32_t bootExtraWakeDuration = 0;

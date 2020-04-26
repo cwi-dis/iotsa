@@ -96,7 +96,7 @@ void IotsaBatteryMod::setup() {
   configLoad();
 #ifdef ESP32
   didWakeFromSleep = (esp_sleep_get_wakeup_cause() != 0);
-  // If we are awaking from sleep we may want top disable WiFi
+  // If we are awaking from sleep we may want to disable WiFi
   //
   // NOTE: there is a bug in the revision 1 ESP32 hardware, which causes issues with wakeup from hibernate
   // to _not_ record this as a wakeup but in stead as an external reset (even though the info printed at
@@ -147,6 +147,10 @@ bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
   return true;
 }
 
+void IotsaBatteryMod::allowBLEConfigModeSwitch() {
+  bleConfigModeSwitchAllowed = true;
+  iotsaConfig.allowRCMDescription("use BLE to set 'reboot with WiFi' to 2");
+}
 bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
@@ -250,6 +254,17 @@ void IotsaBatteryMod::loop() {
 #endif
     _readVoltages();
   }
+  // If a reboot or configuration mode change has been requested (probably over BLE) we do so now.
+  if (doSoftReboot) {
+    if (doSoftReboot == 2 && bleConfigModeSwitchAllowed) {
+      IFDEBUG IotsaSerial.println("Allow configmode change from BLE");
+      iotsaConfig.allowRequestedConfigurationMode();
+    } else {
+      IFDEBUG IotsaSerial.println("Reboot from BLE");
+      ESP.restart();
+    }
+    doSoftReboot = 0;
+  }
   // See for how long we want to be awake, this cycle
   int curWakeDuration = wakeDuration;
   if (!didWakeFromSleep) curWakeDuration += bootExtraWakeDuration;
@@ -271,10 +286,6 @@ void IotsaBatteryMod::loop() {
       IFDEBUG IotsaSerial.println("Sleep canceled");
       millisAtWakeup = millis();
       return;
-    }
-    // If a reboot has been requested (probably over BLE) we do so now.
-    if (doSoftReboot) {
-      ESP.restart();
     }
     // We go to sleep, in some form.
     IFDEBUG IotsaSerial.print("Going to sleep at ");

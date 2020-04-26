@@ -342,9 +342,9 @@ This is technically a module, but unlike other modules it is not really optional
 your iotsa board is running with WiFi disabled). It should _not_ be instantiated in your
 program, this happens automatically. This module also opens and/or initializes the SPIFFS filesystem.
 
-If the iotsa server is operating in normal (production) mode a user can access URL `/config` to request configuration mode, factory reset or ota-programming mode. The user must then turn power off and on again within 5 minutes to switch the iotsa server to its new mode, for another 5 minutes. If nothing happens during this period the server reboots and reverts to normal mode.
+If the iotsa server is operating in normal (production) mode a user can access URL `/config` to request configuration mode, factory reset or ota-programming mode. The user must then _demonstrate physical access_ within 5 minutes to switch the iotsa server to its new mode, for another 5 minutes. If nothing happens during this period the server reverts to normal mode.
 
-The intention of requiring a power cycle is that any "dangerous" operation requires both network access (to request the operation) and physical access (to turn power on and off).
+> The intention of _demonstrating physical access_ is that any "dangerous" operation requires both network access (to request the operation) and physical access. The user can always turn power on and off to demonstrate physical access, but a iotsa program can allow different methods (such as pressing a certain button a number of times in quick succession).
 
 On a factory reset all configuration information (literally: _all_) is forgotten and the iotsa device is completely new again.
 
@@ -363,13 +363,13 @@ In private mode the device does not connect to a WiFi network, but in stead crea
 
 If a device is new (it has no WiFi network name) it will enter private mode automatically. If a device cannot find its configured WiFi network it will enter private mode for 5 minutes and then reboot and retry joining the configured network.
 
-If a device has a WiFi network configured but it cannot join this network after trying for 5 minutes it will go to private network mode.
+If a device has a WiFi network configured but it cannot join this network after trying for 5 minutes it will also enable private network mode.
 
 If a device is in normal WiFi mode the WiFi parameters can only be changed if the device is in configuration mode.
 
 The module also provides a REST api on `/api/wificonfig` (and this api depends on whether in configuration mode or not).
 
-The module can be disabled (by building with _IOTSA\_WITHOUT\_WIFI_) but until other network interface modules are implemented this is not very useful.
+The module can be disabled by building with _IOTSA\_WITHOUT\_WIFI_).
 
 ### iotsaSimple.h
 

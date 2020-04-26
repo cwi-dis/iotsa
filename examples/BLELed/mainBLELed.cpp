@@ -171,6 +171,8 @@ void setup(void){
 #ifdef PIN_DISABLESLEEP
   batteryMod.setPinDisableSleep(PIN_DISABLESLEEP);
 #endif
+  // As an example, we allow switching to configuration mode by sending a BLE command
+  batteryMod.allowBLEConfigModeSwitch();
   application.setup();
   application.serverSetup();
 }
