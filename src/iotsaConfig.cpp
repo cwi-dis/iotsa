@@ -262,7 +262,10 @@ void IotsaConfig::requestReboot(uint32_t ms) {
 }
 
 void IotsaConfig::printHeapSpace() {
+  // Difficult to print on esp8266. Debugging only, so just don't print anything.
+#ifdef ESP32
   size_t memAvail = heap_caps_get_free_size(MALLOC_CAP_8BIT);
   size_t largestBlock = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
   IFDEBUG IotsaSerial.printf("Available heap space: %u bytes, largest block: %u bytes\n", memAvail, largestBlock);
+#endif
 }
