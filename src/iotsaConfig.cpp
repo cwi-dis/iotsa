@@ -260,3 +260,9 @@ void IotsaConfig::requestReboot(uint32_t ms) {
   IFDEBUG IotsaSerial.println("Restart requested");
   rebootAtMillis = millis() + ms;
 }
+
+void IotsaConfig::printHeapSpace() {
+  size_t memAvail = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+  size_t largestBlock = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
+  IFDEBUG IotsaSerial.printf("Available heap space: %u bytes, largest block: %u bytes\n", memAvail, largestBlock);
+}

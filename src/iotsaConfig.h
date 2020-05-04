@@ -59,6 +59,7 @@ public:
   void postponeSleep(uint32_t ms);
   bool canSleep();
   void requestReboot(uint32_t ms);
+  void printHeapSpace();
 };
 
 extern IotsaConfig iotsaConfig;
