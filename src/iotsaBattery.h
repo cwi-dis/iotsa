@@ -48,6 +48,7 @@ protected:
   uint32_t bootExtraWakeDuration = 0;
   uint32_t sleepDuration = 0;
   uint32_t wifiActiveDuration = 0;
+  uint32_t watchdogDuration = 0;
   uint8_t disableSleepOnUSBPower = 0;
   void _readVoltages();
   int pinVBat = -1;
