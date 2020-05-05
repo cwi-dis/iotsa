@@ -57,6 +57,7 @@ IotsaFilesBackupMod filesBackupMod(application, authProvider);
 #endif
 
 #ifdef WITH_BATTERY
+#define PIN_DISABLE_SLEEP 0 // Define for pin on which low signal disables sleep
 #include "iotsaBattery.h"
 IotsaBatteryMod batteryMod(application, authProvider);
 #endif
@@ -64,6 +65,9 @@ IotsaBatteryMod batteryMod(application, authProvider);
 void setup(void){
   application.setup();
   application.serverSetup();
+#ifdef PIN_DISABLE_SLEEP
+  batteryMod.setPinDisableSleep(PIN_DISABLE_SLEEP);
+#endif
 }
  
 void loop(void){
