@@ -13,11 +13,12 @@
 // CHANGE: Add application includes and declarations here
 
 #undef WITH_USER   // Enable username/password authentication for changing configurations
-#define WITH_NTP    // Use network time protocol to synchronize the clock.
+#undef WITH_NTP    // Use network time protocol to synchronize the clock.
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
-#define WITH_FILES  // Enable static files webserver
-#define WITH_FILESUPLOAD  // Enable upload of static files for webserver
-#define WITH_FILESBACKUP  // Enable backup of all files including config files and webserver files
+#undef WITH_FILES  // Enable static files webserver
+#undef WITH_FILESUPLOAD  // Enable upload of static files for webserver
+#undef WITH_FILESBACKUP  // Enable backup of all files including config files and webserver files
+#define WITH_BATTERY // Enable power-saving support
 
 IotsaApplication application("Iotsa Skeleton Server");
 IotsaWifiMod wifiMod(application);
@@ -53,6 +54,11 @@ IotsaFilesUploadMod filesUploadMod(application, authProvider);
 #ifdef WITH_FILESBACKUP
 #include "iotsaFilesBackup.h"
 IotsaFilesBackupMod filesBackupMod(application, authProvider);
+#endif
+
+#ifdef WITH_BATTERY
+#include "iotsaBattery.h"
+IotsaBatteryMod batteryMod(application, authProvider);
 #endif
 
 void setup(void){
