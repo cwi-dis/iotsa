@@ -11,14 +11,12 @@
 #endif
 
 enum IotsaSleepMode : uint8_t {
-  SLEEP_NONE,
-  SLEEP_DELAY,
-  SLEEP_LIGHT,
-  SLEEP_DEEP,
-  SLEEP_HIBERNATE,
-  SLEEP_DEEP_NOWIFI,
-  SLEEP_HIBERNATE_NOWIFI,
-  SLEEP_ADAPTIVE_NOWIFI
+  IOTSA_SLEEP_NONE,
+  IOTSA_SLEEP_DELAY,
+  IOTSA_SLEEP_LIGHT,
+  IOTSA_SLEEP_DEEP,
+  IOTSA_SLEEP_HIBERNATE,
+  _IOTSA_SLEEP_MAX
 };
 
 class IotsaBatteryMod : public IotsaBatteryModBaseMod, public IotsaBLEApiProvider {
@@ -45,9 +43,11 @@ protected:
   int doSoftReboot = 0;
   bool bleConfigModeSwitchAllowed = false;
   uint32_t millisAtWakeup = 0;
+  uint32_t millisAtWifiWakeup = 0;
   uint32_t wakeDuration = 0;
   uint32_t bootExtraWakeDuration = 0;
   uint32_t sleepDuration = 0;
+  uint32_t wifiActiveDuration = 0;
   uint8_t disableSleepOnUSBPower = 0;
   void _readVoltages();
   int pinVBat = -1;

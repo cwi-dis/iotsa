@@ -39,21 +39,26 @@ void IotsaWifiMod::setup() {
     return;
   }
   configLoad();
-  iotsaConfig.wifiEnabled = true;
   _wifiGotoMode();
 }
 
 void IotsaWifiMod::_wifiGotoMode() {
   iotsa_wifi_mode newMode = IOTSA_WIFI_DISABLED;
-  if (ssid.length()) {
-    newMode = IOTSA_WIFI_NORMAL;
-  } else {
-    newMode = IOTSA_WIFI_FACTORY;
+  if (!iotsaConfig.disableWifiOnBoot) {
+    if (ssid.length()) {
+      newMode = IOTSA_WIFI_NORMAL;
+    } else {
+      newMode = IOTSA_WIFI_FACTORY;
+    }
   }
   if (newMode == IOTSA_WIFI_DISABLED) {
     _wifiStopStation();
     _wifiStopAP(IOTSA_WIFI_DISABLED);
-  } else if (newMode == IOTSA_WIFI_FACTORY) {
+    iotsaConfig.wifiEnabled = false;
+    return;
+  }
+  iotsaConfig.wifiEnabled = true;
+  if (newMode == IOTSA_WIFI_FACTORY) {
     _wifiStopStation();
     _wifiStartAP(IOTSA_WIFI_FACTORY);
   } else {

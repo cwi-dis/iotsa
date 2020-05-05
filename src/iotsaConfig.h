@@ -9,6 +9,7 @@ class IotsaConfig {
   friend class IotsaConfigMod;
   friend class IotsaOtaMod;
   friend class IotsaWifiMod;
+  friend class IotsaBatteryMod;
 private:
   bool configWasLoaded = false;
   bool otaEnabled = false;

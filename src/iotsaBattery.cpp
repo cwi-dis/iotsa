@@ -26,6 +26,11 @@ IotsaBatteryMod::handler() {
     wakeDuration = server->arg("wakeDuration").toInt();
     anyChanged = true;
   }
+  if( server->hasArg("wifiActiveDuration")) {
+    if (needsAuthentication()) return;
+    wifiActiveDuration = server->arg("wifiActiveDuration").toInt();
+    anyChanged = true;
+  }
   if( server->hasArg("bootExtraWakeDuration")) {
     if (needsAuthentication()) return;
     bootExtraWakeDuration = server->arg("bootExtraWakeDuration").toInt();
@@ -50,6 +55,9 @@ IotsaBatteryMod::handler() {
     if (!didWakeFromSleep) nextSleepTime += bootExtraWakeDuration;
     message += "Remaining awake for: " + String((nextSleepTime - millis())/1000.0) + "s<br>";
   }
+  if (wifiActiveDuration) {
+    message += "Wifi will be disabled in: " + String((millisAtWifiWakeup + wifiActiveDuration - millis())/1000.0) + "s<br>";
+  }
   if (pinVBat >= 0) {
     message += "Battery level: " + String(levelVBat) + "%<br>";
   }
@@ -59,21 +67,19 @@ IotsaBatteryMod::handler() {
   message += "</p>";
   message += "<form method='get'>";
   message += "Sleep mode: <select name='sleepMode' value='" + String(sleepMode) + 
-    "'><option value='0'" + String(sleepMode==SLEEP_NONE?" selected":"") + 
-    ">None</option><option value='1'" + String(sleepMode==SLEEP_DELAY?" selected":"") + 
-    ">Delay</option><option value='2'" + String(sleepMode==SLEEP_LIGHT?" selected":"") + 
-    ">Light sleep</option><option value='3'" + String(sleepMode==SLEEP_DEEP?" selected":"") + 
-    ">Deep sleep</option><option value='4'" + String(sleepMode==SLEEP_HIBERNATE?" selected":"") + 
-    ">Hibernate</option><option value='5'" + String(sleepMode==SLEEP_DEEP_NOWIFI?" selected":"") + 
-    ">Deep, no WiFi on wake</option><option value='6'" + String(sleepMode==SLEEP_HIBERNATE_NOWIFI?" selected":"") + 
-    ">Hibernate, no WiFi on wake</option><option value='7'" + String(sleepMode==SLEEP_ADAPTIVE_NOWIFI?" selected":"") + 
-    ">Adaptive light or deep, no WiFi on wake</option></select><br>";
-  message += "Sleep duration: <input name='sleepDuration' value='" + String(sleepDuration) + "'><br>";
-  message += "Wake duration: <input name='wakeDuration' value='" + String(wakeDuration) + "'><br>";
-  message += "Extra wake duration after poweron/reset: <input name='bootExtraWakeDuration' value='" + String(bootExtraWakeDuration) + "'><br>";
+    "'><option value='0'" + String(sleepMode==IOTSA_SLEEP_NONE?" selected":"") + 
+    ">None</option><option value='1'" + String(sleepMode==IOTSA_SLEEP_DELAY?" selected":"") + 
+    ">Delay</option><option value='2'" + String(sleepMode==IOTSA_SLEEP_LIGHT?" selected":"") + 
+    ">Light sleep</option><option value='3'" + String(sleepMode==IOTSA_SLEEP_DEEP?" selected":"") + 
+    ">Deep sleep</option><option value='4'" + String(sleepMode==IOTSA_SLEEP_HIBERNATE?" selected":"") + 
+    ">Hibernate</option></select><br>";
+  message += "Sleep duration (ms): <input name='sleepDuration' value='" + String(sleepDuration) + "'><br>";
+  message += "Wake duration (ms): <input name='wakeDuration' value='" + String(wakeDuration) + "'><br>";
+  message += "Extra wake duration after poweron/reset (ms): <input name='bootExtraWakeDuration' value='" + String(bootExtraWakeDuration) + "'><br>";
+  message += "WiFi duration after poweron/reset/deepsleep (ms): <input name='wifiActiveDuration' value='" + String(wifiActiveDuration) + "'><br>";
   if (pinVUSB >= 0) {
-    message += "<input type='radio' name='disableSleepOnUSBPower' value='0'" + String(disableSleepOnUSBPower?"":" checked") + ">Sleep on USB or battery power<br>";
-    message += "<input type='radio' name='disableSleepOnUSBPower' value='1'" + String(disableSleepOnUSBPower?" checked":"") + ">Only sleep on battery power<br>";
+    message += "<input type='radio' name='disableSleepOnUSBPower' value='0'" + String(disableSleepOnUSBPower?"":" checked") + ">Sleep or disable WiFi on both USB or battery power<br>";
+    message += "<input type='radio' name='disableSleepOnUSBPower' value='1'" + String(disableSleepOnUSBPower?" checked":"") + ">Only sleep or disable WiFi on battery power<br>";
   }
   message += "<input type='submit'></form>";
   server->send(200, "text/html", message);
@@ -104,7 +110,7 @@ void IotsaBatteryMod::setup() {
   // Various workarounds I've tried did not work.
   // See https://github.com/espressif/esp-idf/issues/494 for a description.
   //
-  if ((sleepMode == SLEEP_HIBERNATE_NOWIFI || sleepMode == SLEEP_DEEP_NOWIFI || sleepMode == SLEEP_ADAPTIVE_NOWIFI) && didWakeFromSleep) {
+  if (wifiActiveDuration > 0 && didWakeFromSleep) {
     IFDEBUG IotsaSerial.println("Disabling wifi");
     if (iotsaConfig.wifiEnabled) {
       IFDEBUG IotsaSerial.println("Wifi already enabled?");
@@ -138,6 +144,7 @@ bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
   reply["sleepDuration"] = sleepDuration;
   reply["wakeDuration"] = wakeDuration;
   reply["bootExtraWakeDuration"] = bootExtraWakeDuration;
+  reply["wifiActiveDuration"] = wifiActiveDuration;
   _readVoltages();
   if (pinVBat >= 0) reply["levelVBat"] = levelVBat;
   if (pinVUSB >= 0) {
@@ -168,6 +175,10 @@ bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, J
   }
   if (reqObj.containsKey("bootExtraWakeDuration")) {
     bootExtraWakeDuration = reqObj["bootExtraWakeDuration"];
+    anyChanged = true;
+  }
+  if (reqObj.containsKey("wifiActiveDuration")) {
+    wifiActiveDuration = reqObj["wifiActiveDuration"];
     anyChanged = true;
   }
   if (pinVUSB >= 0 && reqObj.containsKey("disableSleepOnUSBPower")) {
@@ -217,6 +228,7 @@ void IotsaBatteryMod::configLoad() {
   IotsaConfigFileLoad cf("/config/battery.cfg");
   int value;
   cf.get("sleepMode", value, 0);
+  if (value > _IOTSA_SLEEP_MAX) value = IOTSA_SLEEP_NONE;
   sleepMode = (IotsaSleepMode)value;
   cf.get("wakeDuration", value, 0);
   wakeDuration = value;
@@ -224,6 +236,8 @@ void IotsaBatteryMod::configLoad() {
   bootExtraWakeDuration = value;
   cf.get("sleepDuration", value, 0);
   sleepDuration = value;
+  cf.get("wifiActiveDuration", value, 0);
+  wifiActiveDuration = value;
   if (pinVUSB >= 0) {
     cf.get("disableSleepOnUSBPower", value, 0);
     disableSleepOnUSBPower = value;
@@ -237,6 +251,7 @@ void IotsaBatteryMod::configSave() {
   cf.put("wakeDuration", (int)wakeDuration);
   cf.put("bootExtraWakeDuration", (int)bootExtraWakeDuration);
   cf.put("sleepDuration", (int)sleepDuration);
+  cf.put("wifiActiveDuration", (int)wifiActiveDuration);
   if (pinVUSB >= 0) {
     cf.put("disableSleepOnUSBPower", (int)disableSleepOnUSBPower);
   }
@@ -254,6 +269,7 @@ void IotsaBatteryMod::loop() {
 #endif
     _readVoltages();
   }
+  if (millisAtWifiWakeup == 0) millisAtWifiWakeup = millis();
   // If a reboot or configuration mode change has been requested (probably over BLE) we do so now.
   if (doSoftReboot) {
     if (doSoftReboot == 2 && bleConfigModeSwitchAllowed) {
@@ -265,84 +281,97 @@ void IotsaBatteryMod::loop() {
     }
     doSoftReboot = 0;
   }
-  // See for how long we want to be awake, this cycle
+  // Return quickly if no sleep or wifi sleep is required.
+  if (sleepMode == IOTSA_SLEEP_NONE && wifiActiveDuration == 0) return;
+  // Check whether we should disable Wifi or sleep
   int curWakeDuration = wakeDuration;
   if (!didWakeFromSleep) curWakeDuration += bootExtraWakeDuration;
-  // Now check whether we've already been awake that long
-  if (sleepMode && curWakeDuration > 0 && millis() > millisAtWakeup + curWakeDuration) {
-    // We have. See whether there's any reason not to go asleep.
-    // One reason is if the "don't go to sleep" button is being pressed, if it exists.
-    bool cancelSleep = pinDisableSleep >= 0 && digitalRead(pinDisableSleep) == LOW;
-    // Another reason is if we're running on USB power and we only sleep on battery power
-    if (disableSleepOnUSBPower && pinVUSB >= 0) {
-      if (levelVUSB > 80) cancelSleep = true;
+  bool shouldDisableWifi = wifiActiveDuration && millis() > millisAtWifiWakeup + wifiActiveDuration;
+  bool shouldSleep = sleepMode && curWakeDuration > 0 && millis() > millisAtWakeup + curWakeDuration;
+  // Again, return quickly if no sleep or wifi sleep is required.
+  if (!shouldSleep && !shouldDisableWifi) return;
+  // Now check for other reasons NOT to go to sleep or disable wifi
+  bool cancelSleep = pinDisableSleep >= 0 && digitalRead(pinDisableSleep) == LOW;
+  // Another reason is if we're running on USB power and we only sleep on battery power
+  if (disableSleepOnUSBPower && pinVUSB >= 0) {
+    if (levelVUSB > 80) cancelSleep = true;
+  }
+  // Another reason is that we are in configuration mode
+  if (iotsaConfig.inConfigurationMode()) cancelSleep = true;
+  // A final reason is if some other module is asking for an extension of the waking period
+  if (!iotsaConfig.canSleep()) cancelSleep = true;
+  // If there is a reason not to sleep we return. We also reset the wake timer.
+  if (cancelSleep) {
+    IFDEBUG IotsaSerial.println("Sleep canceled");
+    millisAtWakeup = millis();
+    millisAtWifiWakeup = millis();
+    return;
+  }
+  if (shouldDisableWifi) {
+    if (iotsaConfig.wifiEnabled) {
+      IotsaSerial.println("Disabling wifi");
+      // Setting the iotsaConfig variables causes the wifi module to disable itself next loop()
+      iotsaConfig.disableWifiOnBoot = true;
+      iotsaConfig.wantWifiModeSwitch = true;
     }
-    // Another reason is that we are in configuration mode
-    if (iotsaConfig.inConfigurationMode()) cancelSleep = true;
-    // A final reason is if some other module is asking for an extension of the waking period
-    if (!iotsaConfig.canSleep()) cancelSleep = true;
-    // If there is a reason not to sleep we return.
-    if (cancelSleep) {
-      IFDEBUG IotsaSerial.println("Sleep canceled");
+  }
+  if (!shouldSleep) return;
+  // We go to sleep, in some form.
+  IFDEBUG IotsaSerial.print("Going to sleep at ");
+  IFDEBUG IotsaSerial.print(millis());
+  IFDEBUG IotsaSerial.print(" for ");
+  IFDEBUG IotsaSerial.print(sleepDuration);
+  IFDEBUG IotsaSerial.print(" mode ");
+  IFDEBUG IotsaSerial.println(sleepMode);
+
+  if(sleepMode == IOTSA_SLEEP_DELAY) {
+    // This isn't really sleeping, it's just a delay. Not sure it is actually useful.
+    delay(sleepDuration);
+    millisAtWakeup = 0;
+  } else {
+#ifdef ESP32
+    // We are going to sleep. First set the reasons for wakeup, such as a timer.
+    // IFDEBUG delay(10); // Flush serial buffer
+    if (sleepDuration) {
+      esp_sleep_enable_timer_wakeup(sleepDuration*1000LL);
+    } else {
+      // xxxjack configure other wakeup sources...
+    }
+    if (sleepMode == IOTSA_SLEEP_LIGHT) {
+      // Light sleep is easiest: everything remains powered just running slowly.
+      // We return here after the sleep.
+#ifdef IOTSA_WITH_BLE
+      bool btActive = IotsaBLEServerMod::pauseServer();
+#endif
+      esp_light_sleep_start();
+      IFDEBUG IotsaSerial.print("light sleep wakup at ");
       millisAtWakeup = millis();
+      IFDEBUG IotsaSerial.println(millisAtWakeup);
+#ifdef IOTSA_WITH_BLE
+      if (btActive) {
+        IFDEBUG IotsaSerial.println("Re-activate ble");
+        IotsaBLEServerMod::resumeServer();
+      }
+#endif
       return;
     }
-    // We go to sleep, in some form.
-    IFDEBUG IotsaSerial.print("Going to sleep at ");
-    IFDEBUG IotsaSerial.print(millis());
-    IFDEBUG IotsaSerial.print(" for ");
-    IFDEBUG IotsaSerial.print(sleepDuration);
-    IFDEBUG IotsaSerial.print(" mode ");
-    IFDEBUG IotsaSerial.println(sleepMode);
-    if(sleepMode == SLEEP_DELAY) {
-      // This isn't really sleeping, it's just a delay. Not sure it is actually useful.
-      delay(sleepDuration);
-      millisAtWakeup = 0;
-    } else {
-#ifdef ESP32
-      // We are going to sleep. First set the reasons for wakeup, such as a timer.
-      IFDEBUG delay(10); // Flush serial buffer
-      if (sleepDuration) {
-        esp_sleep_enable_timer_wakeup(sleepDuration*1000LL);
-      } else {
-        // xxxjack configure other wakeup sources...
-      }
-      if (sleepMode == SLEEP_LIGHT || (sleepMode == SLEEP_ADAPTIVE_NOWIFI && !iotsaConfig.wifiEnabled)) {
-        // Light sleep is easiest: everything remains powered just running slowly.
-        // We return here after the sleep.
-#ifdef IOTSA_WITH_BLE
-        bool btActive = IotsaBLEServerMod::pauseServer();
-#endif
-        esp_light_sleep_start();
-        IFDEBUG IotsaSerial.print("light sleep wakup at ");
-        millisAtWakeup = millis();
-        IFDEBUG IotsaSerial.println(millisAtWakeup);
-#ifdef IOTSA_WITH_BLE
-        if (btActive) {
-          IFDEBUG IotsaSerial.println("Re-activate ble");
-          IotsaBLEServerMod::resumeServer();
-        }
-#endif
-        return;
-      }
-      // Before sleeping we turn off the radios.
-      if (iotsaConfig.wifiEnabled) esp_wifi_stop();
-      esp_bt_controller_disable();
-      // For hibernation we also turn off various peripherals.
-      if (sleepMode == SLEEP_HIBERNATE || sleepMode == SLEEP_HIBERNATE_NOWIFI) {
-        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_OFF);
-        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_OFF);
-        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
-      }
-      // Time to go to sleep.
-      esp_deep_sleep_start();
-      // We should not return here, but get a reboot later.
-      IFDEBUG IotsaSerial.println("esp_deep_sleep_start() failed?");
-#else
-      // For esp8266 only deep-sleep is implemented.
-      ESP.deepSleep(sleepDuration*1000LL);
-#endif
+    // Before sleeping we turn off the radios.
+    if (iotsaConfig.wifiEnabled) esp_wifi_stop();
+    esp_bt_controller_disable();
+    // For hibernation we also turn off various peripherals.
+    if (sleepMode == IOTSA_SLEEP_HIBERNATE) {
+      esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_OFF);
+      esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_OFF);
+      esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
     }
+    // Time to go to sleep.
+    esp_deep_sleep_start();
+    // We should not return here, but get a reboot later.
+    IFDEBUG IotsaSerial.println("esp_deep_sleep_start() failed?");
+#else
+    // For esp8266 only deep-sleep is implemented.
+    ESP.deepSleep(sleepDuration*1000LL);
+#endif
   }
 }
 
