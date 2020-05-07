@@ -379,6 +379,7 @@ void IotsaBatteryMod::loop() {
     // This isn't really sleeping, it's just a delay. Not sure it is actually useful.
     delay(sleepDuration);
     millisAtWakeup = 0;
+    didWakeFromSleep = true;
 #ifdef ESP32
     if (watchdogTimer) {
       timerWrite(watchdogTimer, 0);
@@ -389,7 +390,7 @@ void IotsaBatteryMod::loop() {
   }
 #ifdef ESP32
   // We are going to sleep. First set the reasons for wakeup, such as a timer.
-  // IFDEBUG delay(10); // Flush serial buffer
+  IFDEBUG delay(5); // Flush serial buffer
   if (sleepDuration) {
     esp_sleep_enable_timer_wakeup(sleepDuration*1000LL);
   } else {
@@ -404,6 +405,7 @@ void IotsaBatteryMod::loop() {
     esp_light_sleep_start();
     IFDEBUG IotsaSerial.print("light sleep wakup at ");
     millisAtWakeup = millis();
+    didWakeFromSleep = true;
     IFDEBUG IotsaSerial.println(millisAtWakeup);
 #ifdef IOTSA_WITH_BLE
     if (btActive) {
