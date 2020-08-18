@@ -21,15 +21,18 @@ from .wifi import IotsaWifi
 from .protocols import HandlerForProto
 
 class IotsaConfig(object):
-    def __init__(self, device, api):
+    def __init__(self, device, api, cache=False):
         self.device = device
         self.endpoint = api
         self.status = {}
         self.settings = {}
+        self.cache = cache
         self.didLoad = False
 
     def load(self):
-        if self.didLoad: return
+        if self.didLoad and self.cache: return
+        self.status = {}
+        self.didload = False
         self.status = self.device.protocolHandler.get(self.endpoint)
         self.didLoad = True
         
@@ -72,7 +75,7 @@ class IotsaDevice(object):
             url += ':%d' % port
         HandlerClass = HandlerForProto[protocol]
         self.protocolHandler = HandlerClass(url, noverify=noverify, bearer=bearer, auth=auth)
-        self.config = IotsaConfig(self, 'config')
+        self.config = IotsaConfig(self, 'config', cache=True)
         self.auth = None
         self.bearerToken = None
         self.apis = {'config' : self.config}
