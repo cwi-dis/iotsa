@@ -80,7 +80,11 @@ class IotsaDevice(object):
     def __del__(self):
         self.close()
         
-    def _guessProtocol(self, ipAddress, port):
+    _ProtocolCache = {}
+    @classmethod
+    def _guessProtocol(klass, ipAddress, port):
+        if (ipAddress, port) in klass._ProtocolCache:
+            return klass._ProtocolCache[(ipAddress, port)]
         protocol = 'https'
         noverify = False
         url = '%s://%s' % (protocol, ipAddress)
@@ -89,15 +93,19 @@ class IotsaDevice(object):
         HandlerClass = HandlerForProto[protocol]
         ph = HandlerClass(url, noverify=noverify)
         try:
-            ph.get('config')
+            ph.request('GET', 'config', retryCount=0)
         except requests.exceptions.SSLError:
             if VERBOSE: print("Using https protocol with --noverify")
-            return 'https', True
+            rv = ('https', True)
+            klass._ProtocolCache[(ipAddress, port)] = rv
+            return rv
         except:
             pass
         else:
             if VERBOSE: print("Using https protocol")
-            return 'https', False
+            rv = ('https', False)
+            klass._ProtocolCache[(ipAddress, port)] = rv
+            return rv
             
         protocol = 'http'
         url = '%s://%s' % (protocol, ipAddress)
@@ -106,13 +114,15 @@ class IotsaDevice(object):
         HandlerClass = HandlerForProto[protocol]
         ph = HandlerClass(url, noverify=noverify)
         try:
-            ph.get('config')
+            ph.request('GET', 'config', retryCount=0)
         except:
             pass
         else:
             if VERBOSE: print("Using http protocol")
-            return 'http', False
-            
+            rv = ('http', False)
+            klass._ProtocolCache[(ipAddress, port)] = rv
+            return rv
+
         protocol = 'coap'
         noverify = True
         url = '%s://%s' % (protocol, ipAddress)
@@ -126,7 +136,9 @@ class IotsaDevice(object):
             pass
         else:
             if VERBOSE: print("Using coap protocol")
-            return 'coap', False
+            rv = ('coap', False)
+            klass._ProtocolCache[(ipAddress, port)] = rv
+            return rv
             
         raise IotsaError("Cannot determine protocol to use for {}, use --protocol".format(ipAddress))
             

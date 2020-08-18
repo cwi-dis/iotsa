@@ -42,7 +42,7 @@ class IotsaRESTProtocolHandler(object):
         assert files is None or json is None
         return self.request('POST', endpoint, json=json, files=files)
         
-    def request(self, method, endpoint, json=None, files=None):
+    def request(self, method, endpoint, json=None, files=None, retryCount=5):
         headers = {}
         if self.bearer:
             headers['Authorization'] = 'Bearer '+self.bearer
@@ -58,7 +58,6 @@ class IotsaRESTProtocolHandler(object):
                 print('....', headers)
             if json:
                 print('>>>>', json)
-        retryCount = 5
         while True:
             try:
                 r = requests.request(method, url, auth=self.auth, json=json, verify=not self.noverify, headers=headers, files=files)
