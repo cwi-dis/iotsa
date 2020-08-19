@@ -39,7 +39,7 @@ class IotsaEndpoint(object):
         
     def flush(self):
         self.didLoad = False
-        self.settings = {}
+        self.status = {}
         
     def transaction(self):
         self.inTransaction = True
