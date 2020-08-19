@@ -190,6 +190,9 @@ void IotsaBatteryMod::allowBLEConfigModeSwitch() {
 bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
+  if (reqObj.containsKey("postponeSleep")) {
+    iotsaConfig.postponeSleep(reqObj["postponeSleep"].as<int>());
+  }
   if (reqObj.containsKey("sleepMode")) {
     sleepMode = (IotsaSleepMode)reqObj["sleepMode"].as<int>();
     anyChanged = true;
