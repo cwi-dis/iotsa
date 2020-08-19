@@ -40,21 +40,24 @@ class IotsaEndpoint(object):
     def flush(self):
         self.didLoad = False
         self.status = {}
+        self.settings = {}
         
     def transaction(self):
         self.inTransaction = True
         
     def commit(self):
-        if self.settings:
+        settings = self.settings
+        self.settings = {}
+        self.inTransaction = False
+        if settings:
             self.device.flush()
-            reply = self.device.protocolHandler.put(self.endpoint, json=self.settings)
+            reply = self.device.protocolHandler.put(self.endpoint, json=settings)
             if reply and reply.get('needsReboot'):
                 if 'requestedModeTimeout' in reply:
                     msg = 'Reboot %s within %s seconds to activate mode %s' % (self.device.ipAddress, reply.get('requestedModeTimeout', '???'), self.device.modeName(reply.get('requestedMode')))
                     raise UserIntervention(msg)
                 if VERBOSE:
                     print("config: reboot to activate new setting")
-        self.inTransaction = False
             
     def get(self, name, default='no default'):
         self.load()
@@ -265,6 +268,7 @@ class IotsaDevice(object):
         if self.config.get('currentMode') == mode:
             if verbose: print("%s: target already in mode %s" % (sys.argv[0], self.modeName(mode)))
             return
+        self.config.transaction()
         self.config.set('requestedMode', mode)
         try:
             self.config.commit()
