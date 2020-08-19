@@ -342,6 +342,24 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
     if (m->name != "")
       modules.add(m->name);
   }
+  JsonArray features = reply.createNestedArray("features");
+#ifdef IOTSA_WITH_HTTP
+  features.add("http");
+#endif
+#ifdef IOTSA_WITH_HTTPS
+  features.add("https");
+#endif
+#ifdef IOTSA_WITH_COAP
+  features.add("coap");
+#endif
+#ifdef IOTSA_WITH_OTA
+  features.add("ota");
+#endif
+#ifdef IOTSA_WITH_BLE
+  features.add("ble");
+#endif
+  if (iotsaConfig.mdnsEnabled) features.add("mdns");
+
   return true;
 }
 
