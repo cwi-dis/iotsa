@@ -20,7 +20,7 @@ from .dfu import DFU
 from .wifi import IotsaWifi
 from .protocols import HandlerForProto
 
-class IotsaConfig(object):
+class IotsaEndpoint(object):
     def __init__(self, device, api, cache=False):
         self.device = device
         self.endpoint = api
@@ -28,6 +28,7 @@ class IotsaConfig(object):
         self.settings = {}
         self.cache = cache
         self.didLoad = False
+        self.inTransaction = False
 
     def load(self):
         if self.didLoad and self.cache: return
@@ -36,7 +37,14 @@ class IotsaConfig(object):
         self.status = self.device.protocolHandler.get(self.endpoint)
         self.didLoad = True
         
-    def save(self):
+    def flush(self):
+        self.didLoad = False
+        self.settings = {}
+        
+    def transaction(self):
+        self.inTransaction = True
+        
+    def commit(self):
         if self.settings:
             self.device.flush()
             reply = self.device.protocolHandler.put(self.endpoint, json=self.settings)
@@ -46,10 +54,16 @@ class IotsaConfig(object):
                     raise UserIntervention(msg)
                 if VERBOSE:
                     print("config: reboot to activate new setting")
+        self.inTransaction = False
             
-    def get(self, name, default=None):
+    def get(self, name, default='no default'):
         self.load()
+        if default == 'no default':
+            return self.status[name]
         return self.status.get(name, default)
+        
+    def __getattr__(self, name):
+        return self.get(name)
         
     def getAll(self):
         self.load()
@@ -57,6 +71,8 @@ class IotsaConfig(object):
         
     def set(self, name, value):
         self.settings[name] = value
+        if not self.inTransaction:
+            self.commit()
         
     def printStatus(self):
         self.load()
@@ -75,7 +91,7 @@ class IotsaDevice(object):
             url += ':%d' % port
         HandlerClass = HandlerForProto[protocol]
         self.protocolHandler = HandlerClass(url, noverify=noverify, bearer=bearer, auth=auth)
-        self.config = IotsaConfig(self, 'config', cache=True)
+        self.config = IotsaEndpoint(self, 'config', cache=True)
         self.auth = None
         self.bearerToken = None
         self.apis = {'config' : self.config}
@@ -154,7 +170,7 @@ class IotsaDevice(object):
         
     def flush(self):
         for a in self.apis.values():
-            a.didLoad = False
+            a.flush()
         
     def setLogin(self, username, password):
         self.auth = (username, password)
@@ -164,8 +180,11 @@ class IotsaDevice(object):
         
     def getApi(self, api):
         if not api in self.apis:
-            self.apis[api] = IotsaConfig(self, api)
+            self.apis[api] = IotsaEndpoint(self, api)
         return self.apis[api]
+        
+    def __getattr__(self, name):
+        return self.getApi(name)
         
     def getAll(self):
         all = self.config.getAll()
@@ -248,7 +267,7 @@ class IotsaDevice(object):
             return
         self.config.set('requestedMode', mode)
         try:
-            self.config.save()
+            self.config.commit()
         except UserIntervention as arg:
             if verbose:
                 print("%s: %s" % (sys.argv[0], arg), file=sys.stderr)

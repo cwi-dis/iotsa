@@ -32,7 +32,7 @@ of those devices and uploading new firmware over the air.
 VERSION="2.1"    
 
 setup(
-    name='iotsaControl',
+    name='iotsa',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
@@ -72,7 +72,7 @@ setup(
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
     ],
 
     # What does your project relate to?
@@ -80,7 +80,7 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=["iotsaControl"],
+    packages=["iotsa"],
 
     # List run-time dependencies here.  These will be installed by pip when
     # your project is installed. For an analysis of "install_requires" vs pip's
@@ -113,7 +113,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
-            'iotsaControl=iotsaControl.__main__:main',
+            'iotsaControl=iotsa.__main__:main',
         ],
     },
 )

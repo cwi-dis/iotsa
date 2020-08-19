@@ -185,6 +185,7 @@ class Main(object):
             raise api.UserIntervention("Set target into configuration mode first. See configMode or configWait commands.")
         
         anyDone = False
+        self.device.config.transaction()
         while True:
             subCmd = self._getcmd()
             if not subCmd or subCmd == '--':
@@ -198,7 +199,7 @@ class Main(object):
         if not anyDone:
             print("%s: config: requires name=value [...] to set config variables" % sys.argv[0], file=sys.stderr)
             sys.exit(1)
-        self.device.config.save()
+        self.device.config.commit()
         
     def cmd_configMode(self):
         """Ask target to go into configuration mode"""
@@ -301,7 +302,7 @@ class Main(object):
         """Set WiFi parameters (target must be in configuration or private WiFi mode)"""
         self.loadDevice()
         wifi = self.device.getApi('wificonfig')
-        
+        wifi.transaction()
         anyDone = False
         while True:
             subCmd = self._getcmd()
@@ -320,7 +321,7 @@ class Main(object):
         if not anyDone:
             print("%s: wifiConfig: requires name=value [...] to set config variables" % sys.argv[0], file=sys.stderr)
             sys.exit(1)
-        wifi.save()
+        wifi.commit()
         
     def cmd_xInfo(self):
         """Show target information for a specific module, next argument is module name"""
@@ -340,7 +341,7 @@ class Main(object):
             print("%s: xConfig requires a module name" % sys.argv[0], file=sys.stderr)
             sys.exit(1)
         ext = self.device.getApi(modName)
-        
+        ext.transaction()
         anyDone = False
         while True:
             subCmd = self._getcmd()
@@ -359,7 +360,7 @@ class Main(object):
         if not anyDone:
             print("%s: xConfig %s: requires name=value [...] to set config variables" % sys.argv[0], file=sys.stderr)
             sys.exit(1)
-        ext.save()
+        ext.commit()
         
     def cmd_reboot(self):
         """Reboot the target"""
