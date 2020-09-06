@@ -171,6 +171,7 @@ bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
   reply["wakeDuration"] = wakeDuration;
   reply["bootExtraWakeDuration"] = bootExtraWakeDuration;
   reply["wifiActiveDuration"] = wifiActiveDuration;
+  reply["postponeSleep"] = iotsaConfig.postponeSleep(0);
 #ifdef ESP32
   reply["watchdogDuration"] = watchdogDuration;
 #endif

@@ -57,7 +57,7 @@ public:
   uint32_t getStatusColor();
   void pauseSleep();
   void resumeSleep();
-  void postponeSleep(uint32_t ms);
+  uint32_t postponeSleep(uint32_t ms);
   bool canSleep();
   void requestReboot(uint32_t ms);
   void printHeapSpace();

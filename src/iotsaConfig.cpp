@@ -210,9 +210,12 @@ void IotsaConfig::resumeSleep() {
   pauseSleepCount--; 
 }
 
-void IotsaConfig::postponeSleep(uint32_t ms) {
+uint32_t IotsaConfig::postponeSleep(uint32_t ms) {
   uint32_t noSleepBefore = millis() + ms;
   if (noSleepBefore > postponeSleepMillis) postponeSleepMillis = noSleepBefore;
+  int32_t rv = postponeSleepMillis - millis();
+  if (rv < 2) rv = 0;
+  return rv;
 }
 
 bool IotsaConfig::canSleep() {
