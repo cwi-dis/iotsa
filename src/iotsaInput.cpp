@@ -10,7 +10,7 @@ static void dummyTouchCallback() {}
 
 static bool anyWakeOnTouch;
 static uint64_t bitmaskButtonWakeHigh;
-static int buttonWakeLow;
+static int buttonWakeLow = -1;
 
 void IotsaInputMod::setup() {
   anyWakeOnTouch = false;
@@ -21,7 +21,7 @@ void IotsaInputMod::setup() {
   }
 #ifdef ESP32
   esp_err_t err;
-  if (bitmaskButtonWakeHigh && buttonWakeLow && anyWakeOnTouch) {
+  if (bitmaskButtonWakeHigh && buttonWakeLow >= 0 && anyWakeOnTouch) {
     IotsaSerial.println("IotsaInputMod: too many incompatible wakeup sources");
   }
   if (anyWakeOnTouch) {
@@ -108,7 +108,7 @@ void Button::setup() {
   if (wake) {
     // Buttons should be wired to GND. So press gives a low level.
     if (actOnPress) {
-      if (buttonWakeLow > 0) IotsaSerial.println("Multiple low wake inputs");
+      if (buttonWakeLow >= 0) IotsaSerial.println("Multiple low wake inputs");
       buttonWakeLow = pin;
     } else {
       bitmaskButtonWakeHigh |= 1LL << pin;
