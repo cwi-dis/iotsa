@@ -4,7 +4,7 @@
 #include "iotsaApi.h"
 #include "iotsaConfigFile.h"
 
-class IotsaRequest {
+class IotsaRequest : IotsaApiModObject {
 public:
   IotsaRequest() : url(""), sslInfo(""), credentials(""), token("") {}
   bool send();

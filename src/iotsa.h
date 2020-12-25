@@ -110,6 +110,8 @@ public:
 
   virtual void setup() = 0;
   virtual void loop() = 0;
+  virtual void configLoad() {}
+  virtual void configSave() {}
 #ifdef IOTSA_WITH_WEB
   virtual String info();
 #endif
@@ -150,6 +152,19 @@ public:
   using IotsaMod::IotsaMod;	// Inherit constructor
 };
 
+class IotsaConfigFileLoad;
+class IotsaConfigFileSave;
+
+class IotsaModObject {
+public:
+  virtual ~IotsaModObject() {}
+  virtual void configLoad(IotsaConfigFileLoad& cf, String& name) = 0;
+  virtual void configSave(IotsaConfigFileSave& cf, String& name) = 0;
+  virtual void formHandler(String& message, String& text, String& name) = 0;
+#ifdef IOTSA_WITH_WEB
+  virtual bool formArgHandler(IotsaWebServer *server, String name) = 0;
+#endif
+};
 
 extern IotsaConfig iotsaConfig;
 #endif
