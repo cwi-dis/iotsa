@@ -207,6 +207,7 @@ void IotsaMultiUserMod::configLoad() {
   IotsaConfigFileLoad cf("/config/users.cfg");
   // xxxjack should really free old users...
   IotsaUser **up = &users;
+  // xxxjack should use object interface.
   for(int cnt=0; ; cnt++) {
     String username;
     String arg = "user" + String(cnt);

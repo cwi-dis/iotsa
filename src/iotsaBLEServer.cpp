@@ -181,20 +181,16 @@ void IotsaBLEServerMod::serverSetup() {
 void IotsaBLEServerMod::configLoad() {
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   IotsaConfigFileLoad cf("/config/bleserver.cfg");
-  int value;
-  cf.get("isEnabled", value, 1);
-  isEnabled = (bool)value;
-  cf.get("adv_min", value, adv_min);
-  adv_min = value;
+  cf.get("isEnabled", isEnabled, true);
+  cf.get("adv_min", adv_min, adv_min);
   if (adv_min) pAdvertising->setMinInterval(adv_min);
-  cf.get("adv_max", value, adv_max);
-  adv_max = value;
+  cf.get("adv_max", adv_max, adv_max);
   if (adv_max) pAdvertising->setMaxInterval(adv_max);
 }
 
 void IotsaBLEServerMod::configSave() {
   IotsaConfigFileSave cf("/config/bleserver.cfg");
-  cf.put("isEnabled", (int)isEnabled);
+  cf.put("isEnabled", isEnabled);
   cf.put("adv_min", adv_min);
   cf.put("adv_max", adv_max);
   if (BLEDevice::getInitialized()) {

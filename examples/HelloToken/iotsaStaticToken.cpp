@@ -60,6 +60,7 @@ void IotsaStaticTokenMod::configLoad() {
   cf.get("ntoken", ntoken, 0);
   if (tokens) free(tokens);
   if (ntoken <= 0) return;
+  // xxxjack should use object interface
   tokens = (StaticToken *)calloc(ntoken, sizeof(StaticToken));
    
   for (int i=0; i<ntoken; i++) {

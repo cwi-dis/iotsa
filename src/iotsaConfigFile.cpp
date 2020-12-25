@@ -23,6 +23,20 @@ void IotsaConfigFileLoad::get(String name, int &value, int def) {
   value = sValue.toInt();
 }
 
+void IotsaConfigFileLoad::get(String name, uint32_t &value, uint32_t def) {
+  String sValue;
+  String sDef = String(def);
+  get(name, sValue, sDef);
+  value = (uint32_t)sValue.toInt();
+}
+
+void IotsaConfigFileLoad::get(String name, bool &value, bool def) {
+  String sValue;
+  String sDef = String(def);
+  get(name, sValue, sDef);
+  value = (bool)sValue.toInt();
+}
+
 void IotsaConfigFileLoad::get(String name, float &value, float def) {
   String sValue;
   String sDef = String(def);
@@ -32,6 +46,12 @@ void IotsaConfigFileLoad::get(String name, float &value, float def) {
 
 void IotsaConfigFileLoad::get(String name, String &value, const String &def) {
   get(name, value, def.c_str());
+}
+
+void IotsaConfigFileLoad::get(String name, std::string &value, const std::string &def) {
+  String sValue;
+  get(name, sValue, def.c_str());
+  value = sValue.c_str();
 }
 
 void IotsaConfigFileLoad::get(String name, String &value, const char *def) {
@@ -82,6 +102,13 @@ void IotsaConfigFileSave::put(String name, const String &value) {
   fp.print(name);
   fp.print('=');
   fp.print(value);
+  fp.print('\n');
+}
+
+void IotsaConfigFileSave::put(String name, const std::string &value) {
+  fp.print(name);
+  fp.print('=');
+  fp.print(value.c_str());
   fp.print('\n');
 }
 

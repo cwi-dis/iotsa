@@ -5,6 +5,7 @@ iotsa 2.5 - development
   interaction than reboot. AP enabled while in configuration mode.
 - iotsaBatteryMod sleep modes rationalized. 
 - Python iotsa package (including iotsaConfig as a script entry point)
+- Added API for per-module objects.
 
 iotsa 2.4.1 - 23-Apr-2020
 

@@ -270,37 +270,31 @@ void IotsaBatteryMod::configLoad() {
   cf.get("sleepMode", value, 0);
   if (value > _IOTSA_SLEEP_MAX) value = IOTSA_SLEEP_NONE;
   sleepMode = (IotsaSleepMode)value;
-  cf.get("wakeDuration", value, 0);
-  wakeDuration = value;
-  cf.get("bootExtraWakeDuration", value, 0);
-  bootExtraWakeDuration = value;
-  cf.get("sleepDuration", value, 0);
-  sleepDuration = value;
-  cf.get("wifiActiveDuration", value, 0);
-  wifiActiveDuration = value;
+  cf.get("wakeDuration", wakeDuration, 0);
+  cf.get("bootExtraWakeDuration", bootExtraWakeDuration, 0);
+  cf.get("sleepDuration", sleepDuration, 0);
+  cf.get("wifiActiveDuration", wifiActiveDuration, 0);
 #ifdef ESP32
-  cf.get("watchdogDuration", value, 0);
-  watchdogDuration = value;
+  cf.get("watchdogDuration", watchdogDuration, 0);
 #endif
   if (pinVUSB >= 0) {
-    cf.get("disableSleepOnUSBPower", value, 0);
-    disableSleepOnUSBPower = value;
+    cf.get("disableSleepOnUSBPower", disableSleepOnUSBPower, 0);
   }
   millisAtWakeup = 0;
 }
 
 void IotsaBatteryMod::configSave() {
   IotsaConfigFileSave cf("/config/battery.cfg");
-  cf.put("sleepMode", (int)sleepMode);
-  cf.put("wakeDuration", (int)wakeDuration);
-  cf.put("bootExtraWakeDuration", (int)bootExtraWakeDuration);
-  cf.put("sleepDuration", (int)sleepDuration);
-  cf.put("wifiActiveDuration", (int)wifiActiveDuration);
+  cf.put("sleepMode", sleepMode);
+  cf.put("wakeDuration", wakeDuration);
+  cf.put("bootExtraWakeDuration", bootExtraWakeDuration);
+  cf.put("sleepDuration", sleepDuration);
+  cf.put("wifiActiveDuration", wifiActiveDuration);
 #ifdef ESP32
-  cf.put("watchdogDuration", (int)watchdogDuration);
+  cf.put("watchdogDuration", watchdogDuration);
 #endif
   if (pinVUSB >= 0) {
-    cf.put("disableSleepOnUSBPower", (int)disableSleepOnUSBPower);
+    cf.put("disableSleepOnUSBPower", disableSleepOnUSBPower);
   }
   millisAtWakeup = 0;
 }
