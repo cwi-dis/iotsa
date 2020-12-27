@@ -45,7 +45,7 @@ jobs:
       run: |
         pio ci --lib="." --board=nodemcuv2
         pio lib -g install "esp32_https_server_compat@~1.0.0"
-        pio ci --lib="." --board=nodemcuv2 --board=esp32thing
+        pio ci --lib="." --board=esp32thing
       env:
         PLATFORMIO_CI_SRC: ${{ matrix.example }}
         
