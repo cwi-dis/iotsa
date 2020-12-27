@@ -9,22 +9,24 @@ jobs:
     strategy:
       matrix:
         example:
-          - examples/Hello
-#          - examples/HelloApi
-#          - examples/HelloCpp
-#          - examples/HelloPasswd
-#          - examples/HelloRights
-#          - examples/HelloToken
-#          - examples/HelloUser
-#          - examples/Led
-#          - examples/Light
-#          - examples/Log
-#          - examples/Skeleton
-#          - examples/Button
-#          - examples/Ringer
-#          - examples/BLELed
-          - examples/Temperature
-          
+        - examples/Hello
+        - examples/HelloApi
+        - examples/HelloCpp
+        - examples/HelloPasswd
+        - examples/HelloRights
+        - examples/HelloToken
+        - examples/HelloUser
+        - examples/Led
+        - examples/Light
+        - examples/Log
+        - examples/Skeleton
+        - examples/Button
+        - examples/Ringer
+        - examples/BLELed
+        - examples/Temperature
+      include:
+      - example: examples/Led
+        build_flags: -DIOTSA_WITH_COAP -DIOTSA_WITHOUT_WEB -DIOTSA_WITHOUT_REST -DIOTSA_WITHOUT_HTTP -DIOTSA_WITHOUT_HTTPS -DIOTSA_WITH_PLACEHOLDERS
     steps:
     - uses: actions/checkout@v2
     - name: Cache pip
@@ -63,6 +65,7 @@ jobs:
         pio ci --lib="." --project-option="lib_ldf_mode=deep+" --board=esp32thing
       env:
         PLATFORMIO_CI_SRC: ${{ matrix.example }}
+        PLATFORMIO_BUILD_FLAGS: ${{ matrix.build_flags }}
         
 # From travis:
 #- IOTSA_EXAMPLE=Hello PLATFORMIO_CI_SRC=examples/Hello
