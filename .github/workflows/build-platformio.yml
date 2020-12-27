@@ -23,6 +23,7 @@ jobs:
 #          - examples/Button
 #          - examples/Ringer
 #          - examples/BLELed
+         - examples/Temperature
           
     steps:
     - uses: actions/checkout@v2
@@ -55,6 +56,7 @@ jobs:
         pio lib -g install "ArduinoJWT@~1.0.1"
         pio lib -g install "CoAP simple library@1.3.19"
         pio lib -g install "esp32_https_server_compat@~1.0.0"
+        pio lib -g install "DHT sensor library@~1.4.1"
     - name: Run PlatformIO
       run: |
         pio ci --lib="." --project-option="lib_ldf_mode=deep+" --project-option="lib_ignore=esp32_https_server_compat" --board=nodemcuv2
