@@ -10,19 +10,19 @@ jobs:
       matrix:
         example:
           - examples/Hello
-          - examples/HelloApi
-          - examples/HelloCpp
-          - examples/HelloPasswd
-          - examples/HelloRights
-          - examples/HelloToken
-          - examples/HelloUser
-          - examples/Led
-          - examples/Light
-          - examples/Log
-          - examples/Skeleton
-          - examples/Button
-          - examples/Ringer
-          - examples/BLELed
+#          - examples/HelloApi
+#          - examples/HelloCpp
+#          - examples/HelloPasswd
+#          - examples/HelloRights
+#          - examples/HelloToken
+#          - examples/HelloUser
+#          - examples/Led
+#          - examples/Light
+#          - examples/Log
+#          - examples/Skeleton
+#          - examples/Button
+#          - examples/Ringer
+#          - examples/BLELed
           
     steps:
     - uses: actions/checkout@v2
