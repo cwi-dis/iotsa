@@ -6,10 +6,11 @@ on: push
 jobs:
   build:
     runs-on: ubuntu-latest
-    matrix:
-      example:
-        - examples/Hello/mainHello.cpp
-        - examples/HelloApi/mainHelloApi.cpp
+    strategy:
+      matrix:
+        example:
+          - examples/Hello/mainHello.cpp
+          - examples/HelloApi/mainHelloApi.cpp
     steps:
     - uses: actions/checkout@v2
     - name: Cache pip
