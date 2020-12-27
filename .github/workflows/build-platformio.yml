@@ -9,8 +9,8 @@ jobs:
     strategy:
       matrix:
         example:
-          - examples/Hello/mainHello.cpp
-          - examples/HelloApi/mainHelloApi.cpp
+          - examples/Hello
+          - examples/HelloApi
     steps:
     - uses: actions/checkout@v2
     - name: Cache pip
