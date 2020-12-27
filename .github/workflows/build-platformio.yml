@@ -11,6 +11,19 @@ jobs:
         example:
           - examples/Hello
           - examples/HelloApi
+          - examples/HelloCpp
+          - examples/HelloPasswd
+          - examples/HelloRights
+          - examples/HelloToken
+          - examples/HelloUser
+          - examples/Led
+          - examples/Light
+          - examples/Log
+          - examples/Skeleton
+          - examples/Button
+          - examples/Ringer
+          - examples/BLELed
+          
     steps:
     - uses: actions/checkout@v2
     - name: Cache pip
@@ -41,10 +54,10 @@ jobs:
         pio lib -g install "ArduinoJson@~6.14.1"
         pio lib -g install "ArduinoJWT@~1.0.1"
         pio lib -g install "CoAP simple library@1.3.19"
+        pio lib -g install "esp32_https_server_compat@~1.0.0"
     - name: Run PlatformIO
       run: |
         pio ci --lib="." --project-option="lib_ldf_mode=deep+" --project-option="lib_ignore=esp32_https_server_compat" --board=nodemcuv2
-        pio lib -g install "esp32_https_server_compat@~1.0.0"
         pio ci --lib="." --project-option="lib_ldf_mode=deep+" --board=esp32thing
       env:
         PLATFORMIO_CI_SRC: ${{ matrix.example }}
