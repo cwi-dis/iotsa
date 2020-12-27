@@ -8,6 +8,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        board:
+        - nodemcuv2
+        - esp32thing
         example:
         - examples/Hello
         - examples/HelloApi
@@ -25,9 +28,12 @@ jobs:
         - examples/BLELed
         - examples/Temperature
         build_flags: [""]
-        # Include special builds.
+        # Extra options/settings.
         include:
-        # A build of Led with only COAP support (no web, no rest, no http/s)
+        # For esp8266 we need to manually exclude esp32_https_server and esp32_https_server_compat. Probably bug in libdeps of platformio
+        - board: nodemcuv2
+          pio_extra_args: --project-option="lib_ignore=esp32_https_server_compat"
+        # Extra build: Led with only COAP support (no web, no rest, no http/s)
         - example: examples/Led
           build_flags: -DIOTSA_WITH_COAP -DIOTSA_WITHOUT_WEB -DIOTSA_WITHOUT_REST -DIOTSA_WITHOUT_HTTP -DIOTSA_WITHOUT_HTTPS -DIOTSA_WITH_PLACEHOLDERS
     steps:
@@ -64,8 +70,7 @@ jobs:
         pio lib -g install "DHT sensor library@~1.4.1"
     - name: Run PlatformIO
       run: |
-        pio ci --lib="." --project-option="lib_ldf_mode=deep+" --project-option="lib_ignore=esp32_https_server_compat" --board=nodemcuv2
-        pio ci --lib="." --project-option="lib_ldf_mode=deep+" --board=esp32thing
+        pio ci --lib="." --project-option="lib_ldf_mode=deep+" ${{ matrix.pio_extra_args }} --board=${{ matrix.board }}
       env:
         PLATFORMIO_CI_SRC: ${{ matrix.example }}
         PLATFORMIO_BUILD_FLAGS: ${{ matrix.build_flags }}
