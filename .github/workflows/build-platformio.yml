@@ -23,7 +23,7 @@ jobs:
 #          - examples/Button
 #          - examples/Ringer
 #          - examples/BLELed
-         - examples/Temperature
+          - examples/Temperature
           
     steps:
     - uses: actions/checkout@v2
