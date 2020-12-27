@@ -33,9 +33,37 @@ jobs:
         # For esp8266 we need to manually exclude esp32_https_server and esp32_https_server_compat. Probably bug in libdeps of platformio
         - board: nodemcuv2
           pio_extra_args: --project-option="lib_ignore=esp32_https_server_compat"
+        # Extra build: Led with HTTPS
+        - example: examples/Led
+          build_flags: -DIOTSA_WITH_HTTPS
+          board: nodemcuv2
+        - example: examples/Led
+          build_flags: -DIOTSA_WITH_HTTPS
+          board: esp32thing
+        # Extra build: Led with COAP
+        - example: examples/Led
+          build_flags: -DIOTSA_WITH_COAP
+          board: nodemcuv2
+        - example: examples/Led
+          build_flags: -DIOTSA_WITH_COAP
+          board: esp32thing
         # Extra build: Led with only COAP support (no web, no rest, no http/s)
         - example: examples/Led
           build_flags: -DIOTSA_WITH_COAP -DIOTSA_WITHOUT_WEB -DIOTSA_WITHOUT_REST -DIOTSA_WITHOUT_HTTP -DIOTSA_WITHOUT_HTTPS -DIOTSA_WITH_PLACEHOLDERS
+          board: nodemcuv2
+        - example: examples/Led
+          build_flags: -DIOTSA_WITH_COAP -DIOTSA_WITHOUT_WEB -DIOTSA_WITHOUT_REST -DIOTSA_WITHOUT_HTTP -DIOTSA_WITHOUT_HTTPS -DIOTSA_WITH_PLACEHOLDERS
+          board: esp32thing
+        # Extra build: BLELed with BLE added
+        - example: examples/BLELed
+          board: esp32thing
+          build_flags: -DIOTSA_WITH_BLE
+          pio_extra_args: --project-option="board_build.partitions=no_ota.csv"
+        # Extra build: BLELed with only BLE (no web, http/s, rest, wifi)
+        - example: examples/BLELed
+          board: esp32thing
+          build_flags: -DIOTSA_WITH_BLE -DIOTSA_WITHOUT_COAP -DIOTSA_WITHOUT_WEB -DIOTSA_WITHOUT_REST -DIOTSA_WITHOUT_HTTP -DIOTSA_WITHOUT_HTTPS -DIOTSA_WITH_PLACEHOLDERS
+          pio_extra_args: --project-option="board_build.partitions=no_ota.csv"
     steps:
     - uses: actions/checkout@v2
     - name: Cache pip
