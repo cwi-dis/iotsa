@@ -60,7 +60,7 @@ jobs:
 
     - name: Build Led esp32thing
       run: |
-        arduino-cli compile -fqbn "esp32:esp32:esp32thing" ./examples/Led
+        arduino-cli compile --fqbn "esp32:esp32:esp32thing" ./examples/Led
 #    - name: Arduino build
 #      uses: ArminJo/arduino-test-compile@v3
 #      with:
