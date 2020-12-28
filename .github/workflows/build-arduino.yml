@@ -18,14 +18,50 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-    - name: Checkout custom library
+
+    - name: Setup Arduino CLI
+      uses: arduino/setup-arduino-cli@v1.1.1
+
+    - name: Install platform
+      run: |
+        arduino-cli core update-index
+#        arduino-cli core update-index --additional-urls "https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json"
+        arduino-cli core update-index --additional-urls "https://arduino.esp8266.com/stable/package_esp8266com_index.json,https://dl.espressif.com/dl/package_esp32_index.json"
+#        arduino-cli core install "esp32:esp32" --additional-urls "https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json"
+        arduino-cli core install "esp32:esp32"
+        arduino-cli core install "esp8266:esp8266"
+        arduino-cli lib install "Adafruit NeoPixel"
+        arduino-cli lib install "Time"
+        arduino-cli lib install "Timezone"
+        arduino-cli lib install "ArduinoJson"
+        arduino-cli lib install "CoAP simple library"
+        arduino-cli lib install "ESP32_HTTPS_Server"
+        arduino-cli lib install "esp32_https_server_compat"
+        arduino-cli lib install "DHT sensor library"
+        arduino-cli lib install "Adafruit Unified Sensor"
+#        python -m pip install --upgrade pip
+#        pip install pyserial
+
+    - name: Checkout custom libraries
       uses: actions/checkout@v2
       with:
         repository: yutter/ArduinoJWT
         path: CustomLibrary_ArduinoJWT 
-    - name: Arduino build
-      uses: ArminJo/arduino-test-compile@v3
-      with:
-        platform-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json,https://dl.espressif.com/dl/package_esp32_index.json
-        arduino-board-fqbn: ${{ matrix. arduino-board-fqbn }}
-        required-libraries: Adafruit NeoPixel,Time,Timezone,ArduinoJson,CoAP simple library,ESP32_HTTPS_Server,esp32_https_server_compat,DHT sensor library,Adafruit Unified Sensor
+
+    - name: Install iotsa and custom libraries
+      run: |
+        mkdir -p ~/Arduino/libraries
+        pwd
+        ls -l
+        ln -s . ~/Arduino/libraries/iotsa
+        ln -s CustomLibrary_ArduinoJWT ~/Arduino/libraries/ArduinoJWT
+
+    - name: Build Led esp32thing
+      run: |
+        arduino-cli compile -fqbn "esp32:esp32:esp32thing" ./examples/Led
+#    - name: Arduino build
+#      uses: ArminJo/arduino-test-compile@v3
+#      with:
+#        platform-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json,https://dl.espressif.com/dl/package_esp32_index.json
+#        arduino-board-fqbn: ${{ matrix. arduino-board-fqbn }}
+#        required-libraries: Adafruit NeoPixel,Time,Timezone,ArduinoJson,CoAP simple library,ESP32_HTTPS_Server,esp32_https_server_compat,DHT sensor library,Adafruit Unified Sensor
