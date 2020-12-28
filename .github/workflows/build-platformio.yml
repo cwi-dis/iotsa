@@ -118,8 +118,7 @@ jobs:
 
     - name: Run PlatformIO
       run: |
-        pio ci --lib="." --project-option="lib_ldf_mode=deep+" ${{ matrix.pio_extra_args }} --board=${{ matrix.board }}
-        ls -Ra
+        pio ci --lib="." --project-option="lib_ldf_mode=deep+" ${{ matrix.pio_extra_args }} --board=${{ matrix.board }} --keep-build-dir
       env:
         PLATFORMIO_CI_SRC: examples/${{ matrix.example }}
         PLATFORMIO_BUILD_FLAGS: ${{ matrix.build_flags }}
@@ -138,7 +137,23 @@ jobs:
     strategy:
       matrix:
         repo:
+        - cwi-dis/iotsa433
+        - cwi-dis/iotsaBLELed
+        - cwi-dis/iotsaDMXLedstrip
+        - cwi-dis/iotsaDMXSensor
+        - cwi-dis/iotsaDisplayServer
+        - cwi-dis/iotsaDoorOpener
+        - cwi-dis/iotsaDoorbellButton
+        - cwi-dis/iotsaDoorbellRinger
+        - cwi-dis/iotsaGPIO
+        - cwi-dis/iotsaMotorServer
         - cwi-dis/iotsaNeoClock
+        - cwi-dis/iotsaOLED
+        - cwi-dis/iotsaRGBWSensor
+        - cwi-dis/iotsaResponseTime
+        - cwi-dis/iotsaSensor
+        - cwi-dis/iotsaSmartMeter
+        - cwi-dis/lissabon
     runs-on: ubuntu-latest
     steps:
     - name: Repository Dispatch
