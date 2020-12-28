@@ -55,8 +55,10 @@ jobs:
         mkdir -p ~/Arduino/libraries
         pwd
         ls -l
-        ln -s . ~/Arduino/libraries/iotsa
-        ln -s CustomLibrary_ArduinoJWT ~/Arduino/libraries/ArduinoJWT
+        ln -s $PWD ~/Arduino/libraries/iotsa
+        ln -s $PWD/CustomLibrary_ArduinoJWT ~/Arduino/libraries/ArduinoJWT
+        ls -l ~/Arduino/libraries
+        ls -lL ~/Arduino/libraries
 
     - name: Build Led esp32thing
       run: |
