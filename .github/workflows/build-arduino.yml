@@ -12,9 +12,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        arduino-board-fqbn:
+        board:
         - esp32:esp32:esp32thing
-      
+        - esp8266:esp8266:nodemcuv2
+        example:
+        - examples/Hello
+        - examples/Led
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -84,9 +87,9 @@ jobs:
         ls -lL ~/Arduino/libraries
         ls -l ~/Arduino
 
-    - name: Build Led esp32thing
+    - name: Build ${{ matrix.example }} ${{ matrix.board }}
       run: |
-        arduino-cli compile --fqbn "esp32:esp32:esp32thing" ./examples/Led
+        arduino-cli compile --fqbn ${{ matrix.board }} ${{ matrix.example }}
 #    - name: Arduino build
 #      uses: ArminJo/arduino-test-compile@v3
 #      with:
