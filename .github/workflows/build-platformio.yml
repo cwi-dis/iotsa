@@ -137,7 +137,7 @@ jobs:
     strategy:
       matrix:
         repo:
-        - dis-git/iotsaNeoClock
+        - cwi-dis/iotsaNeoClock
     runs-on: ubuntu-latest
     steps:
     - name: Repository Dispatch
