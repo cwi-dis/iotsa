@@ -1,0 +1,117 @@
+# Created this action based on information found in:
+# - <https://github.com/marketplace/actions/test-compile-for-arduino>
+# - <https://docs.github.com/en/free-pro-team@latest/actions/quickstart>
+name: build-arduino
+on: 
+  push:
+    paths-ignore:
+    - '.github/workflows/build-platformio.yml'
+    - 'docs/**'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        board:
+        - esp32:esp32:esp32thing
+        - esp8266:esp8266:nodemcuv2
+        example:
+        - examples/Hello
+        - examples/HelloApi
+        - examples/HelloCpp
+        - examples/HelloPasswd
+        - examples/HelloRights
+        - examples/HelloToken
+        - examples/HelloUser
+        - examples/Led
+        - examples/Light
+        - examples/Log
+        - examples/Skeleton
+        - examples/Button
+        - examples/Ringer
+# Temporarily disabled:
+#        - examples/BLELed
+        - examples/Temperature
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+      
+    - name: Cache pip
+      uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+   
+    - name: Cache Arduino CLI
+      uses: actions/cache@v2
+      with:
+        path: ~/.arduino15
+        key: ${{ runner.os }}-${{ hashFiles('*_index.json') }}
+   
+    - name: Cache Arduino libraries
+      uses: actions/cache@v2
+      with:
+        path: ~/Arduino/libraries
+        key: ${{ runner.os }}-${{ hashFiles('**/library.properties') }}
+   
+    - name: Setup Arduino CLI
+      uses: arduino/setup-arduino-cli@v1.1.1
+
+    - name: Install pyserial
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyserial
+        
+    - name: Install Arduino platforms and libraries
+      run: |
+        arduino-cli core update-index
+        arduino-cli core update-index --additional-urls "https://arduino.esp8266.com/stable/package_esp8266com_index.json,https://dl.espressif.com/dl/package_esp32_index.json"
+        arduino-cli core install "esp32:esp32" --additional-urls "https://dl.espressif.com/dl/package_esp32_index.json"
+
+        arduino-cli core install "esp8266:esp8266" --additional-urls "https://arduino.esp8266.com/stable/package_esp8266com_index.json"
+
+        arduino-cli lib install "Adafruit NeoPixel"
+        arduino-cli lib install "Time"
+        arduino-cli lib install "Timezone"
+        arduino-cli lib install "ArduinoJson"
+        arduino-cli lib install "CoAP simple library"
+        arduino-cli lib install "ESP32_HTTPS_Server"
+        arduino-cli lib install "esp32_https_server_compat"
+        arduino-cli lib install "DHT sensor library"
+        arduino-cli lib install "Adafruit Unified Sensor"
+#        arduino-cli core update-index --additional-urls "https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json"
+#        arduino-cli core install "esp32:esp32" --additional-urls "https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json"
+
+    - name: Checkout custom libraries
+      uses: actions/checkout@v2
+      with:
+        repository: yutter/ArduinoJWT
+        path: CustomLibrary_ArduinoJWT 
+
+    - name: Install iotsa and custom libraries
+      run: |
+        mkdir -p ~/Arduino/libraries
+        pwd
+        ls -l
+        ln -fs $PWD ~/Arduino/libraries/iotsa
+        ln -fs $PWD/CustomLibrary_ArduinoJWT ~/Arduino/libraries/ArduinoJWT
+        ls -l ~/Arduino/libraries
+        ls -lL ~/Arduino/libraries
+        ls -l ~/Arduino
+
+    - name: Build ${{ matrix.example }} ${{ matrix.board }}
+      run: |
+        arduino-cli compile --fqbn ${{ matrix.board }} ${{ matrix.example }}
+#    - name: Arduino build
+#      uses: ArminJo/arduino-test-compile@v3
+#      with:
+#        platform-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json,https://dl.espressif.com/dl/package_esp32_index.json
+#        arduino-board-fqbn: ${{ matrix. arduino-board-fqbn }}
+#        required-libraries: Adafruit NeoPixel,Time,Timezone,ArduinoJson,CoAP simple library,ESP32_HTTPS_Server,esp32_https_server_compat,DHT sensor library,Adafruit Unified Sensor
+
+    - name: Unnstall iotsa and custom libraries
+      run: |
+        rm -f ~/Arduino/libraries/iotsa
+        rm -f ~/Arduino/libraries/ArduinoJWT
