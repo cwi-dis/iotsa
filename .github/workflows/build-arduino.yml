@@ -17,7 +17,21 @@ jobs:
         - esp8266:esp8266:nodemcuv2
         example:
         - examples/Hello
+        - examples/HelloApi
+        - examples/HelloCpp
+        - examples/HelloPasswd
+        - examples/HelloRights
+        - examples/HelloToken
+        - examples/HelloUser
         - examples/Led
+        - examples/Light
+        - examples/Log
+        - examples/Skeleton
+        - examples/Button
+        - examples/Ringer
+# Temporarily disabled:
+#        - examples/BLELed
+        - examples/Temperature
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
