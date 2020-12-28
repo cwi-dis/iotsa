@@ -8,6 +8,9 @@ on:
     - '.github/workflows/build-arduino.yml'
     - 'docs/**'
 jobs:
+  #
+  # Job#1 - Build all examples for all platforms, upload binaries as artifacts
+  #
   build:
     runs-on: ubuntu-latest
     strategy:
@@ -16,22 +19,22 @@ jobs:
         - nodemcuv2
         - esp32thing
         example:
-        - examples/Hello
-        - examples/HelloApi
-        - examples/HelloCpp
-        - examples/HelloPasswd
-        - examples/HelloRights
-        - examples/HelloToken
-        - examples/HelloUser
-        - examples/Led
-        - examples/Light
-        - examples/Log
-        - examples/Skeleton
-        - examples/Button
-        - examples/Ringer
+        - Hello
+        - HelloApi
+        - HelloCpp
+        - HelloPasswd
+        - HelloRights
+        - HelloToken
+        - HelloUser
+        - Led
+        - Light
+        - Log
+        - Skeleton
+        - Button
+        - Ringer
 # Temporarily disabled:
-#        - examples/BLELed
-        - examples/Temperature
+#        - BLELed
+        - Temperature
         build_flags: [""]
         # Extra options/settings.
         include:
@@ -39,43 +42,45 @@ jobs:
         - board: nodemcuv2
           pio_extra_args: --project-option="lib_ignore=esp32_https_server_compat"
         # Extra build: Led with HTTPS
-        - example: examples/Led
+        - example: Led
           build_flags: -DIOTSA_WITH_HTTPS
           board: nodemcuv2
           pio_extra_args: --project-option="lib_ignore=esp32_https_server_compat"
-        - example: examples/Led
+        - example: Led
           build_flags: -DIOTSA_WITH_HTTPS
           board: esp32thing
         # Extra build: Led with COAP
-        - example: examples/Led
+        - example: Led
           build_flags: -DIOTSA_WITH_COAP
           board: nodemcuv2
           pio_extra_args: --project-option="lib_ignore=esp32_https_server_compat"
-        - example: examples/Led
+        - example: Led
           build_flags: -DIOTSA_WITH_COAP
           board: esp32thing
         # Extra build: Led with only COAP support (no web, no rest, no http/s)
-        - example: examples/Led
+        - example: Led
           build_flags: -DIOTSA_WITH_COAP -DIOTSA_WITHOUT_WEB -DIOTSA_WITHOUT_REST -DIOTSA_WITHOUT_HTTP -DIOTSA_WITHOUT_HTTPS -DIOTSA_WITH_PLACEHOLDERS
           board: nodemcuv2
           pio_extra_args: --project-option="lib_ignore=esp32_https_server_compat"
-        - example: examples/Led
+        - example: Led
           build_flags: -DIOTSA_WITH_COAP -DIOTSA_WITHOUT_WEB -DIOTSA_WITHOUT_REST -DIOTSA_WITHOUT_HTTP -DIOTSA_WITHOUT_HTTPS -DIOTSA_WITH_PLACEHOLDERS
           board: esp32thing
 # Temporarily disabled.
 #        # Extra build: BLELed with BLE added
-#        - example: examples/BLELed
+#        - example: BLELed
 #          board: esp32thing
 #          build_flags: -DIOTSA_WITH_BLE
 #          pio_extra_args: --project-option="board_build.partitions=no_ota.csv"
 # Temporarily disabled.
 #        # Extra build: BLELed with only BLE (no web, http/s, rest, wifi)
-#        - example: examples/BLELed
+#        - example: BLELed
 #          board: esp32thing
 #          build_flags: -DIOTSA_WITH_BLE -DIOTSA_WITHOUT_COAP -DIOTSA_WITHOUT_WEB -DIOTSA_WITHOUT_API -DIOTSA_WITHOUT_REST -DIOTSA_WITHOUT_HTTP -DIOTSA_WITHOUT_HTTPS -DIOTSA_WITH_PLACEHOLDERS
 #          pio_extra_args: --project-option="board_build.partitions=no_ota.csv"
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v2
+
     - name: Cache pip
       uses: actions/cache@v2
       with:
@@ -83,19 +88,23 @@ jobs:
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-
+
     - name: Cache PlatformIO
       uses: actions/cache@v2
       with:
         path: ~/.platformio
         key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+
     - name: Set up Python
       uses: actions/setup-python@v2
+
     - name: Install PlatformIO
       run: |
         python -m pip install --upgrade pip
         pip install --upgrade platformio
         pio platform install --with-package framework-arduinoespressif8266 espressif8266
         pio platform install --with-package framework-arduinoespressif32 espressif32
+
     - name: Install library dependencies
       run: |
         pio lib -g install "Adafruit NeoPixel@~1.3.5"
@@ -106,39 +115,34 @@ jobs:
         pio lib -g install "CoAP simple library@1.3.19"
         pio lib -g install "esp32_https_server_compat@~1.0.0"
         pio lib -g install "DHT sensor library@~1.4.1"
+
     - name: Run PlatformIO
       run: |
         pio ci --lib="." --project-option="lib_ldf_mode=deep+" ${{ matrix.pio_extra_args }} --board=${{ matrix.board }}
       env:
-        PLATFORMIO_CI_SRC: ${{ matrix.example }}
+        PLATFORMIO_CI_SRC: examples/${{ matrix.example }}
         PLATFORMIO_BUILD_FLAGS: ${{ matrix.build_flags }}
         
-# From travis:
-#- IOTSA_EXAMPLE=Hello PLATFORMIO_CI_SRC=examples/Hello
-#- IOTSA_EXAMPLE=HelloApi PLATFORMIO_CI_SRC=examples/HelloApi
-#- IOTSA_EXAMPLE=HelloCpp PLATFORMIO_CI_SRC=examples/HelloCpp
-#- IOTSA_EXAMPLE=HelloPasswd PLATFORMIO_CI_SRC=examples/HelloPasswd
-#- IOTSA_EXAMPLE=HelloRights PLATFORMIO_CI_SRC=examples/HelloRights
-#- IOTSA_EXAMPLE=HelloToken PLATFORMIO_CI_SRC=examples/HelloToken
-#- IOTSA_EXAMPLE=HelloUser PLATFORMIO_CI_SRC=examples/HelloUser
-#- IOTSA_EXAMPLE=Led PLATFORMIO_CI_SRC=examples/Led
-#- IOTSA_EXAMPLE=Light PLATFORMIO_CI_SRC=examples/Light
-#- IOTSA_EXAMPLE=Log PLATFORMIO_CI_SRC=examples/Log
-#- IOTSA_EXAMPLE=Skeleton PLATFORMIO_CI_SRC=examples/Skeleton
-#- IOTSA_EXAMPLE=Button PLATFORMIO_CI_SRC=examples/Button
-#- IOTSA_EXAMPLE=Ringer PLATFORMIO_CI_SRC=examples/Ringer
-## Temporarily removed, see https://github.com/platformio/platform-espressif32/issues/301
-## - IOTSA_EXAMPLE=BLELed PLATFORMIO_CI_SRC=examples/BLELed PLATFORMIO_CI_EXTRA_ARGS='--project-option="board_build.partitions=no_ota.csv"'
-## Build a service coap-only (no web, no http[s])
-#- IOTSA_EXAMPLE=Led PLATFORMIO_CI_SRC=examples/Led PLATFORMIO_BUILD_FLAGS="-DIOTSA_WITH_COAP -DIOTSA_WITHOUT_WEB -DIOTSA_WITHOUT_REST -DIOTSA_WITHOUT_HTTP -DIOTSA_WITHOUT_HTTPS -DIOTSA_WITH_PLACEHOLDERS"
-## Build a service with both coap and rest/web
-#- IOTSA_EXAMPLE=Led PLATFORMIO_CI_SRC=examples/Led PLATFORMIO_BUILD_FLAGS="-DIOTSA_WITH_COAP -DIOTSA_WITH_REST"
-## Build a service with https in stead of http
-## - IOTSA_EXAMPLE=Led PLATFORMIO_CI_SRC=examples/Led PLATFORMIO_BUILD_FLAGS="-DIOTSA_WITHOUT_HTTP -DIOTSA_WITH_HTTPS"
-## Build a coap-only service that uses requests
-#- IOTSA_EXAMPLE=Button PLATFORMIO_CI_SRC=examples/Button PLATFORMIO_BUILD_FLAGS="-DIOTSA_WITH_COAP -DIOTSA_WITHOUT_WEB -DIOTSA_WITHOUT_REST -DIOTSA_WITHOUT_HTTP -DIOTSA_WITHOUT_HTTPS -DIOTSA_WITH_PLACEHOLDERS"
-#
-# run commands from travis:
-#- platformio ci --lib="." --project-option="lib_ldf_mode=deep+" --board=nodemcuv2  $PLATFORMIO_CI_EXTRA_ARGS
-#- platformio lib -g install "esp32_https_server_compat@~1.0.0"
-#- platformio ci --lib="." --project-option="lib_ldf_mode=deep+" --board=esp32thing  $PLATFORMIO_CI_EXTRA_ARGS
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ matrix.example }}-${{ matrix.board }}.bin
+        path: .pio/build/${{ matrix.board }}/firmware.bin        
+  #
+  # Job#2 - dispatch build event to dependent repositories
+  #
+  dispatch:
+#    if: only-for-develop-branch
+    needs: build
+    strategy:
+      matrix:
+        repo:
+        - dis-git/iotsaNeoClock
+    runs-on: ubuntu-latest
+    steps:
+    - name: Repository Dispatch
+      uses: peter-evans/repository-dispatch@v1
+      with:
+        token: ${{ secrets.REPO_ACCESS_TOKEN }}
+        repository: ${{ matrix.repo }}
+        event-type: rebuild
