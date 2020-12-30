@@ -30,11 +30,25 @@ void IotsaConfigFileLoad::get(String name, uint32_t &value, uint32_t def) {
   value = (uint32_t)sValue.toInt();
 }
 
+void IotsaConfigFileLoad::get(String name, uint16_t &value, uint16_t def) {
+  int iDef = (int)def;
+  int iValue;
+  get(name, iValue, iDef);
+  value = (uint16_t)iValue;
+}
+
+void IotsaConfigFileLoad::get(String name, uint8_t &value, uint8_t def) {
+  int iDef = (int)def;
+  int iValue;
+  get(name, iValue, iDef);
+  value = (uint8_t)iValue;
+}
+
 void IotsaConfigFileLoad::get(String name, bool &value, bool def) {
-  String sValue;
-  String sDef = String(def);
-  get(name, sValue, sDef);
-  value = (bool)sValue.toInt();
+  int iDef = (int)def;
+  int iValue;
+  get(name, iValue, iDef);
+  value = (bool)iValue;
 }
 
 void IotsaConfigFileLoad::get(String name, float &value, float def) {
