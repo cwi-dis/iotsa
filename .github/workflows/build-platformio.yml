@@ -32,8 +32,7 @@ jobs:
         - Skeleton
         - Button
         - Ringer
-# Temporarily disabled:
-#        - BLELed
+        - BLELed
         - Temperature
         build_flags: [""]
         # Extra options/settings.
