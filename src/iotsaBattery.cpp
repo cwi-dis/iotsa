@@ -164,6 +164,12 @@ void IotsaBatteryMod::setup() {
 #endif
 }
 
+
+void IotsaBatteryMod::allowBLEConfigModeSwitch() {
+  bleConfigModeSwitchAllowed = true;
+  iotsaConfig.allowRCMDescription("use BLE to set 'reboot with WiFi' to 2");
+}
+
 #ifdef IOTSA_WITH_API
 bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
   reply["sleepMode"] = (int)sleepMode;
@@ -184,10 +190,6 @@ bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
   return true;
 }
 
-void IotsaBatteryMod::allowBLEConfigModeSwitch() {
-  bleConfigModeSwitchAllowed = true;
-  iotsaConfig.allowRCMDescription("use BLE to set 'reboot with WiFi' to 2");
-}
 bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
