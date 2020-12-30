@@ -115,8 +115,8 @@ jobs:
 
     - name: Run PlatformIO
       run: |
-        pio ci --lib="." --project-option="lib_ldf_mode=deep+" ${{ matrix.pio_extra_args }} --board=${{ matrix.board }} --keep-build-dir
-        ls -ra
+        rm -rf /tmp/pio-build
+        pio ci --lib="." --project-option="lib_ldf_mode=deep+" ${{ matrix.pio_extra_args }} --board=${{ matrix.board }} --keep-build-dir --build-dir /tmp/pio-build
       env:
         PLATFORMIO_CI_SRC: examples/${{ matrix.example }}
         PLATFORMIO_BUILD_FLAGS: ${{ matrix.build_flags }}
@@ -125,7 +125,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: ${{ matrix.example }}-${{ matrix.board }}.bin
-        path: .pio/build/${{ matrix.board }}/firmware.bin        
+        path: /tmp/pio-build/.pio/build/${{ matrix.board }}/firmware.bin        
   #
   # Job#2 - dispatch build event to dependent repositories
   #
