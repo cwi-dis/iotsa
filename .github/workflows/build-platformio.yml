@@ -64,13 +64,11 @@ jobs:
         - example: Led
           build_flags: -DIOTSA_WITH_COAP -DIOTSA_WITHOUT_WEB -DIOTSA_WITHOUT_REST -DIOTSA_WITHOUT_HTTP -DIOTSA_WITHOUT_HTTPS -DIOTSA_WITH_PLACEHOLDERS
           board: esp32thing
-# Temporarily disabled.
-#        # Extra build: BLELed with BLE added
-#        - example: BLELed
-#          board: esp32thing
-#          build_flags: -DIOTSA_WITH_BLE
-#          pio_extra_args: --project-option="board_build.partitions=no_ota.csv"
-# Temporarily disabled.
+        # Extra build: BLELed with BLE added
+        - example: BLELed
+          board: esp32thing
+          build_flags: -DIOTSA_WITH_BLE
+          pio_extra_args: --project-option="board_build.partitions=no_ota.csv"
 #        # Extra build: BLELed with only BLE (no web, http/s, rest, wifi)
 #        - example: BLELed
 #          board: esp32thing
@@ -100,7 +98,7 @@ jobs:
     - name: Install PlatformIO
       run: |
         python -m pip install --upgrade pip
-        pip install --upgrade platformio
+        pip install platformio==4.0.3
         pio platform install --with-package framework-arduinoespressif8266 espressif8266
         pio platform install --with-package framework-arduinoespressif32 espressif32
 
