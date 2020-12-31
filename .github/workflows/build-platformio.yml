@@ -109,14 +109,14 @@ jobs:
 
     - name: Install library dependencies
       run: |
-        pio lib -g install "Adafruit NeoPixel@~1.3.5"
-        pio lib -g install "Time@>=1.6"
-        pio lib -g install "Timezone@~1.2.4"
-        pio lib -g install "ArduinoJson@~6.14.1"
-        pio lib -g install "ArduinoJWT@~1.0.1"
-        pio lib -g install "CoAP simple library@1.3.19"
-        pio lib -g install "esp32_https_server_compat@~1.0.0"
-        pio lib -g install "DHT sensor library@~1.4.1"
+        pio lib -g install "Adafruit NeoPixel"
+        pio lib -g install "Time"
+        pio lib -g install "Timezone"
+        pio lib -g install "ArduinoJson"
+        pio lib -g install "ArduinoJWT"
+        pio lib -g install "CoAP simple library"
+        pio lib -g install "esp32_https_server_compat"
+        pio lib -g install "DHT sensor library"
 
     - name: Run PlatformIO
       run: |
