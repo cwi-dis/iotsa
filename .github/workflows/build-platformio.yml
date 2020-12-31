@@ -165,3 +165,5 @@ jobs:
         token: ${{ secrets.REPO_ACCESS_TOKEN }}
         repository: ${{ matrix.repo }}
         event-type: rebuild
+        # Note this always uses the SHA. It may be better to use github.ref if it is refs/tags/xxxxxx
+        client-payload: '{"iotsa_ref" : ${{ github.sha }}}'
