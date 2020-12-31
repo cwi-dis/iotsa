@@ -3,14 +3,25 @@
 #include "iotsa.h"
 #include "iotsaApi.h"
 
-class IotsaUser {
+class IotsaUser : IotsaModObject {
 public:
-  IotsaUser() : username(""), password(""), rights(""), apiEndpoint(""), next(NULL) {}
+  IotsaUser() {}
   String username;
   String password;
   String rights;
   String apiEndpoint;
-  IotsaUser *next;
+public:
+  bool configLoad(IotsaConfigFileLoad& cf, String& f_name);
+  void configSave(IotsaConfigFileSave& cf, String& f_name);
+#ifdef IOTSA_WITH_WEB
+  void formHandler(String& message, String& text, String& f_name);
+  void formHandlerTD(String& message);
+  bool formArgHandler(IotsaWebServer *server, String name);
+#endif
+#ifdef IOTSA_WITH_API
+  void getHandler(JsonObject& reply);
+  bool putHandler(const JsonVariant& request);
+#endif
 };
 
 class IotsaMultiUserMod : public IotsaAuthMod, public IotsaApiProvider {
@@ -29,7 +40,8 @@ protected:
   void configLoad();
   void configSave();
   void handler();
-  IotsaUser *users;
+  std::vector<IotsaUser> users;
+  int _addUser(IotsaUser& newUser);
 #ifdef IOTSA_WITH_API
   IotsaApiService api;
 #endif

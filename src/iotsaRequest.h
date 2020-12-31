@@ -8,11 +8,12 @@ class IotsaRequest : IotsaApiModObject {
 public:
   IotsaRequest() : url(""), sslInfo(""), credentials(""), token("") {}
   bool send();
-  void configLoad(IotsaConfigFileLoad& cf, String& name);
-  void configSave(IotsaConfigFileSave& cf, String& name);
-  void formHandler(String& message, String& text, String& name);
+  bool configLoad(IotsaConfigFileLoad& cf, String& f_name);
+  void configSave(IotsaConfigFileSave& cf, String& f_name);
 #ifdef IOTSA_WITH_WEB
-  bool formArgHandler(IotsaWebServer *server, String name);
+  void formHandler(String& message, String& text, String& f_name);
+  void formHandlerTD(String& message);
+  bool formArgHandler(IotsaWebServer *server, String f_name);
 #endif
 #ifdef IOTSA_WITH_API
   void getHandler(JsonObject& reply);

@@ -1,6 +1,70 @@
 #include "iotsaMultiUser.h"
 #include "iotsaConfigFile.h"
 
+bool IotsaUser::configLoad(IotsaConfigFileLoad& cf, String& f_name) {
+#if 0
+  String username;
+  String password;
+  String rights;
+  String apiEndpoint;
+#endif
+  cf.get(f_name + ".username", username, "");
+  cf.get(f_name + ".password", password, "");
+  cf.get(f_name + ".rights", rights, "");
+  // xxxjack cf.get(f_name + ".apiEndpoint", apiEndpoint, "");
+  return username != "";
+}
+
+void IotsaUser::configSave(IotsaConfigFileSave& cf, String& f_name) {
+  cf.put(f_name + ".username", username);
+  cf.put(f_name + ".password", password);
+  cf.put(f_name + ".rights", rights);
+}
+
+#ifdef IOTSA_WITH_WEB
+void IotsaUser::formHandler(String& message, String& text, String& f_name) {
+
+}
+void IotsaUser::formHandlerTD(String& message) {
+
+}
+
+bool IotsaUser::formArgHandler(IotsaWebServer *server, String name) {
+  username = server->arg("username");
+  password = server->arg("password");
+  rights = server->arg("rights");
+  return true;
+}
+
+#endif
+
+#ifdef IOTSA_WITH_API
+void IotsaUser::getHandler(JsonObject& reply) {
+  reply["username"] = username;
+  bool hasPassword = password.length() > 0;
+  reply["has_password"] = hasPassword;
+  reply["rights"] = rights;
+}
+
+bool IotsaUser::putHandler(const JsonVariant& request) {
+  bool anyChanged;
+  JsonObject reqObj = request.as<JsonObject>();
+  if (reqObj.containsKey("username")) {
+    username = reqObj["username"].as<String>();
+    anyChanged = true;
+  }
+  if (reqObj.containsKey("password")) {
+    password = reqObj["password"].as<String>();
+    anyChanged = true;
+  }
+  if (reqObj.containsKey("rights")) {
+    rights = reqObj["rights"].as<String>();
+    anyChanged = true;
+  }
+  return anyChanged;
+}
+#endif
+
 IotsaMultiUserMod::IotsaMultiUserMod(IotsaApplication &_app)
 :	IotsaAuthMod(_app),
   users(NULL)
@@ -20,9 +84,11 @@ IotsaMultiUserMod::handler() {
   
     String message = "<html><head><title>Edit users</title></head><body><h1>Edit users</h1>";
     message += "<table><tr><th>User</th><th>rights</th><th>New password<br>New rights</th></tr>";
-    IotsaUser *u;
-    for (u=users; u; u=u->next) {
-      message += "<tr><td>";
+    for(auto u: users) {
+      message += "<tr>";
+      u.formHandlerTD(message);
+  #if 0
+      message += "<td>";
       message += htmlEncode(u->username);
       message += "</td><td>";
       message += htmlEncode(u->rights);
@@ -35,7 +101,9 @@ IotsaMultiUserMod::handler() {
       message += "<input name='password' type='password'><br>";
       message += "<input name='rights'><br>";
       message += "<input type='submit' value='Change'>";
-      message += "</form></td></tr>";
+      message += "</form></td>";
+#endif
+      message += "</tr>";
     }
     message += "</table><br><hr>";
 
@@ -54,35 +122,22 @@ IotsaMultiUserMod::handler() {
   if (needsAuthentication("users")) return;
 
   if (command == "add") {
-    IotsaUser *u = new IotsaUser();
-    u->username = server->arg("username");
-    u->password = server->arg("password");
-    u->rights = server->arg("rights");
-    if (u->username != "") {
-      IotsaUser **up = &users;
-      int count;
-      for(count=0; *up; count++, up = &(*up)->next);
-      u->apiEndpoint = String("/api/users/")+String(count);
-      *up = u;
-      configSave();
-#ifdef IOTSA_WITH_API
-      api.setup(u->apiEndpoint.c_str(), true, true);
-#endif
+    IotsaUser newUser;
+    if (newUser.formArgHandler(server)) {
+      _addUser(newUser);
     }
     server->send(200, "text/plain", "OK\r\n");
     return; 
-  } else
+  }
   if (command == "change") {
     String username = server->arg("username");
-    for(IotsaUser *u=users; u; u=u->next) {
-      if (u->username == username) {
-        String a = server->arg("password");
-        if (a != "") u->password = a;
-        a = server->arg("rights");
-        if (a != "") u->rights = a;
-        configSave();
-        server->send(200, "text/plain", "OK\r\n");
-        return; 
+    for (auto u: users) {
+      if (u.username == username) {
+        if (i.formArgHandler(server)) {
+          configSave();
+          server->send(200, "text/plain", "OK\r\n");
+          return; 
+        }
       }
     }
     server->send(404, "text/plain", "No such user\r\n");
@@ -104,21 +159,15 @@ bool IotsaMultiUserMod::getHandler(const char *path, JsonObject& reply) {
   if (strcmp(path, "/api/users") == 0) {
     reply["multi"] = true;
     JsonArray usersList = reply.createNestedArray("users");
-    for (IotsaUser *u=users; u; u=u->next) {
+    for (auto u: users) {
       JsonObject user = usersList.createNestedObject();
-      user["username"] = u->username;
-      bool hasPassword = u->password.length() > 0;
-      user["has_password"] = hasPassword;
-      user["rights"] = u->rights;
+      u.getHandler(user);
     }
     return true;
   }
-  for (IotsaUser *u=users; u; u=u->next) {
-    if (strcmp(u->apiEndpoint.c_str(), path) == 0) {
-      reply["username"] = u->username;
-      bool hasPassword = u->password.length() > 0;
-      reply["has_password"] = hasPassword;
-      reply["rights"] = u->rights;
+  for (auto u: users) {
+    if (strcmp(u.apiEndpoint.c_str(), path) == 0) {
+      u.getHandler(reply);
       return true;
     }
   }
@@ -133,22 +182,9 @@ bool IotsaMultiUserMod::putHandler(const char *path, const JsonVariant& request,
   int idx = num.toInt();
 
   bool anyChanged = false;
-  IotsaUser *u = users;
-  while (u && idx > 0) { u = u->next; idx--; }
-  if (u == NULL) return false;
+  IotsaUser& u = users[idx];
   JsonObject reqObj = request.as<JsonObject>();
-  if (reqObj.containsKey("username")) {
-    u->username = reqObj["username"].as<String>();
-    anyChanged = true;
-  }
-  if (reqObj.containsKey("password")) {
-    u->password = reqObj["password"].as<String>();
-    anyChanged = true;
-  }
-  if (reqObj.containsKey("rights")) {
-    u->rights = reqObj["rights"].as<String>();
-    anyChanged = true;
-  }
+  anyChanged = u.putHandler(reqObj);
   if (anyChanged) {
     configSave();
   }
@@ -158,32 +194,26 @@ bool IotsaMultiUserMod::postHandler(const char *path, const JsonVariant& request
   if (strcmp(path, "/api/users") != 0) return false;
   if (!iotsaConfig.inConfigurationMode()) return false;
   bool anyChanged = false;
-  IotsaUser *u = new IotsaUser();
+  IotsaUser newUser;
   JsonObject reqObj = request.as<JsonObject>();
-  if (reqObj.containsKey("username")) {
-    u->username = reqObj["username"].as<String>();
-    anyChanged = true;
-  }
-  if (reqObj.containsKey("password")) {
-    u->password = reqObj["password"].as<String>();
-    anyChanged = true;
-  }
-  if (reqObj.containsKey("rights")) {
-    u->rights = reqObj["rights"].as<String>();
-    anyChanged = true;
-  }
+  anyChanged = newUser.putHandler(reqObj);
+
   if (anyChanged) {
-    IotsaUser **up = &users;
-    int count;
-    for(count=0; *up; count++, up = &(*up)->next);
-    u->apiEndpoint = String("/api/users/")+String(count);
-    *up = u;
+    _addUser(newUser);
     configSave();
-    api.setup(u->apiEndpoint.c_str());
   }
   return anyChanged;
 }
 #endif // IOTSA_WITH_API
+
+int IotsaMultiUserMod::_addUser(IotsaUser& newUser) {
+  int oldLength = users.size();
+  users.push_back(newUser);
+  newUser.apiEndpoint = String("/api/users/")+String(oldLength);
+  api.setup(newUser.apiEndpoint.c_str(), true, true, false);
+  configSave();
+  return oldLength;
+}
 
 void IotsaMultiUserMod::setup() {
   configLoad();
@@ -196,57 +226,33 @@ void IotsaMultiUserMod::serverSetup() {
 #ifdef IOTSA_WITH_API
   api.setup("/api/users", true, false, true);
   name = "users";
-  IotsaUser *u = users;
-  while(u) {
-    api.setup(u->apiEndpoint.c_str(), true, true, false);
+  int idx = 0;
+  for(auto u: users) {
+    u.apiEndpoint = String("/api/users/")+String(idx++);
+    api.setup(u.apiEndpoint.c_str(), true, true, false);
   }
 #endif // IOTSA_WITH_API
 }
 
 void IotsaMultiUserMod::configLoad() {
   IotsaConfigFileLoad cf("/config/users.cfg");
-  // xxxjack should really free old users...
-  IotsaUser **up = &users;
-  // xxxjack should use object interface.
-  for(int cnt=0; ; cnt++) {
-    String username;
-    String arg = "user" + String(cnt);
-    cf.get(arg, username, "");
-    if (username == "") break;
-
-    *up = new IotsaUser();
-    (*up)->username = username;
-    (*up)->apiEndpoint = "/api/users/" + String(cnt); 
-    arg = "password" + String(cnt);
-    cf.get(arg, (*up)->password, "");
-    arg = "rights" + String(cnt);
-    cf.get(arg, (*up)->rights, "");
-
-    IotsaSerial.print("Username=");
-    IotsaSerial.print((*up)->username);
-    IotsaSerial.print(", password length=");
-    IotsaSerial.println((*up)->password.length());
-    IotsaSerial.print("Rights=");
-    IotsaSerial.println((*up)->rights);
-
-    up = &(*up)->next;
+  users.clear();
+  for(int i=0; ; i++) {
+    String f_name = String(i);
+    IotsaUser newUser;
+    if (!newUser.configLoad(cf, f_name)) break;
+    users.push_back(newUser);
   }
 }
 
 void IotsaMultiUserMod::configSave() {
   IotsaConfigFileSave cf("/config/users.cfg");
-  IotsaUser *u = users;
-  int cnt;
-  for(cnt=0; u; cnt++, u=u->next) {
-    String arg = "user" + String(cnt);
-    cf.put(arg, u->username);
-    arg = "password" + String(cnt);
-    cf.put(arg, u->password);
-    arg = "rights" + String(cnt);
-    cf.put(arg, u->rights);
+
+  int i = 0;
+  for(auto it: users) {
+    String f_name = String(i++);
+    it.configSave(cf, f_name);
   }
-  IotsaSerial.print("Saved users.cfg, #users=");
-  IotsaSerial.println(cnt);
 }
 
 void IotsaMultiUserMod::loop() {
@@ -254,21 +260,19 @@ void IotsaMultiUserMod::loop() {
 
 bool IotsaMultiUserMod::allows(const char *right) {
   // No users means everything is allowed.
-  if (users == NULL) return true;
+  if (users.empty()) return true;
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
   // Otherwise we loop over all users until we find one that matches.
-  IotsaUser *u = users;
-  while (u) {
-    if (server->authenticate(u->username.c_str(), u->password.c_str())) {
+  for(auto u: users) {
+    if (server->authenticate(u.username.c_str(), u.password.c_str())) {
       String rightField("/");
       rightField += right;
       rightField += "/";
-      if (u->rights == "*" || u->rights.indexOf(rightField) >= 0) {
+      if (u.rights == "*" || u.rights.indexOf(rightField) >= 0) {
         return true;
       }
       break;
     }
-    u = u->next;
   }
   server->requestAuthentication();
   IotsaSerial.print("Return 401 Unauthorized for right=");
