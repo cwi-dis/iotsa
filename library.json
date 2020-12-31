@@ -18,26 +18,26 @@
     "platforms" : [ "espressif8266", "espressif32"],
     "dependencies" : [
         {
-            "name" : "Adafruit NeoPixel",
+            "name" : "Adafruit NeoPixel"
         },
         {
-            "name" : "Time",
+            "name" : "Time"
         },
         {
-            "name" : "Timezone",
+            "name" : "Timezone"
         },
         {
-            "name" : "ArduinoJson",
+            "name" : "ArduinoJson"
         },
         {
-            "name" : "ArduinoJWT",
+            "name" : "ArduinoJWT"
         },
         {
-            "name" : "CoAP simple library",
+            "name" : "CoAP simple library"
         },
         {
             "platforms" : "espressif32",
-            "name" : "esp32_https_server_compat",
+            "name" : "esp32_https_server_compat"
         }
     ],
     "examples" : [
