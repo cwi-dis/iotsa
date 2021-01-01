@@ -2,12 +2,6 @@
 #include "iotsaConfigFile.h"
 
 bool IotsaUser::configLoad(IotsaConfigFileLoad& cf, String& f_name) {
-#if 0
-  String username;
-  String password;
-  String rights;
-  String apiEndpoint;
-#endif
   cf.get(f_name + ".username", username, "");
   cf.get(f_name + ".password", password, "");
   cf.get(f_name + ".rights", rights, "");
@@ -22,14 +16,39 @@ void IotsaUser::configSave(IotsaConfigFileSave& cf, String& f_name) {
 }
 
 #ifdef IOTSA_WITH_WEB
-void IotsaUser::formHandler(String& message, String& text, String& f_name) {
-
+void IotsaUser::formHandler(String& message) {
+  message += "Username: <input name='username'><br>";
+  message += "Password: <input name='password' type='password'><br>";
+  message += "Rights: <input name='rights'><br>";
 }
-void IotsaUser::formHandlerTD(String& message) {
 
+void IotsaUser::formHandler(String& message, String& text, String& f_name) {
+  IotsaSerial.println("IotsaUser::formHandler not implemented");
+}
+
+void IotsaUser::formHandlerTH(String& message) {
+  message += "<th>User</th><th>rights</th><th>New password<br>New rights</th>";
+}
+
+void IotsaUser::formHandlerTD(String& message) {
+  message += "<td>";
+  message += IotsaMod::htmlEncode(username);
+  message += "</td><td>";
+  message += IotsaMod::htmlEncode(rights);
+  message += "</td><td><form method='get'>";
+  message += "<form method='get'>";
+  message += "<input type='hidden' name='command' value='add'>";
+  message += "<input type='hidden' name='username' value='";
+  message += IotsaMod::htmlEncode(username);
+  message += "'>";
+  message += "<input name='password' type='password'><br>";
+  message += "<input name='rights'><br>";
+  message += "<input type='submit' value='Change'>";
+  message += "</form></td>";
 }
 
 bool IotsaUser::formArgHandler(IotsaWebServer *server, String name) {
+  // name=="" for IotsaUser
   username = server->arg("username");
   password = server->arg("password");
   rights = server->arg("rights");
@@ -81,49 +100,33 @@ void
 IotsaMultiUserMod::handler() {
   String command = server->arg("command");
   if (command == "") {
-  
-    String message = "<html><head><title>Edit users</title></head><body><h1>Edit users</h1>";
-    message += "<table><tr><th>User</th><th>rights</th><th>New password<br>New rights</th></tr>";
+    // No command or empty command: default page.
+    String message = "<html><head><title>Edit users</title><style>table, th, td {border: 1px solid black;padding:5px;border-collapse: collapse;}</style></head><body><h1>Edit users</h1>";
+    message += "<h2>Existing users</h2><table><tr>";
+    IotsaUser::formHandlerTH(message);
+    message += "</tr>";
     for(auto u: users) {
       message += "<tr>";
       u.formHandlerTD(message);
-  #if 0
-      message += "<td>";
-      message += htmlEncode(u->username);
-      message += "</td><td>";
-      message += htmlEncode(u->rights);
-      message += "</td><td><form method='get'>";
-      message += "<form method='get'>";
-      message += "<input type='hidden' name='command' value='add'>";
-      message += "<input type='hidden' name='username' value='";
-      message += htmlEncode(u->username);
-      message += "'>";
-      message += "<input name='password' type='password'><br>";
-      message += "<input name='rights'><br>";
-      message += "<input type='submit' value='Change'>";
-      message += "</form></td>";
-#endif
       message += "</tr>";
     }
-    message += "</table><br><hr>";
+    message += "</table><br>";
 
-    message += "<form method='get'>";
+    message += "<h2>Add new user</h2><form method='get'>";
     message += "<input type='hidden' name='command' value='add'>";
-    message += "Username: <input name='username'><br>";
-    message += "Password: <input name='password' type='password'><br>";
-    message += "Rights: <input name='rights'><br>";
+    IotsaUser::formHandler(message);
     message += "<input type='submit' value='Add'>";
     message += "</form><hr>";
 
     server->send(200, "text/html", message);
     return;
   }
-
+  // Otherwise we need access rights.
   if (needsAuthentication("users")) return;
 
   if (command == "add") {
     IotsaUser newUser;
-    if (newUser.formArgHandler(server)) {
+    if (newUser.formArgHandler(server, "")) {
       _addUser(newUser);
     }
     server->send(200, "text/plain", "OK\r\n");
@@ -133,7 +136,7 @@ IotsaMultiUserMod::handler() {
     String username = server->arg("username");
     for (auto u: users) {
       if (u.username == username) {
-        if (i.formArgHandler(server)) {
+        if (u.formArgHandler(server, "")) {
           configSave();
           server->send(200, "text/plain", "OK\r\n");
           return; 
@@ -265,6 +268,8 @@ bool IotsaMultiUserMod::allows(const char *right) {
   // Otherwise we loop over all users until we find one that matches.
   for(auto u: users) {
     if (server->authenticate(u.username.c_str(), u.password.c_str())) {
+      // NULL or empty rights field means: only existence is required.
+      if (right == NULL || *right == '\0') return true;
       String rightField("/");
       rightField += right;
       rightField += "/";

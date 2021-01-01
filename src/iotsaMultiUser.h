@@ -14,7 +14,9 @@ public:
   bool configLoad(IotsaConfigFileLoad& cf, String& f_name);
   void configSave(IotsaConfigFileSave& cf, String& f_name);
 #ifdef IOTSA_WITH_WEB
+  static void formHandler(String& message);
   void formHandler(String& message, String& text, String& f_name);
+  static void formHandlerTH(String& message);
   void formHandlerTD(String& message);
   bool formArgHandler(IotsaWebServer *server, String name);
 #endif

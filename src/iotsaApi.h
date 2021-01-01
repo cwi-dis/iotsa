@@ -7,7 +7,9 @@ class IotsaApiModObject : public IotsaModObject {
 public:
   virtual ~IotsaApiModObject() {}
 #ifdef IOTSA_WITH_WEB
+  // static virtual void formHandler(String& message) = 0;
   virtual void formHandler(String& message, String& text, String& f_name) = 0;
+  // static virtual void formHandlerTH(String& message) = 0;
   virtual void formHandlerTD(String& message) = 0;
   virtual bool formArgHandler(IotsaWebServer *server, String f_name) = 0;
 #endif
