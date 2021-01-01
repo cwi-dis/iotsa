@@ -28,6 +28,7 @@ void IotsaRequest::configSave(IotsaConfigFileSave& cf, String& f_name) {
     cf.put(f_name + ".token", token);
 }
 
+#ifdef IOTSA_WITH_WEB
 void IotsaRequest::formHandler(String& message, String& text, String& f_name) {  
     message += "<em>" + text +  "</em><br>\n";
     message += "Activation URL: <input name='" + f_name +  ".url' value='";
@@ -55,7 +56,6 @@ void IotsaRequest::formHandlerTD(String& message) {
   IotsaSerial.println("IotsaRequest formHandlerTD unimplemented");
 }
 
-#ifdef IOTSA_WITH_WEB
 bool IotsaRequest::formArgHandler(IotsaWebServer *server, String name) {
   bool any = false;
   String wtdName = name + "url";
