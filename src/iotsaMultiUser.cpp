@@ -68,6 +68,10 @@ void IotsaUser::getHandler(JsonObject& reply) {
 bool IotsaUser::putHandler(const JsonVariant& request) {
   bool anyChanged;
   JsonObject reqObj = request.as<JsonObject>();
+  if (password) {
+    String old = reqObj["old_password"].as<String>();
+    if (old != password) return false;
+  }
   if (reqObj.containsKey("username")) {
     username = reqObj["username"].as<String>();
     anyChanged = true;
@@ -99,54 +103,54 @@ IotsaMultiUserMod::IotsaMultiUserMod(IotsaApplication &_app)
 void
 IotsaMultiUserMod::handler() {
   String command = server->arg("command");
-  if (command == "") {
-    // No command or empty command: default page.
-    String message = "<html><head><title>Edit users</title><style>table, th, td {border: 1px solid black;padding:5px;border-collapse: collapse;}</style></head><body><h1>Edit users</h1>";
-    message += "<h2>Existing users</h2><table><tr>";
-    IotsaUser::formHandlerTH(message);
-    message += "</tr>";
-    for(auto u: users) {
-      message += "<tr>";
-      u.formHandlerTD(message);
-      message += "</tr>";
-    }
-    message += "</table><br>";
-
-    message += "<h2>Add new user</h2><form method='get'>";
-    message += "<input type='hidden' name='command' value='add'>";
-    IotsaUser::formHandler(message);
-    message += "<input type='submit' value='Add'>";
-    message += "</form><hr>";
-
-    server->send(200, "text/html", message);
-    return;
-  }
-  // Otherwise we need access rights.
-  if (needsAuthentication("users")) return;
 
   if (command == "add") {
+    if (needsAuthentication("users")) return;
     IotsaUser newUser;
     if (newUser.formArgHandler(server, "")) {
       _addUser(newUser);
     }
-    server->send(200, "text/plain", "OK\r\n");
-    return; 
-  }
-  if (command == "change") {
+  } else if (command == "change") {
+    if (needsAuthentication("users")) return;
     String username = server->arg("username");
+    bool ok = false;
     for (auto u: users) {
       if (u.username == username) {
         if (u.formArgHandler(server, "")) {
+          ok = true;
           configSave();
-          server->send(200, "text/plain", "OK\r\n");
-          return; 
         }
       }
     }
-    server->send(404, "text/plain", "No such user\r\n");
+    if (!ok) {
+      server->send(404, "text/plain", "No such user\r\n");
+      return;
+    }
+  } else if (command != "") {
+    server->send(400, "text/plain", "Unknown command");
     return;
   }
-  server->send(400, "text/plain", "Unknown command");
+    
+  // No command or empty command: default page.
+  String message = "<html><head><title>Edit users</title><style>table, th, td {border: 1px solid black;padding:5px;border-collapse: collapse;}</style></head><body><h1>Edit users</h1>";
+  message += "<h2>Existing users</h2><table><tr>";
+  IotsaUser::formHandlerTH(message);
+  message += "</tr>";
+  for(auto u: users) {
+    message += "<tr>";
+    u.formHandlerTD(message);
+    message += "</tr>";
+  }
+  message += "</table><br>";
+
+  message += "<h2>Add new user</h2><form method='get'>";
+  message += "<input type='hidden' name='command' value='add'>";
+  IotsaUser::formHandler(message);
+  message += "<input type='submit' value='Add'>";
+  message += "</form><hr>";
+
+  server->send(200, "text/html", message);
+
 }
 
 String IotsaMultiUserMod::info() {
@@ -180,6 +184,7 @@ bool IotsaMultiUserMod::getHandler(const char *path, JsonObject& reply) {
 bool IotsaMultiUserMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   if (strncmp(path, "/api/users/", 11) != 0) return false;
   if (!iotsaConfig.inConfigurationMode()) return false;
+  // xxxjack should also check access rights? Maybe in stead of configurationMode?
   String num(path);
   num.remove(0, 11);
   int idx = num.toInt();

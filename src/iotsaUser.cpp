@@ -118,7 +118,7 @@ bool IotsaUserMod::putHandler(const char *path, const JsonVariant& request, Json
   JsonObject reqObj = request.as<JsonObject>();
   // Check old password, if a password has been set.
   if (password) {
-    String old = reqObj["old"].as<String>();
+    String old = reqObj["old_password"].as<String>();
     if (old != password) return false;
   }
   if (reqObj.containsKey("username")) {
@@ -151,8 +151,8 @@ void IotsaUserMod::serverSetup() {
 
 void IotsaUserMod::configLoad() {
   IotsaConfigFileLoad cf("/config/users.cfg");
-  cf.get("user0", username, username);
-  cf.get("password0", password, password);
+  cf.get("0.user", username, username);
+  cf.get("0.password", password, password);
   IotsaSerial.print("Loaded users.cfg. Username=");
   IotsaSerial.print(username);
   IotsaSerial.print(", password length=");
@@ -161,8 +161,8 @@ void IotsaUserMod::configLoad() {
 
 void IotsaUserMod::configSave() {
   IotsaConfigFileSave cf("/config/users.cfg");
-  cf.put("user0", username);
-  cf.put("password0", password);
+  cf.put("0.user", username);
+  cf.put("0.password", password);
   IotsaSerial.print("Saved users.cfg. Username=");
   IotsaSerial.print(username);
   IotsaSerial.print(", password length=");
