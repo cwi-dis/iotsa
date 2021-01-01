@@ -89,8 +89,7 @@ bool IotsaUser::putHandler(const JsonVariant& request) {
 #endif
 
 IotsaMultiUserMod::IotsaMultiUserMod(IotsaApplication &_app)
-:	IotsaAuthMod(_app),
-  users(NULL)
+:	IotsaAuthMod(_app)
 #ifdef IOTSA_WITH_API
   ,
   api(this, _app, this)
