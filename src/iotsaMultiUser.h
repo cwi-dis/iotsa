@@ -3,14 +3,27 @@
 #include "iotsa.h"
 #include "iotsaApi.h"
 
-class IotsaUser {
+class IotsaUser : IotsaApiModObject {
 public:
-  IotsaUser() : username(""), password(""), rights(""), apiEndpoint(""), next(NULL) {}
+  IotsaUser() {}
   String username;
   String password;
   String rights;
   String apiEndpoint;
-  IotsaUser *next;
+public:
+  bool configLoad(IotsaConfigFileLoad& cf, String& f_name) override;
+  void configSave(IotsaConfigFileSave& cf, String& f_name) override;
+#ifdef IOTSA_WITH_WEB
+  static void formHandler(String& message) /*override*/;
+  static void formHandlerTH(String& message) /*override*/;
+  void formHandler(String& message, String& text, String& f_name) override;
+  void formHandlerTD(String& message) override;
+  bool formArgHandler(IotsaWebServer *server, String name) override;
+#endif
+#ifdef IOTSA_WITH_API
+  void getHandler(JsonObject& reply) override;
+  bool putHandler(const JsonVariant& request) override;
+#endif
 };
 
 class IotsaMultiUserMod : public IotsaAuthMod, public IotsaApiProvider {
@@ -29,7 +42,9 @@ protected:
   void configLoad();
   void configSave();
   void handler();
-  IotsaUser *users;
+  std::vector<IotsaUser> users;
+  int _addUser(IotsaUser& newUser);
+  // _delUser(int) not implemented, because of /api/users/<num> which would change
 #ifdef IOTSA_WITH_API
   IotsaApiService api;
 #endif

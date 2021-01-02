@@ -6,6 +6,7 @@
 class IotsaApiModObject : public IotsaModObject {
 public:
   virtual ~IotsaApiModObject() {}
+
 #ifdef IOTSA_WITH_API
   virtual void getHandler(JsonObject& reply) = 0;
   virtual bool putHandler(const JsonVariant& request) = 0;

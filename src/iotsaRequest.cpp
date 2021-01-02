@@ -13,44 +13,49 @@
 #endif
 
 
-void IotsaRequest::configLoad(IotsaConfigFileLoad& cf, String& name) {
-    cf.get(name+"url", url, "");
-    cf.get(name + SSL_INFO_NAME, sslInfo, "");
-    cf.get(name + "credentials", credentials, "");
-    cf.get(name + "token", token, "");
+bool IotsaRequest::configLoad(IotsaConfigFileLoad& cf, String& f_name) {
+    cf.get(f_name + ".url", url, "");
+    cf.get(f_name + "." + SSL_INFO_NAME, sslInfo, "");
+    cf.get(f_name + "credentials", credentials, "");
+    cf.get(f_name + "token", token, "");
+    return url != "";
 }
 
-void IotsaRequest::configSave(IotsaConfigFileSave& cf, String& name) {
-    cf.put(name + "url", url);
-    cf.put(name + SSL_INFO_NAME, sslInfo);
-    cf.put(name + "credentials", credentials);
-    cf.put(name + token, token);
+void IotsaRequest::configSave(IotsaConfigFileSave& cf, String& f_name) {
+    cf.put(f_name + ".url", url);
+    cf.put(f_name + "." + SSL_INFO_NAME, sslInfo);
+    cf.put(f_name + ".credentials", credentials);
+    cf.put(f_name + ".token", token);
 }
 
-void IotsaRequest::formHandler(String& message, String& text, String& name) {  
+#ifdef IOTSA_WITH_WEB
+void IotsaRequest::formHandler(String& message, String& text, String& f_name) {  
     message += "<em>" + text +  "</em><br>\n";
-    message += "Activation URL: <input name='" + name +  "url' value='";
+    message += "Activation URL: <input name='" + f_name +  ".url' value='";
     message += url;
     message += "'><br>\n";
 #ifdef ESP32
-    message += "Root CA cert <i>(https only)</i>: <input name='" + name + "rootCA' value='";
+    message += "Root CA cert <i>(https only)</i>: <input name='" + f_name + ".rootCA' value='";
     message += sslInfo;
 #else
-    message += "Fingerprint <i>(https only)</i>: <input name='" + name +  "fingerprint' value='";
+    message += "Fingerprint <i>(https only)</i>: <input name='" + f_name +  ".fingerprint' value='";
     message += sslInfo;
 #endif
     message += "'><br>\n";
 
-    message += "Bearer token <i>(optional)</i>: <input name='" + name + "token' value='";
+    message += "Bearer token <i>(optional)</i>: <input name='" + f_name + ".token' value='";
     message += token;
     message += "'><br>\n";
 
-    message += "Credentials <i>(optional, user:pass)</i>: <input name='" + name + "credentials' value='";
+    message += "Credentials <i>(optional, user:pass)</i>: <input name='" + f_name + ".credentials' value='";
     message += credentials;
     message += "'><br>\n";
 }
 
-#ifdef IOTSA_WITH_WEB
+void IotsaRequest::formHandlerTD(String& message) {
+  IotsaSerial.println("IotsaRequest formHandlerTD unimplemented");
+}
+
 bool IotsaRequest::formArgHandler(IotsaWebServer *server, String name) {
   bool any = false;
   String wtdName = name + "url";

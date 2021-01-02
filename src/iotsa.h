@@ -158,11 +158,14 @@ class IotsaConfigFileSave;
 class IotsaModObject {
 public:
   virtual ~IotsaModObject() {}
-  virtual void configLoad(IotsaConfigFileLoad& cf, String& name) = 0;
+  virtual bool configLoad(IotsaConfigFileLoad& cf, String& name) = 0;
   virtual void configSave(IotsaConfigFileSave& cf, String& name) = 0;
-  virtual void formHandler(String& message, String& text, String& name) = 0;
 #ifdef IOTSA_WITH_WEB
-  virtual bool formArgHandler(IotsaWebServer *server, String name) = 0;
+  // static virtual void formHandler(String& message) = 0;
+  virtual void formHandler(String& message, String& text, String& f_name) = 0;
+  // static virtual void formHandlerTH(String& message) = 0;
+  virtual void formHandlerTD(String& message) = 0;
+  virtual bool formArgHandler(IotsaWebServer *server, String f_name) = 0;
 #endif
 };
 
