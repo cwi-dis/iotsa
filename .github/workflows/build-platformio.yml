@@ -8,6 +8,12 @@ on:
     - '.github/workflows/build-arduino.yml'
     - 'docs/**'
   pull_request:
+  workflow_dispatch:
+    inputs:
+      iotsa_ref:
+        description: 'iotsa branch, ref or sha'
+        required: true
+        detault: develop
   
 jobs:
   #
