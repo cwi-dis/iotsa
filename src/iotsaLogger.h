@@ -6,13 +6,13 @@
 class IotsaLoggerMod : public IotsaMod {
 public:
   IotsaLoggerMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL);
-  void setup();
-  void serverSetup();
-  void loop();
-  String info();
+  void setup() override;
+  void serverSetup() override;
+  void loop() override;
+  String info() override;
 protected:
-  void configLoad();
-  void configSave();
+  void configLoad() override;
+  void configSave() override;
   void handler();
   String argument;
 };

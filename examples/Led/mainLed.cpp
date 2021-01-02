@@ -34,11 +34,11 @@ IotsaOtaMod otaMod(application);
 class IotsaLedControlMod : public IotsaLedMod {
 public:
   using IotsaLedMod::IotsaLedMod;
-  void serverSetup();
-  String info();
+  void serverSetup() override;
+  String info() override;
 protected:
-  bool getHandler(const char *path, JsonObject& reply);
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
+  bool getHandler(const char *path, JsonObject& reply) override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
 private:
   void handler();
 };

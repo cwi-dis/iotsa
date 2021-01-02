@@ -13,10 +13,10 @@ class IotsaSimpleMod : public IotsaMod {
    		hfun(_hfun),
    		ifun(_ifun)
 	{}
-	void setup();
-	void serverSetup();
-	void loop();
-	String info();
+	void setup() override;
+	void serverSetup() override;
+	void loop() override;
+	String info() override;
   protected:
   	const char *url;
   	handlerfunc hfun;

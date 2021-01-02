@@ -6,10 +6,10 @@
 class IotsaFilesUploadMod : public IotsaMod {
 public:
   using IotsaMod::IotsaMod;
-  void setup();
-  void serverSetup();
-  void loop();
-  String info();
+  void setup() override;
+  void serverSetup() override;
+  void loop() override;
+  String info() override;
 private:
   void uploadHandler();
   void uploadOkHandler();
@@ -19,9 +19,9 @@ private:
 class IotsaFilesUploadMod : public IotsaMod {
 public:
   using IotsaMod::IotsaMod;
-  void setup() {}
-  void serverSetup() {}
-  void loop() {}
+  void setup() override {}
+  void serverSetup() override {}
+  void loop() override {}
 };
 #endif // IOTSA_WITH_WEB || IOTSA_WITH_PLACEHOLDERS
 

@@ -114,10 +114,10 @@ class IotsaInputMod : public IotsaMod {
 public:
   IotsaInputMod(IotsaApplication& app, Input **_inputs, int _nInput) : IotsaMod(app), inputs(_inputs), nInput(_nInput) {}
   using IotsaMod::IotsaMod;
-  void setup();
-  void serverSetup();
-  void loop();
-  String info() { return ""; }
+  void setup() override;
+  void serverSetup() override;
+  void loop() override;
+  String info() override { return ""; }
 protected:
   Input **inputs;
   int nInput;

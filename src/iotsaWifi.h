@@ -43,10 +43,10 @@ private:
 class IotsaWifiMod : public IotsaMod {
 public:
   using IotsaMod::IotsaMod;
-  void setup() {}
-  void serverSetup() {}
-  void loop() {}
-  String info() {return "";}
+  void setup() override {}
+  void serverSetup() override {}
+  void loop() override {}
+  String info() override {return "";}
 };
 #endif // IOTSA_WITH_WIFI || IOTSA_WITH_PLACEHOLDERS
 

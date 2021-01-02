@@ -23,19 +23,19 @@ class IotsaBatteryMod : public IotsaBatteryModBaseMod, public IotsaBLEApiProvide
 public:
   IotsaBatteryMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL) : IotsaBatteryModBaseMod(_app, _auth, true) {}
 
-  void setup();
-  void serverSetup();
-  void loop();
-  String info();
+  void setup() override;
+  void serverSetup() override;
+  void loop() override;
+  String info() override;
   void setPinVUSB(int pin, float range=2.5) { pinVUSB = pin; rangeVUSB = range; }
   void setPinVBat(int pin, float range=1.8) { pinVBat = pin; rangeVBat = range; }
   void setPinDisableSleep(int pin) { pinDisableSleep = pin; }
   void allowBLEConfigModeSwitch();
 protected:
-  bool getHandler(const char *path, JsonObject& reply);
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
-  void configLoad();
-  void configSave();
+  bool getHandler(const char *path, JsonObject& reply) override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+  void configLoad() override;
+  void configSave() override;
   void handler();
   String argument;
   enum IotsaSleepMode sleepMode;
@@ -60,8 +60,8 @@ protected:
   uint8_t levelVUSB;
 #ifdef IOTSA_WITH_BLE
   IotsaBleApiService bleApi;
-  bool blePutHandler(UUIDstring charUUID);
-  bool bleGetHandler(UUIDstring charUUID);
+  bool blePutHandler(UUIDstring charUUID) override;
+  bool bleGetHandler(UUIDstring charUUID) override;
   static constexpr UUIDstring serviceUUID = "180F";
   static constexpr UUIDstring levelVBatUUID = "2A19";
   static constexpr UUIDstring levelVUSBUUID = "E4D90002-250F-46E6-90A4-AB98F01A0587";

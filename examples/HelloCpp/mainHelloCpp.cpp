@@ -28,10 +28,10 @@ IotsaOtaMod otaMod(application);
 class IotsaHelloMod : public IotsaMod {
 public:
   IotsaHelloMod(IotsaApplication &_app) : IotsaMod(_app) {}
-	void setup();
-	void serverSetup();
-	void loop();
-  String info();
+	void setup() override;
+	void serverSetup() override;
+	void loop() override;
+  String info() override;
 private:
   void handler();
 };

@@ -51,18 +51,18 @@ IotsaBLEServerMod bleserverMod(application);
 class IotsaLedControlMod : public IotsaLedMod, public IotsaBLEApiProvider {
 public:
   using IotsaLedMod::IotsaLedMod;
-  void setup();
-  void serverSetup();
-  String info();
+  void setup() override;
+  void serverSetup() override;
+  String info() override;
 protected:
-  bool getHandler(const char *path, JsonObject& reply);
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
+  bool getHandler(const char *path, JsonObject& reply) override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
   void handler();
 
 #ifdef IOTSA_WITH_BLE
   IotsaBleApiService bleApi;
-  bool blePutHandler(UUIDstring charUUID);
-  bool bleGetHandler(UUIDstring charUUID);
+  bool blePutHandler(UUIDstring charUUID) override;
+  bool bleGetHandler(UUIDstring charUUID) override;
   static constexpr UUIDstring serviceUUID = "3B000001-1226-4A53-9D24-AFA50C0163A3";
   static constexpr UUIDstring rgbUUID = "3B000002-1226-4A53-9D24-AFA50C0163A3";
 #endif // IOTSA_WITH_BLE

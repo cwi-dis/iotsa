@@ -23,14 +23,14 @@ unsigned long alarmEndTime;
 class IotsaAlarmMod : public IotsaApiMod {
 public:
   IotsaAlarmMod(IotsaApplication &_app) : IotsaApiMod(_app) {}
-  void setup();
-  void serverSetup();
-  void loop();
-  String info();
+  void setup() override;
+  void serverSetup() override;
+  void loop() override;
+  String info() override;
   using IotsaBaseMod::needsAuthentication;
 protected:
-  bool getHandler(const char *path, JsonObject& reply);
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
+  bool getHandler(const char *path, JsonObject& reply) override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
   void handler();
 };
 

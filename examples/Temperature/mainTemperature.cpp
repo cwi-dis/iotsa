@@ -32,10 +32,10 @@ public:
   : IotsaMod(_app),
     dht(pin, type)
   {}
-	void setup();
-	void serverSetup();
-	void loop();
-  String info();
+	void setup() override;
+	void serverSetup() override;
+	void loop() override;
+  String info() override;
 private:
   void handler();
   void _update();

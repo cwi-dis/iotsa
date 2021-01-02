@@ -21,18 +21,18 @@ public:
 #endif // IOTSA_WITH_HTTPS
   {
   }
-	void setup();
-	void serverSetup();
-	void loop();
-  String info();
+	void setup() override;
+	void serverSetup() override;
+	void loop() override;
+  String info() override;
 protected:
-  bool getHandler(const char *path, JsonObject& reply);
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
+  bool getHandler(const char *path, JsonObject& reply) override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
   void uploadHandler();
   void uploadOkHandler();
 private:
-  void configLoad();
-  void configSave();
+  void configLoad() override;
+  void configSave() override;
   void handler();
 #ifdef IOTSA_WITH_HTTPS
   const uint8_t* newCertificate;

@@ -107,7 +107,7 @@ public:
     }
   }
   IotsaBaseMod& operator=(const IotsaBaseMod& that) = delete;
-
+  
   virtual void setup() = 0;
   virtual void loop() = 0;
   virtual void configLoad() {}

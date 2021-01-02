@@ -13,12 +13,12 @@
 class IotsaLedMod : public IotsaLedModBaseMod, public IotsaStatusInterface {
 public:
   IotsaLedMod(IotsaApplication &_app, int pin, neoPixelType t=NEO_GRB + NEO_KHZ800, IotsaAuthMod *_auth=NULL);
-  void setup();
-  void serverSetup();
-  void loop();
-  String info();
+  void setup() override;
+  void serverSetup() override;
+  void loop() override;
+  String info() override;
   void set(uint32_t _rgb, int _onDuration, int _offDuration, int _count);
-  void showStatus();
+  void showStatus() override;
 protected:
   Adafruit_NeoPixel strip;
   uint32_t rgb;
