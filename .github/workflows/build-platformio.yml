@@ -137,7 +137,7 @@ jobs:
   # Job#2 - dispatch build event to dependent repositories
   #
   dispatch:
-    if: ${{ github.event_name == 'push' && ( github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/' ) }}
+    if: ${{ github.event_name == 'push' && ( github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/') ) }}
     needs: build
     strategy:
       matrix:
@@ -164,7 +164,7 @@ jobs:
       iotsa_ref: ${{ github.sha }}
     steps:
     - name: Set iotsa_ref
-      if: ${{ startsWith(gethub.ref, "refs/tags/") }}
+      if: ${{ startsWith(github.ref, "refs/tags/") }}
       run: |
         echo "iotsa_ref=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
         
