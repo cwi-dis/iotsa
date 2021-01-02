@@ -33,9 +33,9 @@ public:
   String info();
   bool allows(const char *obj, IotsaApiOperation verb);
   bool allows(const char *right);
-  bool getHandler(const char *path, JsonObject& reply);
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
-  bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply);
+  bool getHandler(const char *path, JsonObject& reply) override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+  bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
 protected:
   void loadCapabilitiesFromRequest();
   void configLoad();
