@@ -3,7 +3,7 @@
 #include "iotsa.h"
 #include "iotsaApi.h"
 
-class IotsaUser : IotsaModObject {
+class IotsaUser : IotsaApiModObject {
 public:
   IotsaUser() {}
   String username;
