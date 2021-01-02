@@ -7,6 +7,8 @@ on:
     paths-ignore:
     - '.github/workflows/build-arduino.yml'
     - 'docs/**'
+  pull_request:
+  
 jobs:
   #
   # Job#1 - Build all examples for all platforms, upload binaries as artifacts
@@ -135,7 +137,7 @@ jobs:
   # Job#2 - dispatch build event to dependent repositories
   #
   dispatch:
-#    if: only-for-develop-branch
+    if: ${{ github.event_name == "push" && ( github.ref == "refs/heads/develop" || startsWith(gethub.ref, "refs/tags/") }}
     needs: build
     strategy:
       matrix:
@@ -158,7 +160,14 @@ jobs:
         - cwi-dis/iotsaSmartMeter
         - cwi-dis/lissabon
     runs-on: ubuntu-latest
+    env:
+      iotsa_ref: ${{ github.sha }}
     steps:
+    - name: Set iotsa_ref
+      if: ${{ startsWith(gethub.ref, "refs/tags/") }}
+      run: |
+        echo "iotsa_ref=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+        
     - name: Repository Dispatch
       uses: peter-evans/repository-dispatch@v1
       with:
@@ -166,4 +175,4 @@ jobs:
         repository: ${{ matrix.repo }}
         event-type: rebuild
         # Note this always uses the SHA. It may be better to use github.ref if it is refs/tags/xxxxxx
-        client-payload: '{"iotsa_ref" : "${{ github.sha }}" }'
+        client-payload: '{"iotsa_ref" : "${{ env.iotsa_ref }}" }'
