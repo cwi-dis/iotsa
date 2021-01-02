@@ -137,7 +137,7 @@ jobs:
   # Job#2 - dispatch build event to dependent repositories
   #
   dispatch:
-    if: ${{ github.event_name == "push" && ( github.ref == "refs/heads/develop" || startsWith(gethub.ref, "refs/tags/") }}
+    if: ${{ github.event_name == 'push' && ( github.ref == 'refs/heads/develop' || startsWith(gethub.ref, 'refs/tags/' ) }}
     needs: build
     strategy:
       matrix:
