@@ -29,7 +29,7 @@ public:
   void setup() override;
   void serverSetup() override;
   void loop() override;
-#ifdef IOTSA_WIH_WEB
+#ifdef IOTSA_WITH_WEB
   String info() override;
 #endif
   bool allows(const char *right=NULL) override;
