@@ -35,10 +35,14 @@ class IotsaLedControlMod : public IotsaLedMod {
 public:
   using IotsaLedMod::IotsaLedMod;
   void serverSetup() override;
+#ifdef IOTSA_WITH_WEB
   String info() override;
+#endif
 protected:
+#ifdef IOTSA_WITH_API
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+#endif
 private:
   void handler();
 };
@@ -88,6 +92,7 @@ String IotsaLedControlMod::info() {
 }
 #endif // IOTSA_WITH_WEB
 
+#ifdef IOTSA_WITH_API
 bool IotsaLedControlMod::getHandler(const char *path, JsonObject& reply) {
   reply["rgb"] = rgb;
   reply["onDuration"] = onDuration;
@@ -105,13 +110,16 @@ bool IotsaLedControlMod::putHandler(const char *path, const JsonVariant& request
   set(_rgb, _onDuration, _offDuration, _count);
   return true;
 }
+#endif
 
 void IotsaLedControlMod::serverSetup() {
   // Setup the web server hooks for this module.
 #ifdef IOTSA_WITH_WEB
   server->on("/led", std::bind(&IotsaLedControlMod::handler, this));
 #endif // IOTSA_WITH_WEB
+#ifdef IOTSA_WITH_API
   api.setup("/api/led", true, true);
+#endif
   name = "led";
 }
 
