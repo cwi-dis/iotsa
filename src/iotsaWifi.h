@@ -14,16 +14,16 @@
 class IotsaWifiMod : public IotsaWifiModBaseMod {
 public:
   IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL);
-	void setup();
-	void serverSetup();
-	void loop();
-  String info();
+	void setup() override;
+	void serverSetup() override;
+	void loop() override;
+  String info() override;
 protected:
-  bool getHandler(const char *path, JsonObject& reply);
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
+  bool getHandler(const char *path, JsonObject& reply) override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
 private:
-  void configLoad();
-  void configSave();
+  void configLoad() override;
+  void configSave() override;
   void handler();
   void _wifiGotoMode();
   bool _wifiStartStation();

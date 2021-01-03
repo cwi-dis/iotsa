@@ -2,7 +2,7 @@
 #define _IOTSASTATICTOKEN_H_
 #include "iotsa.h"
 
-class IotsaStaticTokenObject : IotsaModObject {
+class IotsaStaticTokenObject : IotsaApiModObject {
 public:
   IotsaStaticTokenObject() {}
   String token;
