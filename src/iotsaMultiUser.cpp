@@ -217,7 +217,9 @@ int IotsaMultiUserMod::_addUser(IotsaUser& newUser) {
   int oldLength = users.size();
   users.push_back(newUser);
   newUser.apiEndpoint = String("/api/users/")+String(oldLength);
+#ifdef IOTSA_WITH_API
   api.setup(newUser.apiEndpoint.c_str(), true, true, false);
+#endif
   configSave();
   return oldLength;
 }

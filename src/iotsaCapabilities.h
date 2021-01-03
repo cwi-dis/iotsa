@@ -30,12 +30,16 @@ public:
   void setup() override;
   void serverSetup() override;
   void loop() override;
+#ifdef IOTSA_WITH_WEB
   String info() override;
+#endif
   bool allows(const char *obj, IotsaApiOperation verb) override;
   bool allows(const char *right) override;
+#ifdef IOTSA_WITH_WEB
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
   bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+#endif
 protected:
   void loadCapabilitiesFromRequest();
   void configLoad() override;

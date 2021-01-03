@@ -29,7 +29,9 @@ public:
   void setup() override;
   void serverSetup() override;
   void loop() override;
+#ifdef IOTSA_WIH_WEB
   String info() override;
+#endif
   bool allows(const char *right=NULL) override;
   bool allows(const char *obj, IotsaApiOperation verb) override;
 protected:

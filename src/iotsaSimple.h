@@ -16,7 +16,9 @@ class IotsaSimpleMod : public IotsaMod {
 	void setup() override;
 	void serverSetup() override;
 	void loop() override;
+#ifdef IOTSA_WITH_WEB
 	String info() override;
+#endif
   protected:
   	const char *url;
   	handlerfunc hfun;

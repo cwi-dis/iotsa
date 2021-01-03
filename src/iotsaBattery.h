@@ -26,14 +26,18 @@ public:
   void setup() override;
   void serverSetup() override;
   void loop() override;
+#ifdef IOTSA_WITH_WEB
   String info() override;
+#endif
   void setPinVUSB(int pin, float range=2.5) { pinVUSB = pin; rangeVUSB = range; }
   void setPinVBat(int pin, float range=1.8) { pinVBat = pin; rangeVBat = range; }
   void setPinDisableSleep(int pin) { pinDisableSleep = pin; }
   void allowBLEConfigModeSwitch();
 protected:
+#ifdef IOTSA_WITH_API
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+#endif
   void configLoad() override;
   void configSave() override;
   void handler();

@@ -24,10 +24,14 @@ public:
 	void setup() override;
 	void serverSetup() override;
 	void loop() override;
+#ifdef IOTSA_WITH_WEB
   String info() override;
+#endif
 protected:
+#ifdef IOTSA_WITH_API
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+#endif
   void uploadHandler();
   void uploadOkHandler();
 private:

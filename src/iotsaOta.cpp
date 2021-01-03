@@ -52,6 +52,7 @@ void IotsaOtaMod::loop() {
   if (iotsaConfig.configurationMode == IOTSA_MODE_OTA) ArduinoOTA.handle();
 }
 
+#ifdef IOTSA_WITH_WEB
 String IotsaOtaMod::info() {
   String rv;
   if (iotsaConfig.configurationMode == IOTSA_MODE_OTA) {
@@ -68,3 +69,4 @@ String IotsaOtaMod::info() {
   }
   return rv;
 }
+#endif

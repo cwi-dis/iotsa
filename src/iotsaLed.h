@@ -16,7 +16,9 @@ public:
   void setup() override;
   void serverSetup() override;
   void loop() override;
+#ifdef IOTSA_WITH_WEB
   String info() override;
+#endif
   void set(uint32_t _rgb, int _onDuration, int _offDuration, int _count);
   void showStatus() override;
 protected:
