@@ -155,12 +155,14 @@ void IotsaStaticTokenMod::configSave() {
 void IotsaStaticTokenMod::loop() {
 }
 
+#ifdef IOTSA_WITH_WEB
 String IotsaStaticTokenMod::info() {
   String message = "<p>Static tokens enabled.";
   message += " See <a href=\"/tokens\">/tokens</a> to change.";
   message += "</p>";
   return message;
 }
+#endif
 
 bool IotsaStaticTokenMod::allows(const char *right) {
   if (server->hasHeader("Authorization")) {
