@@ -25,14 +25,14 @@
 class IotsaHelloMod : public IotsaApiMod {
 public:
   IotsaHelloMod(IotsaApplication &_app, IotsaAuthMod *_auth=NULL) : IotsaApiMod(_app, _auth, false) {}
-	void setup();
-	void serverSetup();
-	void loop();
-  String info();
+	void setup() override;
+	void serverSetup() override;
+	void loop() override;
+  String info() override;
   using IotsaBaseMod::needsAuthentication;
 protected:
-  bool getHandler(const char *path, JsonObject& reply);
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
+  bool getHandler(const char *path, JsonObject& reply) override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
 private:
   void handler();
 };

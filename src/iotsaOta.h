@@ -5,10 +5,12 @@
 class IotsaOtaMod : public IotsaMod {
 public:
   using IotsaMod::IotsaMod;
-  void setup();
-  void serverSetup();
-  void loop();
-  String info();
+  void setup() override;
+  void serverSetup() override;
+  void loop() override;
+#ifdef IOTSA_WITH_WEB
+  String info() override;
+#endif
 };
 
 #endif

@@ -27,19 +27,23 @@ private:
 class IotsaCapabilityMod : public IotsaAuthMod, public IotsaApiProvider {
 public:
   IotsaCapabilityMod(IotsaApplication &_app, IotsaAuthenticationProvider &_chain);
-  void setup();
-  void serverSetup();
-  void loop();
-  String info();
-  bool allows(const char *obj, IotsaApiOperation verb);
-  bool allows(const char *right);
-  bool getHandler(const char *path, JsonObject& reply);
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
-  bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply);
+  void setup() override;
+  void serverSetup() override;
+  void loop() override;
+#ifdef IOTSA_WITH_WEB
+  String info() override;
+#endif
+  bool allows(const char *obj, IotsaApiOperation verb) override;
+  bool allows(const char *right) override;
+#ifdef IOTSA_WITH_API
+  bool getHandler(const char *path, JsonObject& reply) override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+  bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+#endif
 protected:
   void loadCapabilitiesFromRequest();
-  void configLoad();
-  void configSave();
+  void configLoad() override;
+  void configSave() override;
   void handler();
   IotsaCapability *capabilities;
 #ifdef IOTSA_WITH_API

@@ -10,7 +10,7 @@ public:
   IotsaCoapApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth)
   : IotsaCoapApiService(_provider, _app)
   {}
-  void setup(const char* path, bool get=false, bool put=false, bool post=false);
+  void setup(const char* path, bool get=false, bool put=false, bool post=false) override;
 private:
   IotsaApiProvider* provider; 
 //  void _getHandlerWrapper(const char *path);
@@ -26,9 +26,9 @@ public:
   : IotsaMod(_app, _auth, early),
     api(this, _app)
   {}
-  virtual bool getHandler(const char *path, JsonObject& reply) { return false; }
-  virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
-  virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
+  virtual bool getHandler(const char *path, JsonObject& reply) override { return false; }
+  virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
+  virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
 protected:
   IotsaCoapApiService api;
 };

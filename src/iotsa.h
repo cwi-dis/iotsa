@@ -107,7 +107,7 @@ public:
     }
   }
   IotsaBaseMod& operator=(const IotsaBaseMod& that) = delete;
-
+  
   virtual void setup() = 0;
   virtual void loop() = 0;
   virtual void configLoad() {}
@@ -136,10 +136,10 @@ public:
   {
   }
   IotsaMod& operator=(const IotsaMod& that) = delete;
-  virtual void serverSetup() = 0;
+  virtual void serverSetup() override = 0;
 
 #ifdef IOTSA_WITH_WEB
-  virtual String info() = 0;
+  virtual String info() override = 0;
   static String htmlEncode(String data); // Helper - convert strings to HTML-safe representation
   static void percentDecode(const String &src, String &dst); // Helper - convert string from url-encoded to normal
 #endif

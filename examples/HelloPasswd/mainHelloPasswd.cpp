@@ -22,18 +22,18 @@
 class IotsaStaticAuthMod : public IotsaAuthMod {
 public:
   using IotsaAuthMod::IotsaAuthMod;
-  void setup() {}
-  void serverSetup() {}
-  void loop() {}
-  String info() { return ""; }
-  bool allows(const char *right=NULL) {
+  void setup() override {}
+  void serverSetup() override {}
+  void loop() override {}
+  String info() override { return ""; }
+  bool allows(const char *right=NULL) override {
     if (!server->authenticate("admin", "admin")) {
       server->requestAuthentication();
       return false;
     }
     return true;
   }
-  bool allows(const char *obj, IotsaApiOperation verb) {
+  bool allows(const char *obj, IotsaApiOperation verb) override {
     return allows("api");
   }
 };
@@ -47,10 +47,10 @@ public:
 class IotsaHelloMod : public IotsaMod {
 public:
   using IotsaMod::IotsaMod;
-	void setup();
-	void serverSetup();
-	void loop();
-  String info();
+	void setup() override;
+	void serverSetup() override;
+	void loop() override;
+  String info() override;
 private:
   void handler();
 };

@@ -46,7 +46,7 @@ public:
   : restService(_provider, _app, _auth),
     coapService(_provider, _app, _auth)
   {}
-  void setup(const char* path, bool get=false, bool put=false, bool post=false) {
+  void setup(const char* path, bool get=false, bool put=false, bool post=false) override {
     restService.setup(path, get, put, post);
     coapService.setup(path, get, put, post);
   }
@@ -61,9 +61,9 @@ public:
   : IotsaMod(_app, _auth, early),
     api(this, _app, _auth)
   {}
-  virtual bool getHandler(const char *path, JsonObject& reply) { return false; }
-  virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
-  virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
+  virtual bool getHandler(const char *path, JsonObject& reply) override { return false; }
+  virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
+  virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
 protected:
   IotsaANYApiService api;
 };
@@ -81,7 +81,7 @@ class IotsaNoApiService : public IotsaApiServiceProvider {
 public:
   IotsaNoApiService() {}
   IotsaNoApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth) {}
-  void setup(const char* path, bool get=false, bool put=false, bool post=false) {}
+  void setup(const char* path, bool get=false, bool put=false, bool post=false) override {}
 };
 
 class IotsaNoApiMod : public IotsaMod {

@@ -12,15 +12,19 @@
 class IotsaNothingMod : public IotsaNothingModBaseMod {
 public:
   using IotsaNothingModBaseMod::IotsaNothingModBaseMod;
-  void setup();
-  void serverSetup();
-  void loop();
-  String info();
+  void setup() override;
+  void serverSetup() override;
+  void loop() override;
+#ifdef IOTSA_WITH_WEB
+  String info() override;
+#endif
 protected:
-  bool getHandler(const char *path, JsonObject& reply);
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
-  void configLoad();
-  void configSave();
+#ifdef IOTSA_WITH_API
+  bool getHandler(const char *path, JsonObject& reply) override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+#endif
+  void configLoad() override;
+  void configSave() override;
   void handler();
   String argument;
 };

@@ -14,16 +14,20 @@
 class IotsaWifiMod : public IotsaWifiModBaseMod {
 public:
   IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL);
-	void setup();
-	void serverSetup();
-	void loop();
-  String info();
+	void setup() override;
+	void serverSetup() override;
+	void loop() override;
+#ifdef IOTSA_WITH_WEB
+  String info() override;
+#endif
 protected:
-  bool getHandler(const char *path, JsonObject& reply);
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
+#ifdef IOTSA_WITH_API
+  bool getHandler(const char *path, JsonObject& reply) override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+#endif
 private:
-  void configLoad();
-  void configSave();
+  void configLoad() override;
+  void configSave() override;
   void handler();
   void _wifiGotoMode();
   bool _wifiStartStation();
@@ -43,10 +47,10 @@ private:
 class IotsaWifiMod : public IotsaMod {
 public:
   using IotsaMod::IotsaMod;
-  void setup() {}
-  void serverSetup() {}
-  void loop() {}
-  String info() {return "";}
+  void setup() override {}
+  void serverSetup() override {}
+  void loop() override {}
+  String info() override {return "";}
 };
 #endif // IOTSA_WITH_WIFI || IOTSA_WITH_PLACEHOLDERS
 

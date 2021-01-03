@@ -2,39 +2,41 @@
 #define _IOTSASTATICTOKEN_H_
 #include "iotsa.h"
 
-class IotsaStaticTokenObject : IotsaModObject {
+class IotsaStaticTokenObject : IotsaApiModObject {
 public:
   IotsaStaticTokenObject() {}
   String token;
   String rights;
 public:
-  bool configLoad(IotsaConfigFileLoad& cf, String& f_name);
-  void configSave(IotsaConfigFileSave& cf, String& f_name);
+  bool configLoad(IotsaConfigFileLoad& cf, String& f_name) override;
+  void configSave(IotsaConfigFileSave& cf, String& f_name) override;
 #ifdef IOTSA_WITH_WEB
-  static void formHandler(String& message);
-  void formHandler(String& message, String& text, String& f_name);
-  static void formHandlerTH(String& message);
-  void formHandlerTD(String& message);
-  bool formArgHandler(IotsaWebServer *server, String name);
+  static void formHandler(String& message) /*override*/;
+  void formHandler(String& message, String& text, String& f_name) override;
+  static void formHandlerTH(String& message) /* override*/;
+  void formHandlerTD(String& message) override;
+  bool formArgHandler(IotsaWebServer *server, String name) override;
 #endif
 #ifdef IOTSA_WITH_API
-  void getHandler(JsonObject& reply);
-  bool putHandler(const JsonVariant& request);
+  void getHandler(JsonObject& reply) override;
+  bool putHandler(const JsonVariant& request) override;
 #endif
 };
 
 class IotsaStaticTokenMod : public IotsaAuthMod {
 public:
   IotsaStaticTokenMod(IotsaApplication &_app, IotsaAuthenticationProvider &_chain);
-  void setup();
-  void serverSetup();
-  void loop();
-  String info();
-  bool allows(const char *right=NULL);
-  bool allows(const char *obj, IotsaApiOperation verb);
+  void setup() override;
+  void serverSetup() override;
+  void loop() override;
+#ifdef IOTSA_WITH_WEB
+  String info() override;
+#endif
+  bool allows(const char *right=NULL) override;
+  bool allows(const char *obj, IotsaApiOperation verb) override;
 protected:
-  void configLoad();
-  void configSave();
+  void configLoad() override;
+  void configSave() override;
   void handler();
   int _addToken(IotsaStaticTokenObject& newToken);
   bool _delToken(int index);

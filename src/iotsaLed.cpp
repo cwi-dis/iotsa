@@ -58,9 +58,11 @@ void IotsaLedMod::serverSetup() {
 	// Do nothing
 }
 
+#ifdef IOTSA_WITH_WEB
 String IotsaLedMod::info() {
 	return "";
 }
+#endif
 
 void IotsaLedMod::set(uint32_t _rgb, int _onDuration, int _offDuration, int _count) {
   showingStatus = false;

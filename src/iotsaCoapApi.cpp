@@ -138,8 +138,8 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
 class IotsaCoapServiceMod : public IotsaBaseMod {
 public:
   IotsaCoapServiceMod(IotsaApplication &_app);
-  void setup();
-  void loop();
+  void setup() override;
+  void loop() override;
   void addEndpoint(CoapEndpoint *ep, const char *path);
 protected:
   CoapEndpoint *firstEndpoint;

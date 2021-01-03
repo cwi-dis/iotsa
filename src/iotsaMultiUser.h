@@ -29,18 +29,22 @@ public:
 class IotsaMultiUserMod : public IotsaAuthMod, public IotsaApiProvider {
 public:
   IotsaMultiUserMod(IotsaApplication &_app);
-  void setup();
-  void serverSetup();
-  void loop();
-  String info();
-  bool allows(const char *right=NULL);
-  bool allows(const char *obj, IotsaApiOperation verb);
-  bool getHandler(const char *path, JsonObject& reply);
-  bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply);
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
+  void setup() override;
+  void serverSetup() override;
+  void loop() override;
+#ifdef IOTSA_WITH_WEB
+  String info() override;
+#endif
+  bool allows(const char *right=NULL) override;
+  bool allows(const char *obj, IotsaApiOperation verb) override;
+#ifdef IOTSA_WITH_API
+  bool getHandler(const char *path, JsonObject& reply) override;
+  bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+#endif
 protected:
-  void configLoad();
-  void configSave();
+  void configLoad() override;
+  void configSave() override;
   void handler();
   std::vector<IotsaUser> users;
   int _addUser(IotsaUser& newUser);

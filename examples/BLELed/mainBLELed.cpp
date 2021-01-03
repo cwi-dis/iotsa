@@ -51,18 +51,22 @@ IotsaBLEServerMod bleserverMod(application);
 class IotsaLedControlMod : public IotsaLedMod, public IotsaBLEApiProvider {
 public:
   using IotsaLedMod::IotsaLedMod;
-  void setup();
-  void serverSetup();
-  String info();
+  void setup() override;
+  void serverSetup() override;
+#ifdef IOTSA_WITH_WEB
+  String info() override;
+#endif
 protected:
-  bool getHandler(const char *path, JsonObject& reply);
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
+#ifdef IOTSA_WITH_API
+  bool getHandler(const char *path, JsonObject& reply) override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+#endif
   void handler();
 
 #ifdef IOTSA_WITH_BLE
   IotsaBleApiService bleApi;
-  bool blePutHandler(UUIDstring charUUID);
-  bool bleGetHandler(UUIDstring charUUID);
+  bool blePutHandler(UUIDstring charUUID) override;
+  bool bleGetHandler(UUIDstring charUUID) override;
   static constexpr UUIDstring serviceUUID = "3B000001-1226-4A53-9D24-AFA50C0163A3";
   static constexpr UUIDstring rgbUUID = "3B000002-1226-4A53-9D24-AFA50C0163A3";
 #endif // IOTSA_WITH_BLE
@@ -124,6 +128,7 @@ String IotsaLedControlMod::info() {
 }
 #endif // IOTSA_WITH_WEB
 
+#ifdef IOTSA_WITH_API
 bool IotsaLedControlMod::getHandler(const char *path, JsonObject& reply) {
   reply["rgb"] = rgb;
   return true;
@@ -134,6 +139,7 @@ bool IotsaLedControlMod::putHandler(const char *path, const JsonVariant& request
   set(_rgb, 1000, 0, 0x7fff);
   return true;
 }
+#endif // IOTSA_WITH_API
 
 void IotsaLedControlMod::serverSetup() {
   name = "led";

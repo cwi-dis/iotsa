@@ -72,10 +72,10 @@ class IotsaBLEServerMod : public IotsaBLEServerModBaseMod {
   friend class IotsaBleApiService;
 public:
   using IotsaBLEServerModBaseMod::IotsaBLEServerModBaseMod;
-  void setup();
-  void serverSetup();
-  void loop();
-  String info();
+  void setup() override;
+  void serverSetup() override;
+  void loop() override;
+  String info() override;
   static void setAdvertisingInterval(uint16_t _adv_min, uint16_t _adv_max) {
     adv_min = _adv_min;
     adv_max = _adv_max;
@@ -85,10 +85,10 @@ public:
   static void resumeServer();
 protected:
   bool isEnabled;
-  bool getHandler(const char *path, JsonObject& reply);
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
-  void configLoad();
-  void configSave();
+  bool getHandler(const char *path, JsonObject& reply) override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+  void configLoad() override;
+  void configSave() override;
   void handler();
 
   static void createServer();

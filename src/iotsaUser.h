@@ -6,18 +6,22 @@
 class IotsaUserMod : public IotsaAuthMod, public IotsaApiProvider {
 public:
   IotsaUserMod(IotsaApplication &_app, const char *_username="admin", const char *_password="");
-  void setup();
-  void serverSetup();
-  void loop();
-  String info();
-  bool allows(const char *right=NULL);
-  bool allows(const char *obj, IotsaApiOperation verb) { return allows("api");}
-  bool getHandler(const char *path, JsonObject& reply);
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
-  bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply);
+  void setup() override;
+  void serverSetup() override;
+  void loop() override;
+#ifdef IOTSA_WITH_WEB
+  String info() override;
+#endif
+  bool allows(const char *right=NULL) override;
+  bool allows(const char *obj, IotsaApiOperation verb) override { return allows("api");}
+#ifdef IOTSA_WITH_API
+  bool getHandler(const char *path, JsonObject& reply) override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+  bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+#endif
 protected:
-  void configLoad();
-  void configSave();
+  void configLoad() override;
+  void configSave() override;
   void handler();
   String username;
   String password;
