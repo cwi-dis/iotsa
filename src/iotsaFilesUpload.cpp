@@ -1,8 +1,5 @@
 #include <Esp.h>
-#include "FS.h"
-#ifdef ESP32
-#include <SPIFFS.h>
-#endif
+#include "iotsaFS.h"
 #include "iotsaFilesUpload.h"
 
 #ifdef IOTSA_WITH_WEB
@@ -21,8 +18,8 @@ IotsaFilesUploadMod::uploadHandler() {
     String _uploadfilename = "/data/" + upload.filename;
     IFDEBUG IotsaSerial.print("Uploading ");
     IFDEBUG IotsaSerial.println(_uploadfilename);
-    if(SPIFFS.exists(_uploadfilename)) SPIFFS.remove(_uploadfilename);
-    _uploadFile = SPIFFS.open(_uploadfilename, "w");
+    if(IOTSA_FS.exists(_uploadfilename)) IOTSA_FS.remove(_uploadfilename);
+    _uploadFile = IOTSA_FS.open(_uploadfilename, "w");
     //DBG_OUTPUT_PORT.print("Upload: START, filename: "); DBG_OUTPUT_PORT.println(upload.filename);
   } else if(upload.status == UPLOAD_FILE_WRITE){
     if(_uploadFile) _uploadFile.write(upload.buf, upload.currentSize);

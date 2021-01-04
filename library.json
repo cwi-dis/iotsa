@@ -38,6 +38,10 @@
         {
             "platforms" : "espressif32",
             "name" : "esp32_https_server_compat"
+        },
+        {
+            "platforms" : "espressif32",
+            "name" : "lorol/LittleFS_esp32"
         }
     ],
     "examples" : [

@@ -1,13 +1,11 @@
 #include <Esp.h>
 #ifdef ESP32
 #include <ESPmDNS.h>
-#include <SPIFFS.h>
 #include <esp_log.h>
 #else
 #include <ESP8266mDNS.h>
 #include <user_interface.h>
 #endif
-#include <FS.h>
 
 #include "iotsa.h"
 #include "iotsaConfigFile.h"

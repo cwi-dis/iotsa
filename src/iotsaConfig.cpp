@@ -1,12 +1,10 @@
 #include "iotsa.h"
 #include "iotsaConfigFile.h"
-
+#include "iotsaFS.h"
 #ifdef ESP32
-#include <SPIFFS.h>
 #include <esp_log.h>
 #include <rom/rtc.h>
 #endif
-#include <FS.h>
 
 //
 // Global variable initialization
@@ -158,8 +156,12 @@ void IotsaConfig::beginConfigurationMode() {
 void IotsaConfig::factoryReset() {
     IFDEBUG IotsaSerial.println("configurationMode: Factory-reset");
   	delay(1000);
+#ifdef WITH_LEGACY_SPIFFS
   	IFDEBUG IotsaSerial.println("Formatting SPIFFS...");
-  	SPIFFS.format();
+#else
+  	IFDEBUG IotsaSerial.println("Formatting LittleFS...");
+#endif
+  	IOTSA_FS.format();
   	IFDEBUG IotsaSerial.println("Format done, rebooting.");
   	delay(2000);
   	ESP.restart();

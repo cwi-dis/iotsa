@@ -1,0 +1,25 @@
+#ifndef _IOTSAFS_H_
+#define _IOTSAFS_H_
+//
+// SPIFFS/LittleFS choice is complex, also for include file differences on ESP32/ESP8266.
+// So put if all in a separate include file.
+//
+#include <FS.h>
+
+#ifdef WITH_LEGACY_SPIFFS
+#ifdef ESP32
+#include <SPIFFS.h>
+#endif
+#define IOTSA_FS SPIFFS
+#define IOTSA_FS_NAME "SPIFFS"
+#else
+#include <LittleFS.h>
+#ifdef ESP32
+#define IOTSA_FS LITTLEFS
+#else
+#define IOTSA_FS LittleFS
+#endif
+#define IOTSA_FS_NAME "LittleFS"
+#endif
+
+#endif

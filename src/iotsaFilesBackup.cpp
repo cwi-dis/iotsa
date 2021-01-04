@@ -1,10 +1,6 @@
 #include <Esp.h>
 #include "iotsaFilesBackup.h"
-#ifdef ESP32
-#include "SPIFFS.h"
-#else
-#include "FS.h"
-#endif
+#include "iotsaFS.h"
 
 #ifdef IOTSA_WITH_WEB
 struct tarHeader {
@@ -22,7 +18,7 @@ struct tarHeader {
 
 #ifdef ESP32
 static void addFilenames(std::vector<String>& fileList, String dirName) {
-	File root = SPIFFS.open(dirName);
+	File root = IOTSA_FS.open(dirName);
 	while(1) {
 		File file = root.openNextFile();
 		if (!file) break;
@@ -32,7 +28,7 @@ static void addFilenames(std::vector<String>& fileList, String dirName) {
 }
 #else
 static void addFilenames(std::vector<String>& fileList, String dirName) {
-  Dir d = SPIFFS.openDir(dirName);
+  Dir d = IOTSA_FS.openDir(dirName);
   while (d.next()) {
   	// Get header information
   	String fileName(d.fileName());
@@ -82,7 +78,7 @@ IotsaFilesBackupMod::handler() {
   	const String& fileName = *it;
   	IFDEBUG IotsaSerial.print("File ");
   	IFDEBUG IotsaSerial.println(fileName);
-  	File fp = SPIFFS.open(fileName, "r");
+  	File fp = IOTSA_FS.open(fileName, "r");
   	if (!fp) continue;
   	//fileName = fileName.substring(1);
   	size_t fileSize = fp.size();
