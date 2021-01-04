@@ -103,7 +103,7 @@ jobs:
       with:
         repository: lorol/LITTLEFS
         path: CustomLibrary_LittleFS
-        ref: 1.0 
+        ref: '1.0' 
 
     - name: Install iotsa and custom libraries
       run: |
