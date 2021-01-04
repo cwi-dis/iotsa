@@ -13,10 +13,11 @@
 #define IOTSA_FS SPIFFS
 #define IOTSA_FS_NAME "SPIFFS"
 #else
-#include <LITTLEFS.h>
 #ifdef ESP32
+#include <LITTLEFS.h>
 #define IOTSA_FS LITTLEFS
 #else
+#include <LittleFS.h>
 #define IOTSA_FS LittleFS
 #endif
 #define IOTSA_FS_NAME "LittleFS"
