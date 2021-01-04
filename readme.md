@@ -560,3 +560,4 @@ the box, or make the box fit a iotsa board with some of the experimental area ro
 removed.
 
 The 3D-printable case for a iotsa board is also available at Thingyverse: <http://www.thingiverse.com/thing:2303793>.
+
