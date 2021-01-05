@@ -1,7 +1,7 @@
 # iotsa - Internet of Things server architecture
 
-[![Travis Build Status](https://travis-ci.org/cwi-dis/iotsa.svg?branch=master)](https://travis-ci.org/cwi-dis/iotsa)
 ![build-platformio](https://github.com/cwi-dis/iotsa/workflows/build-platformio/badge.svg)
+![build-arduino](https://github.com/cwi-dis/iotsa/workflows/build-arduino/badge.svg)
 
 This library contains a framework to easily create esp8266-based or esp32-based web servers that can interface to all sorts of sensors and actuators. The servers can be REST-compatible, and COAP-compatible, including
 seamless integration with the [Igor home automation server](https://github.com/cwi-dis/igor). 
@@ -9,6 +9,8 @@ seamless integration with the [Igor home automation server](https://github.com/c
 
 Home page is <https://github.com/cwi-dis/iotsa>. 
 This software is licensed under the [MIT license](LICENSE.txt) by the CWI DIS group, <http://www.dis.cwi.nl>.
+
+Note that the build badges above are for the [develop branch](https://github.com/cwi-dis/iotsa/tree/develop), for the iotsa library itself and the examples. Build status for iotsa applications against the develop branch can be found below.
 
 ## Installation and use for developers
 
@@ -522,16 +524,120 @@ has no users, and allows all rights always.
 
 Here are some projects that use iotsa, and that also be used as further examples (_Note that as of this writing not all projects may be publicly accessible yet_):
 
-* [iotsaGPIO](http://github.com/cwi-dis/iotsaGPIO): allows web access (or REST access) to analog and digital input and output pins.
-* [iotsaDisplayServer](http://github.com/cwi-dis/iotsaDisplayServer): Drives an LCD display, such as an i2c 4x40 character module. Support for a buzzer (to attract user attention) and buttons (programmable to trigger actions by accessing programmable URLs) is included.
-* [iotsaMotorServer](http://github.com/cwi-dis/iotsaMotorServer): Drives one or more stepper motors. Schematics and 3D models are included for a device to lift an object (such as a plant in a pot) to a height that can be changed through the web.
-* [iotsaNeoClock](http://github.com/cwi-dis/iotsaNeoClock): A clock comprised of 60 NeoPixel LEDs. Shows the time, but can also show programmable patterns (as alerts) and temporal information (such as expected rainfall for the coming hour). Schematics and building instructions included.
-* [iotsaDoorOpener](http://github.com/cwi-dis/iotsaDoorOpener): Operates a solenoid to open a door. On web access, or when an RFID tag (such as a keychain fob or a mifare contactless transport card) is presented. RFID cards are programmable (over the net, or using a special "learn" card). A web request can be sent to a programmable URL when a card is presented.
-* [iotsaSmartMeter](http://github.com/cwi-dis/iotsaSmartMeter): Reads electricity and gas usage of a dutch Smart Meter through the standardised P1 port and makes the data available on the net.
-* [iotsaDoorbellButton](http://github.com/cwi-dis/iotsaDoorbellButton) and [iotsaDoorbellRinger](http://github.com/cwi-dis/iotsaDoorbellRinger) are two very simple REST services that together form a door bell. 
-* [iotsaLedstrip](http://github.com/cwi-dis/iotsaLedstrip): A driver for NeoPixel or similar LED strips. This application is mainly intended to use the LED strips for lighting, so you are able to adjustcolor temperature, intensity, etc.
-* [iotsaDMXLedstrip](http://github.com/cwi-dis/iotsaDMXLedstrip): A driver for NeoPixel or similar LED strips to use for theatre lighting. The individual LEDs are controllable using the Art-Net DMX protocol, which is supported by many theatre lighting consoles or software such as the open source QLC+.
-* [iotsaDMXSensor](http://github.com/cwi-dis/iotsaDMXSensor): Reads sensor values from Estimote Bluetooth LE sensors and makes these available as DMX slider values (using DMX over Art-Net over WiFi). Can be used to input sensor values into a standard theatre lighting console or software such as QLC+.
+### [lissabon](http://github.com/cwi-dis/lissabon)
+
+![build-platformio](https://github.com/cwi-dis/lissabon/workflows/build-platformio/badge.svg)
+![build-arduino](https://github.com/cwi-dis/lissabon/workflows/build-arduino/badge.svg)
+
+This is a whole set of appliances aimed at very low power overhead control of lighting in an off-grid situation (think: battery-backed solar power holiday home). Dimmers, LED strip controllers, remotes.
+
+### [iotsaGPIO](http://github.com/cwi-dis/iotsaGPIO)
+
+![build-platformio](https://github.com/cwi-dis/iotsaGPIO/workflows/build-platformio/badge.svg)
+![build-arduino](https://github.com/cwi-dis/iotsaGPIO/workflows/build-arduino/badge.svg)
+
+Allows web access (or REST access) to analog and digital input and output pins.
+
+### [iotsaDisplayServer](http://github.com/cwi-dis/iotsaDisplayServer)
+
+![build-platformio](https://github.com/cwi-dis/iotsaDisplayServer/workflows/build-platformio/badge.svg)
+![build-arduino](https://github.com/cwi-dis/iotsaDisplayServer/workflows/build-arduino/badge.svg)
+
+Drives an OLED display, such as an i2c 4x40 character module. Support for a buzzer (to attract user attention) and buttons (programmable to trigger actions by accessing programmable URLs) is included.
+
+### [iotsaOLED](http://github.com/cwi-dis/iotsaOLED)
+
+![build-platformio](https://github.com/cwi-dis/iotsaOLED/workflows/build-platformio/badge.svg)
+![build-arduino](https://github.com/cwi-dis/iotsaOLED/workflows/build-arduino/badge.svg)
+
+Drives an LCD display, such as an Adafruit SSD1306. Same external API as _iotsaDisplayServer_, but also allows Bluetooth LE control.
+
+### [iotsaMotorServer](http://github.com/cwi-dis/iotsaMotorServer)
+
+![build-platformio](https://github.com/cwi-dis/iotsaMotorServer/workflows/build-platformio/badge.svg)
+![build-arduino](https://github.com/cwi-dis/iotsaMotorServer/workflows/build-arduino/badge.svg)
+
+Drives one or more stepper motors. Schematics and 3D models are included for a device to lift an object (such as a plant in a pot) to a height that can be changed through the web.
+
+### [iotsaNeoClock](http://github.com/cwi-dis/iotsaNeoClock)
+
+![build-platformio](https://github.com/cwi-dis/iotsaNeoClock/workflows/build-platformio/badge.svg)
+![build-arduino](https://github.com/cwi-dis/iotsaNeoClock/workflows/build-arduino/badge.svg)
+
+A clock comprised of 60 NeoPixel LEDs. Shows the time, but can also show programmable patterns (as alerts) and temporal information (such as expected rainfall for the coming hour). Schematics and building instructions included.
+
+### [iotsaDoorOpener](http://github.com/cwi-dis/iotsaDoorOpener)
+
+![build-platformio](https://github.com/cwi-dis/iotsaDoorOpener/workflows/build-platformio/badge.svg)
+![build-arduino](https://github.com/cwi-dis/iotsaDoorOpener/workflows/build-arduino/badge.svg)
+
+Operates a solenoid to open a door. On web access, or when an RFID tag (such as a keychain fob or a mifare contactless transport card) is presented. RFID cards are programmable (over the net, or using a special "learn" card). A web request can be sent to a programmable URL when a card is presented.
+
+### [iotsaSmartMeter](http://github.com/cwi-dis/iotsaSmartMeter)
+
+![build-platformio](https://github.com/cwi-dis/iotsaSmartMeter/workflows/build-platformio/badge.svg)
+![build-arduino](https://github.com/cwi-dis/iotsaSmartMeter/workflows/build-arduino/badge.svg)
+
+Reads electricity and gas usage of a dutch Smart Meter through the standardised P1 port and makes the data available on the net.
+
+### [iotsaDoorbellButton](http://github.com/cwi-dis/iotsaDoorbellButton)
+
+![build-platformio](https://github.com/cwi-dis/iotsaDoorbellButton/workflows/build-platformio/badge.svg)
+![build-arduino](https://github.com/cwi-dis/iotsaDoorbellButton/workflows/build-arduino/badge.svg)
+
+Very simple server that emits a GET request when a button is pressed. Uses capabilities.
+
+### [iotsaDoorbellRinger](http://github.com/cwi-dis/iotsaDoorbellRinger)
+
+![build-platformio](https://github.com/cwi-dis/iotsaDoorbellRinger/workflows/build-platformio/badge.svg)
+![build-arduino](https://github.com/cwi-dis/iotsaDoorbellRinger/workflows/build-arduino/badge.svg)
+
+Very simple server that sounds a buzzer when a GET request is received. Uses capabilities. 
+
+### [iotsaLedstrip](http://github.com/cwi-dis/iotsaLedstrip)
+
+![build-platformio](https://github.com/cwi-dis/iotsaLedstrip/workflows/build-platformio/badge.svg)
+![build-arduino](https://github.com/cwi-dis/iotsaLedstrip/workflows/build-arduino/badge.svg)
+
+A driver for NeoPixel or similar LED strips. This application is mainly intended to use the LED strips for lighting, so you are able to adjustcolor temperature, intensity, etc.
+
+### [iotsaDMXLedstrip](http://github.com/cwi-dis/iotsaDMXLedstrip)
+
+![build-platformio](https://github.com/cwi-dis/iotsaDMXLedstrip/workflows/build-platformio/badge.svg)
+![build-arduino](https://github.com/cwi-dis/iotsaDMXLedstrip/workflows/build-arduino/badge.svg)
+
+A driver for NeoPixel or similar LED strips to use for theatre lighting. The individual LEDs are controllable using the Art-Net DMX protocol, which is supported by many theatre lighting consoles or software such as the open source QLC+.
+
+### [iotsaDMXSensor](http://github.com/cwi-dis/iotsaDMXSensor)
+
+![build-platformio](https://github.com/cwi-dis/iotsaDMXSensor/workflows/build-platformio/badge.svg)
+![build-arduino](https://github.com/cwi-dis/iotsaDMXSensor/workflows/build-arduino/badge.svg)
+
+Reads sensor values from Estimote Bluetooth LE sensors and makes these available as DMX slider values (using DMX over Art-Net over WiFi). Can be used to input sensor values into a standard theatre lighting console or software such as QLC+.
+
+### [iotsa433](http://github.com/cwi-dis/iotsa433)
+
+![build-platformio](https://github.com/cwi-dis/iotsa433/workflows/build-platformio/badge.svg)
+![build-arduino](https://github.com/cwi-dis/iotsa433/workflows/build-arduino/badge.svg)
+
+Server to receive and transmit 433 MHz home automation signals (the cheap wireless remote controlled sockets, dimmers, garage doors, etc).
+
+### [iotsaSensor](http://github.com/cwi-dis/iotsaSensor)
+
+![build-platformio](https://github.com/cwi-dis/iotsaSensor/workflows/build-platformio/badge.svg)
+![build-arduino](https://github.com/cwi-dis/iotsaSensor/workflows/build-arduino/badge.svg)
+
+Read an analog sensor at an interval that can be specified. Sensor readings are kept in a rolling buffer, and the most recent 512 readings can be retreived through the web interface, together with the timestamp of reading.
+
+
+### [iotsaRGBWSensor](http://github.com/cwi-dis/iotsaRGBWSensor)
+
+![build-platformio](https://github.com/cwi-dis/iotsaRGBWSensor/workflows/build-platformio/badge.svg)
+![build-arduino](https://github.com/cwi-dis/iotsaRGBWSensor/workflows/build-arduino/badge.svg)
+
+Read current ambient light level (RGB and White, color temperature) using a VEML6040 sensor.
+Can be used to calibrate RGB, RGBW and RGBWW led strips.
+
 
 ## hardware
 
