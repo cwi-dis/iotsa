@@ -41,7 +41,8 @@
         },
         {
             "platforms" : "espressif32",
-            "name" : "lorol/LittleFS_esp32"
+            "name" : "https://github.com/lorol/LITTLEFS",
+            "version" : "!=1.0.5"
         }
     ],
     "examples" : [
