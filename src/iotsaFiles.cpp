@@ -1,9 +1,6 @@
 #include <Esp.h>
-#include "FS.h"
-#ifdef ESP32
-#include <SPIFFS.h>
-#endif
 #include "iotsaFiles.h"
+#include "iotsaFS.h"
 
 #ifdef IOTSA_WITH_WEB
 void IotsaFilesMod::setup() {
@@ -14,7 +11,7 @@ void IotsaFilesMod::setup() {
 void
 IotsaFilesMod::_listDir(String& message, const char *name)
 {
-  File d = SPIFFS.open(name);
+  File d = IOTSA_FS.open(name);
   if (!d.isDirectory()) {
   	message += "<em>Not a directory: ";
   	message += name;
@@ -44,7 +41,7 @@ void
 IotsaFilesMod::_listDir(String& message, const char *name)
 {
   message += "<ul>";
-  Dir d = SPIFFS.openDir(name);
+  Dir d = IOTSA_FS.openDir(name);
   while (d.next()) {
       message += "<li><a href=\"" + htmlEncode(d.fileName()) + "\">" + htmlEncode(d.fileName()) + "</a> (" + String(d.fileSize()) + " bytes)</li>";
   }
@@ -76,7 +73,7 @@ IotsaFilesMod::notFoundHandler() {
   if (!accessAllowed(path)) {
   	// Path doesn't refer to a file that may be accessed
   	message = "Access Not Allowed\n\n";
-  } else if (!SPIFFS.exists(path)) {
+  } else if (!IOTSA_FS.exists(path)) {
   	// Path may be accessed, but doesn't exist
   	message = "File Does Not Exist\n\n";
   } else {
@@ -86,7 +83,7 @@ IotsaFilesMod::notFoundHandler() {
    		return;
    	}
   	
-    if (dataFile = SPIFFS.open(path, "r")) {
+    if (dataFile = IOTSA_FS.open(path, "r")) {
     	// Everything is fine. Guess data type, and stream data back
 		String dataType = "text/plain";
 		if(path.endsWith(".html")) dataType = "text/html";

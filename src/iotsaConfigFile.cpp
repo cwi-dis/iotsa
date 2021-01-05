@@ -1,15 +1,13 @@
 #include "iotsa.h"
 #include "iotsaConfigFile.h"
-#ifdef ESP32
-#include <SPIFFS.h>
-#endif
+#include "iotsaFS.h"
 
 IotsaConfigFileLoad::IotsaConfigFileLoad(String filename) {
-  fp = SPIFFS.open(filename, "r");
+  fp = IOTSA_FS.open(filename, "r");
 }
 
 IotsaConfigFileLoad::IotsaConfigFileLoad(const char *filename) {
-  fp = SPIFFS.open(filename, "r");
+  fp = IOTSA_FS.open(filename, "r");
 }
 
 IotsaConfigFileLoad::~IotsaConfigFileLoad() {
@@ -91,11 +89,11 @@ void IotsaConfigFileLoad::get(String name, String &value, const char *def) {
 }
 
 IotsaConfigFileSave::IotsaConfigFileSave(String filename) {
-  fp = SPIFFS.open(filename, "w");
+  fp = IOTSA_FS.open(filename, "w");
 }
 
 IotsaConfigFileSave::IotsaConfigFileSave(const char *filename) {
-  fp = SPIFFS.open(filename, "w");
+  fp = IOTSA_FS.open(filename, "w");
 }
 
 IotsaConfigFileSave::~IotsaConfigFileSave() {
@@ -127,11 +125,11 @@ void IotsaConfigFileSave::put(String name, const std::string &value) {
 }
 
 bool iotsaConfigFileExists(String filename) {
-  return SPIFFS.exists(filename);
+  return IOTSA_FS.exists(filename);
 }
 
 bool iotsaConfigFileLoadBinary(String filename, uint8_t **dataP, size_t *dataLenP) {
-  File fp = SPIFFS.open(filename, "r");
+  File fp = IOTSA_FS.open(filename, "r");
   if (!fp) return false;
   size_t size = fp.size();
   if (size == 0) {
@@ -157,7 +155,7 @@ bool iotsaConfigFileLoadBinary(String filename, uint8_t **dataP, size_t *dataLen
 }
 
 void iotsaConfigFileSaveBinary(String filename, const uint8_t *data, size_t dataLen) {
-  File fp = SPIFFS.open(filename, "w");
+  File fp = IOTSA_FS.open(filename, "w");
   if (fp.write(data, dataLen) != dataLen) {
     IFDEBUG IotsaSerial.println("iotsaConfigFileSaveBinary write wrong size");    
   }

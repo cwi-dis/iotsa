@@ -92,11 +92,18 @@ jobs:
 #        arduino-cli core update-index --additional-urls "https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json"
 #        arduino-cli core install "esp32:esp32" --additional-urls "https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json"
 
-    - name: Checkout custom libraries
+    - name: Checkout custom library ArduinoJWT
       uses: actions/checkout@v2
       with:
         repository: yutter/ArduinoJWT
         path: CustomLibrary_ArduinoJWT 
+
+    - name: Checkout custom library LittleFS
+      uses: actions/checkout@v2
+      with:
+        repository: lorol/LITTLEFS
+        path: CustomLibrary_LittleFS
+        ref: '1.0' 
 
     - name: Install iotsa and custom libraries
       run: |
@@ -105,6 +112,7 @@ jobs:
         ls -l
         ln -fs $PWD ~/Arduino/libraries/iotsa
         ln -fs $PWD/CustomLibrary_ArduinoJWT ~/Arduino/libraries/ArduinoJWT
+        ln -fs $PWD/CustomLibrary_LittleFS ~/Arduino/libraries/LittleFS
         ls -l ~/Arduino/libraries
         ls -lL ~/Arduino/libraries
         ls -l ~/Arduino
@@ -123,3 +131,4 @@ jobs:
       run: |
         rm -f ~/Arduino/libraries/iotsa
         rm -f ~/Arduino/libraries/ArduinoJWT
+        rm -f ~/Arduino/libraries/LittleFS

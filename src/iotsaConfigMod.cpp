@@ -1,18 +1,17 @@
 #include <Esp.h>
 #ifdef ESP32
 #include <ESPmDNS.h>
-#include <SPIFFS.h>
 #include <esp_log.h>
 #include <rom/rtc.h>
 #else
 #include <ESP8266mDNS.h>
 #include <user_interface.h>
 #endif
-#include <FS.h>
 
 #include "iotsa.h"
 #include "iotsaConfigFile.h"
 #include "iotsaConfigMod.h"
+#include "iotsaFS.h"
 
 #ifdef IOTSA_WITH_HTTPS
 #include <libb64/cdecode.h>
@@ -317,8 +316,8 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   reply["program"] = app.title;
 #ifdef IOTSA_WITH_HTTPS
   reply["defaultCert"] = iotsaConfig.usingDefaultCertificate();
-  reply["has_httpsKey"] = SPIFFS.exists("/config/httpsKey.der");
-  reply["has_httpsCert"] = SPIFFS.exists("/config/httpsCert.der");
+  reply["has_httpsKey"] = IOTSA_FS.exists("/config/httpsKey.der");
+  reply["has_httpsCert"] = IOTSA_FS.exists("/config/httpsCert.der");
 #endif
 #ifdef IOTSA_CONFIG_PROGRAM_SOURCE
   reply["programSource"] = IOTSA_CONFIG_PROGRAM_SOURCE;
@@ -398,8 +397,8 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   // Set parameter defaultCert to true to remove any key/certificate
   if (reqObj.containsKey("defaultCert") && reqObj["defaultCert"]) {
     if (iotsaConfig.inConfigurationMode()) {
-      SPIFFS.remove("/config/httpsKey.der");
-      SPIFFS.remove("/config/httpsCert.der");
+      IOTSA_FS.remove("/config/httpsKey.der");
+      IOTSA_FS.remove("/config/httpsCert.der");
     } else {
       wrongMode = true;
     }
@@ -503,8 +502,8 @@ IotsaConfigMod::uploadHandler() {
     String _uploadfilename = "/config/" + upload.filename;
     IFDEBUG IotsaSerial.print("Uploading ");
     IFDEBUG IotsaSerial.println(_uploadfilename);
-    if(SPIFFS.exists(_uploadfilename)) SPIFFS.remove(_uploadfilename);
-    _uploadFile = SPIFFS.open(_uploadfilename, "w");
+    if(IOTSA_FS.exists(_uploadfilename)) IOTSA_FS.remove(_uploadfilename);
+    _uploadFile = IOTSA_FS.open(_uploadfilename, "w");
   } else if(upload.status == UPLOAD_FILE_WRITE){
     if(_uploadFile) _uploadFile.write(upload.buf, upload.currentSize);
   } else if(upload.status == UPLOAD_FILE_END){

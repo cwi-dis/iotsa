@@ -1,9 +1,6 @@
 #include <Esp.h>
-#include <FS.h>
-#ifdef ESP32
-#include <SPIFFS.h>
-#endif
 #include "iotsa.h"
+#include "iotsaFS.h"
 
 // There is an issue with the platformio library dependency finder, and it doesn't find the
 // esp8266httpclient library. This is a workaround.
@@ -42,22 +39,22 @@ IotsaApplication::setup() {
   // But this means the serial port cannot be used for other things.
   Serial.begin(115200);
   IFDEBUG IotsaSerial.println("Serial opened");
-  IFDEBUG IotsaSerial.print("Opening SPIFFS (may take long)...");
-  bool ok = SPIFFS.begin();
+  IFDEBUG IotsaSerial.print("Opening " IOTSA_FS_NAME " (may take long)...");
+  bool ok = IOTSA_FS.begin();
   IFDEBUG IotsaSerial.println(" done.");
   if (!ok) {
-    IFDEBUG IotsaSerial.println("SPIFFS.begin() failed, formatting");
+    IFDEBUG IotsaSerial.println("IOTSA_FS.begin() failed, formatting");
 
-    ok = SPIFFS.format();
+    ok = IOTSA_FS.format();
     if (!ok) {
-      IFDEBUG IotsaSerial.println("SPIFFS.format() failed");
+      IFDEBUG IotsaSerial.println(IOTSA_FS_NAME ".format() failed");
     }
-    ok = SPIFFS.begin();
+    ok = IOTSA_FS.begin();
     if (!ok) {
-      IFDEBUG IotsaSerial.println("SPIFFS.begin() after format failed");
+      IFDEBUG IotsaSerial.println(IOTSA_FS_NAME ".begin() after format failed");
     }
   } else {
-    IFDEBUG IotsaSerial.println("SPIFFS mounted");
+    IFDEBUG IotsaSerial.println(IOTSA_FS_NAME " mounted");
   }
   // Normally iotsaConfigMod is initialized by the WiFi module,
   // but if the WiFi module isn't indluded we ensure that the configuration file is loaded anyway.
