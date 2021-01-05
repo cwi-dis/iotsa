@@ -41,8 +41,8 @@
         },
         {
             "platforms" : "espressif32",
-            "name" : "https://github.com/lorol/LITTLEFS",
-            "version" : "!=1.0.5"
+            "name" : "LITTLEFS",
+            "version" : "https://github.com/lorol/LITTLEFS.git#1.0"
         }
     ],
     "examples" : [
