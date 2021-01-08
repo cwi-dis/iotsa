@@ -6,7 +6,7 @@
 //
 #include <FS.h>
 
-#ifdef WITH_LEGACY_SPIFFS
+#ifdef IOTSA_WITH_LEGACY_SPIFFS
 #ifdef ESP32
 #include <SPIFFS.h>
 #endif

@@ -156,7 +156,7 @@ void IotsaConfig::beginConfigurationMode() {
 void IotsaConfig::factoryReset() {
     IFDEBUG IotsaSerial.println("configurationMode: Factory-reset");
   	delay(1000);
-#ifdef WITH_LEGACY_SPIFFS
+#ifdef IOTSA_WITH_LEGACY_SPIFFS
   	IFDEBUG IotsaSerial.println("Formatting SPIFFS...");
 #else
   	IFDEBUG IotsaSerial.println("Formatting LittleFS...");
