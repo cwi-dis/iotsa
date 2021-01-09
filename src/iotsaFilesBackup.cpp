@@ -79,7 +79,11 @@ IotsaFilesBackupMod::handler() {
   	IFDEBUG IotsaSerial.print("File ");
   	IFDEBUG IotsaSerial.println(fileName);
   	File fp = IOTSA_FS.open(fileName, "r");
-  	if (!fp) continue;
+	// xxxjack should recursively go through directories for LittleFS?
+  	if (!fp) {
+		  IotsaSerial.printf("Backup: cannot open %s\n", fileName.c_str());
+		continue;
+	}
   	//fileName = fileName.substring(1);
   	size_t fileSize = fp.size();
   	size_t filePadding = 512 - (fileSize & 511);
