@@ -4,14 +4,16 @@
 #include "iotsaApi.h"
 #include "iotsaConfigFile.h"
 
-class IotsaRequest : IotsaApiModObject {
+class IotsaRequest : public IotsaApiModObject {
 public:
   IotsaRequest() : url(""), sslInfo(""), credentials(""), token("") {}
-  bool send();
+  bool send(const char *query=NULL);
   bool configLoad(IotsaConfigFileLoad& cf, String& f_name) override;
   void configSave(IotsaConfigFileSave& cf, String& f_name) override;
 #ifdef IOTSA_WITH_WEB
+  static void formHandler(String& message);
   void formHandler(String& message, String& text, String& f_name) override;
+  static void formHandlerTH(String& message);
   void formHandlerTD(String& message) override;
   bool formArgHandler(IotsaWebServer *server, String f_name) override;
 #endif

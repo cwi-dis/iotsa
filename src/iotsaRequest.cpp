@@ -29,31 +29,54 @@ void IotsaRequest::configSave(IotsaConfigFileSave& cf, String& f_name) {
 }
 
 #ifdef IOTSA_WITH_WEB
-void IotsaRequest::formHandler(String& message, String& text, String& f_name) {  
-    message += "<em>" + text +  "</em><br>\n";
-    message += "Activation URL: <input name='" + f_name +  ".url' value='";
-    message += url;
-    message += "'><br>\n";
+void IotsaRequest::formHandler(String& message) { 
+  message += "Activation URL: <input name='url'><br>\n";
 #ifdef ESP32
-    message += "Root CA cert <i>(https only)</i>: <input name='" + f_name + ".rootCA' value='";
-    message += sslInfo;
+  message += "Root CA cert <i>(https only)</i>: <input name='rootCA'><br>\n";
 #else
-    message += "Fingerprint <i>(https only)</i>: <input name='" + f_name +  ".fingerprint' value='";
-    message += sslInfo;
+  message += "Fingerprint <i>(https only)</i>: <input name='fingerprint'><br>\n";
 #endif
-    message += "'><br>\n";
 
-    message += "Bearer token <i>(optional)</i>: <input name='" + f_name + ".token' value='";
-    message += token;
-    message += "'><br>\n";
+  message += "Bearer token <i>(optional)</i>: <input name='token'><br>\n";
+  message += "Credentials <i>(optional, user:pass)</i>: <input name='credentials'><br>\n";
+}
 
-    message += "Credentials <i>(optional, user:pass)</i>: <input name='" + f_name + ".credentials' value='";
-    message += credentials;
-    message += "'><br>\n";
+void IotsaRequest::formHandler(String& message, String& text, String& f_name) { 
+  message += "Activation URL: <input name='" + f_name +  ".url' value='";
+  message += url;
+  message += "'><br>\n";
+#ifdef ESP32
+  message += "Root CA cert <i>(https only)</i>: <input name='" + f_name + ".rootCA' value='";
+  message += sslInfo;
+#else
+  message += "Fingerprint <i>(https only)</i>: <input name='" + f_name +  ".fingerprint' value='";
+  message += sslInfo;
+#endif
+  message += "'><br>\n";
+
+  message += "Bearer token <i>(optional)</i>: <input name='" + f_name + ".token' value='";
+  message += token;
+  message += "'><br>\n";
+
+  message += "Credentials <i>(optional, user:pass)</i>: <input name='" + f_name + ".credentials' value='";
+  message += credentials;
+  message += "'><br>\n";
+}
+
+void IotsaRequest::formHandlerTH(String& message) {
+  message += "<th>URL</th><th>" SSL_INFO_NAME "</th><th>credentials</th><th>token</th>";
 }
 
 void IotsaRequest::formHandlerTD(String& message) {
-  IotsaSerial.println("IotsaRequest formHandlerTD unimplemented");
+  message += "<td>";
+  message += url;
+  message += "</td><td>";
+  message += sslInfo;
+  message += "</td><td>";
+  message += credentials;
+  message += "</td><td>";
+  message += token;
+  message += "</td>";
 }
 
 bool IotsaRequest::formArgHandler(IotsaWebServer *server, String name) {
@@ -94,7 +117,7 @@ bool IotsaRequest::formArgHandler(IotsaWebServer *server, String name) {
 }
 #endif // IOTSA_WITH_WEB
 
-bool IotsaRequest::send() {
+bool IotsaRequest::send(const char *query) {
   bool rv = true;
   HTTPClient http;
   WiFiClient client;
@@ -103,19 +126,22 @@ bool IotsaRequest::send() {
 #else
   BearSSL::WiFiClientSecure *secureClientPtr = NULL;
 #endif
-
-  if (url.startsWith("https:")) {
+  String _url = url;
+  if (query != NULL && *query != '\0') {
+    _url = _url + "?" + query;
+  }
+  if (_url.startsWith("https:")) {
 #ifdef ESP32
     secureClient.setCACert(sslInfo.c_str());
-    rv = http.begin(secureClient, url);
+    rv = http.begin(secureClient, _url);
 #else
     secureClientPtr = new BearSSL::WiFiClientSecure();
     secureClientPtr->setFingerprint(sslInfo.c_str());
 
-    rv = http.begin(*secureClientPtr, url);
+    rv = http.begin(*secureClientPtr, _url);
 #endif
   } else {
-    rv = http.begin(client, url);  
+    rv = http.begin(client, _url);  
   }
   if (!rv) {
 #ifndef ESP32
@@ -135,17 +161,19 @@ bool IotsaRequest::send() {
   if (code >= 200 && code <= 299) {
     IFDEBUG IotsaSerial.print(code);
     IFDEBUG IotsaSerial.print(" OK GET ");
-    IFDEBUG IotsaSerial.println(url);
+    IFDEBUG IotsaSerial.println(_url);
   } else {
     IFDEBUG IotsaSerial.print(code);
     IFDEBUG IotsaSerial.print(" FAIL GET ");
-    IFDEBUG IotsaSerial.print(url);
+    IFDEBUG IotsaSerial.print(_url);
+    if (sslInfo != "") {
 #ifdef ESP32
-    IFDEBUG IotsaSerial.print(", RootCA ");
+      IFDEBUG IotsaSerial.print(", RootCA ");
 #else
-    IFDEBUG IotsaSerial.print(", fingerprint ");
+      IFDEBUG IotsaSerial.print(", fingerprint ");
 #endif
-    IFDEBUG IotsaSerial.println(sslInfo);
+      IFDEBUG IotsaSerial.println(sslInfo);
+    }
     rv = false;
   }
   http.end();

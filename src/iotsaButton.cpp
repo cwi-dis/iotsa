@@ -61,7 +61,7 @@ void IotsaButtonMod::setup() {
 #ifdef IOTSA_WITH_WEB
 void IotsaButtonMod::handler() {
   bool any = false;
-
+  // xxxjack do this different with args like button2.on, etc
   for (uint8_t i=0; i<server->args(); i++){
     for (int j=0; j<nButton; j++) {
       if (buttons[j].req.formArgHandler(server, "button" + String(j+1))) {
