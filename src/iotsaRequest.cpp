@@ -16,8 +16,8 @@
 bool IotsaRequest::configLoad(IotsaConfigFileLoad& cf, String& f_name) {
     cf.get(f_name + ".url", url, "");
     cf.get(f_name + "." + SSL_INFO_NAME, sslInfo, "");
-    cf.get(f_name + "credentials", credentials, "");
-    cf.get(f_name + "token", token, "");
+    cf.get(f_name + ".credentials", credentials, "");
+    cf.get(f_name + ".token", token, "");
     return url != "";
 }
 
@@ -128,7 +128,11 @@ bool IotsaRequest::send(const char *query) {
 #endif
   String _url = url;
   if (query != NULL && *query != '\0') {
-    _url = _url + "?" + query;
+    if (_url.indexOf('?') > 0) {
+      _url = _url + "&" + query;
+    } else {
+      _url = _url + "?" + query;
+    }
   }
   if (_url.startsWith("https:")) {
 #ifdef ESP32
