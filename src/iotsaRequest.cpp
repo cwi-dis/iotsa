@@ -119,7 +119,6 @@ bool IotsaRequest::formArgHandler(IotsaWebServer *server, String name) {
 
 bool IotsaRequest::send(const char *query) {
   bool rv = true;
-  HTTPClient http;
   WiFiClient client;
 #ifdef ESP32
   WiFiClientSecure secureClient;
@@ -127,60 +126,72 @@ bool IotsaRequest::send(const char *query) {
   BearSSL::WiFiClientSecure *secureClientPtr = NULL;
 #endif
   String _url = url;
-  if (query != NULL && *query != '\0') {
-    if (_url.indexOf('?') > 0) {
-      _url = _url + "&" + query;
+  {
+    // We start a new scope, because we want to delete the
+    // HTTPClient before the client/secureClient/secureClientPtr
+    // so we don't have a dangling reference.
+    HTTPClient http;
+    if (query != NULL && *query != '\0') {
+      if (_url.indexOf('?') > 0) {
+        _url = _url + "&" + query;
+      } else {
+        _url = _url + "?" + query;
+      }
+    }
+    if (_url.startsWith("https:")) {
+#ifdef ESP32
+      secureClient.setCACert(sslInfo.c_str());
+      rv = http.begin(secureClient, _url);
+#else
+      secureClientPtr = new BearSSL::WiFiClientSecure();
+      secureClientPtr->setFingerprint(sslInfo.c_str());
+
+      rv = http.begin(*secureClientPtr, _url);
+#endif
     } else {
-      _url = _url + "?" + query;
+      rv = http.begin(client, _url);  
     }
-  }
-  if (_url.startsWith("https:")) {
-#ifdef ESP32
-    secureClient.setCACert(sslInfo.c_str());
-    rv = http.begin(secureClient, _url);
-#else
-    secureClientPtr = new BearSSL::WiFiClientSecure();
-    secureClientPtr->setFingerprint(sslInfo.c_str());
-
-    rv = http.begin(*secureClientPtr, _url);
-#endif
-  } else {
-    rv = http.begin(client, _url);  
-  }
-  if (!rv) {
+    if (!rv) {
 #ifndef ESP32
-    if (secureClientPtr) delete secureClientPtr;
+      if (secureClientPtr) delete secureClientPtr;
 #endif
-    return false;
-  }
-  if (token != "") {
-    http.addHeader("Authorization", "Bearer " + token);
-  }
-
-  if (credentials != "") {
-  	String cred64 = base64::encode(credentials);
-    http.addHeader("Authorization", "Basic " + cred64);
-  }
-  int code = http.GET();
-  if (code >= 200 && code <= 299) {
-    IFDEBUG IotsaSerial.print(code);
-    IFDEBUG IotsaSerial.print(" OK GET ");
-    IFDEBUG IotsaSerial.println(_url);
-  } else {
-    IFDEBUG IotsaSerial.print(code);
-    IFDEBUG IotsaSerial.print(" FAIL GET ");
-    IFDEBUG IotsaSerial.print(_url);
-    if (sslInfo != "") {
-#ifdef ESP32
-      IFDEBUG IotsaSerial.print(", RootCA ");
-#else
-      IFDEBUG IotsaSerial.print(", fingerprint ");
-#endif
-      IFDEBUG IotsaSerial.println(sslInfo);
+      return false;
     }
-    rv = false;
+    // We are going to discard the http object anyway, so reuse is useless.
+    http.setReuse(false);
+    if (token != "") {
+      http.addHeader("Authorization", "Bearer " + token);
+    }
+
+    if (credentials != "") {
+      String cred64 = base64::encode(credentials);
+      http.addHeader("Authorization", "Basic " + cred64);
+    }
+    int code = http.GET();
+    http.end();
+    if (code >= 200 && code <= 299) {
+      IFDEBUG IotsaSerial.print(code);
+      IFDEBUG IotsaSerial.print(" OK GET ");
+      IFDEBUG IotsaSerial.println(_url);
+    } else {
+      IFDEBUG IotsaSerial.print(code);
+      IFDEBUG IotsaSerial.print(" FAIL GET ");
+      IFDEBUG IotsaSerial.print(_url);
+#if 0
+      if (sslInfo != "") {
+#ifdef ESP32
+        IFDEBUG IotsaSerial.print(", RootCA ");
+#else
+        IFDEBUG IotsaSerial.print(", fingerprint ");
+#endif
+        IFDEBUG IotsaSerial.print(sslInfo);
+      }
+#endif
+      IFDEBUG IotsaSerial.println();
+
+      rv = false;
+    }
   }
-  http.end();
 #ifndef ESP32
   if (secureClientPtr) delete secureClientPtr;
 #endif
