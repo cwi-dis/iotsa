@@ -79,6 +79,7 @@
 #endif
 
 #ifndef IOTSA_WIFI_TIMEOUT
+// Default timeout (in seconds) to search for SSID before enabling Access Point
 #define IOTSA_WIFI_TIMEOUT 30
 #endif
 

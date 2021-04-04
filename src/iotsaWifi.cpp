@@ -23,6 +23,7 @@ IotsaWifiMod::IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *
   configMod(_app, _auth),
   ssid(""),
   ssidPassword(""),
+  ssidTimeout(IOTSA_WIFI_TIMEOUT*1000),
   searchTimeoutMillis(0)
 {
 }
@@ -91,7 +92,7 @@ bool IotsaWifiMod::_wifiStartStation() {
   WiFi.setAutoReconnect(true);
   IFDEBUG IotsaSerial.println("");
   iotsaConfig.wifiMode = IOTSA_WIFI_SEARCHING;
-  searchTimeoutMillis = millis() + IOTSA_WIFI_TIMEOUT*1000;
+  searchTimeoutMillis = millis() + ssidTimeout;
   if (app.status) app.status->showStatus();
   return true;
 }
@@ -218,6 +219,14 @@ IotsaWifiMod::handler() {
       wrongMode = true;
     }
   }
+  if( server->hasArg("ssidTimeout")) {
+    if (iotsaConfig.inConfigurationOrFactoryMode()) {
+      ssidTimeout = server->arg("ssidTimeout").toInt();
+      anyChanged = true;
+    } else {
+      wrongMode = true;
+    }
+  }
   if (anyChanged) {
     configSave();
   }
@@ -237,7 +246,9 @@ IotsaWifiMod::handler() {
   message += ", see <a href='/config'>/config</a> to change.</p>";
   message += "<form method='get'>Network: <input name='ssid' value='";
   message += htmlEncode(ssid);
-  message += "'><br>Password: <input type='password' name='ssidPassword'><br><input type='submit'></form>";
+  message += "'><br>Password: <input type='password' name='ssidPassword'><br>";
+  message += "Timeout (ms): <input name='ssidTimeout' value='" + String(ssidTimeout) + "'><br>(After how long private Access Point is enabled)<br>";
+  message += "<input type='submit'></form>";
   message += "</body></html>";
   server->send(200, "text/html", message);
 #if 0
@@ -275,6 +286,7 @@ String IotsaWifiMod::info() {
 bool IotsaWifiMod::getHandler(const char *path, JsonObject& reply) {
   reply["ssid"] = ssid;
   reply["has_ssidPassword"] = ssidPassword.length() > 0;
+  reply["ssidTimeout"] = ssidTimeout;
   return true;
 }
 
@@ -291,6 +303,10 @@ bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, Json
   }
   if (reqObj.containsKey("ssidPassword")) {
     ssidPassword = reqObj["ssidPassword"].as<String>();
+    anyChanged = true;
+  }
+  if (reqObj.containsKey("ssidTimeout")) {
+    ssidTimeout = reqObj["ssidTimeout"];
     anyChanged = true;
   }
   if (anyChanged) configSave();
@@ -315,12 +331,14 @@ void IotsaWifiMod::configLoad() {
   IotsaConfigFileLoad cf("/config/wifi.cfg");
   cf.get("ssid", ssid, "");
   cf.get("ssidPassword", ssidPassword, "");
+  cf.get("ssidTimeout", ssidTimeout, IOTSA_WIFI_TIMEOUT*1000);
 }
 
 void IotsaWifiMod::configSave() {
   IotsaConfigFileSave cf("/config/wifi.cfg");
   cf.put("ssid", ssid);
   cf.put("ssidPassword", ssidPassword);
+  cf.put("ssidTimeout", (int)ssidTimeout);
   IFDEBUG IotsaSerial.println("Saved wifi.cfg");
   // If we were in factory mode enable config mode (so we keep the AP)
   if (iotsaConfig.wifiMode == IOTSA_WIFI_FACTORY) {
@@ -366,7 +384,7 @@ void IotsaWifiMod::loop() {
       // Lost connection. 
       IFDEBUG IotsaSerial.println("WiFi connection lost");
       iotsaConfig.wifiMode = IOTSA_WIFI_SEARCHING;
-      searchTimeoutMillis = millis() + IOTSA_WIFI_TIMEOUT*1000;
+      searchTimeoutMillis = millis() + ssidTimeout;
     }
     break;
   case IOTSA_WIFI_NOTFOUND:

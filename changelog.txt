@@ -3,6 +3,7 @@ iotsa 2.5 - development
 - Start of a development branch with odd version numbers
 - Various changes to configuration mode: can now be enabled (by the iotsa program) with other
   interaction than reboot. AP enabled while in configuration mode.
+- Timeout for creating AP when connection to wifi network fails is now configurable
 - iotsaBatteryMod sleep modes rationalized. 
 - Python iotsa package (including iotsaConfig as a script entry point)
 - Added API for per-module objects.
