@@ -64,7 +64,7 @@ void IotsaButtonMod::handler() {
   // xxxjack do this different with args like button2.on, etc
   for (uint8_t i=0; i<server->args(); i++){
     for (int j=0; j<nButton; j++) {
-      if (buttons[j].req.formArgHandler(server, "button" + String(j+1))) {
+      if (buttons[j].req.formHandler_args(server, "button" + String(j+1), true)) {
           any = true;
       }
       String wtdName = "button" + String(j+1) + "on";
@@ -97,7 +97,7 @@ void IotsaButtonMod::handler() {
   }
   message += "<form method='get'>";
   for (int i=0; i<nButton; i++) {
-    buttons[i].req.formHandler(message, "Button " + String(i+1), "button" + String(i+1));
+    buttons[i].req.formHandler_body(message, "Button " + String(i+1), "button" + String(i+1), true);
     message += "Call URL on: ";
     message += "<input name='button" + String(i+1) + "on' type='radio' value='press'";
     if (buttons[i].sendOnPress && !buttons[i].sendOnRelease) message += " checked";

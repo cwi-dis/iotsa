@@ -5,32 +5,32 @@
 #undef PASSWORD_DEBUGGING	// Enables admin1/admin1 to always log in
 
 
-bool IotsaStaticTokenObject::configLoad(IotsaConfigFileLoad& cf, String& f_name) {
+bool IotsaStaticTokenObject::configLoad(IotsaConfigFileLoad& cf, const String& f_name) {
   cf.get(f_name + ".token", token, "");
   cf.get(f_name + ".rights", rights, "");
   return token != "";
 }
 
-void IotsaStaticTokenObject::configSave(IotsaConfigFileSave& cf, String& f_name) {
+void IotsaStaticTokenObject::configSave(IotsaConfigFileSave& cf, const String& f_name) {
   cf.put(f_name + ".token", token);
   cf.put(f_name + ".rights", rights);
 }
 
 #ifdef IOTSA_WITH_WEB
-void IotsaStaticTokenObject::formHandler(String& message) {
+void IotsaStaticTokenObject::formHandler_new(String& message) {
   message += "Token: <input name='token'><br>";
   message += "Rights: <input name='rights'><br>";
 }
 
-void IotsaStaticTokenObject::formHandler(String& message, String& text, String& f_name) {
+void IotsaStaticTokenObject::formHandler_body(String& message, const String& text, const String& f_name, bool includeConfig) {
   IotsaSerial.println("IotsaStaticTokenObject::formHandler not implemented");
 }
 
-void IotsaStaticTokenObject::formHandlerTH(String& message) {
+void IotsaStaticTokenObject::formHandler_TH(String& message, bool includeConfig) {
   message += "<th>Token</th><th>rights</th>";
 }
 
-void IotsaStaticTokenObject::formHandlerTD(String& message) {
+void IotsaStaticTokenObject::formHandler_TD(String& message, bool includeConfig) {
   message += "<td>";
   message += IotsaMod::htmlEncode(token);
   message += "</td><td>";
@@ -38,7 +38,7 @@ void IotsaStaticTokenObject::formHandlerTD(String& message) {
   message += "</td>";
 }
 
-bool IotsaStaticTokenObject::formArgHandler(IotsaWebServer *server, String name) {
+bool IotsaStaticTokenObject::formHandler_args(IotsaWebServer *server, const String& name, bool includeConfig) {
   // name=="" for IotsaUser
   token = server->arg("token");
   rights = server->arg("rights");
@@ -82,7 +82,7 @@ IotsaStaticTokenMod::handler() {
 
   if (command == "add") {
     IotsaStaticTokenObject newToken;
-    if (newToken.formArgHandler(server, "")) {
+    if (newToken.formHandler_args(server, "", true)) {
       _addToken(newToken);
       configSave();
     }
@@ -95,19 +95,19 @@ IotsaStaticTokenMod::handler() {
 
   String message = "<html><head><title>Tokens</title><style>table, th, td {border: 1px solid black;padding:5px;border-collapse: collapse;}</style></head><body><h1>Tokens</h1>";
   message += "<h2>Existing tokens</h2><table><tr>";
-  IotsaStaticTokenObject::formHandlerTH(message);
+  IotsaStaticTokenObject::formHandler_TH(message, true);
   message += "<th>Operation</th></tr>";
   int index=0;
   for(auto t: tokens) {
     message += "<tr>";
-    t.formHandlerTD(message);
+    t.formHandler_TD(message, true);
     message += "<td><form><input type='hidden' name='index' value='" + String(index++) + "'><input type='submit' name='command' value='del'></form></td>";
     message += "</tr>";
   }
   message += "</table><br>";
 
   message += "<h2>Add new token</h2><form method='get'>";
-  IotsaStaticTokenObject::formHandler(message);
+  IotsaStaticTokenObject::formHandler_new(message);
   message += "<input type='submit' name='command' value='add'>";
   message += "</form><hr>";
 

@@ -1,7 +1,7 @@
 #include "iotsaMultiUser.h"
 #include "iotsaConfigFile.h"
 
-bool IotsaUser::configLoad(IotsaConfigFileLoad& cf, String& f_name) {
+bool IotsaUser::configLoad(IotsaConfigFileLoad& cf, const String& f_name) {
   cf.get(f_name + ".username", username, "");
   cf.get(f_name + ".password", password, "");
   cf.get(f_name + ".rights", rights, "");
@@ -9,28 +9,28 @@ bool IotsaUser::configLoad(IotsaConfigFileLoad& cf, String& f_name) {
   return username != "";
 }
 
-void IotsaUser::configSave(IotsaConfigFileSave& cf, String& f_name) {
+void IotsaUser::configSave(IotsaConfigFileSave& cf, const String& f_name) {
   cf.put(f_name + ".username", username);
   cf.put(f_name + ".password", password);
   cf.put(f_name + ".rights", rights);
 }
 
 #ifdef IOTSA_WITH_WEB
-void IotsaUser::formHandler(String& message) {
+void IotsaUser::formHandler_new(String& message) {
   message += "Username: <input name='username'><br>";
   message += "Password: <input name='password' type='password'><br>";
   message += "Rights: <input name='rights'><br>";
 }
 
-void IotsaUser::formHandler(String& message, String& text, String& f_name) {
+void IotsaUser::formHandler_body(String& message, const String& text, const String& f_name, bool includeConfig) {
   IotsaSerial.println("IotsaUser::formHandler not implemented");
 }
 
-void IotsaUser::formHandlerTH(String& message) {
+void IotsaUser::formHandler_TH(String& message, bool includeConfig) {
   message += "<th>User</th><th>rights</th><th>New password<br>New rights</th>";
 }
 
-void IotsaUser::formHandlerTD(String& message) {
+void IotsaUser::formHandler_TD(String& message, bool includeConfig) {
   message += "<td>";
   message += IotsaMod::htmlEncode(username);
   message += "</td><td>";
@@ -47,7 +47,7 @@ void IotsaUser::formHandlerTD(String& message) {
   message += "</form></td>";
 }
 
-bool IotsaUser::formArgHandler(IotsaWebServer *server, String name) {
+bool IotsaUser::formHandler_args(IotsaWebServer *server, const String& name, bool includeConfig) {
   // name=="" for IotsaUser
   username = server->arg("username");
   password = server->arg("password");
@@ -106,7 +106,7 @@ IotsaMultiUserMod::handler() {
   if (command == "add") {
     if (needsAuthentication("users")) return;
     IotsaUser newUser;
-    if (newUser.formArgHandler(server, "")) {
+    if (newUser.formHandler_args(server, "", true)) {
       _addUser(newUser);
     }
   } else if (command == "change") {
@@ -115,7 +115,7 @@ IotsaMultiUserMod::handler() {
     bool ok = false;
     for (auto u: users) {
       if (u.username == username) {
-        if (u.formArgHandler(server, "")) {
+        if (u.formHandler_args(server, "", true)) {
           ok = true;
           configSave();
         }
@@ -133,18 +133,18 @@ IotsaMultiUserMod::handler() {
   // No command or empty command: default page.
   String message = "<html><head><title>Edit users</title><style>table, th, td {border: 1px solid black;padding:5px;border-collapse: collapse;}</style></head><body><h1>Edit users</h1>";
   message += "<h2>Existing users</h2><table><tr>";
-  IotsaUser::formHandlerTH(message);
+  IotsaUser::formHandler_TH(message, true);
   message += "</tr>";
   for(auto u: users) {
     message += "<tr>";
-    u.formHandlerTD(message);
+    u.formHandler_TD(message, true);
     message += "</tr>";
   }
   message += "</table><br>";
 
   message += "<h2>Add new user</h2><form method='get'>";
   message += "<input type='hidden' name='command' value='add'>";
-  IotsaUser::formHandler(message);
+  IotsaUser::formHandler_new(message);
   message += "<input type='submit' value='Add'>";
   message += "</form><hr>";
 

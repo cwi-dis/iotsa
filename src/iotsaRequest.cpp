@@ -13,7 +13,7 @@
 #endif
 
 
-bool IotsaRequest::configLoad(IotsaConfigFileLoad& cf, String& f_name) {
+bool IotsaRequest::configLoad(IotsaConfigFileLoad& cf, const String& f_name) {
     cf.get(f_name + ".url", url, "");
     cf.get(f_name + "." + SSL_INFO_NAME, sslInfo, "");
     cf.get(f_name + ".credentials", credentials, "");
@@ -21,7 +21,7 @@ bool IotsaRequest::configLoad(IotsaConfigFileLoad& cf, String& f_name) {
     return url != "";
 }
 
-void IotsaRequest::configSave(IotsaConfigFileSave& cf, String& f_name) {
+void IotsaRequest::configSave(IotsaConfigFileSave& cf, const String& f_name) {
     cf.put(f_name + ".url", url);
     cf.put(f_name + "." + SSL_INFO_NAME, sslInfo);
     cf.put(f_name + ".credentials", credentials);
@@ -29,7 +29,7 @@ void IotsaRequest::configSave(IotsaConfigFileSave& cf, String& f_name) {
 }
 
 #ifdef IOTSA_WITH_WEB
-void IotsaRequest::formHandler(String& message) { 
+void IotsaRequest::formHandler_new(String& message) { 
   message += "Activation URL: <input name='url'><br>\n";
 #ifdef ESP32
   message += "Root CA cert <i>(https only)</i>: <input name='rootCA'><br>\n";
@@ -41,7 +41,7 @@ void IotsaRequest::formHandler(String& message) {
   message += "Credentials <i>(optional, user:pass)</i>: <input name='credentials'><br>\n";
 }
 
-void IotsaRequest::formHandler(String& message, String& text, String& f_name) { 
+void IotsaRequest::formHandler_body(String& message, const String& text, const String& f_name, bool includeConfig) { 
   message += "Activation URL: <input name='" + f_name +  ".url' value='";
   message += url;
   message += "'><br>\n";
@@ -63,11 +63,11 @@ void IotsaRequest::formHandler(String& message, String& text, String& f_name) {
   message += "'><br>\n";
 }
 
-void IotsaRequest::formHandlerTH(String& message) {
+void IotsaRequest::formHandler_TH(String& message, bool includeConfig) {
   message += "<th>URL</th><th>" SSL_INFO_NAME "</th><th>credentials</th><th>token</th>";
 }
 
-void IotsaRequest::formHandlerTD(String& message) {
+void IotsaRequest::formHandler_TD(String& message, bool includeConfig) {
   message += "<td>";
   message += url;
   message += "</td><td>";
@@ -79,9 +79,9 @@ void IotsaRequest::formHandlerTD(String& message) {
   message += "</td>";
 }
 
-bool IotsaRequest::formArgHandler(IotsaWebServer *server, String name) {
+bool IotsaRequest::formHandler_args(IotsaWebServer *server, const String& name, bool includeConfig) {
   bool any = false;
-  String wtdName = name + "url";
+  String wtdName = name + ".url";
   if (server->hasArg(wtdName)) {
     IotsaMod::percentDecode(server->arg(wtdName), url);
     IFDEBUG IotsaSerial.print(wtdName);
@@ -89,7 +89,7 @@ bool IotsaRequest::formArgHandler(IotsaWebServer *server, String name) {
     IFDEBUG IotsaSerial.println(url);
     any = true;
   }
-  wtdName = name + SSL_INFO_NAME;
+  wtdName = name + "." + SSL_INFO_NAME;
   if (server->hasArg(wtdName)) {
     IotsaMod::percentDecode(server->arg(wtdName), sslInfo);
     IFDEBUG IotsaSerial.print(wtdName);
@@ -97,7 +97,7 @@ bool IotsaRequest::formArgHandler(IotsaWebServer *server, String name) {
     IFDEBUG IotsaSerial.println(sslInfo);
     any = true;
   }
-  wtdName = name + "credentials";
+  wtdName = name + ".credentials";
   if (server->hasArg(wtdName)) {
     IotsaMod::percentDecode(server->arg(wtdName), credentials);
     IFDEBUG IotsaSerial.print(wtdName);
@@ -105,7 +105,7 @@ bool IotsaRequest::formArgHandler(IotsaWebServer *server, String name) {
     IFDEBUG IotsaSerial.println(credentials);
     any = true;
     }
-  wtdName = name + "token";
+  wtdName = name + ".token";
   if (server->hasArg(wtdName)) {
     IotsaMod::percentDecode(server->arg(wtdName), token);
     IFDEBUG IotsaSerial.print(wtdName);

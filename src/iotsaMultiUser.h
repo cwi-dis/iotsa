@@ -11,14 +11,14 @@ public:
   String rights;
   String apiEndpoint;
 public:
-  bool configLoad(IotsaConfigFileLoad& cf, String& f_name) override;
-  void configSave(IotsaConfigFileSave& cf, String& f_name) override;
+  bool configLoad(IotsaConfigFileLoad& cf, const String& f_name) override;
+  void configSave(IotsaConfigFileSave& cf, const String& f_name) override;
 #ifdef IOTSA_WITH_WEB
-  static void formHandler(String& message) /*override*/;
-  static void formHandlerTH(String& message) /*override*/;
-  void formHandler(String& message, String& text, String& f_name) override;
-  void formHandlerTD(String& message) override;
-  bool formArgHandler(IotsaWebServer *server, String name) override;
+  static void formHandler_new(String& message) /*override*/;
+  static void formHandler_TH(String& message, bool includeConfig) /*override*/;
+  void formHandler_body(String& message, const String& text, const String& f_name, bool includeConfig) override;
+  void formHandler_TD(String& message, bool includeConfig) override;
+  bool formHandler_args(IotsaWebServer *server, const String& name, bool includeConfig) override;
 #endif
 #ifdef IOTSA_WITH_API
   void getHandler(JsonObject& reply) override;
