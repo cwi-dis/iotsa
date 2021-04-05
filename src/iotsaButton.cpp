@@ -97,7 +97,7 @@ void IotsaButtonMod::handler() {
   }
   message += "<form method='get'>";
   for (int i=0; i<nButton; i++) {
-    buttons[i].req.formHandler_body(message, "Button " + String(i+1), "button" + String(i+1), true);
+    buttons[i].req.formHandler_fields(message, "Button " + String(i+1), "button" + String(i+1), true);
     message += "Call URL on: ";
     message += "<input name='button" + String(i+1) + "on' type='radio' value='press'";
     if (buttons[i].sendOnPress && !buttons[i].sendOnRelease) message += " checked";

@@ -17,12 +17,12 @@ void IotsaStaticTokenObject::configSave(IotsaConfigFileSave& cf, const String& f
 }
 
 #ifdef IOTSA_WITH_WEB
-void IotsaStaticTokenObject::formHandler_new(String& message) {
+void IotsaStaticTokenObject::formHandler_emptyfields(String& message) {
   message += "Token: <input name='token'><br>";
   message += "Rights: <input name='rights'><br>";
 }
 
-void IotsaStaticTokenObject::formHandler_body(String& message, const String& text, const String& f_name, bool includeConfig) {
+void IotsaStaticTokenObject::formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) {
   IotsaSerial.println("IotsaStaticTokenObject::formHandler not implemented");
 }
 
@@ -107,7 +107,7 @@ IotsaStaticTokenMod::handler() {
   message += "</table><br>";
 
   message += "<h2>Add new token</h2><form method='get'>";
-  IotsaStaticTokenObject::formHandler_new(message);
+  IotsaStaticTokenObject::formHandler_emptyfields(message);
   message += "<input type='submit' name='command' value='add'>";
   message += "</form><hr>";
 

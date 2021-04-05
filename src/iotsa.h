@@ -161,8 +161,8 @@ public:
   virtual bool configLoad(IotsaConfigFileLoad& cf, const String& name) = 0;
   virtual void configSave(IotsaConfigFileSave& cf, const String& name) = 0;
 #ifdef IOTSA_WITH_WEB
-  // static virtual void formHandler_new(String& message) = 0;
-  virtual void formHandler_body(String& message, const String& text, const String& f_name, bool includeConfig) = 0;
+  // static virtual void formHandler_emptyfields(String& message) = 0;
+  virtual void formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) = 0;
   // static virtual void formHandler_TH(String& message, bool includeConfig) = 0;
   virtual void formHandler_TD(String& message, bool includeConfig) = 0;
   virtual bool formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig) = 0;

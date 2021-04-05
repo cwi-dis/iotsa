@@ -16,13 +16,13 @@ void IotsaUser::configSave(IotsaConfigFileSave& cf, const String& f_name) {
 }
 
 #ifdef IOTSA_WITH_WEB
-void IotsaUser::formHandler_new(String& message) {
+void IotsaUser::formHandler_emptyfields(String& message) {
   message += "Username: <input name='username'><br>";
   message += "Password: <input name='password' type='password'><br>";
   message += "Rights: <input name='rights'><br>";
 }
 
-void IotsaUser::formHandler_body(String& message, const String& text, const String& f_name, bool includeConfig) {
+void IotsaUser::formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) {
   IotsaSerial.println("IotsaUser::formHandler not implemented");
 }
 
@@ -144,7 +144,7 @@ IotsaMultiUserMod::handler() {
 
   message += "<h2>Add new user</h2><form method='get'>";
   message += "<input type='hidden' name='command' value='add'>";
-  IotsaUser::formHandler_new(message);
+  IotsaUser::formHandler_emptyfields(message);
   message += "<input type='submit' value='Add'>";
   message += "</form><hr>";
 

@@ -11,8 +11,8 @@ public:
   bool configLoad(IotsaConfigFileLoad& cf, const String& f_name) override;
   void configSave(IotsaConfigFileSave& cf, const String& f_name) override;
 #ifdef IOTSA_WITH_WEB
-  static void formHandler_new(String& message);
-  void formHandler_body(String& message, const String& text, const String& f_name, bool includeConfig) override;
+  static void formHandler_emptyfields(String& message);
+  void formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) override;
   static void formHandler_TH(String& message, bool includeConfig);
   void formHandler_TD(String& message, bool includeConfig) override;
   bool formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig) override;

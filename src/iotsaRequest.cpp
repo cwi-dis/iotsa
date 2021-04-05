@@ -29,7 +29,7 @@ void IotsaRequest::configSave(IotsaConfigFileSave& cf, const String& f_name) {
 }
 
 #ifdef IOTSA_WITH_WEB
-void IotsaRequest::formHandler_new(String& message) { 
+void IotsaRequest::formHandler_emptyfields(String& message) { 
   message += "Activation URL: <input name='url'><br>\n";
 #ifdef ESP32
   message += "Root CA cert <i>(https only)</i>: <input name='rootCA'><br>\n";
@@ -41,7 +41,7 @@ void IotsaRequest::formHandler_new(String& message) {
   message += "Credentials <i>(optional, user:pass)</i>: <input name='credentials'><br>\n";
 }
 
-void IotsaRequest::formHandler_body(String& message, const String& text, const String& f_name, bool includeConfig) { 
+void IotsaRequest::formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) { 
   message += "Activation URL: <input name='" + f_name +  ".url' value='";
   message += url;
   message += "'><br>\n";
