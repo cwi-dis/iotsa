@@ -30,7 +30,7 @@ public:
   String info() override;
 #endif
   void setPinVUSB(int pin, float range=2.5) { pinVUSB = pin; rangeVUSB = range; }
-  void setPinVBat(int pin, float range=1.8) { pinVBat = pin; rangeVBat = range; }
+  void setPinVBat(int pin, float range=3.6, float minRange=0) { pinVBat = pin; rangeVBat = range; rangeVBatMin = minRange; }
   void setPinDisableSleep(int pin) { pinDisableSleep = pin; }
   void allowBLEConfigModeSwitch();
 protected:
@@ -57,7 +57,9 @@ protected:
   void _readVoltages();
   int pinVBat = -1;
   int pinVUSB = -1;
-  float rangeVBat = 2.5;
+  float rangeVBat = 3.3;
+  float rangeVBatMin = 0;
+  float correctionVBat = 1.0;
   float rangeVUSB = 1.8;
   int pinDisableSleep = -1;
   uint8_t levelVBat;

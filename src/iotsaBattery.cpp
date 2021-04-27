@@ -58,6 +58,11 @@ IotsaBatteryMod::handler() {
     disableSleepOnUSBPower = server->arg("disableSleepOnUSBPower").toInt();
     anyChanged = true;
   }
+  if( server->hasArg("correctionVBat")) {
+    if (needsAuthentication()) return;
+    correctionVBat = server->arg("correctionVBat").toFloat();
+    anyChanged = true;
+  }
   if (anyChanged) configSave();
 
   String message = "<html><head><title>Battery power saving module</title></head><body><h1>Battery power saving module</h1>";
@@ -97,6 +102,9 @@ IotsaBatteryMod::handler() {
   if (pinVUSB >= 0) {
     message += "<input type='radio' name='disableSleepOnUSBPower' value='0'" + String(disableSleepOnUSBPower?"":" checked") + ">Sleep or disable WiFi on both USB or battery power<br>";
     message += "<input type='radio' name='disableSleepOnUSBPower' value='1'" + String(disableSleepOnUSBPower?" checked":"") + ">Only sleep or disable WiFi on battery power<br>";
+  }
+  if (pinVBat >= 0) {
+    message += "Battery voltage correction factor: <input name='correctionVBat' value='" + String(correctionVBat) + "'><br>";
   }
 #ifdef ESP32
   message += "Watchdog timer duration (ms): <input name='watchdogDuration' value='" + String(watchdogDuration) + "'><br>";
@@ -183,7 +191,10 @@ bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
   reply["watchdogDuration"] = watchdogDuration;
 #endif
   _readVoltages();
-  if (pinVBat >= 0) reply["levelVBat"] = levelVBat;
+  if (pinVBat >= 0) {
+    reply["levelVBat"] = levelVBat;
+    reply["correctionVBat"] = correctionVBat;
+  }
   if (pinVUSB >= 0) {
     reply["levelVUSB"] = levelVUSB;
     reply["disableSleepOnUSBPower"] = disableSleepOnUSBPower;
@@ -223,6 +234,10 @@ bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, J
     anyChanged = true;
   }
 #endif
+  if (pinVBat >= 0 && reqObj.containsKey("correctionVBat")) {
+    correctionVBat = reqObj["correctionVBat"];
+    anyChanged = true;
+  }
   if (pinVUSB >= 0 && reqObj.containsKey("disableSleepOnUSBPower")) {
     disableSleepOnUSBPower = reqObj["disableSleepOnUSBPower"];
     anyChanged = true;
@@ -280,6 +295,9 @@ void IotsaBatteryMod::configLoad() {
 #ifdef ESP32
   cf.get("watchdogDuration", watchdogDuration, 0);
 #endif
+  if (pinVBat >= 0) {
+    cf.get("correctionVBat", correctionVBat, 1.0);
+  }
   if (pinVUSB >= 0) {
     cf.get("disableSleepOnUSBPower", disableSleepOnUSBPower, 0);
   }
@@ -296,6 +314,9 @@ void IotsaBatteryMod::configSave() {
 #ifdef ESP32
   cf.put("watchdogDuration", watchdogDuration);
 #endif
+  if (pinVBat >= 0) {
+    cf.put("correctionVBat", correctionVBat);
+  }
   if (pinVUSB >= 0) {
     cf.put("disableSleepOnUSBPower", disableSleepOnUSBPower);
   }
@@ -443,8 +464,11 @@ void IotsaBatteryMod::_readVoltages() {
   if (pinVBat >= 0) {
     int level = analogRead(pinVBat);
     // 3.9v input would give a reading of 4095 (at the default attenuation of 11dB). We scale, so a voltage of rangeVBat gives 100%
-    levelVBat = int(100*3.9*level/(rangeVBat*4096));
-//    IFDEBUG IotsaSerial.printf("analog level=%d levelVBat=%d\n", level, levelVBat);
+    // See https://esphome.io/components/sensor/adc.html#adc-esp32-attenuation for a description of the attenuation
+    float lvbFloat = (level * correctionVBat * 3.9)/ 4096.0;
+    lvbFloat = (level - rangeVBatMin) / (rangeVBatMin - rangeVBatMin);
+    levelVBat = lvbFloat <= 0 ? 0 : int(100*lvbFloat);
+    IFDEBUG IotsaSerial.printf("analog level=%d levelVBat=%d\n", level, levelVBat);
     IFDEBUG IotsaSerial.print("VBat=");
     IFDEBUG IotsaSerial.println(levelVBat);
   }
