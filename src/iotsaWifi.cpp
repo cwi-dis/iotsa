@@ -126,6 +126,8 @@ void IotsaWifiMod::_wifiStartStationFailed() {
   IFDEBUG IotsaSerial.print(ssid);
   IFDEBUG IotsaSerial.print(", status=");
   IFDEBUG IotsaSerial.println(privateNetworkModeReason);
+  // Stop searching, so we can enable AP.
+  _wifiStopStation(); 
 }
 
 bool IotsaWifiMod::_wifiStartAP(iotsa_wifi_mode mode) {
@@ -370,6 +372,13 @@ void IotsaWifiMod::loop() {
     }
     break;
   case IOTSA_WIFI_NOTFOUND:
+    // We are in AP mode because the network we really want couldn't be connected to.
+    // We stay in this mode until we time out, then we try connecting again.
+    if (searchTimeoutMillis != 0 && millis() > searchTimeoutMillis) {
+      IotsaSerial.println("Wifi retry connecting");
+      _wifiStartStation();
+    }
+    break;
   case IOTSA_WIFI_SEARCHING:
     if (curStatus == WL_CONNECTED) {
       // Search succeeded, we are connected.
@@ -380,9 +389,10 @@ void IotsaWifiMod::loop() {
         _wifiStopAP(IOTSA_WIFI_NORMAL);
       }
     } else if (searchTimeoutMillis != 0 && millis() > searchTimeoutMillis) {
-      // Search failed. Enable AP. Continue searching,
-      // but we don't need to enable the AP again.
-      searchTimeoutMillis = 0;
+      // Search failed. Enable AP.
+      // Unfortunately we cannot continue searching (because this requires the radio to hop channels,
+      // which would kill the AP).
+      searchTimeoutMillis = millis() + IOTSA_WIFI_TIMEOUT*1000;
       if (curStatus == WL_IDLE_STATUS || curStatus == WL_NO_SHIELD) {
         // Unsure why this happens, maybe only when switching from one SSID to another?
         // We think we are searching but the WiFi thinks nothing is happening.
