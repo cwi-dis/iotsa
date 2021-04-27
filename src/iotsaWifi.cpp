@@ -392,7 +392,8 @@ void IotsaWifiMod::loop() {
       // Search failed. Enable AP.
       // Unfortunately we cannot continue searching (because this requires the radio to hop channels,
       // which would kill the AP).
-      searchTimeoutMillis = millis() + IOTSA_WIFI_TIMEOUT*1000;
+      // We stay in AP mode for ten times search duration (300 seconds default)
+      searchTimeoutMillis = millis() + 10*IOTSA_WIFI_TIMEOUT*1000;
       if (curStatus == WL_IDLE_STATUS || curStatus == WL_NO_SHIELD) {
         // Unsure why this happens, maybe only when switching from one SSID to another?
         // We think we are searching but the WiFi thinks nothing is happening.
