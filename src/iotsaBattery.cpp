@@ -466,9 +466,9 @@ void IotsaBatteryMod::_readVoltages() {
     // 3.9v input would give a reading of 4095 (at the default attenuation of 11dB). We scale, so a voltage of rangeVBat gives 100%
     // See https://esphome.io/components/sensor/adc.html#adc-esp32-attenuation for a description of the attenuation
     float lvbFloat = (level * correctionVBat * 3.9)/ 4096.0;
-    lvbFloat = (level - rangeVBatMin) / (rangeVBatMin - rangeVBatMin);
-    levelVBat = lvbFloat <= 0 ? 0 : int(100*lvbFloat);
-    IFDEBUG IotsaSerial.printf("analog level=%d levelVBat=%d\n", level, levelVBat);
+    float charge = (lvbFloat - rangeVBatMin) / (rangeVBat - rangeVBatMin);
+    levelVBat = charge <= 0 ? 0 : int(100*charge);
+    //IFDEBUG IotsaSerial.printf("analog level=%d float level=%f range=%f..%f charge=%f levelVBat=%d\n", level, lvbFloat, rangeVBatMin, rangeVBat, charge, levelVBat);
     IFDEBUG IotsaSerial.print("VBat=");
     IFDEBUG IotsaSerial.println(levelVBat);
   }
