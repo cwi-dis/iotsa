@@ -259,6 +259,7 @@ bool IotsaBatteryMod::blePutHandler(UUIDstring charUUID) {
 }
 
 bool IotsaBatteryMod::bleGetHandler(UUIDstring charUUID) {
+  _readVoltages();
   if (charUUID == levelVBatUUID) {
       bleApi.set(levelVBatUUID, levelVBat);
       return true;
