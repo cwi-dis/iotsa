@@ -295,12 +295,8 @@ void IotsaBatteryMod::configLoad() {
 #ifdef ESP32
   cf.get("watchdogDuration", watchdogDuration, 0);
 #endif
-  if (pinVBat >= 0) {
-    cf.get("correctionVBat", correctionVBat, 1.0);
-  }
-  if (pinVUSB >= 0) {
-    cf.get("disableSleepOnUSBPower", disableSleepOnUSBPower, 0);
-  }
+  cf.get("correctionVBat", correctionVBat, 1.0);
+  cf.get("disableSleepOnUSBPower", disableSleepOnUSBPower, 0);
   millisAtWakeup = 0;
 }
 
