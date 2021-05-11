@@ -229,7 +229,7 @@ bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, J
     anyChanged = true;
   }
 #ifdef ESP32
-  if (reqObj.containsKey("wiatchdogDuration")) {
+  if (reqObj.containsKey("watchdogDuration")) {
     watchdogDuration = reqObj["watchdogDuration"];
     anyChanged = true;
   }
