@@ -294,17 +294,30 @@ class IotsaDevice(object):
 
     def reboot(self):
         self.protocolHandler.put('config', json={'reboot':True})
+    
+    def _find_espota(self):
+        if 'ESPOTA' in os.environ:
+            espota = os.environ['ESPOTA']
+            espota = os.path.expanduser(espota)
+        else:
+            candidates = [
+                "~/.platformio/packages/tool-espotapy/espota.py",
+                "~/.platformio/packages/framework-arduinoespressif8266/tools/espota.py"
+            ]
+            for path in candidates:
+                espota = os.path.expanduser(path)
+                if os.path.exists(espota):
+                    break
+        if not os.path.exists(espota):
+            raise IotsaError("Helper command not found: %s\nPlease install espota.py and optionally set ESPOTA environment variable" % (espota))
+        return espota
         
     def ota(self, filename):
         if not os.path.exists(filename):
             filename, _ = urllib.request.urlretrieve(filename)
-        ESPOTA="~/.platformio/packages/tool-espotapy/espota.py"
-        ESPOTA = os.environ.get("ESPOTA", ESPOTA)
-        ESPOTA = os.path.expanduser(ESPOTA)
-        if not os.path.exists(ESPOTA):
-            raise IotsaError("Helper command not found: %s\nPlease install espota.py and optionally set ESPOTA environment variable" % (ESPOTA))
-        #cmd = [ESPOTA, '-i', self.ipAddress, '-f', filename]
-        cmd = '"%s" -i %s -f "%s"' % (ESPOTA, self.ipAddress, filename)
+        espota = self._find_espota()
+        #cmd = ['python', espota, '-i', self.ipAddress, '-f', filename]
+        cmd = 'python "%s" -i %s -f "%s"' % (espota, self.ipAddress, filename)
         status = subprocess.call(cmd, shell=True)
         if status != 0:
             raise IotsaError("OTA command %s failed" % (cmd))

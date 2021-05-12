@@ -229,7 +229,7 @@ bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, J
     anyChanged = true;
   }
 #ifdef ESP32
-  if (reqObj.containsKey("wiatchdogDuration")) {
+  if (reqObj.containsKey("watchdogDuration")) {
     watchdogDuration = reqObj["watchdogDuration"];
     anyChanged = true;
   }
@@ -296,12 +296,8 @@ void IotsaBatteryMod::configLoad() {
 #ifdef ESP32
   cf.get("watchdogDuration", watchdogDuration, 0);
 #endif
-  if (pinVBat >= 0) {
-    cf.get("correctionVBat", correctionVBat, 1.0);
-  }
-  if (pinVUSB >= 0) {
-    cf.get("disableSleepOnUSBPower", disableSleepOnUSBPower, 0);
-  }
+  cf.get("correctionVBat", correctionVBat, 1.0);
+  cf.get("disableSleepOnUSBPower", disableSleepOnUSBPower, 0);
   millisAtWakeup = 0;
 }
 
