@@ -29,8 +29,8 @@ static bool stringContainedIn(const char *wanted, JsonVariant& got) {
 
 // Get a scope indicator from a JSON variant
 static IotsaCapabilityObjectScope getRightFrom(const JsonVariant& arg) {
-  if (!arg.is<char*>()) return IOTSA_SCOPE_NONE;
-  const char *argStr = arg.as<char*>();
+  if (!arg.is<const char*>()) return IOTSA_SCOPE_NONE;
+  const char *argStr = arg.as<const char*>();
   if (strcmp(argStr, "self") == 0) return IOTSA_SCOPE_SELF;
   if (strcmp(argStr, "descendant-or-self") == 0) return IOTSA_SCOPE_FULL;
   if (strcmp(argStr, "descendant") == 0) return IOTSA_SCOPE_CHILD;
