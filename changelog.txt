@@ -6,6 +6,7 @@ iotsa 2.5 - development
 - iotsaBatteryMod sleep modes rationalized. 
 - Python iotsa package (including iotsaConfig as a script entry point)
 - Added API for per-module objects.
+- Added IotsaRtcMod to control ds1302 realtime clock module.
 
 iotsa 2.4.1 - 23-Apr-2020
 
