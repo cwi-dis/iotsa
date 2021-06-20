@@ -36,6 +36,9 @@
             "name" : "CoAP simple library"
         },
         {
+            "name" : "Ds1302"
+        },
+        {
             "platforms" : "espressif32",
             "name" : "esp32_https_server_compat"
         },
