@@ -69,7 +69,7 @@ IotsaNtpMod::handler() {
 		anyChanged = true;
 	}
 #else
-  if( server->hasarg("minutesWest")) {
+  if( server->hasArg("minutesWest")) {
     if (needsAuthentication("ntp")) return;
     minutesWestFromUtc = server->arg("minuteswest").toInt();
     anyChanged = true;
@@ -144,7 +144,7 @@ bool IotsaNtpMod::getHandler(const char *path, JsonObject& reply) {
   long _minutesWest = utcTime() - localTime();
   reply["minutesWest"] = _minutesWest;
 #else
-  reply["minutesWest"] = minutesWest;
+  reply["minutesWest"] = minutesWestFromUtc;
 #endif
   return true;
 }
@@ -163,7 +163,7 @@ bool IotsaNtpMod::putHandler(const char *path, const JsonVariant& request, JsonO
   }
 #else
   if (reqObj.containsKey("minutesWest")) {
-    ntpServer = reqObj["minutesWest"];
+    minutesWestFromUtc = reqObj["minutesWest"];
     anyChanged = true;
   }
 #endif

@@ -13,7 +13,7 @@
 // CHANGE: Add application includes and declarations here
 
 #undef WITH_USER   // Enable username/password authentication for changing configurations
-#undef WITH_NTP    // Use network time protocol to synchronize the clock.
+#define WITH_NTP    // Use network time protocol to synchronize the clock.
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 #undef WITH_FILES  // Enable static files webserver
 #undef WITH_FILESUPLOAD  // Enable upload of static files for webserver

@@ -21,12 +21,6 @@
             "name" : "Adafruit NeoPixel"
         },
         {
-            "name" : "Time"
-        },
-        {
-            "name" : "Timezone"
-        },
-        {
             "name" : "ArduinoJson"
         },
         {
