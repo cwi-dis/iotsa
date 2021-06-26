@@ -57,8 +57,8 @@ protected:
   WiFiUDP udp;
   unsigned long nextNtpRequest; // When to send an NTP request
   unsigned long lastMillis; // To detect millis() rollover
-   byte ntpPacket[NTP_PACKET_SIZE];
-  unsigned long utcTimeAtMillisEpoch;
+  byte ntpPacket[NTP_PACKET_SIZE];
+  bool gotInitialSync = false;
 
 };
 

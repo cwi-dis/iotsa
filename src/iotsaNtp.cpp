@@ -1,5 +1,6 @@
 #include "iotsaNtp.h"
 #include "iotsaConfigFile.h"
+#include <time.h>
 
 #ifdef IOTSA_WITH_TIMEZONE_LIBRARY
 #include <Timezone.h>
@@ -12,7 +13,7 @@ const unsigned int NTP_PORT = 123;
 
 unsigned long IotsaNtpMod::utcTime()
 {
-  return millis() / 1000 + utcTimeAtMillisEpoch;
+  return time(NULL);
 }
 
 unsigned long IotsaNtpMod::localTime()
@@ -216,7 +217,7 @@ void IotsaNtpMod::loop() {
   
   // Check whether we have to send an NTP request
   if (now >= nextNtpRequest) {
-    if (utcTimeAtMillisEpoch == 0) {
+    if (!gotInitialSync) {
       nextNtpRequest = now + NTP_MIN_INTERVAL*1000;
     } else {
       nextNtpRequest = now + NTP_INTERVAL*1000;
@@ -287,7 +288,11 @@ void IotsaNtpMod::loop() {
     const unsigned long seventyYears = 2208988800UL;
     // subtract seventy years:
     unsigned long nowUtc = secsSince1900 - seventyYears;
-    utcTimeAtMillisEpoch = nowUtc - (millis() / 1000);
+    struct timeval tm;
+    tm.tv_sec = nowUtc;
+    tm.tv_usec = 0;
+    settimeofday(&tm, NULL);
+    gotInitialSync = true;
     IFDEBUG { IotsaSerial.print("ntp: Now(utc)="); IotsaSerial.print(utcTime()); IotsaSerial.print(" now(local)="); IotsaSerial.println(localTime()); }
   }
 }
