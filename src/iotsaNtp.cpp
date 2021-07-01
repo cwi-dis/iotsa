@@ -31,22 +31,31 @@ unsigned long IotsaNtpMod::localTime()
 
 int IotsaNtpMod::localSeconds()
 {
-  return localTime() % 60;
+  time_t sysTime;
+  time(&sysTime);
+  struct tm *tp = localtime(&sysTime);
+  return tp->tm_sec;
 }
 
 int IotsaNtpMod::localMinutes()
 {
-  return localTime() / 60 % 60;
+  time_t sysTime;
+  time(&sysTime);
+  struct tm *tp = localtime(&sysTime);
+  return tp->tm_min;
 }
 
 int IotsaNtpMod::localHours()
 {
-  return localTime() / 3600 % 24;
+  time_t sysTime;
+  time(&sysTime);
+  struct tm *tp = localtime(&sysTime);
+  return tp->tm_hour;
 }
 
 int IotsaNtpMod::localHours12()
 {
-  return localTime() / 3600 % 12;
+  return localHours() % 12;
 }
 
 bool IotsaNtpMod::localIsPM()
@@ -72,7 +81,8 @@ IotsaNtpMod::handler() {
 #else
   if( server->hasArg("minutesWest")) {
     if (needsAuthentication("ntp")) return;
-    minutesWestFromUtc = server->arg("minuteswest").toInt();
+    minutesWestFromUtc = server->arg("minutesWest").toInt();
+    _setupTimezone();
     anyChanged = true;
   }
 #endif
@@ -159,7 +169,8 @@ bool IotsaNtpMod::putHandler(const char *path, const JsonVariant& request, JsonO
   }
 #ifdef IOTSA_WITH_TIMEZONE_LIBRARY
   if (reqObj.containsKey("tzDescription")) {
-    ntpServer = reqObj["tzDescription"].as<String>();
+    String newTz = reqObj["tzDescription"].as<String>();
+    parseTimezone(newTz);
     anyChanged = true;
   }
 #else
@@ -192,8 +203,8 @@ void IotsaNtpMod::configLoad() {
   parseTimezone(newTzdesc);
 #else
   cf.get("minutesWest", minutesWestFromUtc, 0);
+  _setupTimezone();
 #endif
- 
 }
 
 void IotsaNtpMod::configSave() {
@@ -288,10 +299,10 @@ void IotsaNtpMod::loop() {
     const unsigned long seventyYears = 2208988800UL;
     // subtract seventy years:
     unsigned long nowUtc = secsSince1900 - seventyYears;
-    struct timeval tm;
-    tm.tv_sec = nowUtc;
-    tm.tv_usec = 0;
-    settimeofday(&tm, NULL);
+    struct timeval tv;
+    tv.tv_sec = nowUtc;
+    tv.tv_usec = 0;
+    settimeofday(&tv, NULL);
     gotInitialSync = true;
     IFDEBUG { IotsaSerial.print("ntp: Now(utc)="); IotsaSerial.print(utcTime()); IotsaSerial.print(" now(local)="); IotsaSerial.println(localTime()); }
   }
@@ -371,5 +382,12 @@ void IotsaNtpMod::parseTimezone(const String& newDesc) {
 	
 	tzDescription = newDesc;
 	tz = new Timezone(dstRule, stdRule);
+}
+#else
+void IotsaNtpMod::_setupTimezone() {
+  static char tzenvbuf[32];
+  snprintf(tzenvbuf, sizeof(tzenvbuf), "UNK%d:%d", minutesWestFromUtc / 60, minutesWestFromUtc % 60);
+  setenv("TZ", tzenvbuf, 1);
+  tzset();
 }
 #endif // IOTSA_WITH_TIMEZONE_LIBRARY

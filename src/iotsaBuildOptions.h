@@ -60,9 +60,15 @@
 //#endif
 
 //#ifndef IOTSA_WITHOUT_TIMEZONE_LIBRARY
-//// Timezone support is enabled in NTP module by default
+//// Timezone support is enabled in NTP module by default using Timezone library
 //#define IOTSA_WITH_TIMEZONE_LIBRARY
 //#endif
+// Timezone support through libc
+#define IOTSA_WITH_TIMEZONE_LIBC
+
+#if defined(IOTSA_WITH_TIMEZONE_LIBC) || defined(IOTSA_WITH_TIMEZONE_LIBRARY)
+#define IOTSA_WITH_TIMEZONE
+#endif
 
 // #define IOTSA_WITH_PLACEHOLDERS
 

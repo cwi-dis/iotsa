@@ -54,6 +54,7 @@ protected:
   void configLoad() override;
   void configSave() override;
   void handler();
+  void _setupTimezone();
   WiFiUDP udp;
   unsigned long nextNtpRequest; // When to send an NTP request
   unsigned long lastMillis; // To detect millis() rollover
