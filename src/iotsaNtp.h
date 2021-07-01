@@ -37,6 +37,7 @@ public:
   int localHours();
   int localHours12();
   bool localIsPM();
+  String isoTime();
 
   String ntpServer;
 protected:
@@ -46,15 +47,17 @@ protected:
 #endif
 #ifdef IOTSA_WITH_TIMEZONE_LIBRARY
   Timezone *tz;
+#endif
+#ifdef IOTSA_WITH_TIMEZONE
   String tzDescription;
   void parseTimezone(const String& newDesc);
 #else
   int minutesWestFromUtc;
+  void _setupTimezone();
 #endif
   void configLoad() override;
   void configSave() override;
   void handler();
-  void _setupTimezone();
   WiFiUDP udp;
   unsigned long nextNtpRequest; // When to send an NTP request
   unsigned long lastMillis; // To detect millis() rollover
