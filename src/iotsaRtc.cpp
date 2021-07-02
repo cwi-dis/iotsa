@@ -1,6 +1,10 @@
 #include "iotsaRtc.h"
 #include "iotsaConfigFile.h"
 
+// How often to update the RTC from the system time (presumably ntp-synced)
+#define UPDATE_INTERVAL 120000
+
+#include <time.h>
 const char * IotsaRtcMod::isoTime()
 {
   static char buf[32];
@@ -106,6 +110,7 @@ String IotsaRtcMod::info() {
 
 void IotsaRtcMod::setup() {
   ds1302.init();
+  _updateSysTime();
 }
 
 #ifdef IOTSA_WITH_API
@@ -142,4 +147,40 @@ void IotsaRtcMod::configSave() {
 }
 
 void IotsaRtcMod::loop() {
+  if (millis() > nextUpdateMillis) {
+    _updateFromSysTime();
+    nextUpdateMillis = millis() + UPDATE_INTERVAL;
+  }
+}
+
+void IotsaRtcMod::_updateSysTime() {
+  IotsaSerial.printf("xxxjack time()=%ld\n", time(NULL));
+  if (time(NULL) < 3600*24*366) {
+    struct tm tm;
+    memset((void *)&tm, 0, sizeof(tm));
+    _updateCurrentTime();
+    tzset();
+    tm.tm_year = currentTime.year + 2000 - 1900;
+    tm.tm_mon = currentTime.month-1;
+    tm.tm_mday = currentTime.day;
+    tm.tm_hour = currentTime.hour;
+    tm.tm_min = currentTime.minute;
+    tm.tm_sec = currentTime.second;
+    time_t nowUtc = mktime(&tm);
+    struct timeval tv;
+    tv.tv_sec = nowUtc;
+    tv.tv_usec = 0;
+    settimeofday(&tv, NULL);
+    IotsaSerial.printf("Initialized time %d-%d-%d %d:%d:%d asctime %s ctime %s time_t %ld from RTC\n", tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, asctime(&tm), ctime(&nowUtc), nowUtc);
+  }
+}
+
+void IotsaRtcMod::_updateFromSysTime() {
+ char buf[64];
+  time_t sysTime;
+  time(&sysTime);
+  struct tm *tp = localtime(&sysTime);
+  strftime(buf, sizeof(buf), "%FT%T", tp);
+  setIsoTime(buf); 
+  IotsaSerial.printf("Saved time %s to RTC\n", buf); 
 }

@@ -46,6 +46,9 @@ protected:
   void configLoad() override;
   void configSave() override;
   void handler();
+  void _updateSysTime();
+  void _updateFromSysTime();
+  uint32_t nextUpdateMillis;
 };
 
 #endif
