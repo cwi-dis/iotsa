@@ -2,6 +2,8 @@
 #include "iotsaConfigFile.h"
 #include "iotsaFS.h"
 
+#include <string>
+
 IotsaConfigFileLoad::IotsaConfigFileLoad(String filename) {
   fp = IOTSA_FS.open(filename, "r");
 }

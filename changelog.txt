@@ -7,6 +7,8 @@ iotsa 2.5 - development
 - Python iotsa package (including iotsaConfig as a script entry point)
 - Added API for per-module objects.
 - Added IotsaRtcMod to control ds1302 realtime clock module.
+- Prefer libc timezone handling over Timezone library
+- Moved to Arduino framework 3.0
 
 iotsa 2.4.1 - 23-Apr-2020
 

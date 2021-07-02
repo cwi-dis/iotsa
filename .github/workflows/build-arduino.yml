@@ -98,6 +98,12 @@ jobs:
         repository: yutter/ArduinoJWT
         path: CustomLibrary_ArduinoJWT 
 
+    - name: Checkout custom library Ds1302
+      uses: actions/checkout@v2
+      with:
+        repository: Treboada/Ds1302
+        path: CustomLibrary_Ds1302
+
     - name: Checkout custom library LittleFS
       uses: actions/checkout@v2
       with:
@@ -112,6 +118,7 @@ jobs:
         ls -l
         ln -fs $PWD ~/Arduino/libraries/iotsa
         ln -fs $PWD/CustomLibrary_ArduinoJWT ~/Arduino/libraries/ArduinoJWT
+        ln -fs $PWD/CustomLibrary_Ds1302 ~/Arduino/libraries/Ds1302
         ln -fs $PWD/CustomLibrary_LittleFS ~/Arduino/libraries/LittleFS
         ls -l ~/Arduino/libraries
         ls -lL ~/Arduino/libraries

@@ -27,7 +27,8 @@
             "name" : "ArduinoJWT"
         },
         {
-            "name" : "CoAP simple library"
+            "name" : "CoAP simple library",
+            "version" : "https://github.com/jackjansen/CoAP-simple-library"
         },
         {
             "name" : "Ds1302"
