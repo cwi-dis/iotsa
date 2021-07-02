@@ -61,6 +61,7 @@ public:
   bool canSleep();
   void requestReboot(uint32_t ms);
   void printHeapSpace();
+  bool networkIsUp();
 };
 
 extern IotsaConfig iotsaConfig;

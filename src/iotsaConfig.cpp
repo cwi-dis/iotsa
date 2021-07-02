@@ -274,3 +274,7 @@ void IotsaConfig::printHeapSpace() {
   IFDEBUG IotsaSerial.printf("Available heap space: %u bytes, largest block: %u bytes\n", memAvail, largestBlock);
 #endif
 }
+
+bool IotsaConfig::networkIsUp() {
+  return wifiMode == IOTSA_WIFI_NORMAL;
+}

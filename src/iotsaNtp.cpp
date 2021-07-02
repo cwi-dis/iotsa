@@ -243,6 +243,7 @@ void IotsaNtpMod::loop() {
       nextNtpRequest = now;
   }
   lastMillis = now;
+  if (!iotsaConfig.networkIsUp()) return;
   
   // Check whether we have to send an NTP request
   if (now >= nextNtpRequest) {
