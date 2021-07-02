@@ -171,7 +171,7 @@ void IotsaRtcMod::_updateSysTime() {
     tv.tv_sec = nowUtc;
     tv.tv_usec = 0;
     settimeofday(&tv, NULL);
-    IotsaSerial.printf("Initialized time %d-%d-%d %d:%d:%d asctime %s ctime %s time_t %ld from RTC\n", tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, asctime(&tm), ctime(&nowUtc), nowUtc);
+    IotsaSerial.printf("RTC: Initialized system time %d-%d-%d %d:%d:%d\n", 1900+tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
   }
 }
 
@@ -182,5 +182,5 @@ void IotsaRtcMod::_updateFromSysTime() {
   struct tm *tp = localtime(&sysTime);
   strftime(buf, sizeof(buf), "%FT%T", tp);
   setIsoTime(buf); 
-  IotsaSerial.printf("Saved time %s to RTC\n", buf); 
+  IotsaSerial.printf("RTC: Saved from system time %s\n", buf); 
 }

@@ -13,7 +13,7 @@
 // CHANGE: Add application includes and declarations here
 
 #define WITH_RTC    // Enable Realtime Clock support
-#undef WITH_NTP    // Use network time protocol to synchronize the clock.
+#define WITH_NTP    // Use network time protocol to synchronize the clock.
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 #define WITH_BATTERY // Enable power-saving support
 
