@@ -84,7 +84,7 @@ jobs:
         arduino-cli lib install "Time"
         arduino-cli lib install "Timezone"
         arduino-cli lib install "ArduinoJson"
-        arduino-cli lib install --enable-unsafe-install --git-url "https://github.com/jackjansen/CoAP-simple-library"
+        ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true arduino-cli lib install --git-url "https://github.com/jackjansen/CoAP-simple-library"
         arduino-cli lib install "ESP32_HTTPS_Server"
         arduino-cli lib install "esp32_https_server_compat"
         arduino-cli lib install "DHT sensor library"
