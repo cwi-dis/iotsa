@@ -63,12 +63,22 @@ IotsaWebServerMixin::webServerSetup() {
   IFDEBUG IotsaSerial.print(iotsaConfig.httpsKeyLength);
   IFDEBUG IotsaSerial.print(", cert len=");
   IFDEBUG IotsaSerial.println(iotsaConfig.httpsCertificateLength);
+#ifdef IOTSA_WITH_SETRSACERT
+  X509List *chain = new X509List(iotsaConfig.httpsCertificate, iotsaConfig.httpsCertificateLength);
+  PrivateKey *sk = new PrivateKey(iotsaConfig.httpsKey, iotsaConfig.httpsKeyLength);
+  if (!chain || !sk) {
+    IotsaSerial.print("ssl: out of memory");
+  } else {
+    server->getServer().setRSACert(chain, sk);
+  }
+#else
   server->getServer().setServerKeyAndCert_P(
     iotsaConfig.httpsKey,
     iotsaConfig.httpsKeyLength,
     iotsaConfig.httpsCertificate,
     iotsaConfig.httpsCertificateLength
   );
+#endif
 #endif
   server->begin();
   IFDEBUG IotsaSerial.print(IOTSA_WEBSERVER);
