@@ -125,6 +125,7 @@ jobs:
         pio lib -g install "https://github.com/jackjansen/CoAP-simple-library"
         pio lib -g install "esp32_https_server_compat"
         pio lib -g install "DHT sensor library"
+        pio lib -g install "Ds1302"
         pio lib -g install "lorol/LittleFS_esp32@!=1.0.5"
 
     - name: Run PlatformIO
