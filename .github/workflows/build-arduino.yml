@@ -37,6 +37,7 @@ jobs:
         - examples/Skeleton
         - examples/Button
         - examples/Ringer
+        - examples/DateTime
 # Temporarily disabled:
 #        - examples/BLELed
         - examples/Temperature

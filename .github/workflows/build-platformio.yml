@@ -42,6 +42,7 @@ jobs:
         - Ringer
         - BLELed
         - Temperature
+        - DateTime
         variant: [""]
         build_flags: [""]
         # Extra options/settings.

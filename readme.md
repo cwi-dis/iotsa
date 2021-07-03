@@ -466,6 +466,8 @@ A module that does nothing. Use this as the basis of your own modules. Provides 
 
 A module that contacts an NTP server to set the local clock. Accessing URL `/ntpconfig` allows setting the NTP server to use, as well as the timezone.
 
+The modules sets the `libc` time, so functions like `time()` and `localtime()` will work with the correct time.
+
 The module provides an API to get access to the time information:
 
 ```
@@ -481,9 +483,13 @@ bool localIsPM();			// AM/PM indicator
 
 Provides a user interface at `/ntp` and a REST interface at `/api/ntp`.
 
+### iotsaRtc.h
+
+Support for _DS1302_ realtime clock chip, which usually comes on a board with battery backup so it can run for years. Will set _libc_ clock from RTC shortly after boot, and periodically set RTC clock from the system clock. So, when used together with `iotsaNtp` this automatically uses the RTC time when no network is available, and resynchronizes the RTC when a network is available.
+
 ### iotsaOta.h
 
-Allows Over-the-air reprogramming of a iotsa server. After ota-programming has been enabled the device will show up (for 5 minutes) in the Arduino IDE, menu _Tools_ -> _Port_, under the _Network Ports_ section. Select it, and press the checkmark on your sketch to upload. Requires _IOTSA_WITH_HTTP_ or _IOTSA_WITH_HTTPS_.
+Allows Over-the-air reprogramming of a iotsa server. After ota-programming has been enabled the device will show up (for 5 minutes) in the Arduino IDE, menu _Tools_ -> _Port_, under the _Network Ports_ section. Select it, and press the checkmark on your sketch to upload. Requires _IOTSA\_WITH\_HTTP_ or _IOTSA\_WITH\_HTTPS_.
 
 ### iotsaRequest.h
 
