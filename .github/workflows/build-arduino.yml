@@ -101,7 +101,7 @@ jobs:
     - name: Checkout custom library Ds1302
       uses: actions/checkout@v2
       with:
-        repository: Treboada/Ds1302
+        repository: jackjansen/Ds1302
         path: CustomLibrary_Ds1302
 
     - name: Checkout custom library LittleFS
