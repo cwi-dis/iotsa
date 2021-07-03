@@ -60,11 +60,11 @@
 //#endif
 
 #ifndef IOTSA_WITHOUT_TIMEZONE
-#ifdef ESP32
+#if 1
 // Timezone support through libc
 #define IOTSA_WITH_TIMEZONE_LIBC
 #else
-// Timezone support is enabled in NTP module by default using Timezone library
+// legacy Timezone support is enabled in NTP module by default using Timezone library
 #define IOTSA_WITH_TIMEZONE_LIBRARY
 #endif
 #endif
