@@ -134,8 +134,9 @@ jobs:
 #        arduino-board-fqbn: ${{ matrix. arduino-board-fqbn }}
 #        required-libraries: Adafruit NeoPixel,Time,Timezone,ArduinoJson,CoAP simple library,ESP32_HTTPS_Server,esp32_https_server_compat,DHT sensor library,Adafruit Unified Sensor
 
-    - name: Unnstall iotsa and custom libraries
+    - name: Uninstall iotsa and custom libraries
       run: |
         rm -f ~/Arduino/libraries/iotsa
         rm -f ~/Arduino/libraries/ArduinoJWT
+        rm -f ~/Arduino/libraries/Ds1302
         rm -f ~/Arduino/libraries/LittleFS
