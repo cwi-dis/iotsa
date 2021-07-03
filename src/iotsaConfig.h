@@ -1,6 +1,10 @@
 #ifndef _IOTSACONFIG_H_
 #define _IOTSACONFIG_H_
 
+#include <functional>
+
+typedef std::function<void(void)> extensionCallback;
+
 // Intended to be included from iotsa.h
 
 typedef enum { IOTSA_MODE_NORMAL, IOTSA_MODE_CONFIG, IOTSA_MODE_OTA, IOTSA_MODE_FACTORY_RESET } config_mode;
@@ -23,6 +27,7 @@ private:
   uint32_t postponeSleepMillis = 0;
   int pauseSleepCount = 0;
   uint32_t rebootAtMillis = 0;
+  extensionCallback extendCurrentModeCallback;
   void beginConfigurationMode();
   void endConfigurationMode();
   void factoryReset();
@@ -62,6 +67,7 @@ public:
   void requestReboot(uint32_t ms);
   void printHeapSpace();
   bool networkIsUp();
+  void setExtensionCallback(extensionCallback ecmcb);
 };
 
 extern IotsaConfig iotsaConfig;

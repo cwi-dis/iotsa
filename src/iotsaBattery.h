@@ -34,6 +34,7 @@ public:
   void setPinDisableSleep(int pin) { pinDisableSleep = pin; }
   void allowBLEConfigModeSwitch();
 protected:
+  void extendCurrentMode();
 #ifdef IOTSA_WITH_API
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;

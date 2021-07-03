@@ -63,7 +63,10 @@ IotsaBatteryMod::handler() {
     correctionVBat = server->arg("correctionVBat").toFloat();
     anyChanged = true;
   }
-  if (anyChanged) configSave();
+  if (anyChanged) {
+    iotsaConfig.extendConfigurationMode();
+    configSave();
+  }
 
   String message = "<html><head><title>Battery power saving module</title></head><body><h1>Battery power saving module</h1>";
   _readVoltages();
@@ -171,8 +174,8 @@ void IotsaBatteryMod::setup() {
   static BLE2901 doSoftReboot2901("Reboot with WiFi");
   bleApi.addCharacteristic(doSoftRebootUUID, BLE_WRITE, &doSoftReboot2904, &doSoftReboot2901);
 #endif
+  iotsaConfig.setExtensionCallback(std::bind(&IotsaBatteryMod::extendCurrentMode, this));
 }
-
 
 void IotsaBatteryMod::allowBLEConfigModeSwitch() {
   bleConfigModeSwitchAllowed = true;
@@ -318,6 +321,17 @@ void IotsaBatteryMod::configSave() {
     cf.put("disableSleepOnUSBPower", disableSleepOnUSBPower);
   }
   millisAtWakeup = 0;
+}
+
+void IotsaBatteryMod::extendCurrentMode() {
+#ifdef ESP32
+  if (watchdogTimer) {
+    timerWrite(watchdogTimer, 0);
+  }
+#endif
+  millisAtWifiWakeup = millis();
+  millisAtWakeup = millis();
+  IFDEBUG IotsaSerial.println("Battery: extend mode");
 }
 
 void IotsaBatteryMod::loop() {

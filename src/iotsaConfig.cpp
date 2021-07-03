@@ -133,6 +133,12 @@ bool IotsaConfig::inConfigurationOrFactoryMode() {
 void IotsaConfig::extendConfigurationMode() {
   IFDEBUG IotsaSerial.println("Configuration mode extended");
   configurationModeEndTime = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
+  // Allow interested module (probably IotsaBattery) to extend all sorts of timeers
+  if (extendCurrentModeCallback) extendCurrentModeCallback();
+}
+
+void IotsaConfig::setExtensionCallback(extensionCallback ecmcb) {
+  extendCurrentModeCallback = ecmcb;
 }
 
 void IotsaConfig::endConfigurationMode() {
