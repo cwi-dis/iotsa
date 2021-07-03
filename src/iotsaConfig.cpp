@@ -120,7 +120,7 @@ const char *IotsaConfig::modeName(config_mode mode) {
 
 bool IotsaConfig::inConfigurationMode(bool extend) { 
   bool ok = configurationMode == IOTSA_MODE_CONFIG;
-  if (ok && extend) extendConfigurationMode();
+  if (ok && extend) extendCurrentMode();
   return ok;
 }
 
@@ -130,7 +130,7 @@ bool IotsaConfig::inConfigurationOrFactoryMode() {
   return false;
 }
 
-void IotsaConfig::extendConfigurationMode() {
+void IotsaConfig::extendCurrentMode() {
   IFDEBUG IotsaSerial.println("Configuration mode extended");
   configurationModeEndTime = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
   // Allow interested module (probably IotsaBattery) to extend all sorts of timeers

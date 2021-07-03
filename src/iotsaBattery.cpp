@@ -64,7 +64,7 @@ IotsaBatteryMod::handler() {
     anyChanged = true;
   }
   if (anyChanged) {
-    iotsaConfig.extendConfigurationMode();
+    iotsaConfig.extendCurrentMode();
     configSave();
   }
 

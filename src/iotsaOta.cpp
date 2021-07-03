@@ -17,7 +17,7 @@ void otaOnProgress(unsigned int progress, unsigned int total) {
   IFDEBUG IotsaSerial.print("ota: got data ");
   IFDEBUG IotsaSerial.print(progress*100/total);
   IFDEBUG IotsaSerial.println("%");
-  iotsaConfig.extendConfigurationMode();
+  iotsaConfig.extendCurrentMode();
   optFeedWatchdog();
 }
 

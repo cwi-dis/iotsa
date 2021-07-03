@@ -56,7 +56,7 @@ public:
   bool usingDefaultCertificate();
   bool inConfigurationMode(bool extend=false);
   bool inConfigurationOrFactoryMode();
-  void extendConfigurationMode();
+  void extendCurrentMode();
   void allowRequestedConfigurationMode();
   void allowRCMDescription(const char *_rcmInteractionDescription);
   uint32_t getStatusColor();
