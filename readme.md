@@ -1,7 +1,7 @@
 # iotsa - Internet of Things server architecture
 
-[![build-platformio](https://github.com/cwi-dis/iotsa/actions/workflows/build-platformio.yml/badge.svg)](https://github.com/cwi-dis/iotsa/actions/workflows/build-platformio.yml)
-[![build-arduino](https://github.com/cwi-dis/iotsa/actions/workflows/build-arduino.yml/badge.svg)](https://github.com/cwi-dis/iotsa/actions/workflows/build-arduino.yml)
+[![build-platformio](https://github.com/cwi-dis/iotsa/actions/workflows/build-platformio.yml/badge.svg?branch=develop)](https://github.com/cwi-dis/iotsa/actions/workflows/build-platformio.yml)
+[![build-arduino](https://github.com/cwi-dis/iotsa/actions/workflows/build-arduino.yml/badge.svg?branch=develop)](https://github.com/cwi-dis/iotsa/actions/workflows/build-arduino.yml)
 
 This library contains a framework to easily create esp8266-based or esp32-based web servers that can interface to all sorts of sensors and actuators. The servers can be REST-compatible, and COAP-compatible, including
 seamless integration with the [Igor home automation server](https://github.com/cwi-dis/igor). 
