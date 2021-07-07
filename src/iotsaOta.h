@@ -11,6 +11,9 @@ public:
 #ifdef IOTSA_WITH_WEB
   String info() override;
 #endif
+protected:
+  bool started = false;
+  void _start();
 };
 
 #endif

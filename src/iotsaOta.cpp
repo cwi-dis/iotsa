@@ -34,22 +34,30 @@ void otaOnError(int error) {
 void IotsaOtaMod::setup() {
   iotsaConfig.otaEnabled = true;
   if (iotsaConfig.configurationMode == IOTSA_MODE_OTA) {
-	IotsaSerial.println("OTA-update enabled");
-	ArduinoOTA.setPort(8266);
-	ArduinoOTA.setHostname(iotsaConfig.hostName.c_str());
-	ArduinoOTA.onStart(otaOnStart);
-	ArduinoOTA.onProgress(otaOnProgress);
-	ArduinoOTA.onEnd(otaOnEnd);
-	ArduinoOTA.onError(otaOnError);
-	ArduinoOTA.begin();
+    _start();
   }
+}
+
+void IotsaOtaMod::_start() {
+  IotsaSerial.println("OTA-update enabled");
+  ArduinoOTA.setPort(8266);
+  ArduinoOTA.setHostname(iotsaConfig.hostName.c_str());
+  ArduinoOTA.onStart(otaOnStart);
+  ArduinoOTA.onProgress(otaOnProgress);
+  ArduinoOTA.onEnd(otaOnEnd);
+  ArduinoOTA.onError(otaOnError);
+  ArduinoOTA.begin();
+  started = true;
 }
 
 void IotsaOtaMod::serverSetup() {
 }
 
 void IotsaOtaMod::loop() {
-  if (iotsaConfig.configurationMode == IOTSA_MODE_OTA) ArduinoOTA.handle();
+  if (iotsaConfig.configurationMode == IOTSA_MODE_OTA) {
+    if (!started) _start();
+    ArduinoOTA.handle();
+  }
 }
 
 #ifdef IOTSA_WITH_WEB
