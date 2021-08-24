@@ -13,12 +13,13 @@
 
 class IotsaBLEServerCallbacks : public BLEServerCallbacks {
 	void onConnect(BLEServer* pServer) {
-    IFBLEDEBUG IotsaSerial.println("BLE connect\n");
+    IFBLEDEBUG IotsaSerial.printf("BLE connect conn_id=%d\n", pServer->getConnId());
     iotsaConfig.pauseSleep();
   }
 	void onDisconnect(BLEServer* pServer) {
-    IFBLEDEBUG IotsaSerial.println("BLE Disconnect\n");
+    IFBLEDEBUG IotsaSerial.printf("BLE Disconnect conn_id=%d\n", pServer->getConnId());
     iotsaConfig.resumeSleep();
+    pServer->startAdvertising();
 
   }
 };

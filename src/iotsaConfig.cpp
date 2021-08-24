@@ -135,6 +135,10 @@ void IotsaConfig::extendCurrentMode() {
   configurationModeEndTime = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
   // Allow interested module (probably IotsaBattery) to extend all sorts of timeers
   if (extendCurrentModeCallback) extendCurrentModeCallback();
+#ifndef ESP32
+  ESP.wdtFeed();
+#endif
+
 }
 
 void IotsaConfig::setExtensionCallback(extensionCallback ecmcb) {
