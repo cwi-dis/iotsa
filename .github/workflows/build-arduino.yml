@@ -114,7 +114,6 @@ jobs:
         ls -l
         ln -fs $PWD ~/Arduino/libraries/iotsa
         ln -fs $PWD/CustomLibrary_ArduinoJWT ~/Arduino/libraries/ArduinoJWT
-        ln -fs $PWD/CustomLibrary_Ds1302 ~/Arduino/libraries/Ds1302
         ln -fs $PWD/CustomLibrary_LittleFS ~/Arduino/libraries/LittleFS
         ls -l ~/Arduino/libraries
         ls -lL ~/Arduino/libraries
@@ -134,5 +133,4 @@ jobs:
       run: |
         rm -f ~/Arduino/libraries/iotsa
         rm -f ~/Arduino/libraries/ArduinoJWT
-        rm -f ~/Arduino/libraries/Ds1302
         rm -f ~/Arduino/libraries/LittleFS
