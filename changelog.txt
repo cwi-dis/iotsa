@@ -8,6 +8,7 @@ iotsa 2.5 - development
 - Added API for per-module objects.
 - Added IotsaRtcMod to control ds1302 realtime clock module.
 - Prefer libc timezone handling over Timezone library
+- Handle JSON buffer overflow, added jsonBufSize URL parameter
 - Moved to Arduino framework 3.0
 
 iotsa 2.4.1 - 23-Apr-2020
