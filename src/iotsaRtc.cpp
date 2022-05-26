@@ -123,7 +123,7 @@ bool IotsaRtcMod::putHandler(const char *path, const JsonVariant& request, JsonO
   bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
   if (reqObj.containsKey("isoTime")) {
-    const char * time = reqObj["isoTime"].as<char *>();
+    const char * time = reqObj["isoTime"].as<const char *>();
     anyChanged = setIsoTime(time);
   }
   return anyChanged;
@@ -154,7 +154,7 @@ void IotsaRtcMod::loop() {
 }
 
 void IotsaRtcMod::_updateSysTime() {
-  IotsaSerial.printf("xxxjack time()=%ld\n", time(NULL));
+  IotsaSerial.printf("xxxjack time()=%lld\n", time(NULL));
   if (time(NULL) < 3600*24*366) {
     struct tm tm;
     memset((void *)&tm, 0, sizeof(tm));
