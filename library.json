@@ -35,7 +35,8 @@
         },
         {
             "platforms" : "espressif32",
-            "name" : "esp32_https_server_compat"
+            "name" : "esp32_https_server_compat",
+            "version" : "https://github.com/jackjansen/esp32_https_server_compat#exp-jack-sha-header"
         },
         {
             "platforms" : "espressif32",
