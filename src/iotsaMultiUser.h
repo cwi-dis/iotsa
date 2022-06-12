@@ -1,5 +1,6 @@
 #ifndef _IOTSAUSERS_H_
 #define _IOTSAUSERS_H_
+#include <vector>
 #include "iotsa.h"
 #include "iotsaApi.h"
 
