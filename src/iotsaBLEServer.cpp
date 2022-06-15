@@ -13,11 +13,11 @@
 
 class IotsaBLEServerCallbacks : public BLEServerCallbacks {
 	void onConnect(BLEServer* pServer) {
-    IFBLEDEBUG IotsaSerial.printf("BLE connect conn_id=%d\n", pServer->getConnId());
+    IFBLEDEBUG IotsaSerial.printf("BLE connect\n");
     iotsaConfig.pauseSleep();
   }
 	void onDisconnect(BLEServer* pServer) {
-    IFBLEDEBUG IotsaSerial.printf("BLE Disconnect conn_id=%d\n", pServer->getConnId());
+    IFBLEDEBUG IotsaSerial.printf("BLE Disconnect\n");
     iotsaConfig.resumeSleep();
     pServer->startAdvertising();
 
@@ -221,6 +221,29 @@ void IotsaBleApiService::setup(const char* serviceUUID, IotsaBLEApiProvider *_ap
 
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(serviceUUID);
+}
+
+void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask, uint8_t d2904format, uint16_t d2904unit, const char *d2901descr) {
+  IFBLEDEBUG IotsaSerial.printf("add ble characteristic %s mask %d\n", charUUID, mask);
+  nCharacteristic++;
+  characteristicUUIDs = (UUIDstring *)realloc((void *)characteristicUUIDs, nCharacteristic*sizeof(UUIDstring));
+  bleCharacteristics = (BLECharacteristic **)realloc((void *)bleCharacteristics, nCharacteristic*sizeof(BLECharacteristic *));
+  if (characteristicUUIDs == NULL || bleCharacteristics == NULL) {
+    IotsaSerial.println("addCharacteristic out of memory");
+    return;
+  }
+  NimBLECharacteristic *newChar = bleService->createCharacteristic(charUUID, mask);
+  newChar->setCallbacks(new IotsaBLECharacteristicCallbacks(charUUID, apiProvider));
+  BLEDescriptor *d2901 = newChar->createDescriptor("2901");
+  d2901->setValue(std::string(d2901descr));
+  newChar->addDescriptor(d2901);
+  NimBLE2904 *d2904 = (NimBLE2904 *)newChar->createDescriptor("2904");
+  d2904->setFormat(d2904format);
+  d2904->setUnit(d2904unit);
+  newChar->addDescriptor(d2904);
+
+  characteristicUUIDs[nCharacteristic-1] = charUUID;
+  bleCharacteristics[nCharacteristic-1] = newChar;
 }
 
 void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask, BLEDescriptor *d1, BLEDescriptor *d2, BLEDescriptor *d3) {

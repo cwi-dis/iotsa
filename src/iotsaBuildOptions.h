@@ -58,6 +58,9 @@
 //#ifdef ESP32
 //#define IOTSA_WITH_BLE
 //#endif
+#ifdef IOTSA_WITH_NIMBLE
+#define IOTSA_WITH_BLE
+#endif
 
 #ifndef IOTSA_WITHOUT_TIMEZONE
 #if 1
