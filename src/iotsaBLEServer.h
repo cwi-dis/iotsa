@@ -43,10 +43,15 @@ public:
   virtual ~IotsaBLEApiProvider() {}
   virtual bool blePutHandler(UUIDstring charUUID) = 0;
   virtual bool bleGetHandler(UUIDstring charUUID) = 0;
-
+#ifdef IOTSA_WITH_NIMBLE
   static const uint32_t BLE_READ = NIMBLE_PROPERTY::READ;
   static const uint32_t BLE_WRITE = NIMBLE_PROPERTY::WRITE;
   static const uint32_t BLE_NOTIFY = NIMBLE_PROPERTY::NOTIFY;
+#else
+  static const uint32_t BLE_READ = BLECharacteristic::PROPERTY_READ;
+  static const uint32_t BLE_WRITE = BLECharacteristic::PROPERTY_WRITE;
+  static const uint32_t BLE_NOTIFY = BLECharacteristic::PROPERTY_NOTIFY;
+#endif
 };
 
 class IotsaBleApiService {

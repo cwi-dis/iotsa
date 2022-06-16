@@ -2,7 +2,7 @@
 #include "iotsaBLEServer.h"
 #include "iotsaConfigFile.h"
 #ifdef IOTSA_WITH_BLE
-#include <BLE2902.h>
+//#include <BLE2902.h>
 
 #undef IOTSA_BLE_DEBUG
 #ifdef IOTSA_BLE_DEBUG
@@ -232,12 +232,17 @@ void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask, uint8_
     IotsaSerial.println("addCharacteristic out of memory");
     return;
   }
-  NimBLECharacteristic *newChar = bleService->createCharacteristic(charUUID, mask);
+  BLECharacteristic *newChar = bleService->createCharacteristic(charUUID, mask);
   newChar->setCallbacks(new IotsaBLECharacteristicCallbacks(charUUID, apiProvider));
+#ifdef IOTSA_WITH_NIMBLE
   BLEDescriptor *d2901 = newChar->createDescriptor("2901");
+  BLE2904 *d2904 = (BLE2904 *)newChar->createDescriptor("2904");
+#else
+  BLEDescriptor *d2901 = new BLEDescriptor("2901");
+  BLE2904 *d2904 = new BLE2904();
+#endif
   d2901->setValue(std::string(d2901descr));
   newChar->addDescriptor(d2901);
-  NimBLE2904 *d2904 = (NimBLE2904 *)newChar->createDescriptor("2904");
   d2904->setFormat(d2904format);
   d2904->setUnit(d2904unit);
   newChar->addDescriptor(d2904);
