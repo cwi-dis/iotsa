@@ -58,8 +58,11 @@
 //#ifdef ESP32
 //#define IOTSA_WITH_BLE
 //#endif
-#ifdef IOTSA_WITH_NIMBLE
-#define IOTSA_WITH_BLE
+#ifdef IOTSA_WITH_BLE
+// If we want BLE support we use Nimble by preference
+#ifndef IOTSA_WITHOUT_NIMBLE
+#define IOTSA_WITH_NIMBLE
+#endif
 #endif
 
 #ifndef IOTSA_WITHOUT_TIMEZONE
