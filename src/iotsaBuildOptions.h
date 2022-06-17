@@ -1,6 +1,9 @@
 #ifndef _IOTSA_BUILDOPTIONS_H_
 #define _IOTSA_BUILDOPTIONS_H_
 
+// Silence obnoxious warning that we can do nothing about
+#define ESP_OPENSSL_SUPPRESS_LEGACY_WARNING
+
 #ifdef ESP32
 // Unfortunately lorol/LITTLEFS has too many quirks at the moment.
 #define IOTSA_WITH_LEGACY_SPIFFS
