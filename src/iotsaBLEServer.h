@@ -2,23 +2,15 @@
 #define _IOTSABLESERVER_H_
 #include "iotsa.h"
 #include "iotsaApi.h"
+#include "iotsaBle.h"
 
 #ifdef IOTSA_WITH_BLE
-#ifdef IOTSA_WITH_NIMBLE
-#include <NimBLEDevice.h>
-#else
-#include <BLEDevice.h>
-#include <BLEUtils.h>
-#include <BLEServer.h>
-#include <BLE2904.h>
-#endif
 
 #ifdef IOTSA_WITH_API
 #define IotsaBLEServerModBaseMod IotsaApiMod
 #else
 #define IotsaBLEServerModBaseMod IotsaMod
 #endif
-typedef const char * UUIDstring;
 
 class IotsaBLEServerMod;
 class IotsaBLEApiProvider;
