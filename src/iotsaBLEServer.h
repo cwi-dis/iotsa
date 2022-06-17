@@ -66,7 +66,6 @@ public:
     bleCharacteristics(NULL)
   {}
   void setup(const char* serviceUUID, IotsaBLEApiProvider *_apiProvider);
-  void addCharacteristic(UUIDstring charUUID, int mask, BLEDescriptor *d1 = NULL, BLEDescriptor *d2 = NULL, BLEDescriptor *d3 = NULL);
   void addCharacteristic(UUIDstring charUUID, int mask, uint8_t d2904format, uint16_t d2904unit, const char *d2901 = NULL);
   void set(UUIDstring charUUID, const uint8_t *data, size_t size);
   void set(UUIDstring charUUID, uint8_t value);

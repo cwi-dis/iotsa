@@ -100,10 +100,12 @@ void IotsaBLEServerMod::createServer() {
   iotsaConfig.ensureConfigLoaded();
   IFBLEDEBUG IotsaSerial.print("BLE hostname: ");
   IFBLEDEBUG IotsaSerial.println(iotsaConfig.hostName.c_str());
+  #ifndef IOTSA_WITH_NIMBLE
   // We de-init bluetooth and release classic-mode memory, in the hope
   // this frees some of the memory the bluedroid stack uses.
   BLEDevice::deinit(false);
   esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
+  #endif
 
   BLEDevice::init(iotsaConfig.hostName.c_str());
   s_server = BLEDevice::createServer();
@@ -111,14 +113,14 @@ void IotsaBLEServerMod::createServer() {
 }
 
 void IotsaBLEServerMod::startServer() {
+  // Start services
+  for (IotsaBleApiService *sp = s_services; sp; sp=sp->next) {
+    sp->bleService->start();
+  }
   // Start advertising
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->setScanResponse(true);
   pAdvertising->start();
-  // And start services
-  for (IotsaBleApiService *sp = s_services; sp; sp=sp->next) {
-    sp->bleService->start();
-  }
 }
 
 bool IotsaBLEServerMod::pauseServer() {
@@ -246,25 +248,6 @@ void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask, uint8_
   d2904->setFormat(d2904format);
   d2904->setUnit(d2904unit);
   newChar->addDescriptor(d2904);
-
-  characteristicUUIDs[nCharacteristic-1] = charUUID;
-  bleCharacteristics[nCharacteristic-1] = newChar;
-}
-
-void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask, BLEDescriptor *d1, BLEDescriptor *d2, BLEDescriptor *d3) {
-  IFBLEDEBUG IotsaSerial.printf("add ble characteristic %s mask %d\n", charUUID, mask);
-  nCharacteristic++;
-  characteristicUUIDs = (UUIDstring *)realloc((void *)characteristicUUIDs, nCharacteristic*sizeof(UUIDstring));
-  bleCharacteristics = (BLECharacteristic **)realloc((void *)bleCharacteristics, nCharacteristic*sizeof(BLECharacteristic *));
-  if (characteristicUUIDs == NULL || bleCharacteristics == NULL) {
-    IotsaSerial.println("addCharacteristic out of memory");
-    return;
-  }
-  BLECharacteristic *newChar = bleService->createCharacteristic(charUUID, mask);
-  newChar->setCallbacks(new IotsaBLECharacteristicCallbacks(charUUID, apiProvider));
-  if (d1) newChar->addDescriptor(d1);
-  if (d2) newChar->addDescriptor(d2);
-  if (d3) newChar->addDescriptor(d3);
 
   characteristicUUIDs[nCharacteristic-1] = charUUID;
   bleCharacteristics[nCharacteristic-1] = newChar;
