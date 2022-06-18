@@ -2,7 +2,7 @@
 #include "iotsaBLEServer.h"
 #include "iotsaConfigFile.h"
 #ifdef IOTSA_WITH_BLE
-#include <BLE2902.h>
+//#include <BLE2902.h>
 
 #undef IOTSA_BLE_DEBUG
 #ifdef IOTSA_BLE_DEBUG
@@ -13,11 +13,11 @@
 
 class IotsaBLEServerCallbacks : public BLEServerCallbacks {
 	void onConnect(BLEServer* pServer) {
-    IFBLEDEBUG IotsaSerial.printf("BLE connect conn_id=%d\n", pServer->getConnId());
+    IFBLEDEBUG IotsaSerial.printf("BLE connect\n");
     iotsaConfig.pauseSleep();
   }
 	void onDisconnect(BLEServer* pServer) {
-    IFBLEDEBUG IotsaSerial.printf("BLE Disconnect conn_id=%d\n", pServer->getConnId());
+    IFBLEDEBUG IotsaSerial.printf("BLE Disconnect\n");
     iotsaConfig.resumeSleep();
     pServer->startAdvertising();
 
@@ -100,10 +100,12 @@ void IotsaBLEServerMod::createServer() {
   iotsaConfig.ensureConfigLoaded();
   IFBLEDEBUG IotsaSerial.print("BLE hostname: ");
   IFBLEDEBUG IotsaSerial.println(iotsaConfig.hostName.c_str());
+  #ifndef IOTSA_WITH_NIMBLE
   // We de-init bluetooth and release classic-mode memory, in the hope
   // this frees some of the memory the bluedroid stack uses.
   BLEDevice::deinit(false);
   esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
+  #endif
 
   BLEDevice::init(iotsaConfig.hostName.c_str());
   s_server = BLEDevice::createServer();
@@ -111,14 +113,14 @@ void IotsaBLEServerMod::createServer() {
 }
 
 void IotsaBLEServerMod::startServer() {
+  // Start services
+  for (IotsaBleApiService *sp = s_services; sp; sp=sp->next) {
+    sp->bleService->start();
+  }
   // Start advertising
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->setScanResponse(true);
   pAdvertising->start();
-  // And start services
-  for (IotsaBleApiService *sp = s_services; sp; sp=sp->next) {
-    sp->bleService->start();
-  }
 }
 
 bool IotsaBLEServerMod::pauseServer() {
@@ -223,7 +225,7 @@ void IotsaBleApiService::setup(const char* serviceUUID, IotsaBLEApiProvider *_ap
   pAdvertising->addServiceUUID(serviceUUID);
 }
 
-void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask, BLEDescriptor *d1, BLEDescriptor *d2, BLEDescriptor *d3) {
+void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask, uint8_t d2904format, uint16_t d2904unit, const char *d2901descr) {
   IFBLEDEBUG IotsaSerial.printf("add ble characteristic %s mask %d\n", charUUID, mask);
   nCharacteristic++;
   characteristicUUIDs = (UUIDstring *)realloc((void *)characteristicUUIDs, nCharacteristic*sizeof(UUIDstring));
@@ -234,9 +236,18 @@ void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask, BLEDes
   }
   BLECharacteristic *newChar = bleService->createCharacteristic(charUUID, mask);
   newChar->setCallbacks(new IotsaBLECharacteristicCallbacks(charUUID, apiProvider));
-  if (d1) newChar->addDescriptor(d1);
-  if (d2) newChar->addDescriptor(d2);
-  if (d3) newChar->addDescriptor(d3);
+#ifdef IOTSA_WITH_NIMBLE
+  BLEDescriptor *d2901 = newChar->createDescriptor("2901");
+  BLE2904 *d2904 = (BLE2904 *)newChar->createDescriptor("2904");
+#else
+  BLEDescriptor *d2901 = new BLEDescriptor("2901");
+  BLE2904 *d2904 = new BLE2904();
+#endif
+  d2901->setValue(std::string(d2901descr));
+  newChar->addDescriptor(d2901);
+  d2904->setFormat(d2904format);
+  d2904->setUnit(d2904unit);
+  newChar->addDescriptor(d2904);
 
   characteristicUUIDs[nCharacteristic-1] = charUUID;
   bleCharacteristics[nCharacteristic-1] = newChar;
