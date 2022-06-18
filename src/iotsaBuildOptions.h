@@ -4,11 +4,6 @@
 // Silence obnoxious warning that we can do nothing about
 #define ESP_OPENSSL_SUPPRESS_LEGACY_WARNING
 
-#ifdef ESP32
-// Unfortunately lorol/LITTLEFS has too many quirks at the moment.
-#define IOTSA_WITH_LEGACY_SPIFFS
-#endif
-
 #ifndef IOTSA_WITHOUT_DEBUG
 // Debug prints are enabled by default
 #define IOTSA_WITH_DEBUG

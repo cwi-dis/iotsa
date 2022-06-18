@@ -35,17 +35,13 @@
         },
         {
             "platforms" : "espressif32",
-            "name" : "h2zero/NimBLE-Arduino"
+            "name" : "NimBLE-Arduino",
+            "version" : "https://github.com/h2zero/NimBLE-Arduino"
         },
         {
             "platforms" : "espressif32",
             "name" : "esp32_https_server_compat",
             "version" : "https://github.com/jackjansen/esp32_https_server_compat#exp-jack-sha-header"
-        },
-        {
-            "platforms" : "espressif32",
-            "name" : "LITTLEFS",
-            "version" : "https://github.com/lorol/LITTLEFS.git#1.0"
         }
     ],
     "examples" : [
