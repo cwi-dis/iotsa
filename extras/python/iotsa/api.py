@@ -317,7 +317,7 @@ class IotsaDevice(object):
             filename, _ = urllib.request.urlretrieve(filename)
         espota = self._find_espota()
         #cmd = ['python', espota, '-i', self.ipAddress, '-f', filename]
-        cmd = 'python "%s" -i %s -f "%s"' % (espota, self.ipAddress, filename)
+        cmd = 'python3 "%s" -i %s -f "%s"' % (espota, self.ipAddress, filename)
         status = subprocess.call(cmd, shell=True)
         if status != 0:
             raise IotsaError("OTA command %s failed" % (cmd))

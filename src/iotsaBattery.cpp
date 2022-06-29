@@ -151,7 +151,7 @@ void IotsaBatteryMod::setup() {
   if (watchdogDuration) {
     watchdogTimer = timerBegin(0, 80, true);
     timerAttachInterrupt(watchdogTimer, &watchdogTimerTriggered, true);
-    IFDEBUG IotsaSerial.printf("Watchdog: %d seconds\n", watchdogDuration);
+    IFDEBUG IotsaSerial.printf("Watchdog: %d ms\n", watchdogDuration);
     timerAlarmWrite(watchdogTimer, watchdogDuration*1000, false);
     timerAlarmEnable(watchdogTimer);
   }
