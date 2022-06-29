@@ -191,6 +191,8 @@ class Main(object):
             self.args.target = all[0]
         if self.args.target:
             ok = self.wifi.selectDevice(self.args.target)
+            if not ok:
+                sys.exit(1)
         kwargs = {}
         if self.args.bearer:
             kwargs['bearer'] = self.args.bearer
