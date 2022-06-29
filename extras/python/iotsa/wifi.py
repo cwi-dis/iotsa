@@ -151,6 +151,8 @@ class IotsaWifi(PlatformWifi):
         
     def selectDevice(self, device):
         """Select a iotsa device"""
+        if not '.' in device:
+            device = device + '.local'
         if self._checkDevice(device):
             self.device = device
             return True

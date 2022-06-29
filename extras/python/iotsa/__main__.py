@@ -66,7 +66,7 @@ class Main(object):
                 if not cmd: break
                 cmdName = 'cmd_' + cmd
                 if not hasattr(self, cmdName):
-                    print("%s: unknown command %s, help for help" % (sys.argv[0], cmd), file=sys.stderr)
+                    print("%s: unknown command %s, --help for help" % (sys.argv[0], cmd), file=sys.stderr)
                     sys.exit(1)
                 handler = getattr(self, cmdName)
                 try:
