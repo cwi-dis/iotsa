@@ -131,7 +131,27 @@ class Main(object):
         """Helper method to handle multiple commands"""
         if not self.cmdlist: return None
         return self.cmdlist.pop(0)
-        
+   
+    def _getnamevalue(self, modName):
+        """Helper method to return name=value or name=type:value arguments"""
+        subCmd = self._getcmd()
+        if not subCmd or subCmd == '--':
+            return None, None
+        if not '=' in subCmd:
+            self._ungetcmd(subCmd)
+            return None, None
+        name, rest = subCmd.split('=')
+        if type(rest) == type(()):
+            value = '='.join(rest)
+        else:
+            value = rest
+        if ':' in value:
+            typename, rest = value.split(':')
+            typecast = eval(typename)
+            value = typecast(rest)
+            print(f"{sys.argv[0]}: xConfig {modName}: {name}={value} after cast.", file=sys.stderr)
+        return name, value
+
     def _ungetcmd(self, cmd):
         """Helper method to handle multiple commands"""
         self.cmdlist.insert(0, cmd)
@@ -187,13 +207,9 @@ class Main(object):
         anyDone = False
         self.device.config.transaction()
         while True:
-            subCmd = self._getcmd()
-            if not subCmd or subCmd == '--':
+            name, value = self._getnamevalue("config")
+            if not name:
                 break
-            if not '=' in subCmd:
-                self._ungetcmd(subCmd)
-                break
-            name, value = subCmd.split('=', 1)
             self.device.config.set(name, value)
             anyDone = True
         if not anyDone:
@@ -299,23 +315,16 @@ class Main(object):
         wifi.printStatus()
         
     def cmd_wifiConfig(self):
-        """Set WiFi parameters (target must be in configuration or private WiFi mode)"""
+        """Set WiFi parameters (target must be in configuration or private WiFi mode)
+        Parameters are name=value, or optionally name=type:value for example name=int:0"""
         self.loadDevice()
         wifi = self.device.getApi('wificonfig')
         wifi.transaction()
         anyDone = False
         while True:
-            subCmd = self._getcmd()
-            if not subCmd or subCmd == '--':
+            name, value = self._getnamevalue("wifiConfig")
+            if not name:
                 break
-            if not '=' in subCmd:
-                self._ungetcmd(subCmd)
-                break
-            name, rest = subCmd.split('=')
-            if type(rest) == type(()):
-                value = '='.join(rest)
-            else:
-                value = rest
             wifi.set(name, value)
             anyDone = True
         if not anyDone:
@@ -334,7 +343,8 @@ class Main(object):
         ext.printStatus()
         
     def cmd_xConfig(self):
-        """Configure a specific module on the target, next argument is module name"""
+        """Configure a specific module on the target, next argument is module name
+        Parameters are name=value, or optionally name=type:value for example name=int:0"""
         self.loadDevice()
         modName = self._getcmd()
         if not modName:
@@ -344,24 +354,16 @@ class Main(object):
         ext.transaction()
         anyDone = False
         while True:
-            subCmd = self._getcmd()
-            if not subCmd or subCmd == '--':
+            name, value = self._getnamevalue(modName)
+            if not name:
                 break
-            if not '=' in subCmd:
-                self._ungetcmd(subCmd)
-                break
-            name, rest = subCmd.split('=')
-            if type(rest) == type(()):
-                value = '='.join(rest)
-            else:
-                value = rest
             ext.set(name, value)
             anyDone = True
         if not anyDone:
             print("%s: xConfig %s: requires name=value [...] to set config variables" % sys.argv[0], file=sys.stderr)
             sys.exit(1)
         ext.commit()
-        
+
     def cmd_reboot(self):
         """Reboot the target"""
         self.loadDevice()
