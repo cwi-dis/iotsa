@@ -245,17 +245,20 @@ void ValueInput::bindVar(float& _var, float _min, float _max, float _stepSize) {
 
 void ValueInput::_changeValue(int steps) {
   value += steps;
+  IFDEBUG IotsaSerial.printf("ValueInput callback increment %d value %d", steps, value);
   if (intVar) {
     *intVar += steps*intStep;
     if (*intVar < intMin) *intVar = intMin;
     if (*intVar > intMax) *intVar = intMax;
+    IFDEBUG IotsaSerial.printf(" intVar %d", *intVar);
   }
   if (floatVar) {
     *floatVar += steps*floatStep;
     if (*floatVar < floatMin) *floatVar = floatMin;
     if (*floatVar > floatMax) *floatVar = floatMax;
+    IFDEBUG IotsaSerial.printf(" floatVar %f", *floatVar);
   }
-  IFDEBUG IotsaSerial.printf("ValueInput callback increment %d value %d\n", steps, value);
+  IFDEBUG IotsaSerial.println();
   if (activationCallback) {
     activationCallback();
   }
@@ -310,6 +313,7 @@ void RotaryEncoder::loop() {
         change += accelMillis / duration;
       }
     }
+    IotsaSerial.printf("RotaryEncoder pinA=%d pinB=%d increment=%d change=%d\n", pinAstate, pinBstate, increment, change);
     if (increment) {
       _changeValue(change);
     } else {
