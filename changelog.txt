@@ -10,6 +10,8 @@ iotsa 2.5 - development
 - Prefer libc timezone handling over Timezone library
 - Handle JSON buffer overflow, added jsonBufSize URL parameter
 - Moved to Arduino framework 3.0
+- Switched to ArduinoNimble for BLE support
+- Use ESP32Encoder library to handle rotary encoders in iotsaInput module
 
 iotsa 2.4.1 - 23-Apr-2020
 

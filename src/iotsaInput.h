@@ -77,6 +77,7 @@ protected:
   float *floatVar, floatMin, floatMax, floatStep;
 };
 
+class ESP32Encoder;
 class RotaryEncoder : public ValueInput {
 public:
   RotaryEncoder(int _pinA, int _pinB);
@@ -85,9 +86,8 @@ public:
   void setAcceleration(uint32_t _accelMillis);
   uint32_t duration;
 protected:
-  int pinA;
-  int pinB;
-  bool pinAstate;
+  ESP32Encoder *_encoder;
+  int64_t oldCount = 0;
   uint32_t lastChangeMillis;
   uint32_t accelMillis;
 };

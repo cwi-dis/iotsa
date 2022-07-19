@@ -1,6 +1,7 @@
 #include "iotsa.h"
 #include "iotsaInput.h"
 #include "iotsaConfigFile.h"
+#include <ESP32Encoder.h>
 
 #define DEBOUNCE_DELAY 50 // 50 ms debouncing
 
@@ -267,12 +268,14 @@ void ValueInput::_changeValue(int steps) {
 RotaryEncoder::RotaryEncoder(int _pinA, int _pinB)
 : ValueInput(),
   duration(0),
-  pinA(_pinA),
-  pinB(_pinB),
-  pinAstate(false),
+  _encoder(new ESP32Encoder()),
   lastChangeMillis(0),
   accelMillis(0)
 {
+  ESP32Encoder::useInternalWeakPullResistors=UP;
+  // Sigh... It seems we (or ESP32Encoder?) had reversed the pins... Or the edges...
+  _encoder->attachHalfQuad(_pinB, _pinA);
+  _encoder->clearCount();
 }
 
 void RotaryEncoder::setAcceleration(uint32_t _accelMillis) {
@@ -280,32 +283,26 @@ void RotaryEncoder::setAcceleration(uint32_t _accelMillis) {
 }
 
 void RotaryEncoder::setup() {
-  pinMode(pinA, INPUT_PULLUP);
-  pinMode(pinB, INPUT_PULLUP);
-  pinAstate = digitalRead(pinA) == LOW;
+#if 0
   if (wake) {
     // xxxjack unsure about this: would "wake on any high" mean on positive flanks (as I hope) or
     // would this mean the cpu remain awake when any pin is level high? To be determined.
     bitmaskButtonWakeHigh |= 1LL << pinA;
     bitmaskButtonWakeHigh |= 1LL << pinB;
   }
-
+#endif
 }
 
 void RotaryEncoder::loop() {
-  bool pinAnewState = digitalRead(pinA) == LOW;
-
-  if (pinAnewState != pinAstate) {
-    if (lastChangeMillis) {
-      duration = millis() - lastChangeMillis;
-    }
-    lastChangeMillis = millis();
-    // PinA is in a new state
-    pinAstate = pinAnewState;
-    // If pinA changed state high read pinB to determine whether this is an increment or a decrement.
-    bool pinBstate = digitalRead(pinB) == LOW;
-    bool increment = pinAstate != pinBstate;
-    int change = 1;
+  int64_t newCount = _encoder->getCount();
+  if (newCount != oldCount) {
+    IotsaSerial.printf("RotaryEncoder %lld->%lld\n", oldCount, newCount);
+    int delta = (newCount-oldCount);
+    oldCount = newCount;
+    _changeValue(delta);
+  }
+#if 0
+    // This code doesn't work currently....
     if (accelMillis > 0 && duration > 0) {
       // Check if we want to do multiple steps, because the encoder was 
       // rotated fast
@@ -313,13 +310,7 @@ void RotaryEncoder::loop() {
         change += accelMillis / duration;
       }
     }
-    IotsaSerial.printf("RotaryEncoder pinA=%d pinB=%d increment=%d change=%d\n", pinAstate, pinBstate, increment, change);
-    if (increment) {
-      _changeValue(change);
-    } else {
-      _changeValue(-change);
-    }
-  }
+#endif
 }
 
 UpDownButtons::UpDownButtons(Button& _up, Button& _down, bool _useState)
