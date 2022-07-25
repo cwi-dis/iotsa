@@ -77,6 +77,10 @@ protected:
   float *floatVar, floatMin, floatMax, floatStep;
 };
 
+#ifdef ESP32
+#define WITH_ESP32ENCODER_LIB
+#endif
+
 class ESP32Encoder;
 class RotaryEncoder : public ValueInput {
 public:
@@ -86,8 +90,14 @@ public:
   void setAcceleration(uint32_t _accelMillis);
   uint32_t duration;
 protected:
+#ifdef WITH_ESP32ENCODER_LIB
   ESP32Encoder *_encoder;
   int64_t oldCount = 0;
+#else
+  int pinA;
+  int pinB;
+  bool pinAstate;
+#endif
   uint32_t lastChangeMillis;
   uint32_t accelMillis;
 };

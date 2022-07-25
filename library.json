@@ -34,6 +34,7 @@
             "name" : "Ds1302"
         },
         {
+            "platforms" : "espressif32",
             "name" : "ESP32Encoder"
         },
         {
