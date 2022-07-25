@@ -91,6 +91,7 @@ jobs:
         arduino-cli lib install "DHT sensor library"
         arduino-cli lib install "Adafruit Unified Sensor"
         arduino-cli lib install "Ds1302"
+        arduino-cli lib install "ESP32Encoder"
 #        arduino-cli core update-index --additional-urls "https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json"
 #        arduino-cli core install "esp32:esp32" --additional-urls "https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json"
 
