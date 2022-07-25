@@ -128,6 +128,7 @@ jobs:
         pio lib -g install "DHT sensor library"
         pio lib -g install "Ds1302"
         pio lib -g install "NimBLE-Arduino"
+        pio lib -g install "ESP32Encoder"
 
     - name: Run PlatformIO
       run: |
