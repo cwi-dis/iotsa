@@ -124,9 +124,13 @@ jobs:
         pio lib -g install "ArduinoJson"
         pio lib -g install "ArduinoJWT"
         pio lib -g install "https://github.com/jackjansen/CoAP-simple-library"
-        pio lib -g install "esp32_https_server_compat"
         pio lib -g install "DHT sensor library"
         pio lib -g install "Ds1302"
+
+    - name: Install esp32-only library dependencies
+      if: matrix.board == "esp32thing"
+      run: |
+        pio lib -g install "esp32_https_server_compat"
         pio lib -g install "NimBLE-Arduino"
         pio lib -g install "ESP32Encoder"
 
