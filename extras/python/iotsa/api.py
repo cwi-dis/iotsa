@@ -17,6 +17,7 @@ import requests.exceptions
 
 from .consts import UserIntervention, IotsaError, CoapError, VERBOSE
 from .dfu import DFU
+from .ble import BLE
 from .wifi import IotsaWifi
 from .protocols import HandlerForProto
 

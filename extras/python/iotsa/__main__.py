@@ -30,6 +30,7 @@ class Main(object):
         self.wifi = None
         self.device = None
         self.dfu = None
+        self.ble = None
         self.cmdlist = []
         
     def __del__(self):
@@ -161,7 +162,30 @@ class Main(object):
         if self.dfu: return
         self.dfu = api.DFU(self.args.serial)
         self.dfu.dfuWait()
-        
+
+    def loadBLE(self, loadTarget=True):
+        """Load Bluetooth LE driver"""
+        if self.ble: return
+        self.ble = api.BLE()
+        if not loadTarget:
+            return
+        if not self.args.target or self.args.target == "auto":
+            all = self.ble.findDevices()
+            if len(all) == 0:
+                print("%s: no iotsa BLE devices found" % (sys.argv[0]), file=sys.stderr)
+                sys.exit(1)
+            if len(all) > 1:
+                print("%s: multiple iotsa BLE devices:" % (sys.argv[0]), end=' ', file=sys.stderr)
+                for a in all:
+                    print(a, end=' ', file=sys.stderr)
+                print(file=sys.stderr)
+                sys.exit(1)
+            self.args.target = all[0]
+        if self.args.target:
+            ok = self.ble.selectDevice(self.args.target)
+            if not ok:
+                sys.exit(1)        
+    
     def loadWifi(self):
         """Load WiFi network (if not already done)"""
         if self.wifi: return
@@ -284,6 +308,31 @@ class Main(object):
         ok = self.dfu.dfuLoad(filename)
         ok = self.dfu.dfuRun()
         
+    def cmd_bleTargets(self):
+        """List iotsa devices accessible over BLE"""
+        self.loadBLE(loadTarget=False)
+        all = self.ble.findDevices()
+        for d in all:
+            print(d)
+
+    def cmd_bleInfo(self):
+        """Get information on BLE iotsa device"""
+        self.loadBLE()
+        self.ble.printStatus()
+
+    def cmd_ble(self):
+        """Get or set BLE characteristic on iotsa device"""
+        self.loadBLE()
+        subcommand = self._getcmd()
+        if '=' in subcommand:
+            # Set command
+            name, value = subcommand.split("=")
+            self.ble.set(name, value)
+        else:
+            # Get command
+            value = self.ble.get(subcommand)
+            print(value)
+
     def cmd_targets(self):
         """List iotsa devices visible on current network"""
         self.loadWifi()
