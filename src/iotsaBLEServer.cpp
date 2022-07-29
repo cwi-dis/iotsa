@@ -4,7 +4,6 @@
 #ifdef IOTSA_WITH_BLE
 //#include <BLE2902.h>
 
-#undef IOTSA_BLE_DEBUG
 #ifdef IOTSA_BLE_DEBUG
 #define IFBLEDEBUG if(1)
 #else
@@ -244,10 +243,12 @@ void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask, uint8_
   BLE2904 *d2904 = new BLE2904();
 #endif
   d2901->setValue(std::string(d2901descr));
-  newChar->addDescriptor(d2901);
   d2904->setFormat(d2904format);
   d2904->setUnit(d2904unit);
+#ifndef IOTSA_WITH_NIMBLE
+  newChar->addDescriptor(d2901);
   newChar->addDescriptor(d2904);
+#endif
 
   characteristicUUIDs[nCharacteristic-1] = charUUID;
   bleCharacteristics[nCharacteristic-1] = newChar;
