@@ -5,4 +5,4 @@ zeroconf2; python_version < '3.0'
 zeroconf; python_version >= '3.0'
 CoAPthon; python_version < '3.0'
 git+https://github.com/rgerganov/CoAPthon3 ; python_version >= '3.0'
-
+git+https://github.com/jackjansen/bleak@new-typed-attributes
