@@ -1,3 +1,4 @@
+import sys
 import asyncio
 import re
 import bleak
@@ -59,9 +60,13 @@ class BLE:
     async def _asyncPrintStatus(self):
         async with self._currentConnection as client:
             services = await client.get_services()
-        for handle, char in services.characteristics.items():
-            value = None # await client.read_gatt_char_typed(char)
-            print(f'{handle}: {char.uuid} ({char.description}): {value}')
+            for handle, char in services.characteristics.items():
+                try:
+                    value = await client.read_gatt_char_typed(char.uuid)
+                    print(f'{handle}: {char.uuid} ({char.description}): {value}')
+                except bleak.BleakError:
+                    print(f'{handle}: {char.uuid} ({char.description}): cannot read')
+                sys.stdout.flush()
 
     def set(self, name, value):
         self.loop.run_until_complete(self._asyncSet(name, value))
@@ -77,4 +82,8 @@ class BLE:
 
     async def _asyncGet(self, name):
         async with self._currentConnection as client:
-            self._get_rv = await client.read_gatt_char_typed(name)
+            try:
+                self._get_rv = await client.read_gatt_char_typed(name)
+            except bleak.BleakError as e:
+                print(e)
+                self._get_rv = None
