@@ -318,10 +318,8 @@ class Main(object):
     def cmd_bleInfo(self):
         """Get information on BLE iotsa device"""
         self.loadBLE()
-        print('xxxjack ble loaded')
         self.ble.printStatus()
-        print('xxxjack status printed')
-
+        
     def cmd_ble(self):
         """Get or set BLE characteristic on iotsa device"""
         self.loadBLE()

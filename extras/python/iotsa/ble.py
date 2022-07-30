@@ -3,15 +3,20 @@ import asyncio
 import re
 import bleak
 import bleak.pythonic.client
+from .bleIotsaUUIDs import (name_to_uuid, uuid_to_name)
 
 IOTSA_BATTERY_SERVICE="0000180f-0000-1000-8000-00805f9b34fb"
 IOTSA_REBOOT_CHARACTERISTIC=""
 
 class BLE:
+    discover_timeout=11
+
     def __init__(self):
+        self.verbose = False
         self._allDevices = None
         self._currentDevice = None
         self._currentConnection = None
+        self._serviceCollection = None
         self.loop = asyncio.new_event_loop()
 
     def findDevices(self):
@@ -19,25 +24,21 @@ class BLE:
         return self._allDevices
 
     async def _asyncFindDevices(self):
-        candidates = await bleak.discover()
+        candidates = await bleak.discover(timeout=self.discover_timeout)
         # Iotsa devices have a battery service, and a reboot charcteristic in that service.
         # So filter for those.
         iotsaCandidates = []
         for d in candidates:
             if IOTSA_BATTERY_SERVICE in d.metadata.get('uuids', []):
-                print(f"xxxjack device={d} uuids={d.metadata.get('uuids')} mfgdata={d.metadata.get('manufacturer_data')}")
                 iotsaCandidates.append(d)
         if iotsaCandidates:
             self._allDevices = iotsaCandidates
 
     def selectDevice(self, name_or_address):
-        print('xxxjack before async select')
         self.loop.run_until_complete(self._asyncSelectDevice(name_or_address))
-        print('xxxjack after async select')
         return self._currentDevice != None
 
     async def _asyncSelectDevice(self, name_or_address):
-        print('xxxjack async select started')
         if re.fullmatch('[0-9a-fA-F:-]*', name_or_address):
             dev = await bleak.BleakScanner.find_device_by_address(name_or_address)
         else:
@@ -48,32 +49,37 @@ class BLE:
             print(f'Device {name_or_address} not found')
             return
         self._currentDevice = dev
-        self._currentConnection = bleak.pythonic.client.BleakPythonicClient(self._currentDevice)
-        print('xxxjack async select ended')
-
-    def printStatus(self):
-        print('xxxjack before async print status')
+        self._currentConnection = bleak.pythonic.client.BleakPythonicClient(self._currentDevice, timeout=self.discover_timeout)
         
+    def printStatus(self):
         self.loop.run_until_complete(self._asyncPrintStatus())
-        print('xxxjack after async print status')
-
+        
     async def _asyncPrintStatus(self):
         async with self._currentConnection as client:
-            services = await client.get_services()
-            for handle, char in services.characteristics.items():
-                try:
-                    value = await client.read_gatt_char_typed(char.uuid)
-                    print(f'{handle}: {char.uuid} ({char.description}): {value}')
-                except bleak.BleakError:
-                    print(f'{handle}: {char.uuid} ({char.description}): cannot read')
-                sys.stdout.flush()
+            self._serviceCollection = await client.get_services()
+            for service in self._serviceCollection.services.values():
+                if self.verbose:
+                    print(f'{uuid_to_name(service.uuid)} ({service.uuid} {service.description}):')
+                else:
+                    print(f'{uuid_to_name(service.uuid)}:')
+                for char in service.characteristics:
+                    try:
+                        value = await client.read_gatt_char_typed(char.uuid)
+                        if self.verbose:
+                            print(f'\t{uuid_to_name(char.uuid)}={value} ({char.uuid} {char.description})')
+                        else:
+                            print(f'\t{uuid_to_name(char.uuid)}={value}')
+                    except bleak.BleakError:
+                        print(f'\t{uuid_to_name(char.uuid)} ({char.uuid} {char.description}): cannot read')
+                    sys.stdout.flush()
 
     def set(self, name, value):
         self.loop.run_until_complete(self._asyncSet(name, value))
 
     async def _asyncSet(self, name, value):
+        uuid = name_to_uuid(name)
         async with self._currentConnection as client:
-            await client.write_gatt_char_typed(name, value, True)
+            await client.write_gatt_char_typed(uuid, value, response=True)
 
     def get(self, name):
         self._get_rv = None
@@ -81,9 +87,10 @@ class BLE:
         return self._get_rv
 
     async def _asyncGet(self, name):
+        uuid = name_to_uuid(name)
         async with self._currentConnection as client:
             try:
-                self._get_rv = await client.read_gatt_char_typed(name)
+                self._get_rv = await client.read_gatt_char_typed(uuid)
             except bleak.BleakError as e:
                 print(e)
                 self._get_rv = None
