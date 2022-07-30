@@ -12,6 +12,7 @@ iotsa 2.5 - development
 - Moved to Arduino framework 3.0
 - Switched to ArduinoNimble for BLE support
 - Use ESP32Encoder library to handle rotary encoders in iotsaInput module
+- iotsa Python module and iotsaControl have support for BLE through commands bleTargets and ble
 
 iotsa 2.4.1 - 23-Apr-2020
 
