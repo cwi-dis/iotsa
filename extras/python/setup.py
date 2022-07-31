@@ -8,18 +8,9 @@ https://github.com/pypa/sampleproject
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages
 # To use a consistent encoding
-from codecs import open
 from os import path
 import os
 import sys
-
-# Which CoAPthon version to use
-if sys.version_info.major == 2:
-    COAPTHON="CoAPThon"
-    ZEROCONF="zeroconf2"
-else:
-    COAPTHON="CoAPThon3"
-    ZEROCONF="zeroconf"
     
 here = path.abspath(path.dirname(__file__))
 long_description = """
@@ -86,7 +77,7 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=["future", "requests", "esptool", ZEROCONF, COAPTHON, "bleak"],
+    install_requires=["requests", "esptool", "zeroconf", "CoAPThon3", "bleak"],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
