@@ -40,6 +40,10 @@
         },
         {
             "platforms" : ["espressif32"],
+            "name" : "NimBLE-Arduino"
+        },
+        {
+            "platforms" : ["espressif32"],
             "name" : "esp32_https_server_compat",
             "version" : "https://github.com/jackjansen/esp32_https_server_compat#exp-jack-sha-header"
         }

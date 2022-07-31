@@ -113,26 +113,10 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install platformio
-        pio platform install --with-package framework-arduinoespressif8266 espressif8266
-        pio platform install --with-package framework-arduinoespressif32 espressif32
 
-    - name: Install library dependencies
+    - name: Install PlatformIO dependencies
       run: |
-        pio lib -g install "Adafruit NeoPixel"
-        pio lib -g install "Time"
-        pio lib -g install "Timezone"
-        pio lib -g install "ArduinoJson"
-        pio lib -g install "ArduinoJWT"
-        pio lib -g install "https://github.com/jackjansen/CoAP-simple-library"
-        pio lib -g install "DHT sensor library"
-        pio lib -g install "Ds1302"
-
-    - name: Install esp32-only library dependencies
-      if: matrix.board == 'esp32thing'
-      run: |
-        pio lib -g install "esp32_https_server_compat"
-        pio lib -g install "NimBLE-Arduino"
-        pio lib -g install "ESP32Encoder"
+        pio pkg install
 
     - name: Run PlatformIO
       run: |
