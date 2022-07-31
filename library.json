@@ -25,7 +25,8 @@
             "name" : "ArduinoJson"
         },
         {
-            "name" : "ArduinoJWT"
+            "name" : "ArduinoJWT",
+            "version" : "https://github.com/jackjansen/ArduinoJWT"
         },
         {
             "name" : "CoAP simple library",
