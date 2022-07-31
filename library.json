@@ -12,7 +12,8 @@
         "url" : "https://github.com/cwi-dis/iotsa.git"
     },
     "build": {
-        "extraScript" : "extras/mkversionh.py"
+        "extraScript" : "extras/mkversionh.py",
+        "libCompatMode" : "strict"
     },
     "frameworks" : "Arduino",
     "platforms" : [ "espressif8266", "espressif32"],
