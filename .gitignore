@@ -2,6 +2,7 @@
 .piolibdeps
 .pio
 .vscode
+.venv
 *.pyc
 build
 dist
