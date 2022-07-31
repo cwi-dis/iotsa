@@ -121,7 +121,7 @@ jobs:
     - name: Run PlatformIO
       run: |
         rm -rf /tmp/pio-build
-        pio ci --lib="." --project-option="lib_ldf_mode=deep+" ${{ matrix.pio_extra_args }} --board=${{ matrix.board }} --keep-build-dir --build-dir /tmp/pio-build
+        pio ci --lib="." --project-option="lib_ldf_mode=deep+" --project-option="lib_compat_mode=strict" ${{ matrix.pio_extra_args }} --board=${{ matrix.board }} --keep-build-dir --build-dir /tmp/pio-build
       env:
         PLATFORMIO_CI_SRC: examples/${{ matrix.example }}
         PLATFORMIO_BUILD_FLAGS: ${{ matrix.build_flags }}
