@@ -34,11 +34,11 @@
             "name" : "Ds1302"
         },
         {
-            "platforms" : "espressif32",
+            "platforms" : ["espressif32"],
             "name" : "ESP32Encoder"
         },
         {
-            "platforms" : "espressif32",
+            "platforms" : ["espressif32"],
             "name" : "esp32_https_server_compat",
             "version" : "https://github.com/jackjansen/esp32_https_server_compat#exp-jack-sha-header"
         }
