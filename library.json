@@ -33,14 +33,17 @@
             "version" : "https://github.com/jackjansen/CoAP-simple-library"
         },
         {
-            "name" : "Ds1302"
+            "name" : "Ds1302",
+            "owner" : "treboada"
         },
         {
             "platforms" : ["espressif32"],
+            "owner" : "madhephaestus",
             "name" : "ESP32Encoder"
         },
         {
             "platforms" : ["espressif32"],
+            "owner" : "h2zero",
             "name" : "NimBLE-Arduino"
         },
         {
