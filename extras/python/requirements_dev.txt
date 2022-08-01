@@ -1,0 +1,4 @@
+mypy
+black
+Sphinx
+sphinx-rtd-theme
