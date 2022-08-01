@@ -2,38 +2,37 @@ import sys
 import time
 import os
 import socket
+from abc import ABC, abstractmethod
+from typing import List, Optional
 
 from .mdns import PlatformMDNSCollector
 
 from .consts import UserIntervention, VERBOSE
 
+class AbstractPlatformWifi(ABC):
+    """Platform-dependent code for listing and joining of WiFi networks."""
 
-class PlatformWifi(object):
-    """Default WiFi handling: ask the user."""
-
-    def __init__(self):
+    @abstractmethod
+    def platformListWifiNetworks(self) -> List[str]:
+        """Return list of network SSIDs that appear to be iotsa boards"""
         pass
 
-    def platformListWifiNetworks(self):
-        """Return list of network SSIDs that appear to be iotsa boards"""
-        raise UserIntervention(
-            "Please look for WiFi SSIDs (network names) starting with 'config-'"
-        )
-
-    def platformJoinWifiNetwork(self, ssid, password):
-        """Join a wifi network"""
-        raise UserIntervention("Please join WiFi network named %s" % ssid)
-
-    def platformCurrentWifiNetworks(self):
+    @abstractmethod
+    def platformCurrentWifiNetworks(self) -> List[str]:
         """Return all currently connected wifi networks"""
-        return []
+        pass
 
+    @abstractmethod
+    def platformJoinWifiNetwork(self, ssid : str, password : str) -> bool:
+        """Join a wifi network"""
+        pass
 
 if sys.platform == "darwin":
     import subprocess
     import plistlib
 
-    class PlatformWifi(object):
+    class PlatformWifi(AbstractPlatformWifi):
+        """MacOS WiFi handling"""
         def __init__(self):
             self.wifiInterface = os.getenv("IOTSA_WIFI")
             if not self.wifiInterface:
@@ -53,7 +52,7 @@ if sys.platform == "darwin":
                     else:
                         self.wifiInterface = "en1"
 
-        def platformListWifiNetworks(self):
+        def platformListWifiNetworks(self) -> List[str]:
             if VERBOSE:
                 print("Listing wifi networks (OSX)")
             p = subprocess.Popen(
@@ -61,17 +60,15 @@ if sys.platform == "darwin":
                 shell=True,
                 stdout=subprocess.PIPE,
             )
-            if hasattr(plistlib, "load"):
-                data = plistlib.load(p.stdout, fmt=plistlib.FMT_XML)
-            else:
-                data = plistlib.readPlist(p.stdout)
+            assert p.stdout
+            data = plistlib.load(p.stdout, fmt=plistlib.FMT_XML)
             wifiNames = [d["SSID_STR"] for d in data]
             wifiNames.sort()
             if VERBOSE:
                 print("Wifi networks found:", wifiNames)
             return wifiNames
 
-        def platformJoinWifiNetwork(self, ssid, password):
+        def platformJoinWifiNetwork(self, ssid : str, password : str) -> bool:
             if VERBOSE:
                 print("Joining network (OSX):", ssid)
             cmd = "networksetup -setairportnetwork %s %s" % (self.wifiInterface, ssid)
@@ -82,28 +79,46 @@ if sys.platform == "darwin":
                 print("Join network status:", status)
             return status == 0
 
-        def platformCurrentWifiNetworks(self):
+        def platformCurrentWifiNetworks(self) -> List[str]:
             if VERBOSE:
                 print("Find current networks (OSX)")
             cmd = "networksetup -getairportnetwork %s" % self.wifiInterface
             p = subprocess.Popen(
                 cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True
             )
+            assert p.stdout
             data = p.stdout.read()
             if VERBOSE:
                 print("Find result was:", data)
             wifiName = data.split(":")[-1]
             wifiName = wifiName.strip()
             return [wifiName]
+else:
+    class PlatformWifi(AbstractPlatformWifi):
+        """Default WiFi handling: ask the user."""
 
+        def __init__(self):
+            pass
+
+        def platformListWifiNetworks(self) -> List[str]:
+            raise UserIntervention(
+                "Please look for WiFi SSIDs (network names) starting with 'config-'"
+            )
+
+        def platformJoinWifiNetwork(self, ssid : str, password : str) -> bool:
+            raise UserIntervention("Please join WiFi network named %s" % ssid)
+
+        def platformCurrentWifiNetworks(self) -> List[str]:
+            return []
 
 class IotsaWifi(PlatformWifi):
+    """Handle WiFi networks for contacting iotsa devices"""
     def __init__(self):
         PlatformWifi.__init__(self)
         self.ssid = None
         self.device = None
 
-    def findNetworks(self):
+    def findNetworks(self) -> List[str]:
         """Returns list of all WiFi SSIDs that may be unconfigured iotsa devices"""
         all = self.platformListWifiNetworks()
         rv = []
@@ -112,10 +127,12 @@ class IotsaWifi(PlatformWifi):
                 rv.append(net)
         return rv
 
-    def _isNetworkSelected(self, ssid):
+    def _isNetworkSelected(self, ssid : str) -> bool:
+        """Is this wifi network selected?"""
         return ssid in self.platformCurrentWifiNetworks()
 
-    def _isConfigNetwork(self):
+    def _isConfigNetwork(self) -> bool:
+        """Is the currently selected wifi network hosted by an unconfigured iotsa device?"""
         if self.ssid and self.ssid.startswith("config-"):
             return True
         for c in self.platformCurrentWifiNetworks():
@@ -123,7 +140,7 @@ class IotsaWifi(PlatformWifi):
                 return True
         return False
 
-    def selectNetwork(self, ssid, password=None):
+    def selectNetwork(self, ssid : str, password : str = "") -> bool:
         """Select a WiFi network"""
         if self._isNetworkSelected(ssid):
             return True
@@ -132,7 +149,8 @@ class IotsaWifi(PlatformWifi):
             self.ssid = ssid
         return ok
 
-    def _checkDevice(self, deviceName):
+    def _checkDevice(self, deviceName : str) -> bool:
+        """Is the given host a possible iotsa device?"""
         ports = [80, 443]
         for port in ports:
             try:
@@ -147,7 +165,7 @@ class IotsaWifi(PlatformWifi):
             return True
         return False
 
-    def findDevices(self):
+    def findDevices(self) -> List[str]:
         """Return list of all iotsa devices visible on current network(s)"""
         if self._isConfigNetwork():
             if self._checkDevice("192.168.4.1"):
@@ -163,7 +181,7 @@ class IotsaWifi(PlatformWifi):
                 rv.append(d)
         return rv
 
-    def selectDevice(self, device):
+    def selectDevice(self, device : str) -> bool:
         """Select a iotsa device"""
         if not "." in device:
             device = device + ".local"
@@ -172,6 +190,6 @@ class IotsaWifi(PlatformWifi):
             return True
         return False
 
-    def currentDevice(self):
+    def currentDevice(self) -> str:
         """Return the currently selected iotsa device"""
         return self.device

@@ -1,24 +1,20 @@
 import sys
 import time
+from typing import List
 
 from .consts import UserIntervention, VERBOSE
 
+_have_mdns = sys.platform in ("darwin", "linux2", "linux")
 
-class PlatformMDNSCollector(object):
-    """Default mDNS handling: ask the user"""
-
-    def __init__(self):
-        pass
-
-    def run(self, timeout=5):
-        """Run for a short while (5 seconds default) and collect all iotsa devices found. Return list."""
-        raise UserIntervention("Please browse for mDNS services _iotsa._tcp.local")
-
-
-if sys.platform in ("darwin", "linux2", "linux"):
+if _have_mdns:
     import zeroconf
 
-    class PlatformMDNSCollector(object):
+    class PlatformMDNSCollector:
+        """Search for iotsa devices using mDNS/zeroconf/bonjour/rendezvous
+        
+        All devices advertising on mDNS will be checked for providing an _iotsa service
+        (over http/https/tcp/coap) and only the devices that do will be returned.
+        """
         def __init__(self):
             self.found = []
             if VERBOSE:
@@ -53,7 +49,12 @@ if sys.platform in ("darwin", "linux2", "linux"):
                 return
             self.found.append(info.server)
 
-        def run(self, timeout=5):
+        def run(self, timeout : int = 5) -> List[str]:
+            """Run the mDNS browser.
+            
+            :param timeout: how many seconds to wait for iotsa devices
+            :return: list of iotsa devices found
+            """
             time.sleep(timeout)
             self.zeroconf.close()
             self.zeroconf = None
@@ -61,3 +62,13 @@ if sys.platform in ("darwin", "linux2", "linux"):
             if VERBOSE:
                 print("Stop mDNS browsing, found", self.found)
             return self.found
+else:
+    class PlatformMDNSCollector:
+        """Default mDNS handling: ask the user"""
+
+        def __init__(self):
+            pass
+
+        def run(self, timeout=5):
+            """Run for a short while (5 seconds default) and collect all iotsa devices found. Return list."""
+            raise UserIntervention("Please browse for mDNS services _iotsa._tcp.local")

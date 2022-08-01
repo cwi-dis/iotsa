@@ -1,6 +1,8 @@
 import sys
 import socket
 import time
+from abc import ABC, abstractmethod
+from typing import Any, List, Optional, Tuple, Type
 import urllib.parse
 import urllib.request
 import json as jsonmod
@@ -15,9 +17,70 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from .consts import UserIntervention, IotsaError, CoapError, VERBOSE
 
+class IotsaAbstractProtocolHandler(ABC):
+    """Abstract base class for REST and COAP protocol handlers"""
 
-class IotsaRESTProtocolHandler(object):
-    def __init__(self, baseURL, noverify=False, bearer=None, auth=None):
+    @abstractmethod
+    def __init__(self, baseURL : str, noverify : bool = False, bearer : Optional[str] = None, auth : Optional[Tuple[str, str]] = None):
+        pass
+
+    @abstractmethod
+    def close(self):
+        """Close the connection"""
+        pass
+
+    @abstractmethod
+    def get(self, endpoint : str, json : Any = None) -> Any:
+        """Send a REST GET request.
+        
+        :param endpoint: last part of URL
+        :param json: optional argument, will be json-encoded
+        :return: any return value, json-decoded
+        """
+        pass
+
+    @abstractmethod
+    def put(self, endpoint : str, json : Any = None) -> Any:
+        """Send a REST PUT request.
+        
+        :param endpoint: last part of URL
+        :param json: optional argument, will be json-encoded
+        :return: any return value, json-decoded
+        """
+        pass
+
+    @abstractmethod
+    def post(self, endpoint : str, json : Any = None, files : Optional[dict[str, Any]] = None) -> Any:
+        """Send a REST POST request.
+        
+        :param endpoint: last part of URL
+        :param json: optional argument, will be json-encoded
+        :param files: optional files to upload, passed to requests.request
+        :return: any return value, json-decoded
+        """
+        pass
+
+    @abstractmethod
+    def request(self, method : str, endpoint : str, json : Any = None, files : Optional[dict[str, Any]]= None, retryCount : int = 5) -> Any:
+        """Send a REST request.
+        
+        :param method: REST method
+        :param endpoint: last part of URL
+        :param json: optional argument, will be json-encoded
+        :param files: optional files to upload, passed to requests.request
+        :return: any return value, json-decoded
+        """
+        pass
+
+class IotsaRESTProtocolHandler(IotsaAbstractProtocolHandler):
+    """Communicate with iotsa device using REST over HTTP or HTTPS
+    
+    :param baseurl: first part of URL (endpoint arguments will be appended)
+    :param noverify: skip SSL certificate verification (debugging only)
+    :param bearer: (optional) Authorization bearer token
+    :param auth: (optional) Anthentication tuple
+    """
+    def __init__(self, baseURL : str, noverify : bool = False, bearer : Optional[str] = None, auth : Optional[Tuple[str, str]] = None):
         if baseURL[-1] != "/":
             baseURL += "/"
         self.baseURL = baseURL
@@ -85,8 +148,13 @@ class IotsaRESTProtocolHandler(object):
         return None
 
 
-class IotsaCOAPProtocolHandler(object):
-    def __init__(self, baseURL, bearer=None, noverify=None, auth=None):
+class IotsaCOAPProtocolHandler(IotsaAbstractProtocolHandler):
+    """Communicate with iotsa device using COAP over UDP
+    
+    :param baseurl: first part of URL (endpoint arguments will be appended)
+    """
+
+    def __init__(self, baseURL : str, bearer=None, noverify=None, auth=None):
         self.client = None
         if bearer:
             raise CoapError("bearer not supported for coap")
@@ -101,8 +169,8 @@ class IotsaCOAPProtocolHandler(object):
         assert not parts.fragment
         assert parts.netloc
         if ":" in parts.netloc:
-            host, port = parts.netloc.split(":")
-            port = int(port)
+            host, _port = parts.netloc.split(":")
+            port = int(_port)
         else:
             host = parts.netloc
             port = 5683
@@ -183,7 +251,7 @@ class IotsaCOAPProtocolHandler(object):
         return jsonmod.loads(rv.payload)
 
 
-HandlerForProto = {
+HandlerForProto : dict[str, Type[IotsaAbstractProtocolHandler]] = {
     "http": IotsaRESTProtocolHandler,
     "https": IotsaRESTProtocolHandler,
     "coap": IotsaCOAPProtocolHandler,

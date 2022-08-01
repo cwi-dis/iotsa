@@ -7,25 +7,32 @@ import binascii
 import io
 import urllib.request
 import requests.exceptions
+from typing import Any, Optional, Tuple, Union
 
 from .consts import UserIntervention, IotsaError, CoapError, VERBOSE
 from .dfu import DFU
 from .ble import BLE
 from .wifi import IotsaWifi
-from .protocols import HandlerForProto
+from .protocols import HandlerForProto, IotsaAbstractProtocolHandler
 
-
-class IotsaEndpoint(object):
-    def __init__(self, device, api, cache=False):
+class IotsaEndpoint:
+    """Class representing a iotsa (REST or COAP) endpoint.
+    
+    :param device: The iotsa device to which this endpoint belongs
+    :param api: string used to address the endpoint within the device
+    :param cache: if true allow values to be reused without contacting the device again
+    """
+    def __init__(self, device : "IotsaDevice", api : str, cache : bool = False):
         self.device = device
         self.endpoint = api
-        self.status = {}
-        self.settings = {}
+        self.status : dict[str, Any] = {}
+        self.settings : dict[str, Any] = {}
         self.cache = cache
         self.didLoad = False
         self.inTransaction = False
 
-    def load(self):
+    def load(self) -> None:
+        """Load all data from the endpoint (unless cached data is available)"""
         if self.didLoad and self.cache:
             return
         self.status = {}
@@ -33,15 +40,18 @@ class IotsaEndpoint(object):
         self.status = self.device.protocolHandler.get(self.endpoint)
         self.didLoad = True
 
-    def flush(self):
+    def flush(self) -> None:
+        """Clear all loaded data (so it will be reloaded even when caching)"""
         self.didLoad = False
         self.status = {}
         self.settings = {}
 
-    def transaction(self):
+    def transaction(self) -> None:
+        """Start set of updates that will be sent to the device atomically"""
         self.inTransaction = True
 
-    def commit(self):
+    def commit(self) -> None:
+        """Send all updates since transaction() to the device"""
         settings = self.settings
         self.settings = {}
         self.inTransaction = False
@@ -59,7 +69,12 @@ class IotsaEndpoint(object):
                 if VERBOSE:
                     print("config: reboot to activate new setting")
 
-    def get(self, name, default="no default"):
+    def get(self, name : str, default : Any = "no default"):
+        """Get a named value from previous loaded (or set) data
+        
+        :param name: the name of the value to get
+        :param default: optional default value, if not specified KeyError is raised
+        """
         self.load()
         if default == "no default":
             return self.status[name]
@@ -68,55 +83,71 @@ class IotsaEndpoint(object):
     def __getattr__(self, name):
         return self.get(name)
 
-    def getAll(self):
+    def getAll(self) -> dict[str, Any]:
+        """Return dictionary with all values"""
         self.load()
         return copy.deepcopy(self.status)
 
-    def set(self, name, value):
+    def set(self, name : str, value : Any) -> None:
+        """Set a value immedeately (if not in a transaction) or remember the set operation for the commit
+        
+        :param name: name to set
+        :param value: the value
+        """
         self.settings[name] = value
         if not self.inTransaction:
             self.commit()
 
-    def printStatus(self):
+    def printStatus(self) -> None:
+        """Print all names and values previously loaded"""
         self.load()
         print("%s:" % self.device.ipAddress)
         for k, v in list(self.status.items()):
             print("  %-16s %s" % (str(k) + ":", v))
 
-
-class IotsaDevice(object):
+class IotsaDevice:
+    """Class representing a iotsa device
+    
+    :param ipAddress: hostname or ip address of iotsa device
+    :param port: (optional) override of port implied by protocol
+    :param protocol: (optional) protocol to contact device on, default is to sniff the device
+    :param noverify: do not verify HTTPS certificates (debug only)
+    :param bearer: (optional) Authorization bearer token
+    :param auth: (optional) Anthentication tuple
+    """
     def __init__(
         self,
-        ipAddress,
-        port=None,
-        protocol=None,
-        noverify=False,
-        bearer=None,
-        auth=None,
+        ipAddress : str,
+        port : Optional[int] = None,
+        protocol : Optional[str] = None,
+        noverify : bool = False,
+        bearer : Optional[str] = None,
+        auth : Optional[Tuple[str, str]] = None,
     ):
         self.ipAddress = ipAddress
-        self.protocolHandler = None
         if protocol == None:
             protocol, noverify = self._guessProtocol(ipAddress, port)
         url = "%s://%s" % (protocol, ipAddress)
         if port:
             url += ":%d" % port
+        assert protocol
         HandlerClass = HandlerForProto[protocol]
-        self.protocolHandler = HandlerClass(
+        self.protocolHandler : IotsaAbstractProtocolHandler = HandlerClass(
             url, noverify=noverify, bearer=bearer, auth=auth
         )
         self.config = IotsaEndpoint(self, "config", cache=True)
-        self.auth = None
-        self.bearerToken = None
+        self.auth : Optional[Tuple[str, str]] = None
+        self.bearerToken : Optional[str] = None
         self.apis = {"config": self.config}
 
     def __del__(self):
         self.close()
 
-    _ProtocolCache = {}
+    _ProtocolCache : dict[Tuple[str, Optional[int]], Tuple[str, bool]] = {}
 
     @classmethod
-    def _guessProtocol(klass, ipAddress, port):
+    def _guessProtocol(klass, ipAddress : str, port : Optional[int]) -> Tuple[str, bool]:
+        """Sniff device to guess supported protocol"""
         if (ipAddress, port) in klass._ProtocolCache:
             return klass._ProtocolCache[(ipAddress, port)]
         protocol = "https"
@@ -182,23 +213,28 @@ class IotsaDevice(object):
             "Cannot determine protocol to use for {}, use --protocol".format(ipAddress)
         )
 
-    def close(self):
+    def close(self) -> None:
+        """Close connection to the iotsa device"""
         if self.protocolHandler:
             self.protocolHandler.close()
-        self.protocolHandler = None
-        self.apis = None
+        del self.protocolHandler
+        self.apis = {}
 
-    def flush(self):
+    def flush(self) -> None:
+        """Clear all endpoint caches"""
         for a in self.apis.values():
             a.flush()
 
-    def setLogin(self, username, password):
+    def setLogin(self, username : str, password : str) -> None:
+        """Supply Basic authentication information"""
         self.auth = (username, password)
 
-    def setBearerToken(self, token):
+    def setBearerToken(self, token : str) -> None:
+        """Supply Authorization bearer token"""
         self.bearerToken = token
 
-    def getApi(self, api):
+    def getApi(self, api : str) -> IotsaEndpoint:
+        """Return IotsaEndpoint for a given module within the device"""
         if not api in self.apis:
             self.apis[api] = IotsaEndpoint(self, api)
         return self.apis[api]
@@ -206,7 +242,8 @@ class IotsaDevice(object):
     def __getattr__(self, name):
         return self.getApi(name)
 
-    def getAll(self):
+    def getAll(self) -> dict[str, IotsaEndpoint]:
+        """Get dictionary of all modules (except config, which is already in self.config)"""
         all = self.config.getAll()
         moduleNames = all.get("modules", [])
         modules = {}
@@ -219,6 +256,7 @@ class IotsaDevice(object):
         return all
 
     def printStatus(self):
+        """Print all config settings and their values"""
         status = self.config.getAll()
         print("%s:" % self.ipAddress)
         print("  program:        ", status.pop("program", "unknown"))
@@ -270,7 +308,8 @@ class IotsaDevice(object):
         for k, v in list(status.items()):
             print("  %-16s %s" % (k + ":", v))
 
-    def modeName(self, mode):
+    def modeName(self, mode : int) -> str:
+        """Convert iotsa runtime mode integer to descriptive string"""
         if mode is None:
             return "unknown"
         mode = int(mode)
@@ -279,11 +318,20 @@ class IotsaDevice(object):
             return names[mode]
         return "unknown-mode-%d" % mode
 
-    def modeForName(self, name):
+    def modeForName(self, name : str) -> int:
+        """Convert iotsa runtime mode string to integer"""
         names = ["normal", "config", "ota", "factoryReset"]
         return names.index(name)
 
-    def gotoMode(self, modeName, wait=False, verbose=False):
+    def gotoMode(self, modeName : str, wait : bool=False, verbose : bool=False) -> None:
+        """Ask iotsa device to switch runtime mode
+        
+        Note that mode switching may require user intervention, such as rebooting the device.
+
+        :param modeName: the runtime mode wanted
+        :param wait: (optional) if True wait for the mode change to have happened
+        :param verbose: print what is happening, and prompt the user if action is required
+        """
         mode = self.modeForName(modeName)
         if self.config.get("currentMode") == mode:
             if verbose:
@@ -328,6 +376,7 @@ class IotsaDevice(object):
             print("%s: target is now in %s mode" % (sys.argv[0], self.modeName(mode)))
 
     def reboot(self):
+        """Reboot the iotsa device"""
         self.protocolHandler.put("config", json={"reboot": True})
 
     def _find_espota(self):
@@ -350,7 +399,11 @@ class IotsaDevice(object):
             )
         return espota
 
-    def ota(self, filename):
+    def ota(self, filename : str) -> None:
+        """Upload new firmware (Over The Air) to iotsa device
+        
+        Note that device must be in runtime mode ota for this call to succeed.
+        """
         if not os.path.exists(filename):
             filename, _ = urllib.request.urlretrieve(filename)
         espota = self._find_espota()
@@ -360,17 +413,23 @@ class IotsaDevice(object):
         if status != 0:
             raise IotsaError("OTA command %s failed" % (cmd))
 
-    def uploadCertificate(self, keyData, certificateData):
+    def uploadCertificate(self, keyData : Union[str, bytes], certificateData : Union[str, bytes]) -> None:
+        """Upload new SSL key and certificate to the device
+        
+        Note that device must be in mode config for this call to succeed
+        """
         if isinstance(keyData, str) and keyData.startswith("---"):
-            keyData = keyData.splitlines()
-            keyData = keyData[1:-1]
-            keyData = "\n".join(keyData)
-            keyData = binascii.a2b_base64(keyData)
+            keyDataSplit = keyData.splitlines()
+            keyDataSplit = keyDataSplit[1:-1]
+            keyDataJoin = "\n".join(keyDataSplit)
+            keyData = binascii.a2b_base64(keyDataJoin)
+        assert isinstance(keyData, bytes)
         if isinstance(certificateData, str) and certificateData.startswith("---"):
-            certificateData = certificateData.splitlines()
-            certificateData = certificateData[1:-1]
-            certificateData = "\n".join(certificateData)
-            certificateData = binascii.a2b_base64(certificateData)
+            certificateDataSplit = certificateData.splitlines()
+            certificateDataSplit = certificateDataSplit[1:-1]
+            certificateDataJoin = "\n".join(certificateDataSplit)
+            certificateData = binascii.a2b_base64(certificateDataJoin)
+        assert isinstance(certificateData, bytes)
         keyFile = io.BytesIO(keyData)
         files = {
             "keyFile": ("httpsKey.der", keyFile, "application/binary"),
