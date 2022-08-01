@@ -11,10 +11,11 @@ if _have_mdns:
 
     class PlatformMDNSCollector:
         """Search for iotsa devices using mDNS/zeroconf/bonjour/rendezvous
-        
+
         All devices advertising on mDNS will be checked for providing an _iotsa service
         (over http/https/tcp/coap) and only the devices that do will be returned.
         """
+
         def __init__(self):
             self.found = []
             if VERBOSE:
@@ -49,9 +50,9 @@ if _have_mdns:
                 return
             self.found.append(info.server)
 
-        def run(self, timeout : int = 5) -> List[str]:
+        def run(self, timeout: int = 5) -> List[str]:
             """Run the mDNS browser.
-            
+
             :param timeout: how many seconds to wait for iotsa devices
             :return: list of iotsa devices found
             """
@@ -62,7 +63,9 @@ if _have_mdns:
             if VERBOSE:
                 print("Stop mDNS browsing, found", self.found)
             return self.found
+
 else:
+
     class PlatformMDNSCollector:
         """Default mDNS handling: ask the user"""
 

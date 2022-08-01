@@ -12,11 +12,12 @@ IOTSA_REBOOT_CHARACTERISTIC = ""
 
 class BLE:
     """Handle iotsa device connectable over Bluetooth LE"""
+
     discover_timeout = 11
 
     def __init__(self):
         self.verbose = False
-        self._allDevices : list[str] = []
+        self._allDevices: list[str] = []
         self._currentDevice = None
         self._currentConnection = None
         self._serviceCollection = None
@@ -37,11 +38,11 @@ class BLE:
         if iotsaCandidates:
             self._allDevices = iotsaCandidates
 
-    def selectDevice(self, name_or_address : str) -> bool:
+    def selectDevice(self, name_or_address: str) -> bool:
         self.loop.run_until_complete(self._asyncSelectDevice(name_or_address))
         return self._currentDevice != None
 
-    async def _asyncSelectDevice(self, name_or_address : str):
+    async def _asyncSelectDevice(self, name_or_address: str):
         if re.fullmatch("[0-9a-fA-F:-]*", name_or_address):
             dev = await bleak.BleakScanner.find_device_by_address(name_or_address)
         else:
@@ -84,20 +85,20 @@ class BLE:
                         )
                     sys.stdout.flush()
 
-    def set(self, name : str, value : Any) -> None:
+    def set(self, name: str, value: Any) -> None:
         self.loop.run_until_complete(self._asyncSet(name, value))
 
-    async def _asyncSet(self, name : str, value : Any) -> None:
+    async def _asyncSet(self, name: str, value: Any) -> None:
         uuid = name_to_uuid(name)
         async with self._currentConnection as client:
             await client.write_gatt_char_typed(uuid, value, response=True)
 
-    def get(self, name : str) -> Any:
-        self._get_rv : Any = None
+    def get(self, name: str) -> Any:
+        self._get_rv: Any = None
         self.loop.run_until_complete(self._asyncGet(name))
         return self._get_rv
 
-    async def _asyncGet(self, name : str):
+    async def _asyncGet(self, name: str):
         uuid = name_to_uuid(name)
         async with self._currentConnection as client:
             try:

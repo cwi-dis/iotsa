@@ -17,11 +17,18 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from .consts import UserIntervention, IotsaError, CoapError, VERBOSE
 
+
 class IotsaAbstractProtocolHandler(ABC):
     """Abstract base class for REST and COAP protocol handlers"""
 
     @abstractmethod
-    def __init__(self, baseURL : str, noverify : bool = False, bearer : Optional[str] = None, auth : Optional[Tuple[str, str]] = None):
+    def __init__(
+        self,
+        baseURL: str,
+        noverify: bool = False,
+        bearer: Optional[str] = None,
+        auth: Optional[Tuple[str, str]] = None,
+    ):
         pass
 
     @abstractmethod
@@ -30,9 +37,9 @@ class IotsaAbstractProtocolHandler(ABC):
         pass
 
     @abstractmethod
-    def get(self, endpoint : str, json : Any = None) -> Any:
+    def get(self, endpoint: str, json: Any = None) -> Any:
         """Send a REST GET request.
-        
+
         :param endpoint: last part of URL
         :param json: optional argument, will be json-encoded
         :return: any return value, json-decoded
@@ -40,9 +47,9 @@ class IotsaAbstractProtocolHandler(ABC):
         pass
 
     @abstractmethod
-    def put(self, endpoint : str, json : Any = None) -> Any:
+    def put(self, endpoint: str, json: Any = None) -> Any:
         """Send a REST PUT request.
-        
+
         :param endpoint: last part of URL
         :param json: optional argument, will be json-encoded
         :return: any return value, json-decoded
@@ -50,9 +57,11 @@ class IotsaAbstractProtocolHandler(ABC):
         pass
 
     @abstractmethod
-    def post(self, endpoint : str, json : Any = None, files : Optional[dict[str, Any]] = None) -> Any:
+    def post(
+        self, endpoint: str, json: Any = None, files: Optional[dict[str, Any]] = None
+    ) -> Any:
         """Send a REST POST request.
-        
+
         :param endpoint: last part of URL
         :param json: optional argument, will be json-encoded
         :param files: optional files to upload, passed to requests.request
@@ -61,9 +70,16 @@ class IotsaAbstractProtocolHandler(ABC):
         pass
 
     @abstractmethod
-    def request(self, method : str, endpoint : str, json : Any = None, files : Optional[dict[str, Any]]= None, retryCount : int = 5) -> Any:
+    def request(
+        self,
+        method: str,
+        endpoint: str,
+        json: Any = None,
+        files: Optional[dict[str, Any]] = None,
+        retryCount: int = 5,
+    ) -> Any:
         """Send a REST request.
-        
+
         :param method: REST method
         :param endpoint: last part of URL
         :param json: optional argument, will be json-encoded
@@ -72,15 +88,23 @@ class IotsaAbstractProtocolHandler(ABC):
         """
         pass
 
+
 class IotsaRESTProtocolHandler(IotsaAbstractProtocolHandler):
     """Communicate with iotsa device using REST over HTTP or HTTPS
-    
+
     :param baseurl: first part of URL (endpoint arguments will be appended)
     :param noverify: skip SSL certificate verification (debugging only)
     :param bearer: (optional) Authorization bearer token
     :param auth: (optional) Anthentication tuple
     """
-    def __init__(self, baseURL : str, noverify : bool = False, bearer : Optional[str] = None, auth : Optional[Tuple[str, str]] = None):
+
+    def __init__(
+        self,
+        baseURL: str,
+        noverify: bool = False,
+        bearer: Optional[str] = None,
+        auth: Optional[Tuple[str, str]] = None,
+    ):
         if baseURL[-1] != "/":
             baseURL += "/"
         self.baseURL = baseURL
@@ -150,11 +174,11 @@ class IotsaRESTProtocolHandler(IotsaAbstractProtocolHandler):
 
 class IotsaCOAPProtocolHandler(IotsaAbstractProtocolHandler):
     """Communicate with iotsa device using COAP over UDP
-    
+
     :param baseurl: first part of URL (endpoint arguments will be appended)
     """
 
-    def __init__(self, baseURL : str, bearer=None, noverify=None, auth=None):
+    def __init__(self, baseURL: str, bearer=None, noverify=None, auth=None):
         self.client = None
         if bearer:
             raise CoapError("bearer not supported for coap")
@@ -251,7 +275,7 @@ class IotsaCOAPProtocolHandler(IotsaAbstractProtocolHandler):
         return jsonmod.loads(rv.payload)
 
 
-HandlerForProto : dict[str, Type[IotsaAbstractProtocolHandler]] = {
+HandlerForProto: dict[str, Type[IotsaAbstractProtocolHandler]] = {
     "http": IotsaRESTProtocolHandler,
     "https": IotsaRESTProtocolHandler,
     "coap": IotsaCOAPProtocolHandler,

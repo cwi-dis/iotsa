@@ -25,11 +25,11 @@ class Main(object):
     """Main commandline program"""
 
     def __init__(self):
-        self.wifi : Optional[api.IotsaWifi] = None
-        self.device : Optional[api.IotsaDevice] = None
-        self.dfu : Optional[api.dfu] = None
-        self.ble : Optional[api.BLE] = None
-        self.cmdlist : list[str] = []
+        self.wifi: Optional[api.IotsaWifi] = None
+        self.device: Optional[api.IotsaDevice] = None
+        self.dfu: Optional[api.dfu] = None
+        self.ble: Optional[api.BLE] = None
+        self.cmdlist: list[str] = []
 
     def __del__(self):
         self.close()

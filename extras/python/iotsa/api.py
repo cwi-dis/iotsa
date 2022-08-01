@@ -15,18 +15,20 @@ from .ble import BLE
 from .wifi import IotsaWifi
 from .protocols import HandlerForProto, IotsaAbstractProtocolHandler
 
+
 class IotsaEndpoint:
     """Class representing a iotsa (REST or COAP) endpoint.
-    
+
     :param device: The iotsa device to which this endpoint belongs
     :param api: string used to address the endpoint within the device
     :param cache: if true allow values to be reused without contacting the device again
     """
-    def __init__(self, device : "IotsaDevice", api : str, cache : bool = False):
+
+    def __init__(self, device: "IotsaDevice", api: str, cache: bool = False):
         self.device = device
         self.endpoint = api
-        self.status : dict[str, Any] = {}
-        self.settings : dict[str, Any] = {}
+        self.status: dict[str, Any] = {}
+        self.settings: dict[str, Any] = {}
         self.cache = cache
         self.didLoad = False
         self.inTransaction = False
@@ -69,9 +71,9 @@ class IotsaEndpoint:
                 if VERBOSE:
                     print("config: reboot to activate new setting")
 
-    def get(self, name : str, default : Any = "no default"):
+    def get(self, name: str, default: Any = "no default"):
         """Get a named value from previous loaded (or set) data
-        
+
         :param name: the name of the value to get
         :param default: optional default value, if not specified KeyError is raised
         """
@@ -88,9 +90,9 @@ class IotsaEndpoint:
         self.load()
         return copy.deepcopy(self.status)
 
-    def set(self, name : str, value : Any) -> None:
+    def set(self, name: str, value: Any) -> None:
         """Set a value immedeately (if not in a transaction) or remember the set operation for the commit
-        
+
         :param name: name to set
         :param value: the value
         """
@@ -105,9 +107,10 @@ class IotsaEndpoint:
         for k, v in list(self.status.items()):
             print("  %-16s %s" % (str(k) + ":", v))
 
+
 class IotsaDevice:
     """Class representing a iotsa device
-    
+
     :param ipAddress: hostname or ip address of iotsa device
     :param port: (optional) override of port implied by protocol
     :param protocol: (optional) protocol to contact device on, default is to sniff the device
@@ -115,14 +118,15 @@ class IotsaDevice:
     :param bearer: (optional) Authorization bearer token
     :param auth: (optional) Anthentication tuple
     """
+
     def __init__(
         self,
-        ipAddress : str,
-        port : Optional[int] = None,
-        protocol : Optional[str] = None,
-        noverify : bool = False,
-        bearer : Optional[str] = None,
-        auth : Optional[Tuple[str, str]] = None,
+        ipAddress: str,
+        port: Optional[int] = None,
+        protocol: Optional[str] = None,
+        noverify: bool = False,
+        bearer: Optional[str] = None,
+        auth: Optional[Tuple[str, str]] = None,
     ):
         self.ipAddress = ipAddress
         if protocol == None:
@@ -132,21 +136,21 @@ class IotsaDevice:
             url += ":%d" % port
         assert protocol
         HandlerClass = HandlerForProto[protocol]
-        self.protocolHandler : IotsaAbstractProtocolHandler = HandlerClass(
+        self.protocolHandler: IotsaAbstractProtocolHandler = HandlerClass(
             url, noverify=noverify, bearer=bearer, auth=auth
         )
         self.config = IotsaEndpoint(self, "config", cache=True)
-        self.auth : Optional[Tuple[str, str]] = None
-        self.bearerToken : Optional[str] = None
+        self.auth: Optional[Tuple[str, str]] = None
+        self.bearerToken: Optional[str] = None
         self.apis = {"config": self.config}
 
     def __del__(self):
         self.close()
 
-    _ProtocolCache : dict[Tuple[str, Optional[int]], Tuple[str, bool]] = {}
+    _ProtocolCache: dict[Tuple[str, Optional[int]], Tuple[str, bool]] = {}
 
     @classmethod
-    def _guessProtocol(klass, ipAddress : str, port : Optional[int]) -> Tuple[str, bool]:
+    def _guessProtocol(klass, ipAddress: str, port: Optional[int]) -> Tuple[str, bool]:
         """Sniff device to guess supported protocol"""
         if (ipAddress, port) in klass._ProtocolCache:
             return klass._ProtocolCache[(ipAddress, port)]
@@ -225,15 +229,15 @@ class IotsaDevice:
         for a in self.apis.values():
             a.flush()
 
-    def setLogin(self, username : str, password : str) -> None:
+    def setLogin(self, username: str, password: str) -> None:
         """Supply Basic authentication information"""
         self.auth = (username, password)
 
-    def setBearerToken(self, token : str) -> None:
+    def setBearerToken(self, token: str) -> None:
         """Supply Authorization bearer token"""
         self.bearerToken = token
 
-    def getApi(self, api : str) -> IotsaEndpoint:
+    def getApi(self, api: str) -> IotsaEndpoint:
         """Return IotsaEndpoint for a given module within the device"""
         if not api in self.apis:
             self.apis[api] = IotsaEndpoint(self, api)
@@ -308,7 +312,7 @@ class IotsaDevice:
         for k, v in list(status.items()):
             print("  %-16s %s" % (k + ":", v))
 
-    def modeName(self, mode : int) -> str:
+    def modeName(self, mode: int) -> str:
         """Convert iotsa runtime mode integer to descriptive string"""
         if mode is None:
             return "unknown"
@@ -318,14 +322,16 @@ class IotsaDevice:
             return names[mode]
         return "unknown-mode-%d" % mode
 
-    def modeForName(self, name : str) -> int:
+    def modeForName(self, name: str) -> int:
         """Convert iotsa runtime mode string to integer"""
         names = ["normal", "config", "ota", "factoryReset"]
         return names.index(name)
 
-    def gotoMode(self, modeName : str, wait : bool=False, verbose : bool=False) -> None:
+    def gotoMode(
+        self, modeName: str, wait: bool = False, verbose: bool = False
+    ) -> None:
         """Ask iotsa device to switch runtime mode
-        
+
         Note that mode switching may require user intervention, such as rebooting the device.
 
         :param modeName: the runtime mode wanted
@@ -399,9 +405,9 @@ class IotsaDevice:
             )
         return espota
 
-    def ota(self, filename : str) -> None:
+    def ota(self, filename: str) -> None:
         """Upload new firmware (Over The Air) to iotsa device
-        
+
         Note that device must be in runtime mode ota for this call to succeed.
         """
         if not os.path.exists(filename):
@@ -413,9 +419,11 @@ class IotsaDevice:
         if status != 0:
             raise IotsaError("OTA command %s failed" % (cmd))
 
-    def uploadCertificate(self, keyData : Union[str, bytes], certificateData : Union[str, bytes]) -> None:
+    def uploadCertificate(
+        self, keyData: Union[str, bytes], certificateData: Union[str, bytes]
+    ) -> None:
         """Upload new SSL key and certificate to the device
-        
+
         Note that device must be in mode config for this call to succeed
         """
         if isinstance(keyData, str) and keyData.startswith("---"):
