@@ -19,10 +19,12 @@
     "platforms" : [ "espressif8266", "espressif32"],
     "dependencies" : [
         {
-            "name" : "Adafruit NeoPixel"
+            "name" : "Adafruit NeoPixel",
+            "owner" : "adafruit"
         },
         {
-            "name" : "ArduinoJson"
+            "name" : "ArduinoJson",
+            "owner" : "bblanchon"
         },
         {
             "name" : "ArduinoJWT",
