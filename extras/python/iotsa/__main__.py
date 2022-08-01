@@ -5,6 +5,7 @@ import requests
 import time
 import os
 import subprocess
+from typing import Optional
 import urllib.request, urllib.parse, urllib.error
 import socket
 
@@ -24,11 +25,11 @@ class Main(object):
     """Main commandline program"""
 
     def __init__(self):
-        self.wifi = None
-        self.device = None
-        self.dfu = None
-        self.ble = None
-        self.cmdlist = []
+        self.wifi : Optional[api.IotsaWifi] = None
+        self.device : Optional[api.IotsaDevice] = None
+        self.dfu : Optional[api.dfu] = None
+        self.ble : Optional[api.BLE] = None
+        self.cmdlist : list[str] = []
 
     def __del__(self):
         self.close()
