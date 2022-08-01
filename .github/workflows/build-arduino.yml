@@ -82,8 +82,6 @@ jobs:
         arduino-cli core install "esp8266:esp8266" --additional-urls "https://arduino.esp8266.com/stable/package_esp8266com_index.json"
 
         arduino-cli lib install "Adafruit NeoPixel"
-        arduino-cli lib install "Time"
-        arduino-cli lib install "Timezone"
         arduino-cli lib install "ArduinoJson"
         arduino-cli lib install "CoAP simple library"
         arduino-cli lib install "ESP32_HTTPS_Server"
@@ -128,7 +126,7 @@ jobs:
 #      with:
 #        platform-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json,https://dl.espressif.com/dl/package_esp32_index.json
 #        arduino-board-fqbn: ${{ matrix. arduino-board-fqbn }}
-#        required-libraries: Adafruit NeoPixel,Time,Timezone,ArduinoJson,CoAP simple library,ESP32_HTTPS_Server,esp32_https_server_compat,DHT sensor library,Adafruit Unified Sensor
+#        required-libraries: Adafruit NeoPixel,ArduinoJson,CoAP simple library,ESP32_HTTPS_Server,esp32_https_server_compat,DHT sensor library,Adafruit Unified Sensor
 
     - name: Uninstall iotsa and custom libraries
       run: |

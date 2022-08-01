@@ -36,8 +36,6 @@ To do fun things with the iotsa board you will need to do some programming, and 
 * For programming you need the [Arduino IDE](https://arduino.cc), <https://arduino.cc>. You need the version for your computer, not the web version. The Arduino website also has lots of information on getting started with programming Arduino-like devices (such as your iotsa board).
 * You also need to install the [ESP8266 support for the Arduino IDE](https://github.com/esp8266/Arduino), <https://github.com/esp8266/Arduino> additions. And again that website has documentation on all the extra features (such as WiFi) that esp8266 devices (such as your iotsa board) give you access to.
 * You need to install the [iotsa library](https://github.com/cwi-dis/iotsa), <https://github.com/cwi-dis/iotsa>.
-* You may want to install some additional libraries and/or disable them:
-	* Check `iotsa/iotsaNtp.h` to enable or disable timezone support using `WITH_TIMEZONE_LIBRARY`. If enabled, you need to install <https://github.com/JChristensen/Timezone> and <http://playground.arduino.cc/code/time>.
 
 > It is also possible to use _PlatformIO_ in stead of the _Arduino IDE_ to program your iotsa board. View the [readme file](../readme.md) for details.
 

@@ -3,10 +3,6 @@
 #include <time.h>
 #include <stdlib.h>
 
-#ifdef IOTSA_WITH_TIMEZONE_LIBRARY
-#include <Timezone.h>
-#endif
-
 #define NTP_INTERVAL  600 // How often to ask for an NTP reading
 #define NTP_MIN_INTERVAL 20 // How often to ask if we have no NTP reading yet
 
@@ -19,13 +15,7 @@ unsigned long IotsaNtpMod::utcTime()
 
 unsigned long IotsaNtpMod::localTime()
 {
-#ifdef IOTSA_WITH_TIMEZONE_LIBRARY
-  if (tz) {
-  	return tz->toLocal(utcTime());
-  } else {
-  	return utcTime();
-  }
-#elif defined(IOTSA_WITH_TIMEZONE_LIBC)
+#ifdef IOTSA_WITH_TIMEZONE
   time_t systime;
   time(&systime);
   struct tm *tp = localtime(&systime);
@@ -124,11 +114,7 @@ IotsaNtpMod::handler() {
 #ifdef IOTSA_WITH_TIMEZONE
   message += "Timezone change information: <input name='tzDescription' value='";
   message += htmlEncode(tzDescription);
-#ifdef IOTSA_WITH_TIMEZONE_LIBRARY
-  message += "'><br>(format  twice <i>name,week(last=0),dow(sun=1),month,hour(utc),delta</i> for example <kbd>CEDT,0,1,3,1,120,CET,0,1,10,1,60</kbd>)<br>";
-#else
   message += "'><br>(format: unix TZ)<br>";
-#endif
 #else
   message += "Minutes west from UTC: <input name='minutesWest' value='";
   message += String(minutesWestFromUtc);
@@ -329,84 +315,9 @@ void IotsaNtpMod::loop() {
 
 #ifdef IOTSA_WITH_TIMEZONE
 void IotsaNtpMod::parseTimezone(const String& newDesc) {
-#ifdef IOTSA_WITH_TIMEZONE_LIBRARY
-	TimeChangeRule dstRule, stdRule;
-	char descBuffer[80];
-	char *token;
-	
-	tzDescription = String();
-	if (tz) delete tz;
-	
-	// Special case: a single number means a constant timezone offset.
-	if (strchr(newDesc.c_str(), ',') == NULL) {
-		strncpy(dstRule.abbrev, newDesc.c_str(), 5); dstRule.abbrev[5] = '\0';
-		dstRule.week = 1;
-		dstRule.dow = 1;
-		dstRule.month = 1;
-		dstRule.hour = 0;
-		dstRule.offset = newDesc.toInt();
-		tzDescription = String(dstRule.offset);
-		tz = new Timezone(dstRule, dstRule);
-		return;
-	}
-	
-	// Normal case: 12 fields separated by commas.
-	strncpy(descBuffer, newDesc.c_str(), 80);
-	token = strtok(descBuffer, ",");
-	if (token == NULL) return;
-	strncpy(dstRule.abbrev, token, 5); dstRule.abbrev[5] = '\0';
-	
-	token = strtok(NULL, ",");
-	if (token == NULL) return;
-	dstRule.week = atoi(token);
-	
-	token = strtok(NULL, ",");
-	if (token == NULL) return;
-	dstRule.dow = atoi(token);
-	
-	token = strtok(NULL, ",");
-	if (token == NULL) return;
-	dstRule.month = atoi(token);
-	
-	token = strtok(NULL, ",");
-	if (token == NULL) return;
-	dstRule.hour = atoi(token);
-	
-	token = strtok(NULL, ",");
-	if (token == NULL) return;
-	dstRule.offset = atoi(token);
-	
-	token = strtok(NULL, ",");
-	if (token == NULL) return;
-	strncpy(stdRule.abbrev, token, 5); stdRule.abbrev[5] = '\0';
-	
-	token = strtok(NULL, ",");
-	if (token == NULL) return;
-	stdRule.week = atoi(token);
-	
-	token = strtok(NULL, ",");
-	if (token == NULL) return;
-	stdRule.dow = atoi(token);
-	
-	token = strtok(NULL, ",");
-	if (token == NULL) return;
-	stdRule.month = atoi(token);
-	
-	token = strtok(NULL, ",");
-	if (token == NULL) return;
-	stdRule.hour = atoi(token);
-	
-	token = strtok(NULL, ",");
-	if (token == NULL) return;
-	stdRule.offset = atoi(token);
-	
-	tzDescription = newDesc;
-	tz = new Timezone(dstRule, stdRule);
-#else
   tzDescription = newDesc;
   setenv("TZ", newDesc.c_str(), 1);
   tzset();
-#endif
 }
 #else
 void IotsaNtpMod::_setupTimezone() {
@@ -415,4 +326,4 @@ void IotsaNtpMod::_setupTimezone() {
   setenv("TZ", tzenvbuf, 1);
   tzset();
 }
-#endif // IOTSA_WITH_TIMEZONE_LIBRARY
+#endif // IOTSA_WITH_TIMEZONE
