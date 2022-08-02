@@ -46,7 +46,10 @@ jobs:
         - DateTime
         variant: [""]
         build_flags: [""]
-        # Extra options/settings.
+        # Exclude the "normal" Temperature matrix entries: it needs extra libraries specified.
+        exclude:
+        - example: Temperature
+        # Extra matrix entries:
         include:
         # Extra build: Led with HTTPS
         - example: Led
@@ -58,21 +61,31 @@ jobs:
         # Extra build: Led with COAP
         - example: Led
           build_flags: -DIOTSA_WITH_COAP
+          board: nodemcuv2
+        - example: Led
+          build_flags: -DIOTSA_WITH_COAP
+          board: esp32thing
         # Extra build: Led with only COAP support (no web, no rest, no http/s)
         - example: Led
           variant: onlycoap-
           build_flags: -DIOTSA_WITH_COAP -DIOTSA_WITHOUT_WEB -DIOTSA_WITHOUT_REST -DIOTSA_WITHOUT_HTTP -DIOTSA_WITHOUT_HTTPS -DIOTSA_WITH_PLACEHOLDERS
+          board: nodemcuv2
+        - example: Led
+          variant: onlycoap-
+          build_flags: -DIOTSA_WITH_COAP -DIOTSA_WITHOUT_WEB -DIOTSA_WITHOUT_REST -DIOTSA_WITHOUT_HTTP -DIOTSA_WITHOUT_HTTPS -DIOTSA_WITH_PLACEHOLDERS
+          board: esp32thing
         # Extra build: BLELed with BLE added
         - example: BLELed
           variant: withble-
           board: esp32thing
           build_flags: -DIOTSA_WITH_BLE
-#        # Extra build: BLELed with only BLE (no web, http/s, rest, wifi)
-#        - example: BLELed
-#          variant: onlyble-
-#          board: esp32thing
-#          build_flags: -DIOTSA_WITH_BLE -DIOTSA_WITHOUT_COAP -DIOTSA_WITHOUT_WEB -DIOTSA_WITHOUT_API -DIOTSA_WITHOUT_REST -DIOTSA_WITHOUT_HTTP -DIOTSA_WITHOUT_HTTPS -DIOTSA_WITH_PLACEHOLDERS
-#          pio_extra_args: --project-option="board_build.partitions=no_ota.csv"
+          pio_extra_args: --project-option="board_build.partitions=min_spiffs.csv"
+       # Extra build: BLELed with only BLE (no web, http/s, rest, wifi)
+       - example: BLELed
+         variant: onlyble-
+         board: esp32thing
+         build_flags: -DIOTSA_WITH_BLE -DIOTSA_WITHOUT_COAP -DIOTSA_WITHOUT_WEB -DIOTSA_WITHOUT_API -DIOTSA_WITHOUT_REST -DIOTSA_WITHOUT_HTTP -DIOTSA_WITHOUT_HTTPS -DIOTSA_WITH_PLACEHOLDERS
+         pio_extra_args: --project-option="board_build.partitions=min_spiffs.csv"
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
