@@ -80,12 +80,12 @@ jobs:
           board: esp32thing
           build_flags: -DIOTSA_WITH_BLE
           pio_extra_args: --project-option="board_build.partitions=min_spiffs.csv"
-       # Extra build: BLELed with only BLE (no web, http/s, rest, wifi)
-       - example: BLELed
-         variant: onlyble-
-         board: esp32thing
-         build_flags: -DIOTSA_WITH_BLE -DIOTSA_WITHOUT_COAP -DIOTSA_WITHOUT_WEB -DIOTSA_WITHOUT_API -DIOTSA_WITHOUT_REST -DIOTSA_WITHOUT_HTTP -DIOTSA_WITHOUT_HTTPS -DIOTSA_WITH_PLACEHOLDERS
-         pio_extra_args: --project-option="board_build.partitions=min_spiffs.csv"
+        # Extra build: BLELed with only BLE (no web, http/s, rest, wifi)
+        - example: BLELed
+          variant: onlyble-
+          board: esp32thing
+          build_flags: -DIOTSA_WITH_BLE -DIOTSA_WITHOUT_COAP -DIOTSA_WITHOUT_WEB -DIOTSA_WITHOUT_API -DIOTSA_WITHOUT_REST -DIOTSA_WITHOUT_HTTP -DIOTSA_WITHOUT_HTTPS -DIOTSA_WITH_PLACEHOLDERS
+          pio_extra_args: --project-option="board_build.partitions=min_spiffs.csv"
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
