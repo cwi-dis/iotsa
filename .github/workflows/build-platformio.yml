@@ -55,11 +55,11 @@ jobs:
         - example: Temperature
           board: nodemcuv2
           build_flags:
-          pio_extra_args:
+          pio_extra_args: --project_option="lib_deps=adafruit/DHT sensor library"
         - example: Temperature
           board: esp32thing
           build_flags:
-          pio_extra_args:
+          pio_extra_args: --project_option="lib_deps=adafruit/DHT sensor library"
         # Extra build: Led with HTTPS
         - example: Led
           build_flags: -DIOTSA_WITH_HTTPS
