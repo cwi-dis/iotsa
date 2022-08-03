@@ -43,12 +43,11 @@ class VersionFile:
 
 
 def main():
-    progName = os.path.join(os.getcwd(), sys.argv[0])
-    baseDir = os.path.dirname(os.path.dirname(progName))
+    baseDir = os.getcwd()
     libraryConfig = os.path.join(baseDir, "library.json")
     version = os.path.join(baseDir, "src", "iotsaVersion.h")
     if not os.path.exists(libraryConfig) or not os.path.exists(version):
-        print(f"{sys.argv[0]}: Cannot find config files {libraryConfig} and {version}. Must be run from iotsa source tree.", file=sys.stderr)
+        print(f"mkversionh: Cannot find config files {libraryConfig} and {version}. Must be run from iotsa source tree.", file=sys.stderr)
         sys.exit(1)
 
     vf = VersionFile(version)
@@ -67,6 +66,8 @@ def main():
     commit = cmd.stdout.read().strip()
     if commit:
         vf.define("IOTSA_COMMIT", '"' + commit + '"')
+    else:
+        if VERBOSE: print("mkversionh: cannot git rev-parse to get version information", file=sys.stderr)
     fullVersion = vf.get("IOTSA_VERSION", '"unknown""')
     commit = vf.get("IOTSA_COMMIT")
     if commit:
