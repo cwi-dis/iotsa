@@ -5,6 +5,9 @@ import os
 import re
 import subprocess
 
+Import("env")
+print("mkversion: env: ", env.Dump(), file=sys.stderr)
+
 VERBOSE=True
 
 DEFINE_PAT = re.compile(r"^#define\s+(?P<name>\w+)\s+(?P<value>.*)\s+$")
@@ -72,6 +75,4 @@ def main():
     if vf.changed:
         vf.save()
 
-
-if __name__ == "__main__":
-    main()
+main()
