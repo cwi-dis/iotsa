@@ -44,6 +44,7 @@ class VersionFile:
 
 def main():
     baseDir = os.getcwd()
+    baseDir = os.path.dirname(baseDir)
     libraryConfig = os.path.join(baseDir, "library.json")
     version = os.path.join(baseDir, "src", "iotsaVersion.h")
     if not os.path.exists(libraryConfig) or not os.path.exists(version):
