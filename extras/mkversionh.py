@@ -5,10 +5,10 @@ import os
 import re
 import subprocess
 
-Import("env")
-print("mkversion: env: ", env.Dump(), file=sys.stderr)
+# Import("env")
+# print("mkversionh: env: ", env.Dump(), file=sys.stderr)
 
-VERBOSE=True
+VERBOSE=False
 
 DEFINE_PAT = re.compile(r"^#define\s+(?P<name>\w+)\s+(?P<value>.*)\s+$")
 
@@ -18,7 +18,7 @@ class VersionFile:
         self.includeFile = includeFile
         self.defines = {}
         self.changed = False
-        if VERBOSE: print(f"mkversion: loading {self.includeFile}", file=sys.stderr)
+        if VERBOSE: print(f"mkversionh: loading {self.includeFile}", file=sys.stderr)
         for line in open(self.includeFile):
             match = DEFINE_PAT.match(line)
             if match:
@@ -26,9 +26,9 @@ class VersionFile:
 
     def define(self, name, value):
         if self.defines.get(name, None) == value:
-            if VERBOSE: print(f"mkversion: already set: {name}={value}", file=sys.stderr)
+            if VERBOSE: print(f"mkversionh: already set: {name}={value}", file=sys.stderr)
             return
-        if VERBOSE: print(f"mkversion: {name}={value}", file=sys.stderr)
+        if VERBOSE: print(f"mkversionh: {name}={value}", file=sys.stderr)
         self.defines[name] = value
         self.changed = True
 
@@ -36,7 +36,7 @@ class VersionFile:
         fp = open(self.includeFile, "w")
         for name, value in list(self.defines.items()):
             fp.write("#define %s %s\n" % (name, value))
-        if VERBOSE: print(f"mkversion: saved {self.includeFile}", file=sys.stderr)
+        if VERBOSE: print(f"mkversionh: saved {self.includeFile}", file=sys.stderr)
 
     def get(self, key, default=None):
         return self.defines.get(key, default)

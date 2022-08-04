@@ -1,3 +1,3 @@
 #define IOTSA_VERSION "2.5"
-#define IOTSA_COMMIT "unknown"
-#define IOTSA_FULL_VERSION "2.5+unknown"
+#define IOTSA_COMMIT "33753a0"
+#define IOTSA_FULL_VERSION "2.5+sha33753a0"
