@@ -28,7 +28,7 @@ class BLE:
         return self._allDevices
 
     async def _asyncFindDevices(self):
-        candidates = await bleak.discover(timeout=self.discover_timeout)
+        candidates = await bleak.BleakScanner.discover(timeout=self.discover_timeout)
         # Iotsa devices have a battery service, and a reboot charcteristic in that service.
         # So filter for those.
         iotsaCandidates = []
