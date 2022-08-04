@@ -9,6 +9,8 @@ from .bleIotsaUUIDs import name_to_uuid, uuid_to_name
 IOTSA_BATTERY_SERVICE = "0000180f-0000-1000-8000-00805f9b34fb"
 IOTSA_REBOOT_CHARACTERISTIC = ""
 
+class MyDisconnected(Exception):
+    pass
 
 class BLE:
     """Handle iotsa device connectable over Bluetooth LE"""
@@ -58,8 +60,14 @@ class BLE:
             return
         self._currentDevice = dev
         self._currentConnection = bleak.pythonic.client.BleakPythonicClient(
-            self._currentDevice, timeout=self.discover_timeout
+            self._currentDevice, 
+            timeout=self.discover_timeout,
+            disconnected_callback=self.disconnected
         )
+
+    def disconnected(self, c : bleak.BleakClient):
+        print(f"Warning: BLE client {c.address} disconnected", file=sys.stderr)
+        raise MyDisconnected
 
     def printStatus(self) -> None:
         self.loop.run_until_complete(self._asyncPrintStatus())
