@@ -1,3 +1,5 @@
+from .consts import IotsaError
+
 _uuid_to_name: dict[str, str] = {
     "0000180f-0000-1000-8000-00805f9b34fb": "battery",
     "00002a19-0000-1000-8000-00805f9b34fb": "levelBattery",
@@ -21,4 +23,8 @@ def uuid_to_name(uuid: str) -> str:
 
 
 def name_to_uuid(name: str) -> str:
-    return _name_to_uuid.get(name, name)
+    if name in _name_to_uuid:
+        return _name_to_uuid[name]
+    if len(name) == 32 + 4:
+        return name
+    raise IotsaError(f"Unknown BLE characteristic name: {name}")

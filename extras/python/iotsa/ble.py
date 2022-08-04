@@ -79,9 +79,9 @@ class BLE:
                             )
                         else:
                             print(f"\t{uuid_to_name(char.uuid)}={value}")
-                    except bleak.BleakError:
+                    except bleak.BleakError as e:
                         print(
-                            f"\t{uuid_to_name(char.uuid)} ({char.uuid} {char.description}): cannot read"
+                            f"\t{uuid_to_name(char.uuid)} ({char.uuid} {char.description}): cannot read: {e}"
                         )
                     sys.stdout.flush()
 
