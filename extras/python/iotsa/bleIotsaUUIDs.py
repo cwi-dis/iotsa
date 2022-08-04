@@ -2,7 +2,7 @@ _uuid_to_name: dict[str, str] = {
     "0000180f-0000-1000-8000-00805f9b34fb": "battery",
     "00002a19-0000-1000-8000-00805f9b34fb": "levelBattery",
     "e4d90002-250f-46e6-90a4-ab98f01a0587": "levelVUSB",
-    "e4d90002-250f-46e6-90a4-ab98f01a0587": "rebootWifi",
+    "e4d90003-250f-46e6-90a4-ab98f01a0587": "rebootWifi",
     "3b000001-1226-4a53-9d24-afa50c0163a3": "led",
     "3b000002-1226-4a53-9d24-afa50c0163a3": "rgb",
     "6b2f0001-38bc-4204-a506-1d3546ad3688": "lissabon",
