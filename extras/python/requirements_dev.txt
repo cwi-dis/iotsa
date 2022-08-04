@@ -2,3 +2,4 @@ mypy
 black
 Sphinx
 sphinx-rtd-theme
+types-requests

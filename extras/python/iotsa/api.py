@@ -23,12 +23,19 @@ class IotsaEndpoint:
     :param api: string used to address the endpoint within the device
     :param cache: if true allow values to be reused without contacting the device again
     """
+    device : "IotsaDevice"
+    endpoint : str
+    status : dict[str, Any]
+    settings : dict[str, Any]
+    cache : bool
+    didLoad : bool
+    inTransaction : bool
 
     def __init__(self, device: "IotsaDevice", api: str, cache: bool = False):
         self.device = device
         self.endpoint = api
-        self.status: dict[str, Any] = {}
-        self.settings: dict[str, Any] = {}
+        self.status = {}
+        self.settings = {}
         self.cache = cache
         self.didLoad = False
         self.inTransaction = False
@@ -118,6 +125,10 @@ class IotsaDevice:
     :param bearer: (optional) Authorization bearer token
     :param auth: (optional) Anthentication tuple
     """
+    ipAddress : str
+    protocolHandler : IotsaAbstractProtocolHandler
+    auth : Optional[Tuple[str, str]]
+    bearerToken : Optional[str]
 
     def __init__(
         self,
@@ -136,12 +147,12 @@ class IotsaDevice:
             url += ":%d" % port
         assert protocol
         HandlerClass = HandlerForProto[protocol]
-        self.protocolHandler: IotsaAbstractProtocolHandler = HandlerClass(
+        self.protocolHandler = HandlerClass(
             url, noverify=noverify, bearer=bearer, auth=auth
         )
         self.config = IotsaEndpoint(self, "config", cache=True)
-        self.auth: Optional[Tuple[str, str]] = None
-        self.bearerToken: Optional[str] = None
+        self.auth = None
+        self.bearerToken = None
         self.apis = {"config": self.config}
 
     def __del__(self):

@@ -1,7 +1,7 @@
 import sys
 import asyncio
 import re
-from typing import Any
+from typing import Any, Optional
 import bleak
 import bleak.pythonic.client
 from .bleIotsaUUIDs import name_to_uuid, uuid_to_name
@@ -14,6 +14,10 @@ class BLE:
     """Handle iotsa device connectable over Bluetooth LE"""
 
     discover_timeout = 11
+    _currentDevice : Optional[bleak.BLEDevice]
+    _currentConnection : Optional[bleak.BleakClient]
+    _serviceCollection : Optional[bleak.BleakGATTServiceCollection]
+    loop : asyncio.AbstractEventLoop
 
     def __init__(self):
         self.verbose = False
@@ -47,7 +51,7 @@ class BLE:
             dev = await bleak.BleakScanner.find_device_by_address(name_or_address)
         else:
             dev = await bleak.BleakScanner.find_device_by_filter(
-                lambda d, ad: d.name and d.name.lower() == name_or_address
+                lambda d, ad: bool(d.name) and d.name.lower() == name_or_address
             )
         if not dev:
             print(f"Device {name_or_address} not found")
@@ -90,6 +94,7 @@ class BLE:
 
     async def _asyncSet(self, name: str, value: Any) -> None:
         uuid = name_to_uuid(name)
+        assert self._currentConnection
         async with self._currentConnection as client:
             await client.write_gatt_char_typed(uuid, value, response=True)
 
@@ -100,6 +105,7 @@ class BLE:
 
     async def _asyncGet(self, name: str):
         uuid = name_to_uuid(name)
+        assert self._currentConnection
         async with self._currentConnection as client:
             try:
                 self._get_rv = await client.read_gatt_char_typed(uuid)
