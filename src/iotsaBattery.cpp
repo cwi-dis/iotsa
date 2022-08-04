@@ -160,7 +160,7 @@ void IotsaBatteryMod::setup() {
   bleApi.setup(serviceUUID, this);
   bleApi.addCharacteristic(levelVBatUUID, BLE_READ, BLE2904::FORMAT_UINT8, 0x27AD, "Battery Level");
   bleApi.addCharacteristic(levelVUSBUUID, BLE_READ, BLE2904::FORMAT_UINT8, 0x27AD, "USB Voltage Level");
-  bleApi.addCharacteristic(doSoftRebootUUID, BLE_WRITE, BLE2904::FORMAT_BOOLEAN, 0x2700, "Reboot with WiFi");
+  bleApi.addCharacteristic(doSoftRebootUUID, BLE_WRITE, BLE2904::FORMAT_UINT8, 0x2700, "Reboot with WiFi");
 #endif
   iotsaConfig.setExtensionCallback(std::bind(&IotsaBatteryMod::extendCurrentMode, this));
 }
@@ -242,7 +242,7 @@ bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, J
 bool IotsaBatteryMod::blePutHandler(UUIDstring charUUID) {
   if (charUUID == doSoftRebootUUID) {
       doSoftReboot = bleApi.getAsInt(doSoftRebootUUID);
-      IFDEBUG IotsaSerial.print("request reboot ");
+      IFDEBUG IotsaSerial.printf("request reboot mode %d\n", doSoftReboot);
       IFDEBUG IotsaSerial.println(doSoftReboot);
       return true;
   }
@@ -341,9 +341,13 @@ void IotsaBatteryMod::loop() {
   if (millisAtWifiWakeup == 0) millisAtWifiWakeup = millis();
   // If a reboot or configuration mode change has been requested (probably over BLE) we do so now.
   if (doSoftReboot) {
-    if (doSoftReboot == 2 && bleConfigModeSwitchAllowed) {
-      IFDEBUG IotsaSerial.println("Allow configmode change from BLE");
-      iotsaConfig.allowRequestedConfigurationMode();
+    if (doSoftReboot == 2) {
+      if (bleConfigModeSwitchAllowed) {
+        IFDEBUG IotsaSerial.println("Allow configmode change from BLE");
+        iotsaConfig.allowRequestedConfigurationMode();
+      } else {
+        IFDEBUG IotsaSerial.println("Configmode change from BLE requested but not allowed");
+      }
     } else {
       IFDEBUG IotsaSerial.println("Reboot from BLE");
       ESP.restart();
