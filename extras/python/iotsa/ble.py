@@ -74,7 +74,9 @@ class BLE:
             print(f"ble.set({name}, ...): exception: {e}")
 
     async def _asyncPrintStatus(self):
+        assert self._currentConnection
         async with self._currentConnection as client:
+            print(f"{client.address}:")
             self._serviceCollection = await client.get_services()
             for service in self._serviceCollection.services.values():
                 if self.verbose:
@@ -82,19 +84,19 @@ class BLE:
                         f"{uuid_to_name(service.uuid)} ({service.uuid} {service.description}):"
                     )
                 else:
-                    print(f"{uuid_to_name(service.uuid)}:")
+                    print(f"  {uuid_to_name(service.uuid)}:")
                 for char in service.characteristics:
                     try:
                         value = await client.read_gatt_char_typed(char.uuid)
                         if self.verbose:
                             print(
-                                f"\t{uuid_to_name(char.uuid)}={value} ({char.uuid} {char.description})"
+                                f"    {uuid_to_name(char.uuid)}: {value} # uuid={char.uuid} description={char.description}"
                             )
                         else:
-                            print(f"\t{uuid_to_name(char.uuid)}={value}")
+                            print(f"    {uuid_to_name(char.uuid)}: {value}")
                     except bleak.BleakError as e:
                         print(
-                            f"\t{uuid_to_name(char.uuid)} ({char.uuid} {char.description}): cannot read: {e}"
+                            f"    {uuid_to_name(char.uuid)} cannot read, uuid={char.uuid} description={char.description} error={e}"
                         )
                     sys.stdout.flush()
 

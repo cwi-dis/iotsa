@@ -113,8 +113,9 @@ class IotsaEndpoint:
         """Print all names and values previously loaded"""
         self.load()
         print("%s:" % self.device.ipAddress)
+        print("  %s:" % self.endpoint)
         for k, v in list(self.status.items()):
-            print("  %-16s %s" % (str(k) + ":", v))
+            print("    %-16s %s" % (str(k) + ":", v))
 
 
 class IotsaDevice:
