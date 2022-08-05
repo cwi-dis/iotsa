@@ -157,9 +157,6 @@ class IotsaDevice:
         self.bearerToken = None
         self.apis = {"config": self.config}
 
-    def __del__(self):
-        self.close()
-
     _ProtocolCache: dict[Tuple[str, Optional[int]], Tuple[str, bool]] = {}
 
     @classmethod
