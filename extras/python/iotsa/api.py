@@ -46,6 +46,7 @@ class IotsaEndpoint:
             return
         self.status = {}
         self.didload = False
+        assert self.device.protocolHandler
         self.status = self.device.protocolHandler.get(self.endpoint)
         self.didLoad = True
 
@@ -61,6 +62,7 @@ class IotsaEndpoint:
 
     def commit(self) -> None:
         """Send all updates since transaction() to the device"""
+        assert self.device.protocolHandler
         settings = self.settings
         self.settings = {}
         self.inTransaction = False
@@ -126,7 +128,7 @@ class IotsaDevice:
     :param auth: (optional) Anthentication tuple
     """
     ipAddress : str
-    protocolHandler : IotsaAbstractProtocolHandler
+    protocolHandler : Optional[IotsaAbstractProtocolHandler]
     auth : Optional[Tuple[str, str]]
     bearerToken : Optional[str]
 
@@ -232,7 +234,7 @@ class IotsaDevice:
         """Close connection to the iotsa device"""
         if self.protocolHandler:
             self.protocolHandler.close()
-        del self.protocolHandler
+        self.protocolHandler = None
         self.apis = {}
 
     def flush(self) -> None:
@@ -437,6 +439,7 @@ class IotsaDevice:
 
         Note that device must be in mode config for this call to succeed
         """
+        assert self.protocolHandler
         if isinstance(keyData, str) and keyData.startswith("---"):
             keyDataSplit = keyData.splitlines()
             keyDataSplit = keyDataSplit[1:-1]
