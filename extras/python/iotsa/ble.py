@@ -9,9 +9,6 @@ from .bleIotsaUUIDs import name_to_uuid, uuid_to_name
 IOTSA_BATTERY_SERVICE = "0000180f-0000-1000-8000-00805f9b34fb"
 IOTSA_REBOOT_CHARACTERISTIC = ""
 
-class MyDisconnected(Exception):
-    pass
-
 class BLE:
     """Handle iotsa device connectable over Bluetooth LE"""
 
@@ -30,7 +27,10 @@ class BLE:
         self.loop = asyncio.new_event_loop()
 
     def findDevices(self) -> list[str]:
-        self.loop.run_until_complete(self._asyncFindDevices())
+        try:
+            self.loop.run_until_complete(self._asyncFindDevices())
+        except bleak.BleakError as e:
+            print(f"ble.findDevices: exception: {e}")
         return self._allDevices
 
     async def _asyncFindDevices(self):
@@ -45,7 +45,10 @@ class BLE:
             self._allDevices = iotsaCandidates
 
     def selectDevice(self, name_or_address: str) -> bool:
-        self.loop.run_until_complete(self._asyncSelectDevice(name_or_address))
+        try:
+            self.loop.run_until_complete(self._asyncSelectDevice(name_or_address))
+        except bleak.BleakError as e:
+            print(f"ble.set({name}, ...): exception: {e}")
         return self._currentDevice != None
 
     async def _asyncSelectDevice(self, name_or_address: str):
@@ -61,16 +64,14 @@ class BLE:
         self._currentDevice = dev
         self._currentConnection = bleak.pythonic.client.BleakPythonicClient(
             self._currentDevice, 
-            timeout=self.discover_timeout,
-            disconnected_callback=self.disconnected
+            timeout=self.discover_timeout
         )
 
-    def disconnected(self, c : bleak.BleakClient):
-        print(f"Warning: BLE client {c.address} disconnected", file=sys.stderr)
-        raise MyDisconnected
-
     def printStatus(self) -> None:
-        self.loop.run_until_complete(self._asyncPrintStatus())
+        try:
+            self.loop.run_until_complete(self._asyncPrintStatus())
+        except bleak.BleakError as e:
+            print(f"ble.set({name}, ...): exception: {e}")
 
     async def _asyncPrintStatus(self):
         async with self._currentConnection as client:
@@ -98,7 +99,10 @@ class BLE:
                     sys.stdout.flush()
 
     def set(self, name: str, value: Any) -> None:
-        self.loop.run_until_complete(self._asyncSet(name, value))
+        try:
+            self.loop.run_until_complete(self._asyncSet(name, value))
+        except bleak.BleakError as e:
+            print(f"ble.set({name}, ...): exception: {e}")
 
     async def _asyncSet(self, name: str, value: Any) -> None:
         uuid = name_to_uuid(name)
@@ -108,7 +112,10 @@ class BLE:
 
     def get(self, name: str) -> Any:
         self._get_rv: Any = None
-        self.loop.run_until_complete(self._asyncGet(name))
+        try:
+           self.loop.run_until_complete(self._asyncGet(name))
+        except bleak.BleakError as e:
+            print(f"ble.get({name}): exception: {e}")
         return self._get_rv
 
     async def _asyncGet(self, name: str):
