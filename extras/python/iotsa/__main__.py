@@ -229,6 +229,8 @@ class Main(object):
         else:
             value = rest
         if ":" in value:
+            # If a type is specified (as in name=int:3 or name=str:3)
+            # we cast to that type.
             typename, rest = value.split(":")
             typecast = eval(typename)
             value = typecast(rest)
@@ -236,6 +238,37 @@ class Main(object):
                 f"{sys.argv[0]}: xConfig {modName}: {name}={value} after cast.",
                 file=sys.stderr,
             )
+        elif value.lower() == "true":
+            value = 1
+            print(
+                f"{sys.argv[0]}: xConfig {modName}: {name}={value} after cast.",
+                file=sys.stderr,
+            )
+        elif value.lower() == "false":
+            value = 0
+            print(
+                f"{sys.argv[0]}: xConfig {modName}: {name}={value} after cast.",
+                file=sys.stderr,
+            )
+        else:
+            # No type specified. Try to convert to int or float.
+            try:
+                nvalue = int(value)
+                value = nvalue
+                print(
+                    f"{sys.argv[0]}: xConfig {modName}: {name}={value} after cast.",
+                    file=sys.stderr,
+                )
+            except ValueError:
+                try:
+                    nvalue = float(value)
+                    value = nvalue
+                    print(
+                        f"{sys.argv[0]}: xConfig {modName}: {name}={value} after cast.",
+                        file=sys.stderr,
+                    )
+                except ValueError:
+                    pass
         return name, value
 
     def _ungetcmd(self, cmd):
@@ -440,6 +473,8 @@ class Main(object):
     def cmd_ble(self):
         """Get or set BLE characteristic on iotsa device"""
         self.loadBLE()
+        # Note we don't use getnamevalue: ble.set() will know the type to convert
+        # to so we simply pass strings.
         subcommand = self._getcmd()
         if "=" in subcommand:
             # Set command
@@ -534,9 +569,8 @@ class Main(object):
             anyDone = True
         if not anyDone:
             print(
-                "%s: xConfig %s: requires name=value [...] to set config variables"
-                % sys.argv[0],
-                file=sys.stderr,
+                f"{sys.argv[0]}: xConfig {modName}: requires name=value [...] to set config variables",
+                file=sys.stderr
             )
             sys.exit(1)
         ext.commit()
