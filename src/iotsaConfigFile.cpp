@@ -5,11 +5,14 @@
 #include <string>
 
 IotsaConfigFileLoad::IotsaConfigFileLoad(String filename) {
-  fp = IOTSA_FS.open(filename, "r");
+  IotsaConfigFileLoad(filename.c_str());
 }
 
 IotsaConfigFileLoad::IotsaConfigFileLoad(const char *filename) {
   fp = IOTSA_FS.open(filename, "r");
+  if (!fp) {
+    IotsaSerial.printf("IotsaConfigFileLoad: %s not found\n", filename);
+  }
 }
 
 IotsaConfigFileLoad::~IotsaConfigFileLoad() {
@@ -91,11 +94,14 @@ void IotsaConfigFileLoad::get(String name, String &value, const char *def) {
 }
 
 IotsaConfigFileSave::IotsaConfigFileSave(String filename) {
-  fp = IOTSA_FS.open(filename, "w");
+  IotsaConfigFileSave(filename.c_str());
 }
 
 IotsaConfigFileSave::IotsaConfigFileSave(const char *filename) {
-  fp = IOTSA_FS.open(filename, "w");
+  fp = IOTSA_FS.open(filename, "w", true);
+  if (!fp) {
+    IotsaSerial.printf("IotsaConfigFileSave: %s not created\n", filename);
+  }
 }
 
 IotsaConfigFileSave::~IotsaConfigFileSave() {
