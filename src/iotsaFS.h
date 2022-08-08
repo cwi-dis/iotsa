@@ -22,7 +22,9 @@
 // Use normal (as of 2022) LittleFS on esp32 or esp8266.
 #include <LittleFS.h>
 #define IOTSA_FS LittleFS
+#if defined(ESP32)
 #define IOTSA_FS_OPEN_3ARGS // Open has a third create parameter
+#endif
 #endif
 #define IOTSA_FS_NAME "LittleFS"
 #endif
