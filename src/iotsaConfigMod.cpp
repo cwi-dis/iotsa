@@ -503,7 +503,7 @@ IotsaConfigMod::uploadHandler() {
     IFDEBUG IotsaSerial.print("Uploading ");
     IFDEBUG IotsaSerial.println(_uploadfilename);
     if(IOTSA_FS.exists(_uploadfilename)) IOTSA_FS.remove(_uploadfilename);
-#ifdef ESP32
+#ifdef IOTSA_FS_OPEN_3ARGS
     _uploadFile = IOTSA_FS.open(_uploadfilename, "w", true);
 #else
     _uploadFile = IOTSA_FS.open(_uploadfilename, "w");
