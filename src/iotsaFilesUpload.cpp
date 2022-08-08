@@ -19,7 +19,11 @@ IotsaFilesUploadMod::uploadHandler() {
     IFDEBUG IotsaSerial.print("Uploading ");
     IFDEBUG IotsaSerial.println(_uploadfilename);
     if(IOTSA_FS.exists(_uploadfilename)) IOTSA_FS.remove(_uploadfilename);
+#ifdef ESP32
+    _uploadFile = IOTSA_FS.open(_uploadfilename, "w", true);
+#else
     _uploadFile = IOTSA_FS.open(_uploadfilename, "w");
+#endif
     //DBG_OUTPUT_PORT.print("Upload: START, filename: "); DBG_OUTPUT_PORT.println(upload.filename);
   } else if(upload.status == UPLOAD_FILE_WRITE){
     if(_uploadFile) _uploadFile.write(upload.buf, upload.currentSize);

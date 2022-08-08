@@ -98,7 +98,12 @@ IotsaConfigFileSave::IotsaConfigFileSave(String filename) {
 }
 
 IotsaConfigFileSave::IotsaConfigFileSave(const char *filename) {
+#ifdef ESP32
+  // FS.open() needs extra create argument true to create intermediate directories
   fp = IOTSA_FS.open(filename, "w", true);
+#else
+  fp = IOTSA_FS.open(filename, "w");
+#endif
   if (!fp) {
     IotsaSerial.printf("IotsaConfigFileSave: %s not created\n", filename);
   }
