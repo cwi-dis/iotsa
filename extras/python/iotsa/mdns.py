@@ -40,6 +40,9 @@ if _have_mdns:
         def remove_service(self, zc, type, name):
             pass
 
+        def update_service(self, zc, type, name):
+            pass
+            
         def add_service(self, zc, type, name):
             if VERBOSE:
                 print("Found mDNS entry for", name, "type:", type)
