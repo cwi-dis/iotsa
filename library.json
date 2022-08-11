@@ -12,7 +12,7 @@
         "url" : "https://github.com/cwi-dis/iotsa.git"
     },
     "build": {
-        "extraScript" : "extras/mkversionh.py",
+        "extraScript" : "extras/python/mkversionh.py",
         "libCompatMode" : "strict"
     },
     "frameworks" : "Arduino",
