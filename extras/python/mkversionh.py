@@ -84,7 +84,8 @@ def main():
         vf.define("IOTSA_COMMIT", '"' + commit + '"')
     else:
         if VERBOSE: print("mkversionh: cannot git rev-parse to get version information", file=sys.stderr)
-    fullVersion = vf.get("IOTSA_VERSION", '"unknown""')
+    shortVersion = vf.get("IOTSA_VERSION", '"unknown""')
+    fullVersion = shortVersion
     commit = vf.get("IOTSA_COMMIT")
     if commit:
         fullVersion = '"' + eval(fullVersion) + '+sha' + eval(commit) + '"'
@@ -92,7 +93,7 @@ def main():
     if vf.changed:
         vf.save()
     # Generate Python version file too
-    PyNewVersion = f'__version__ = {fullVersion}\n'
+    PyNewVersion = f'__version__ = {fullVersion}\n__shortversion__ = {shortVersion}\n'
     PyOldVersion = open(versionpy).read()
     if PyNewVersion != PyOldVersion:
         open(versionpy, "w").write(PyNewVersion)

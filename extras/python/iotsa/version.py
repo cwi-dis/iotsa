@@ -1,1 +1,2 @@
-__version__ = "2.5+shab78ee59-dirty"
+__version__ = "2.5+sha32937e1-dirty"
+__shortversion__ = "2.5"
