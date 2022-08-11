@@ -43,10 +43,15 @@ class VersionFile:
 
 
 def main():
-    baseDir = os.getcwd()
-    baseDir = os.path.dirname(baseDir)
+    baseDir = os.path.dirname(__file__)
+    while not os.path.exists(os.path.join(baseDir, "library.json")):
+        newBaseDir = os.path.dirname(baseDir)
+        if newBaseDir == baseDir:
+            break
+        baseDir = newBaseDir
     libraryConfig = os.path.join(baseDir, "library.json")
     version = os.path.join(baseDir, "src", "iotsaVersion.h")
+    versionpy = os.path.join(baseDir, "extras", "python", "iotsa", "version.py")
     if not os.path.exists(libraryConfig) or not os.path.exists(version):
         print(f"mkversionh: Cannot find config files {libraryConfig} and {version}. Must be run from iotsa source tree.", file=sys.stderr)
         sys.exit(1)
@@ -65,6 +70,13 @@ def main():
         universal_newlines=True,
     )
     commit = cmd.stdout.read().strip()
+    cmd2 = subprocess.run(
+        "git diff --quiet",
+        shell=True,
+        cwd=baseDir,
+    )
+    if cmd2.returncode == 1:
+        commit = commit + "-dirty"
     if commit:
         vf.define("IOTSA_COMMIT", '"' + commit + '"')
     else:
@@ -76,5 +88,10 @@ def main():
     vf.define("IOTSA_FULL_VERSION", fullVersion)
     if vf.changed:
         vf.save()
+    # Generate Python version file too
+    PyNewVersion = f'__version__ = {fullVersion}\n'
+    PyOldVersion = open(versionpy).read()
+    if PyNewVersion != PyOldVersion:
+        open(versionpy, "w").write(PyNewVersion)
 
 main()
