@@ -21,7 +21,12 @@ of those devices and uploading new firmware over the air.
 """
 
 # Get the version number from the iotsa module
-VERSION = "2.1"
+versionInfo = {}
+with open(os.path.join(here, "iotsa/version.py")) as fp:
+    exec(fp.read(), versionInfo)
+
+
+VERSION = versionInfo["__version__"]
 
 setup(
     name="iotsa",

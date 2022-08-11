@@ -11,6 +11,7 @@ import socket
 
 from . import api
 from . import consts
+from .version import __version__
 
 orig_getaddrinfo = socket.getaddrinfo
 
@@ -185,8 +186,21 @@ class Main(object):
             metavar="TTY",
             help="Serial port to use for DFU commands (default: automatically select)",
         )
-        parser.add_argument("command", nargs="+", help="Command to run")
+        parser.add_argument(
+            "--version",
+            action="store_true",
+            help="Print version and exit"
+        )
+        parser.add_argument("command", nargs="*", help="Command to run")
+        self.cmd_help = parser.print_help
         self.args = parser.parse_args()
+        if self.args.version:
+            print(__version__)
+            sys.exit(0)
+        if not self.args.command:
+            print(f"{parser.prog}: no commands given", file=sys.stderr)
+            parser.print_usage()
+            sys.exit(-1)
         if self.args.verbose:
             consts.VERBOSE.append(True)
         if not self.args.ipv6:
