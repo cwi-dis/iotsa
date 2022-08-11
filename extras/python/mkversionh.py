@@ -43,7 +43,10 @@ class VersionFile:
 
 
 def main():
-    baseDir = os.path.dirname(__file__)
+    try:
+        baseDir = os.path.dirname(__file__)
+    except NameError:
+        baseDir = os.getcwd()
     while not os.path.exists(os.path.join(baseDir, "library.json")):
         newBaseDir = os.path.dirname(baseDir)
         if newBaseDir == baseDir:
