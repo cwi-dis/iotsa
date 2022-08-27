@@ -119,7 +119,7 @@ void IotsaConfigFileSave::put(String name, int value) {
 }
 
 void IotsaConfigFileSave::put(String name, float value) {
-  String sValue = String(value);
+  String sValue = String(value, 6);
   put(name, sValue);
 }
 
