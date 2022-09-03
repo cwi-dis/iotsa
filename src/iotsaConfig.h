@@ -25,6 +25,7 @@ private:
   unsigned long nextConfigurationModeEndTime = 0;
   int configurationModeTimeout = 0;
   uint32_t postponeSleepMillis = 0;
+  uint32_t activityExtraWakeDuration = 0;
   int pauseSleepCount = 0;
   uint32_t rebootAtMillis = 0;
   extensionCallback extendCurrentModeCallback;

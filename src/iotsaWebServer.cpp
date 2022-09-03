@@ -96,6 +96,7 @@ IotsaWebServerMixin::webServerLoop() {
 
 void
 IotsaWebServerMixin::webServerNotFoundHandler() {
+  iotsaConfig.postponeSleep(0);
   String message = "File Not Found\n\n";
   message += "URI: ";
   message += server->uri();
@@ -114,6 +115,7 @@ IotsaWebServerMixin::webServerNotFoundHandler() {
 #ifdef IOTSA_WITH_WEB
 void
 IotsaWebServerMixin::webServerRootHandler() {
+  iotsaConfig.postponeSleep(0);
   String message = "<html><head><title>" + app->title + "</title></head><body><h1>" + app->title + "</h1>";
   IotsaBaseMod *m;
   for (m=app->firstModule; m; m=m->nextModule) {

@@ -32,16 +32,20 @@ public:
 
 	void onRead(BLECharacteristic* pCharacteristic) {
     IFBLEDEBUG IotsaSerial.printf("BLE char onRead 0x%x\n", (uint32_t)pCharacteristic);
+    iotsaConfig.postponeSleep(0);
     api->bleGetHandler(charUUID);
   }
 	void onWrite(BLECharacteristic* pCharacteristic) {
     IFBLEDEBUG IotsaSerial.printf("BLE char onWrite\n");
+    iotsaConfig.postponeSleep(0);
     api->blePutHandler(charUUID);
   }
 	void onNotify(BLECharacteristic* pCharacteristic) {
     IFBLEDEBUG IotsaSerial.printf("BLE char onNotify\n");
+    iotsaConfig.postponeSleep(0);
   }
 	void onStatus(BLECharacteristic* pCharacteristic, Status s, uint32_t code) {
+    iotsaConfig.postponeSleep(0);
     IFBLEDEBUG IotsaSerial.printf("BLE char onStatus\n");
   }
 private:

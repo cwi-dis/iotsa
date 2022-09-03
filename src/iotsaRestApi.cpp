@@ -12,6 +12,7 @@ void IotsaRestApiService::_getHandlerWrapper(const char *path) {
     if (auth && !auth->allows(path, IOTSA_API_GET)) return;
     IFDEBUG IotsaSerial.print("GET api ");
     IFDEBUG IotsaSerial.println(path);
+    iotsaConfig.postponeSleep(0);
     int jsonBufSize = 2048;
     if (server->hasArg("jsonBufSize")) {
         jsonBufSize = server->arg("jsonBufSize").toInt();
@@ -39,6 +40,7 @@ void IotsaRestApiService::_putHandlerWrapper(const char *path) {
     if (auth && !auth->allows(path, IOTSA_API_PUT)) return;
     IFDEBUG IotsaSerial.print("PUT api ");
     IFDEBUG IotsaSerial.println(path);
+    iotsaConfig.postponeSleep(0);
     int jsonBufSize = 2048;
     if (server->hasArg("jsonBufSize")) {
         jsonBufSize = server->arg("jsonBufSize").toInt();
@@ -74,6 +76,7 @@ void IotsaRestApiService::_postHandlerWrapper(const char *path) {
     if (auth && !auth->allows(path, IOTSA_API_POST)) return;
     IFDEBUG IotsaSerial.print("POST api ");
     IFDEBUG IotsaSerial.println(path);
+    iotsaConfig.postponeSleep(0);
     int jsonBufSize = 2048;
     if (server->hasArg("jsonBufSize")) {
         jsonBufSize = server->arg("jsonBufSize").toInt();

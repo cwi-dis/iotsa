@@ -53,6 +53,11 @@ IotsaBatteryMod::handler() {
     bootExtraWakeDuration = server->arg("bootExtraWakeDuration").toInt();
     anyChanged = true;
   }
+  if( server->hasArg("activityExtraWakeDuration")) {
+    if (needsAuthentication()) return;
+    iotsaConfig.activityExtraWakeDuration = server->arg("activityExtraWakeDuration").toInt();
+    anyChanged = true;
+  }
   if( server->hasArg("disableSleepOnUSBPower")) {
     if (needsAuthentication()) return;
     disableSleepOnUSBPower = server->arg("disableSleepOnUSBPower").toInt();
@@ -100,6 +105,7 @@ IotsaBatteryMod::handler() {
     ">Hibernate</option></select><br>";
   message += "Sleep duration (ms): <input name='sleepDuration' value='" + String(sleepDuration) + "'><br>";
   message += "Wake duration (ms): <input name='wakeDuration' value='" + String(wakeDuration) + "'><br>";
+  message += "Extra wake duration after activity (ms): <input name='activityExtraWakeDuration' value='" + String(iotsaConfig.activityExtraWakeDuration) + "'><br>";
   message += "Extra wake duration after poweron/reset (ms): <input name='bootExtraWakeDuration' value='" + String(bootExtraWakeDuration) + "'><br>";
   message += "WiFi duration after poweron/reset/deepsleep (ms): <input name='wifiActiveDuration' value='" + String(wifiActiveDuration) + "'><br>";
   if (pinVUSB >= 0) {
@@ -176,6 +182,7 @@ bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
   reply["sleepDuration"] = sleepDuration;
   reply["wakeDuration"] = wakeDuration;
   reply["bootExtraWakeDuration"] = bootExtraWakeDuration;
+  reply["activityExtraWakeDuration"] = iotsaConfig.activityExtraWakeDuration;
   reply["wifiActiveDuration"] = wifiActiveDuration;
   reply["postponeSleep"] = iotsaConfig.postponeSleep(0);
 #ifdef ESP32
@@ -282,6 +289,7 @@ void IotsaBatteryMod::configLoad() {
   sleepMode = (IotsaSleepMode)value;
   cf.get("wakeDuration", wakeDuration, 0);
   cf.get("bootExtraWakeDuration", bootExtraWakeDuration, 0);
+  cf.get("activityExtraWakeDuration", iotsaConfig.activityExtraWakeDuration, 0);
   cf.get("sleepDuration", sleepDuration, 0);
   cf.get("wifiActiveDuration", wifiActiveDuration, 0);
 #ifdef ESP32
@@ -297,6 +305,7 @@ void IotsaBatteryMod::configSave() {
   cf.put("sleepMode", sleepMode);
   cf.put("wakeDuration", wakeDuration);
   cf.put("bootExtraWakeDuration", bootExtraWakeDuration);
+  cf.put("activityExtraWakeDuration", iotsaConfig.activityExtraWakeDuration);
   cf.put("sleepDuration", sleepDuration);
   cf.put("wifiActiveDuration", wifiActiveDuration);
 #ifdef ESP32

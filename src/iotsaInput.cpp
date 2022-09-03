@@ -135,6 +135,7 @@ void Button::loop() {
   }
   debounceState = state;
   if (millis() > debounceTime + DEBOUNCE_DELAY && state != pressed) {
+    iotsaConfig.postponeSleep(0);
     // The touchpad or button has been in the new state for long enough for us to trust it.
     pressed = state;
     if (pressed) repeatCount = 0;
@@ -171,6 +172,7 @@ void Button::loop() {
   }
   // See if we need to do any repeating
   if (nextRepeat && millis() > nextRepeat) {
+    iotsaConfig.postponeSleep(0);
     if (curRepeat > minRepeat) {
       curRepeat = curRepeat - minRepeat;
       if (curRepeat < minRepeat) curRepeat = minRepeat;
@@ -307,6 +309,7 @@ void RotaryEncoder::loop() {
 #ifdef WITH_ESP32ENCODER_LIB
   int64_t newCount = _encoder->getCount();
   if (newCount != oldCount) {
+    iotsaConfig.postponeSleep(0);
     IotsaSerial.printf("RotaryEncoder %lld->%lld\n", oldCount, newCount);
     int delta = (newCount-oldCount);
     oldCount = newCount;
@@ -319,6 +322,7 @@ void RotaryEncoder::loop() {
   bool pinAnewState = digitalRead(pinA) == LOW;
 
   if (pinAnewState != pinAstate) {
+    iotsaConfig.postponeSleep(0);
     if (lastChangeMillis) {
       duration = millis() - lastChangeMillis;
     }

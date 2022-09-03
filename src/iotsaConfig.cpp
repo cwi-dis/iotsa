@@ -223,7 +223,7 @@ void IotsaConfig::resumeSleep() {
 }
 
 uint32_t IotsaConfig::postponeSleep(uint32_t ms) {
-  uint32_t noSleepBefore = millis() + ms;
+  uint32_t noSleepBefore = millis() + ms + activityExtraWakeDuration;
   if (noSleepBefore > postponeSleepMillis) postponeSleepMillis = noSleepBefore;
   int32_t rv = postponeSleepMillis - millis();
   if (rv < 2) rv = 0;
