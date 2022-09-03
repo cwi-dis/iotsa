@@ -3,7 +3,7 @@ iotsa 2.5 - development
 - Start of a development branch with odd version numbers
 - Various changes to configuration mode: can now be enabled (by the iotsa program) with other
   interaction than reboot. AP enabled while in configuration mode.
-- iotsaBatteryMod sleep modes rationalized. 
+- iotsaBatteryMod sleep modes rationalized. Added various features for postponing sleep.
 - Python iotsa package (including iotsaConfig as a script entry point)
 - Added API for per-module objects.
 - Added IotsaRtcMod to control ds1302 realtime clock module.
