@@ -599,13 +599,6 @@ Very simple server that emits a GET request when a button is pressed. Uses capab
 
 Very simple server that sounds a buzzer when a GET request is received. Uses capabilities. 
 
-### [iotsaLedstrip](http://github.com/cwi-dis/iotsaLedstrip)
-
-![build-platformio](https://github.com/cwi-dis/iotsaLedstrip/workflows/build-platformio/badge.svg)
-![build-arduino](https://github.com/cwi-dis/iotsaLedstrip/workflows/build-arduino/badge.svg)
-
-A driver for NeoPixel or similar LED strips. This application is mainly intended to use the LED strips for lighting, so you are able to adjustcolor temperature, intensity, etc.
-
 ### [iotsaDMXLedstrip](http://github.com/cwi-dis/iotsaDMXLedstrip)
 
 ![build-platformio](https://github.com/cwi-dis/iotsaDMXLedstrip/workflows/build-platformio/badge.svg)
