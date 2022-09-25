@@ -625,8 +625,16 @@ Server to receive and transmit 433 MHz home automation signals (the cheap wirele
 ![build-platformio](https://github.com/cwi-dis/iotsaSensor/workflows/build-platformio/badge.svg)
 ![build-arduino](https://github.com/cwi-dis/iotsaSensor/workflows/build-arduino/badge.svg)
 
-Read an analog sensor at an interval that can be specified. Sensor readings are kept in a rolling buffer, and the most recent 512 readings can be retreived through the web interface, together with the timestamp of reading.
+Read an analog sensor at an interval that can be specified. Sensor readings are kept in a rolling buffer, and the most recent 512 readings can be retreived through the web interface, together with the timestamp of reading. This program is intended to take readings every couple of seconds, or minutes at most.
 
+### [iotsaDataLogger](http://github.com/cwi-dis/iotsaDataLogger)
+
+![build-platformio](https://github.com/cwi-dis/iotsaDataLogger/workflows/build-platformio/badge.svg)
+![build-arduino](https://github.com/cwi-dis/iotsaDataLogger/workflows/build-arduino/badge.svg)
+
+Read an analog sensor at an interval that can be specified. Sensor readings are saved to flash memory, together with the timestamp of reading.
+A realtime clock (RTC) can be used to keep time, which will sync with NTP whever WiFi is available. The program can hibernate (using micro-amperes) between readings.
+This program is intended to take a few measurements per day over long periods of time (months).
 
 ### [iotsaRGBWSensor](http://github.com/cwi-dis/iotsaRGBWSensor)
 
