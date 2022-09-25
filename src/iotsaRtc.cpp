@@ -154,7 +154,6 @@ void IotsaRtcMod::loop() {
 }
 
 void IotsaRtcMod::_updateSysTime() {
-  IotsaSerial.printf("xxxjack time()=%lld\n", time(NULL));
   if (time(NULL) < 3600*24*366) {
     struct tm tm;
     memset((void *)&tm, 0, sizeof(tm));
