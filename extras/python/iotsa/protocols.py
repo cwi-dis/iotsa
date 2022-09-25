@@ -274,6 +274,9 @@ class IotsaCOAPProtocolHandler(IotsaAbstractProtocolHandler):
             print("COAP POST returned", rv.code, repr(rv.payload))
         return jsonmod.loads(rv.payload)
 
+    def request(self, method, endpoint, json=None, files=None, retryCount=5):
+        assert False, "Only get/put/post implemented for COAP, not request()"
+
 
 HandlerForProto: dict[str, Type[IotsaAbstractProtocolHandler]] = {
     "http": IotsaRESTProtocolHandler,
