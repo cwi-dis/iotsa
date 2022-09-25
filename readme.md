@@ -533,7 +533,6 @@ Here are some projects that use iotsa, and that also be used as further examples
 ### [lissabon](http://github.com/cwi-dis/lissabon)
 
 ![build-platformio](https://github.com/cwi-dis/lissabon/workflows/build-platformio/badge.svg)
-![build-arduino](https://github.com/cwi-dis/lissabon/workflows/build-arduino/badge.svg)
 
 This is a whole set of appliances aimed at very low power overhead control of lighting in an off-grid situation (think: battery-backed solar power holiday home). Dimmers, LED strip controllers, remotes.
 
