@@ -67,8 +67,6 @@ def main():
 
     if 'IOTSA_FULL_VERSION' in os.environ:
         fullVersion = os.environ['IOTSA_FULL_VERSION']
-        if not '"' in fullVersion:
-            fullVersion = '"' + fullVersion + '"'
     else:
         cmd = subprocess.Popen(
             "git describe --match 'v*'",
@@ -81,6 +79,8 @@ def main():
     shortVersion = vf.get("IOTSA_VERSION", '"unknown""')
     if not fullVersion:
         fullVersion = shortVersion
+    if not '"' in fullVersion:
+        fullVersion = '"' + fullVersion + '"'
     vf.define("IOTSA_FULL_VERSION", fullVersion)
     if vf.changed:
         vf.save()
