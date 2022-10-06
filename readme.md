@@ -673,3 +673,14 @@ removed.
 
 The 3D-printable case for a iotsa board is also available at Thingyverse: <http://www.thingiverse.com/thing:2303793>.
 
+## Creating a new release
+
+Notes to self, mainly, on creating a new release:
+
+- Update version number in `library.properties` and `library.json`.
+- Run `IOTSA_FULL_VERSION=vX.Y.Z python3 extras/python/mkversionh.py`.
+- Update `changelog.txt` with version number and date.
+- Commit, Push
+- If a real version: merge into `master` and tag on master (otherwise tag on `develop`)
+- This should build the release (to be seen that this works)
+- After a real release: Update `changelog.txt` again on `develop`.

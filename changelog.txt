@@ -1,4 +1,4 @@
-iotsa 2.5 - development
+iotsa 2.5.1 - development
 
 - Start of a development branch with odd version numbers.
 - Various changes to configuration mode: can now be enabled (by the iotsa program) with other
