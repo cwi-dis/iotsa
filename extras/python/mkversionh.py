@@ -65,30 +65,22 @@ def main():
     if "version" in libraryData:
         vf.define("IOTSA_VERSION", '"' + libraryData["version"] + '"')
 
-    cmd = subprocess.Popen(
-        "git rev-parse --short HEAD",
-        shell=True,
-        cwd=baseDir,
-        stdout=subprocess.PIPE,
-        universal_newlines=True,
-    )
-    commit = cmd.stdout.read().strip()
-    cmd2 = subprocess.run(
-        "git diff --quiet ':!src/iotsaVersion.h' ':!extras/python/iotsa/version.py'",
-        shell=True,
-        cwd=baseDir,
-    )
-    if cmd2.returncode == 1:
-        commit = commit + "-dirty"
-    if commit:
-        vf.define("IOTSA_COMMIT", '"' + commit + '"')
+    if 'IOTSA_FULL_VERSION' in os.environ:
+        fullVersion = os.environ['IOTSA_FULL_VERSION']
+        if not '"' in fullVersion:
+            fullVersion = '"' + fullVersion + '"'
     else:
-        if VERBOSE: print("mkversionh: cannot git rev-parse to get version information", file=sys.stderr)
+        cmd = subprocess.Popen(
+            "git describe --match 'v*'",
+            shell=True,
+            cwd=baseDir,
+            stdout=subprocess.PIPE,
+            universal_newlines=True,
+        )
+        fullVersion = cmd.stdout.read().strip()
     shortVersion = vf.get("IOTSA_VERSION", '"unknown""')
-    fullVersion = shortVersion
-    commit = vf.get("IOTSA_COMMIT")
-    if commit:
-        fullVersion = '"' + eval(fullVersion) + '+' + eval(commit) + '"'
+    if not fullVersion:
+        fullVersion = shortVersion
     vf.define("IOTSA_FULL_VERSION", fullVersion)
     if vf.changed:
         vf.save()
