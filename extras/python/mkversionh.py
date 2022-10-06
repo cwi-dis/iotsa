@@ -74,7 +74,7 @@ def main():
     )
     commit = cmd.stdout.read().strip()
     cmd2 = subprocess.run(
-        "git diff --quiet",
+        "git diff --quiet ':!src/iotsaVersion.h' ':!extras/python/iotsa/version.py'",
         shell=True,
         cwd=baseDir,
     )
@@ -88,7 +88,7 @@ def main():
     fullVersion = shortVersion
     commit = vf.get("IOTSA_COMMIT")
     if commit:
-        fullVersion = '"' + eval(fullVersion) + '+sha' + eval(commit) + '"'
+        fullVersion = '"' + eval(fullVersion) + '+' + eval(commit) + '"'
     vf.define("IOTSA_FULL_VERSION", fullVersion)
     if vf.changed:
         vf.save()

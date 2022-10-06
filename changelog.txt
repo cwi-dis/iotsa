@@ -1,19 +1,20 @@
 iotsa 2.5 - development
 
-- Start of a development branch with odd version numbers
+- Start of a development branch with odd version numbers.
 - Various changes to configuration mode: can now be enabled (by the iotsa program) with other
   interaction than reboot. AP enabled while in configuration mode.
 - iotsaBatteryMod sleep modes rationalized. Added various features for postponing sleep.
-- Python iotsa package (including iotsaConfig as a script entry point)
+- Python iotsa package, including iotsa (formerly iotsaConfig) as a script entry point.
 - Added API for per-module objects.
 - Added IotsaRtcMod to control ds1302 realtime clock module.
-- Prefer libc timezone handling over Timezone library
-- Handle JSON buffer overflow, added jsonBufSize URL parameter
-- Moved to Arduino framework 3.0
-- Switched to ArduinoNimble for BLE support
-- Use ESP32Encoder library to handle rotary encoders in iotsaInput module
-- iotsa Python module and iotsaControl have support for BLE through commands bleTargets and ble
-- Python 2 support dropped, and type annotations added to Python module
+- Prefer libc timezone handling over Timezone library.
+- Handle JSON buffer overflow, added jsonBufSize URL parameter.
+- Moved to Arduino framework 3.0.
+- Switched to ArduinoNimble for BLE support.
+- Use ESP32Encoder library to handle rotary encoders in iotsaInput module.
+- iotsa Python module and iotsaControl have support for BLE through commands bleTargets and ble.
+- Python 2 support dropped, and type annotations added to Python module.
+- LittleFS is now default filesystem (but SPIFFS can be selected with a define).
 
 iotsa 2.4.1 - 23-Apr-2020
 
