@@ -1,6 +1,5 @@
-iotsa 2.5.1 - development
+iotsa 2.6 - 07-Oct-2022
 
-- Start of a development branch with odd version numbers.
 - Various changes to configuration mode: can now be enabled (by the iotsa program) with other
   interaction than reboot. AP enabled while in configuration mode.
 - iotsaBatteryMod sleep modes rationalized. Added various features for postponing sleep.

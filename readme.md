@@ -683,4 +683,7 @@ Notes to self, mainly, on creating a new release:
 - Commit, Push
 - If a real version: merge into `master` and tag on master (otherwise tag on `develop`)
 - This should build the release (to be seen that this works)
-- After a real release: Update `changelog.txt` again on `develop`.
+- After a real release:
+	- Update `changelog.txt` again on `develop`.
+	- Ensure release is available on platformIO library registry.
+	- Ensure release is available in Arduino library registry.
