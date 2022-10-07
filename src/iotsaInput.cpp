@@ -23,7 +23,7 @@ void IotsaInputMod::setup() {
   for(int i=0; i<nInput; i++) {
     inputs[i]->setup();
   }
-#ifdef ESP32
+#if defined(ESP32) && !defined(ARDUINO_ESP32C3_DEV)
   esp_err_t err;
   if (bitmaskButtonWakeHigh && buttonWakeLow >= 0 && anyWakeOnTouch) {
     IotsaSerial.println("IotsaInputMod: too many incompatible wakeup sources");
@@ -50,7 +50,7 @@ void IotsaInputMod::setup() {
   }
 #else
   if (anyWakeOnTouch || buttonWakeLow >= 0 || bitmaskButtonWakeHigh) {
-    IotsaSerial.println("Wake-from-sleep not implemented on esp8266");
+    IotsaSerial.println("Wake-from-sleep not implemented on esp8266 or esp32c3");
   }
 #endif
 }
@@ -183,7 +183,7 @@ void Button::loop() {
   }
 }
 
-#ifdef ESP32
+#if defined(ESP32) && !defined(ARDUINO_ESP32C3_DEV)
 Touchpad::Touchpad(int _pin, bool _actOnPress, bool _actOnRelease, bool _wake)
 : Button(_pin, _actOnPress, _actOnRelease, _wake),
 #ifdef IOTSA_DEBUG_INPUT
