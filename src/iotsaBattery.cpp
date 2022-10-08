@@ -368,7 +368,7 @@ void IotsaBatteryMod::loop() {
   // Check whether we should disable Wifi or sleep
   int curWakeDuration = wakeDuration;
   if (!didWakeFromSleep) curWakeDuration += bootExtraWakeDuration;
-  bool shouldDisableWifi = wifiActiveDuration && millis() > millisAtWifiWakeup + wifiActiveDuration;
+  bool shouldDisableWifi = !iotsaConfig.wifiEnabled && wifiActiveDuration && millis() > millisAtWifiWakeup + wifiActiveDuration;
   bool shouldSleep = sleepMode && curWakeDuration > 0 && millis() > millisAtWakeup + curWakeDuration;
   // Again, return quickly if no sleep or wifi sleep is required.
   if (!shouldSleep && !shouldDisableWifi) return;
@@ -382,7 +382,7 @@ void IotsaBatteryMod::loop() {
   if (iotsaConfig.inConfigurationMode()) cancelSleep = true;
   // If there is a reason not to sleep we return. We also reset the wake timer.
   if (cancelSleep) {
-    IFDEBUG IotsaSerial.println("Sleep and WifiSleep canceled, period reset to 0");
+    IFDEBUG IotsaSerial.println("Sleep and WifiSleep canceled, restart period");
     millisAtWakeup = millis();
     millisAtWifiWakeup = millis();
     return;
@@ -398,7 +398,7 @@ void IotsaBatteryMod::loop() {
   }
   // A final reason not to sleep is if some other module is asking for an extension of the waking period
   if (!iotsaConfig.canSleep()) {
-    IFDEBUG IotsaSerial.println("Sleep canceled, period reset to 0");
+    IFDEBUG IotsaSerial.println("Sleep canceled, restart period");
     millisAtWakeup = millis();
     return;    
   }
