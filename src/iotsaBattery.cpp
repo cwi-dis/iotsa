@@ -368,7 +368,7 @@ void IotsaBatteryMod::loop() {
   // Check whether we should disable Wifi or sleep
   int curWakeDuration = wakeDuration;
   if (!didWakeFromSleep) curWakeDuration += bootExtraWakeDuration;
-  bool shouldDisableWifi = !iotsaConfig.wifiEnabled && wifiActiveDuration && millis() > millisAtWifiWakeup + wifiActiveDuration;
+  bool shouldDisableWifi = wifiActiveDuration && millis() > millisAtWifiWakeup + wifiActiveDuration;
   bool shouldSleep = sleepMode && curWakeDuration > 0 && millis() > millisAtWakeup + curWakeDuration;
   // Again, return quickly if no sleep or wifi sleep is required.
   if (!shouldSleep && !shouldDisableWifi) return;
@@ -380,27 +380,22 @@ void IotsaBatteryMod::loop() {
   }
   // Another reason is that we are in configuration mode
   if (iotsaConfig.inConfigurationMode()) cancelSleep = true;
+  // A final reason is if some other module is asking for an extension of the waking period
+  if (!iotsaConfig.canSleep()) cancelSleep = true;
   // If there is a reason not to sleep we return. We also reset the wake timer.
   if (cancelSleep) {
-    IFDEBUG IotsaSerial.println("Sleep and WifiSleep canceled, restart period");
+    IFDEBUG IotsaSerial.println("Sleep canceled");
     millisAtWakeup = millis();
     millisAtWifiWakeup = millis();
     return;
   }
-
   if (shouldDisableWifi) {
     if (iotsaConfig.wifiEnabled) {
-      IotsaSerial.println("Disabling wifi due to wifiActiveDuration");
+      IotsaSerial.println("Disabling wifi");
       // Setting the iotsaConfig variables causes the wifi module to disable itself next loop()
       iotsaConfig.disableWifiOnBoot = true;
       iotsaConfig.wantWifiModeSwitch = true;
     }
-  }
-  // A final reason not to sleep is if some other module is asking for an extension of the waking period
-  if (!iotsaConfig.canSleep()) {
-    IFDEBUG IotsaSerial.println("Sleep canceled, restart period");
-    millisAtWakeup = millis();
-    return;    
   }
   if (!shouldSleep) return;
 #ifdef ESP32
