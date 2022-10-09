@@ -77,7 +77,7 @@ protected:
   float *floatVar, floatMin, floatMax, floatStep;
 };
 
-#ifdef ESP32
+#if defined(ESP32) && !defined(ARDUINO_ESP32C3_DEV)
 #define WITH_ESP32ENCODER_LIB
 #endif
 
