@@ -51,6 +51,11 @@ jobs:
         - example: Temperature
         # Extra matrix entries:
         include:
+        # Add esp32c3 entry
+        - example: Hello
+          board: esp32-c3-devkitm-1
+          build_flags: -DARDUINO_USB_MODE=1 -DARDUINO_USB_CDC_ON_BOOT=1
+          pio_extra_args: --project-option="lib_ignore=madhephaestus/ESP32Encoder"
         # Add Temperature with the right options for including the library
         - example: Temperature
           board: nodemcuv2
