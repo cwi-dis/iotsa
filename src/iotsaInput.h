@@ -6,7 +6,7 @@
 
 #if ESP32
 // With the various variants of the esp32 SoCs we need more fine-grained tests than just ESP32
-#include <soc/soc_caps.h>
+#include "soc/soc_caps.h"
 // Check whether this SoC supports external wakeup from deep sleep
 #if SOC_PM_SUPPORT_EXT_WAKEUP
 #define IOTSA_WITH_WAKEUP_SUPPORT 1
