@@ -17,6 +17,7 @@ struct tarHeader {
 };
 
 #ifdef ESP32
+// xxxjack: need to test whether this workaround is still needed (2022), I think the switch from spiffs to littlefs may have fixed it.
 static void addFilenames(std::vector<String>& fileList, String dirName) {
 	File root = IOTSA_FS.open(dirName);
 	while(1) {

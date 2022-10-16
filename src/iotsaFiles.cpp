@@ -7,6 +7,7 @@ void IotsaFilesMod::setup() {
 }
 
 #ifdef ESP32
+// xxxjack: need to test whether this workaround is still needed (2022), I think the switch from spiffs to littlefs may have fixed it.
 
 void
 IotsaFilesMod::_listDir(String& message, const char *name)

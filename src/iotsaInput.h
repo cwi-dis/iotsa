@@ -4,6 +4,23 @@
 #include "iotsaApi.h"
 #include "iotsaRequest.h"
 
+#if ESP32
+// With the various variants of the esp32 SoCs we need more fine-grained tests than just ESP32
+#include <soc/soc_caps.h>
+// Check whether this SoC supports external wakeup from deep sleep
+#if SOC_PM_SUPPORT_EXT_WAKEUP
+#define IOTSA_WITH_WAKEUP_SUPPORT 1
+#endif
+// Check whether this SoC has touch sensors
+#if SOC_TOUCH_SENSOR_NUM > 0
+#define IOTSA_WITH_TOUCH_SUPPORT 1
+#endif
+// Check whether this variant supports the ESP32Encoder library (esp32c3 does not)
+#if SOC_PCNT_SUPPORTED
+#define IOTSA_WITH_ESP32ENCODER_LIB 1
+#endif
+#endif
+
 //#define IOTSA_DEBUG_INPUT
 
 typedef std::function<bool()> ActivationCallbackType;
@@ -45,7 +62,7 @@ protected:
   bool toggle;
 };
 
-#ifdef ESP32
+#if IOTSA_WITH_TOUCH_SUPPORT
 class Touchpad : public Button {
 public:
   Touchpad(int _pin, bool _actOnPress, bool _actOnRelease, bool _wake=false);
@@ -63,7 +80,7 @@ public:
 #endif
   uint16_t threshold;
 };
-#endif // ESP32
+#endif // IOTSA_WITH_TOUCH_SUPPORT
 
 class ValueInput : public Input {
 public:
@@ -77,9 +94,6 @@ protected:
   float *floatVar, floatMin, floatMax, floatStep;
 };
 
-#if defined(ESP32) && !defined(ARDUINO_ESP32C3_DEV)
-#define WITH_ESP32ENCODER_LIB
-#endif
 
 class ESP32Encoder;
 class RotaryEncoder : public ValueInput {
@@ -90,7 +104,7 @@ public:
   void setAcceleration(uint32_t _accelMillis);
   uint32_t duration;
 protected:
-#ifdef WITH_ESP32ENCODER_LIB
+#ifdef IOTSA_WITH_ESP32ENCODER_LIB
   ESP32Encoder *_encoder;
   int64_t oldCount = 0;
 #else

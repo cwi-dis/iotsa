@@ -1,3 +1,7 @@
+iotsa 2.6.x - In development
+
+- Added support for esp32c3
+
 iotsa 2.6 - 07-Oct-2022
 
 - Various changes to configuration mode: can now be enabled (by the iotsa program) with other

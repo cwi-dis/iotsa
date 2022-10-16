@@ -1,9 +1,4 @@
 #include "iotsaLed.h"
-#ifdef ESP32
-#include <WiFi.h>
-#else
-#include <ESP8266WiFi.h>
-#endif
 
 // Helper function: get color to show current status of module.
 
