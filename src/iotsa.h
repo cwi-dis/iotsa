@@ -54,6 +54,7 @@ public:
 class IotsaApplication : public IotsaWebServerMixin {
   friend class IotsaBaseMod;
   friend class IotsaConfigMod;
+  friend class IotsaWifiMod;
   friend class IotsaWebServerMixin;
 public:
   IotsaApplication(const char *_title);
@@ -90,6 +91,7 @@ public:
 class IotsaBaseMod {
   friend class IotsaApplication;
   friend class IotsaConfigMod;
+  friend class IotsaWifiMod;
   friend class IotsaWebServerMixin;
 public:
   IotsaBaseMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
