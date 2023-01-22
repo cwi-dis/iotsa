@@ -1,6 +1,6 @@
 import sys
 import time
-from typing import List
+from typing import List, Tuple, Dict
 
 from .consts import UserIntervention, VERBOSE
 
@@ -26,15 +26,7 @@ if _have_mdns:
                 zeroconf.ServiceBrowser(self.zeroconf, "_iotsa._tcp.local.", self)
             )
             self.browsers.append(
-                zeroconf.ServiceBrowser(self.zeroconf, "_iotsa._http._tcp.local.", self)
-            )
-            self.browsers.append(
-                zeroconf.ServiceBrowser(
-                    self.zeroconf, "_iotsa._https._tcp.local.", self
-                )
-            )
-            self.browsers.append(
-                zeroconf.ServiceBrowser(self.zeroconf, "_iotsa._coap._tcp.local.", self)
+                zeroconf.ServiceBrowser(self.zeroconf, "_iotsa._udp.local.", self)
             )
 
         def remove_service(self, zc, type, name):
@@ -51,9 +43,20 @@ if _have_mdns:
                 if VERBOSE:
                     print("Ignore duplicate mDNS entry for", info.server, "type:", type)
                 return
-            self.found.append(info.server)
+            properties = {}
+            for k, v in info.properties.items():
+                try:
+                    k = k.decode('utf8')
+                except:
+                    pass
+                try:
+                    v = v.decode('utf8')
+                except:
+                    pass
+                properties[k] = v
+            self.found.append((info.server, properties))
 
-        def run(self, timeout: int = 5) -> List[str]:
+        def run(self, timeout: int = 5) -> List[Tuple[str, Dict]]:
             """Run the mDNS browser.
 
             :param timeout: how many seconds to wait for iotsa devices
@@ -75,6 +78,6 @@ else:
         def __init__(self):
             pass
 
-        def run(self, timeout=5):
+        def run(self, timeout=5) -> List[Tuple[str, Dict]]:
             """Run for a short while (5 seconds default) and collect all iotsa devices found. Return list."""
             raise UserIntervention("Please browse for mDNS services _iotsa._tcp.local")

@@ -181,11 +181,11 @@ class IotsaWifi(PlatformWifi):
         devices = collect.run()
         rv = []
         # Remove final dot (.) that can be appended (certificate matching doesn't like this)
-        for d in devices:
-            if d[-1:] == ".":
-                rv.append(d[:-1])
+        for name, properties in devices:
+            if name[-1:] == ".":
+                rv.append((name[:-1], properties))
             else:
-                rv.append(d)
+                rv.append((name, properties))
         return rv
 
     def selectDevice(self, device: str) -> bool:
