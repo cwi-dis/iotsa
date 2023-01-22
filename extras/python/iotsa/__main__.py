@@ -406,6 +406,7 @@ class Main(object):
             else:
                 name_wanted = subexp
         allTargets = self.wifi.findDevices()
+        nSelected = 0
         selected = None
         proto = None
         for t, properties in allTargets:
@@ -424,8 +425,12 @@ class Main(object):
             print(f'selected: {t}')
             selected = t
             proto = properties.get('P')
+            nSelected += 1
         if not selected:
             print(f'select: no target matches')
+            sys.exit(1)
+        if nSelected > 1:
+            print(f'select: {nSelected} targets match')
             sys.exit(1)
         self.loadDevice(selected, proto)
 
