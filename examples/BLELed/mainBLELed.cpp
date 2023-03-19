@@ -40,6 +40,11 @@ IotsaBatteryMod batteryMod(application);
 #ifdef IOTSA_WITH_BLE
 IotsaBLEServerMod bleserverMod(application);
 #endif
+
+#ifdef IOTSA_WITH_BLEREST
+#include "iotsaBLERest.h"
+IotsaBLERestMod bleRestMod(application);
+#endif
 //
 // LED module. 
 //
