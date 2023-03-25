@@ -35,6 +35,9 @@ public:
 #ifdef IOTSA_WITH_COAP
 #include "iotsaCoapApi.h"
 #endif
+#ifdef IOTSA_WITH_BLEREST
+#include "iotsaBLERestApi.h"
+#endif
 
 //
 // Class that provides both REST and COAP service endpoint implementations.
@@ -49,6 +52,9 @@ public:
   #ifdef IOTSA_WITH_COAP
     coapService(_provider, _app, _auth),
   #endif
+  #ifdef IOTSA_WITH_BLEREST
+    bleRestService(_provider, _app, _auth),
+  #endif
     _dummy(0)
   {}
   void setup(const char* path, bool get=false, bool put=false, bool post=false) override {
@@ -58,6 +64,9 @@ public:
   #ifdef IOTSA_WITH_COAP
     coapService.setup(path, get, put, post);
   #endif
+  #ifdef IOTSA_WITH_BLEREST
+    bleRestService.setup(path, get, put, post);
+  #endif
   }
 private:
 #ifdef IOTSA_WITH_REST
@@ -65,6 +74,9 @@ private:
 #endif
 #ifdef IOTSA_WITH_COAP
   IotsaCoapApiService coapService;
+#endif
+#ifdef IOTSA_WITH_BLEREST
+  IotsaBLERestApiService bleRestService;
 #endif
   int _dummy;
 };

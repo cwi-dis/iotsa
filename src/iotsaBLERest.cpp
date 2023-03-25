@@ -1,5 +1,6 @@
 #include "iotsa.h"
-#include "iotsaBLEREST.h"
+#include "iotsaBLERest.h"
+#include "iotsaBLERestApi.h"
 #include "iotsaConfigFile.h"
 
 #ifdef IOTSA_WITH_WEB
@@ -68,4 +69,21 @@ void IotsaBLERestMod::serverSetup() {
 }
 
 void IotsaBLERestMod::loop() {
+}
+
+std::list<IotsaBLERestApiService*> IotsaBLERestApiService::all;
+
+IotsaBLERestApiService::IotsaBLERestApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth)
+: provider(_provider),
+  auth(_auth)
+{
+  all.push_back(this);
+}
+  
+void IotsaBLERestApiService::setup(const char* path, bool get, bool put, bool post) {
+  IotsaSerial.printf("IotsaBLERestApiService: path=%s\n", path);
+  provider_path = path;
+  provider_get = get;
+  provider_put = put;
+  provider_post = post;
 }
