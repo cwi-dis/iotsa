@@ -36,9 +36,11 @@ bool IotsaBLERestMod::blePutHandler(UUIDstring charUUID) {
 
 bool IotsaBLERestMod::bleGetHandler(UUIDstring charUUID) {
   if (charUUID == responseUUID) {
-    IotsaSerial.printf("IotsaBLERestMod: response=%s\n", curResponse.c_str());
-    bleApi.set(charUUID, curResponse);
+    // xxxjack doesn't handle MTU yet
+    std::string tmp = curResponse;
     curResponse = "";
+    IotsaSerial.printf("IotsaBLERestMod: response=%s\n", tmp.c_str());
+    bleApi.set(charUUID, tmp);
     return true;
   }
   IotsaSerial.println("IotsaBLERestMod: ble: read unknown uuid");
