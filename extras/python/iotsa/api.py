@@ -149,7 +149,10 @@ class IotsaDevice:
         if port:
             url += ":%d" % port
         assert protocol
-        HandlerClass = HandlerForProto[protocol]
+        try:
+            HandlerClass = HandlerForProto[protocol]
+        except KeyError:
+            raise IotsaError(f"Unknown protocol: {protocol}")
         self.protocolHandler = HandlerClass(
             url, noverify=noverify, bearer=bearer, auth=auth
         )
