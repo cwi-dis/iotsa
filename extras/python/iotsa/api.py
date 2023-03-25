@@ -48,6 +48,9 @@ class IotsaEndpoint:
         self.didload = False
         assert self.device.protocolHandler
         self.status = self.device.protocolHandler.get(self.endpoint)
+        if self.status == "" or self.status == None:
+            print(f"Warning: GET {self.endpoint} returned empty response")
+            self.status = {}
         self.didLoad = True
 
     def flush(self) -> None:

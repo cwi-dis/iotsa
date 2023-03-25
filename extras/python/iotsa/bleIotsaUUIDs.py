@@ -5,13 +5,21 @@ _uuid_to_name: dict[str, str] = {
     "00002a19-0000-1000-8000-00805f9b34fb": "levelBattery",
     "e4d90002-250f-46e6-90a4-ab98f01a0587": "levelVUSB",
     "e4d90003-250f-46e6-90a4-ab98f01a0587": "rebootWifi",
+
     "3b000001-1226-4a53-9d24-afa50c0163a3": "led",
     "3b000002-1226-4a53-9d24-afa50c0163a3": "rgb",
+
     "6b2f0001-38bc-4204-a506-1d3546ad3688": "lissabon",
     "6b2f0002-38bc-4204-a506-1d3546ad3688": "isOn",
     "6b2f0003-38bc-4204-a506-1d3546ad3688": "identify",
     "6b2f0004-38bc-4204-a506-1d3546ad3688": "brightness",
     "6b2f0005-38bc-4204-a506-1d3546ad3688": "temperature",
+
+    "e2db0001-d1d6-4564-961f-4b7e8b15ade6": "blerest",
+    "e2db0002-d1d6-4564-961f-4b7e8b15ade6": "httpCommand",
+    "e2db0003-d1d6-4564-961f-4b7e8b15ade6": "httpData",
+    "e2db0004-d1d6-4564-961f-4b7e8b15ade6": "httpResponse",
+
 }
 
 _name_to_uuid: dict[str, str] = {v: k for k, v in _uuid_to_name.items()}
