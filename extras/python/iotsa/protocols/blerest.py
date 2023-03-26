@@ -24,7 +24,7 @@ class IotsaBLERESTProtocolHandler(IotsaAbstractProtocolHandler):
         parts = urllib.parse.urlparse(baseURL)
         self.basePath = parts.path
         if not self.basePath:
-            self.basePath = "/"
+            self.basePath = "/api/"
         assert not parts.params
         assert not parts.query
         assert not parts.fragment

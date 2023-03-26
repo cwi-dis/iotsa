@@ -37,7 +37,7 @@ protected:
   std::string curCommand;
   std::string curData;
   std::string curResponse;
-  void _processRequest();
+  int _processRequest();
 };
 
 #endif
