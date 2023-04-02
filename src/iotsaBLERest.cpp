@@ -26,62 +26,78 @@ bool IotsaBLERestMod::putHandler(const char *path, const JsonVariant& request, J
 }
 
 bool IotsaBLERestMod::blePutHandler(UUIDstring charUUID) {
-  if (charUUID == commandUUID) {
-    curCommand = bleApi.getAsString(charUUID);
-    IFBLEDEBUG IotsaSerial.printf("IotsaBLERestMod: command=%s\n", curCommand.c_str());
-    _processRequest();
+  if (charUUID == controlPointUUID) {
+    HPSControl command = (HPSControl)bleApi.getAsInt(charUUID);
+    IFBLEDEBUG IotsaSerial.printf("IotsaBLERestMod: request command=0x%02x\n", (int)command);
+    curHttpStatus = _processRequest(command);
     return true;
   }
-  if (charUUID == dataUUID) {
-    curData += bleApi.getAsString(charUUID);
-    IFBLEDEBUG IotsaSerial.printf("IotsaBLERestMod: data=%s\n", curData.c_str());
+  if (charUUID == urlUUID) {
+    curUrl = bleApi.getAsString(charUUID);
+    IFBLEDEBUG IotsaSerial.printf("IotsaBLERestMod: request url=%s\n", curUrl.c_str());
     return true;
   }
+  if (charUUID == bodyUUID) {
+    curBody = bleApi.getAsString(charUUID);
+    IFBLEDEBUG IotsaSerial.printf("IotsaBLERestMod: request body=%s\n", curBody.c_str());
+    return true;
+  }
+  if (charUUID == headersUUID) {
+    curHeaders = bleApi.getAsString(charUUID);
+    IFBLEDEBUG IotsaSerial.printf("IotsaBLERestMod: request headers=%s\n", curHeaders.c_str());
+    return true;
+  } 
+
   IotsaSerial.println("IotsaBLERestMod: ble: write unknown uuid");
   return false;
 }
 
 bool IotsaBLERestMod::bleGetHandler(UUIDstring charUUID) {
-  if (charUUID == responseUUID) {
-    // xxxjack doesn't handle MTU yet
-    std::string tmp = curResponse;
-    curResponse = "";
-    IFBLEDEBUG IotsaSerial.printf("IotsaBLERestMod: response=%s\n", tmp.c_str());
+  if (charUUID == urlUUID) {
+    std::string tmp = curUrl;
     bleApi.set(charUUID, tmp);
+    IFBLEDEBUG IotsaSerial.printf("IotsaBLERestMod: response url=%s\n", tmp.c_str());
     return true;
   }
+  if (charUUID == bodyUUID) {
+    std::string tmp = curBody;
+    bleApi.set(charUUID, tmp);
+    IFBLEDEBUG IotsaSerial.printf("IotsaBLERestMod: response body=%s\n", tmp.c_str());
+    return true;
+  }
+  if (charUUID == headersUUID) {
+     std::string tmp = curHeaders;
+    bleApi.set(charUUID, tmp);
+    IFBLEDEBUG IotsaSerial.printf("IotsaBLERestMod: headers=%s\n", tmp.c_str());
+    return true;
+  } 
+  if (charUUID == statusUUID) {
+    uint8_t data[3];
+    data[0] = curHttpStatus & 0xff;
+    data[1] = (curHttpStatus >> 8) & 0xff;
+    data[2] = (uint8_t)curDataStatus;
+    bleApi.set(charUUID, data, 3);
+    return true;
+  }
+  if (charUUID == securityUUID) {
+    bleApi.set(charUUID, (uint8_t)0);
+    return true;
+  }
+  
   IotsaSerial.println("IotsaBLERestMod: ble: read unknown uuid");
   return false;
 }
 
-int IotsaBLERestMod::_processRequest() {
-  curResponse = "";
-  if (curCommand == "") {
-    IotsaSerial.println("IotsaBLERest: empty command");
+int IotsaBLERestMod::_processRequest(HPSControl command) {
+  IFDEBUG IotsaSerial.printf("BLEREST 0x%02x %s\n", (int)command, curUrl.c_str());
+  bool cmd_get = command == HPSControl::GET;
+  bool cmd_put = command == HPSControl::PUT;
+  bool cmd_post = command == HPSControl::POST;
+  if (!cmd_get && !cmd_put && !cmd_post) {
+    IotsaSerial.printf("IotsaBLERest: bad command 0x%02x\n", command);
     return 400;
   }
-  IFDEBUG IotsaSerial.print("BLEREST ");
-  IFDEBUG IotsaSerial.println(curCommand.c_str());
-  bool cmd_get = false;
-  bool cmd_put = false;
-  bool cmd_post = false;
-  std::string url;
-  if (curCommand.rfind("GET ", 0) == 0) {
-    cmd_get = true;
-    url = curCommand.substr(4);
-  } else
-  if (curCommand.rfind("PUT ", 0) == 0) {
-    cmd_put = true;
-    url = curCommand.substr(4);
-  } else
-  if (curCommand.rfind("POST ", 0) == 0) {
-    cmd_post = true;
-    url = curCommand.substr(5);
-  } else {
-    IotsaSerial.printf("IotsaBLERest: bad command %s\n", curCommand.c_str());
-    return 400;
-  }
-  const char *url_c = url.c_str();
+  const char *url_c = curUrl.c_str();
   IotsaBLERestApiService* service = nullptr;
   for(IotsaBLERestApiService* candidate : IotsaBLERestApiService::all) {
     if (cmd_get && !candidate->provider_get) continue;
@@ -92,7 +108,7 @@ int IotsaBLERestMod::_processRequest() {
     break;
   }
   if (service == nullptr) {
-    IotsaSerial.printf("IotsaBLERest: no api provider for url %s\n", url.c_str());
+    IotsaSerial.printf("IotsaBLERest: no api provider for url %s\n", url_c);
     return 404;
   }
   IotsaApiProvider* provider = service->provider;
@@ -105,7 +121,7 @@ int IotsaBLERestMod::_processRequest() {
       IotsaSerial.println("IotsaBLERest: request too large");
       return 413;
     }
-    ArduinoJson::deserializeJson(request_doc, curData.c_str());
+    ArduinoJson::deserializeJson(request_doc, curBody.c_str());
     request = request_doc.as<JsonObject>();
   }
   ArduinoJson::DynamicJsonDocument reply_doc(jsonBufSize);
@@ -128,10 +144,20 @@ int IotsaBLERestMod::_processRequest() {
     IotsaSerial.println("IotsaBLERest: reply too large");
     return 413;
   }
-  serializeJson(reply_doc, curResponse);
-  IFBLEDEBUG IotsaSerial.printf("IotsaBLERest: reply(%d): %s\n", curResponse.size(), curResponse.c_str());
-  curData = "";
-  curCommand = "";
+  curBody = "";
+  serializeJson(reply_doc, curBody);
+  IFBLEDEBUG IotsaSerial.printf("IotsaBLERest: reply(%d): %s\n", curBody.size(), curBody.c_str());
+  if (curBody.size() > HPSMaxBodySize) {
+    curDataStatus = HPSDataStatus::BodyTruncated;
+    curBody = curBody.substr(0, HPSMaxBodySize);
+  } else
+  if (curBody.size() == 0) {
+    curDataStatus = HPSDataStatus::NONE;
+  } else
+  {
+    curDataStatus = HPSDataStatus::BodyReceived;
+  }
+  // We don't do reply headers for now.
   return 200;
 }
 

@@ -14,6 +14,20 @@
 #define IotsaBLERestModBaseMod IotsaApiMod
 
 class IotsaBLERestMod : public IotsaBLERestModBaseMod, public IotsaBLEApiProvider {
+  const int HPSMaxBodySize = 512;
+  enum HPSControl {
+    NONE=0,
+    GET=0x01,
+    POST=0x03,
+    PUT=0x04
+  };
+  enum HPSDataStatus {
+    NONE=0,
+    HeadersReceived = 0x01,
+    HeadersTruncated = 0x02,
+    BodyReceived = 0x04,
+    BodyTruncated = 0x08
+  };
 public:
   using IotsaBLERestModBaseMod::IotsaBLERestModBaseMod;
   void setup() override;
@@ -29,15 +43,21 @@ protected:
   IotsaBleApiService bleApi;
   bool blePutHandler(UUIDstring charUUID) override;
   bool bleGetHandler(UUIDstring charUUID) override;
-  static constexpr UUIDstring serviceUUID = "E2DB0001-D1D6-4564-961F-4B7E8B15ADE6";
-  static constexpr UUIDstring commandUUID = "E2DB0002-D1D6-4564-961F-4B7E8B15ADE6";
-  static constexpr UUIDstring dataUUID = "E2DB0003-D1D6-4564-961F-4B7E8B15ADE6";
-  static constexpr UUIDstring responseUUID = "E2DB0004-D1D6-4564-961F-4B7E8B15ADE6";
+  static constexpr UUIDstring serviceUUID = "1823";
+  static constexpr UUIDstring controlPointUUID = "2ABA";
+  static constexpr UUIDstring urlUUID = "2AB6";
+  static constexpr UUIDstring bodyUUID = "2AB9";
+  static constexpr UUIDstring headersUUID = "2AB7";
+  static constexpr UUIDstring statusUUID = "2AB8";
+  static constexpr UUIDstring securityUUID = "2ABB";
 
-  std::string curCommand;
-  std::string curData;
-  std::string curResponse;
-  int _processRequest();
+  std::string curUrl;
+  std::string curHeaders;
+  std::string curBody;
+  HPSControl curControl;
+  uint16_t curHttpStatus;
+  HPSDataStatus curDataStatus;
+  int _processRequest(HPSControl command);
 };
 
 #endif
