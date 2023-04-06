@@ -15,11 +15,13 @@ _uuid_to_name: dict[str, str] = {
     "6b2f0004-38bc-4204-a506-1d3546ad3688": "brightness",
     "6b2f0005-38bc-4204-a506-1d3546ad3688": "temperature",
 
-    "e2db0001-d1d6-4564-961f-4b7e8b15ade6": "blerest",
-    "e2db0002-d1d6-4564-961f-4b7e8b15ade6": "httpCommand",
-    "e2db0003-d1d6-4564-961f-4b7e8b15ade6": "httpData",
-    "e2db0004-d1d6-4564-961f-4b7e8b15ade6": "httpResponse",
-
+    "00001823-0000-1000-8000-00805f9b34fb": "hps",
+    "00002ab6-0000-1000-8000-00805f9b34fb" : "hpsURL",
+    "00002ab7-0000-1000-8000-00805f9b34fb" : "hpsHeaders",
+    "00002ab8-0000-1000-8000-00805f9b34fb" : "hpsStatus",
+    "00002ab9-0000-1000-8000-00805f9b34fb" : "hpsBody",
+    "00002aba-0000-1000-8000-00805f9b34fb" : "hpsControlPoint",
+    "00002abb-0000-1000-8000-00805f9b34fb" : "hpsSecurity",
 }
 
 _name_to_uuid: dict[str, str] = {v: k for k, v in _uuid_to_name.items()}

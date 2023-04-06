@@ -42,21 +42,32 @@ class IotsaBLERESTProtocolHandler(IotsaAbstractProtocolHandler):
         if self.client:
             self.client.close()
         self.client = None
- 
+    
+    METHOD_TO_CODE = {
+        "GET" : 0x01,
+        "POST" : 0x03,
+        "PUT" : 0x04
+    }
     def request(self, method, endpoint, json=None, files=None, retryCount=5):
         endpoint = self.basePath + endpoint
+        headers = ""
         data = jsonmod.dumps(json)
         if VERBOSE:
             print(f"BLEREST {method} blerest://{self.bleServer}{endpoint}")
         if not self.client.isConnected():
             self.client.selectDevice(self.bleServer)
+        self.client.set("hpsURL", endpoint)
+        self.client.set("hpsHeaders", headers)
         if json != None:
             data = jsonmod.dumps(json)
-            self.client.setStreamed("httpData", data.encode())
-        command = f"{method} {endpoint}"
-        self.client.set("httpCommand", command)
+            self.client.set("hpsBody", data.encode())
+        commandCode = self.METHOD_TO_CODE[method]
+        self.client.set("hpsControlPoint", commandCode)
 
-        rvBytes = self.client.getStreamed("httpResponse")
+        fullStatus = self.client.get("hpsStatus")
+        if VERBOSE:
+            print(f"BLEREST status {repr(fullStatus)}")
+        rvBytes = self.client.get("hpsBody")
         if rvBytes == None or len(rvBytes) == 0:
             if VERBOSE:
                 print(f"BLEREST {method} returned empty response")
