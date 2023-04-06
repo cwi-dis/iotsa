@@ -1,12 +1,12 @@
-#ifndef _IOTSABLERESTAPI_H_
-#define _IOTSABLERESTAPI_H_
+#ifndef _IOTSAHPSAPI_H_
+#define _IOTSAHPSAPI_H_
 #include "iotsa.h"
 #include <list>
 
 
-class IotsaBLERestApiService : public IotsaApiServiceProvider {
+class IotsaHpsApiService : public IotsaApiServiceProvider {
 public:
-  IotsaBLERestApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth);
+  IotsaHpsApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth);
   void setup(const char* path, bool get=false, bool put=false, bool post=false) override;
 private:
   IotsaAuthenticationProvider* auth;
@@ -16,7 +16,7 @@ public:
   bool provider_get=false;
   bool provider_put=false;
   bool provider_post=false;
-  static std::list<IotsaBLERestApiService*> all;
+  static std::list<IotsaHpsApiService*> all;
 };
 
 #endif

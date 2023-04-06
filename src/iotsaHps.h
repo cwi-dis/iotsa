@@ -1,19 +1,19 @@
-#ifndef _IOTSABLEREST_H_
-#define _IOTSABLEREST_H_
+#ifndef _IOTSAHPS_H_
+#define _IOTSAHPS_H_
 #include "iotsa.h"
 #include "iotsaApi.h"
 #include "iotsaBLEServer.h"
 
-#ifdef IOTSA_WITH_BLEREST
+#ifdef IOTSA_WITH_HPS
 #ifndef IOTSA_WITH_API
-#error IOTSA_WITH_BLEREST requires IOTSA_WITH_API
+#error IOTSA_WITH_HPS requires IOTSA_WITH_API
 #endif
 #ifndef IOTSA_WITH_BLE
-#error IOTSA_WITH_BLEREST requires IOTSA_WITH_BLE
+#error IOTSA_WITH_HPS requires IOTSA_WITH_BLE
 #endif
-#define IotsaBLERestModBaseMod IotsaApiMod
+#define IotsaHpsModBaseMod IotsaApiMod
 
-class IotsaBLERestMod : public IotsaBLERestModBaseMod, public IotsaBLEApiProvider {
+class IotsaHpsMod : public IotsaHpsModBaseMod, public IotsaBLEApiProvider {
   const int HPSMaxBodySize = 512;
   enum HPSControl {
     NONE=0,
@@ -29,7 +29,7 @@ class IotsaBLERestMod : public IotsaBLERestModBaseMod, public IotsaBLEApiProvide
     BodyTruncated = 0x08
   };
 public:
-  using IotsaBLERestModBaseMod::IotsaBLERestModBaseMod;
+  using IotsaHpsModBaseMod::IotsaHpsModBaseMod;
   void setup() override;
   void loop() override;
   void serverSetup() override;

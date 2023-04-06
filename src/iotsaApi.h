@@ -35,8 +35,8 @@ public:
 #ifdef IOTSA_WITH_COAP
 #include "iotsaCoapApi.h"
 #endif
-#ifdef IOTSA_WITH_BLEREST
-#include "iotsaBLERestApi.h"
+#ifdef IOTSA_WITH_HPS
+#include "iotsaHpsApi.h"
 #endif
 
 //
@@ -52,7 +52,7 @@ public:
   #ifdef IOTSA_WITH_COAP
     coapService(_provider, _app, _auth),
   #endif
-  #ifdef IOTSA_WITH_BLEREST
+  #ifdef IOTSA_WITH_HPS
     bleRestService(_provider, _app, _auth),
   #endif
     _dummy(0)
@@ -64,7 +64,7 @@ public:
   #ifdef IOTSA_WITH_COAP
     coapService.setup(path, get, put, post);
   #endif
-  #ifdef IOTSA_WITH_BLEREST
+  #ifdef IOTSA_WITH_HPS
     bleRestService.setup(path, get, put, post);
   #endif
   }
@@ -75,8 +75,8 @@ private:
 #ifdef IOTSA_WITH_COAP
   IotsaCoapApiService coapService;
 #endif
-#ifdef IOTSA_WITH_BLEREST
-  IotsaBLERestApiService bleRestService;
+#ifdef IOTSA_WITH_HPS
+  IotsaHpsApiService bleRestService;
 #endif
   int _dummy;
 };

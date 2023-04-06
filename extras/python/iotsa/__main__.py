@@ -349,7 +349,7 @@ class Main(object):
         if proto == None:
             proto = self.args.protocol
           
-        if self.args.protocol == "blerest":
+        if self.args.protocol == "hps":
             # Special case: doesn't need tcp/ip or wifi.
             pass
         else:

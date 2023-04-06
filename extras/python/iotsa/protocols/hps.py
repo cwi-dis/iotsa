@@ -7,20 +7,20 @@ from .abstract import IotsaAbstractProtocolHandler
 from ..consts import VERBOSE, IotsaError
 from ..ble import BLE
 
-class IotsaBLERESTProtocolHandler(IotsaAbstractProtocolHandler):
-    """Communicate with iotsa device using REST over BLE
+class IotsaHPSProtocolHandler(IotsaAbstractProtocolHandler):
+    """Communicate with iotsa device using REST over BLE HTTP Proxy Service
 
     :param baseurl: first part of URL (endpoint arguments will be appended)
     """
 
     def __init__(self, baseURL: str, bearer=None, noverify=None, auth=None):
         if VERBOSE:
-            print(f"IotsaBLERestProtocolHandler({baseURL})")
+            print(f"IotsaHPSProtocolHandler({baseURL})")
         self.client = None
         if bearer:
-            raise IotsaError("bearer not supported for blerest")
+            raise IotsaError("bearer not supported for hps")
         if auth:
-            raise IotsaError("auth not supported for blerest")
+            raise IotsaError("auth not supported for hps")
         parts = urllib.parse.urlparse(baseURL)
         self.basePath = parts.path
         if not self.basePath:
@@ -53,7 +53,7 @@ class IotsaBLERESTProtocolHandler(IotsaAbstractProtocolHandler):
         headers = ""
         data = jsonmod.dumps(json)
         if VERBOSE:
-            print(f"BLEREST {method} blerest://{self.bleServer}{endpoint}")
+            print(f"HPS {method} hps://{self.bleServer}{endpoint}")
         if not self.client.isConnected():
             self.client.selectDevice(self.bleServer)
         self.client.set("hpsURL", endpoint)
@@ -66,14 +66,14 @@ class IotsaBLERESTProtocolHandler(IotsaAbstractProtocolHandler):
 
         fullStatus = self.client.get("hpsStatus")
         if VERBOSE:
-            print(f"BLEREST status {repr(fullStatus)}")
+            print(f"HPS status {repr(fullStatus)}")
         rvBytes = self.client.get("hpsBody")
         if rvBytes == None or len(rvBytes) == 0:
             if VERBOSE:
-                print(f"BLEREST {method} returned empty response")
+                print(f"HPS {method} returned empty response")
             return None
         if VERBOSE:
-            print(f"BLEREST {method} returned {rvBytes}")
+            print(f"HPS {method} returned {rvBytes}")
         return jsonmod.loads(rvBytes)
 
     def get(self, endpoint, json=None):

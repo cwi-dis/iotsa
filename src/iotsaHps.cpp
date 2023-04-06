@@ -1,6 +1,6 @@
 #include "iotsa.h"
-#include "iotsaBLERest.h"
-#include "iotsaBLERestApi.h"
+#include "iotsaHps.h"
+#include "iotsaHpsApi.h"
 #include "iotsaConfigFile.h"
 
 #ifdef IOTSA_BLE_DEBUG
@@ -11,21 +11,21 @@
 
 #ifdef IOTSA_WITH_WEB
 
-String IotsaBLERestMod::info() {
+String IotsaHpsMod::info() {
   String message = "<p>Built with support for REST over Bluetooth LE.</p>";
   return message;
 }
 #endif // IOTSA_WITH_WEB
 
-bool IotsaBLERestMod::getHandler(const char *path, JsonObject& reply) {
+bool IotsaHpsMod::getHandler(const char *path, JsonObject& reply) {
     return true;
 }
 
-bool IotsaBLERestMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+bool IotsaHpsMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
     return false;
 }
 
-bool IotsaBLERestMod::blePutHandler(UUIDstring charUUID) {
+bool IotsaHpsMod::blePutHandler(UUIDstring charUUID) {
   if (charUUID == controlPointUUID) {
     HPSControl command = (HPSControl)bleApi.getAsInt(charUUID);
     IFBLEDEBUG IotsaSerial.printf("IotsaBLERestMod: request command=0x%02x\n", (int)command);
@@ -52,7 +52,7 @@ bool IotsaBLERestMod::blePutHandler(UUIDstring charUUID) {
   return false;
 }
 
-bool IotsaBLERestMod::bleGetHandler(UUIDstring charUUID) {
+bool IotsaHpsMod::bleGetHandler(UUIDstring charUUID) {
   if (charUUID == urlUUID) {
     std::string tmp = curUrl;
     bleApi.set(urlUUID, tmp);
@@ -92,7 +92,7 @@ bool IotsaBLERestMod::bleGetHandler(UUIDstring charUUID) {
   return false;
 }
 
-int IotsaBLERestMod::_processRequest(HPSControl command) {
+int IotsaHpsMod::_processRequest(HPSControl command) {
   IFDEBUG IotsaSerial.printf("BLEREST 0x%02x %s\n", (int)command, curUrl.c_str());
   bool cmd_get = command == HPSControl::GET;
   bool cmd_put = command == HPSControl::PUT;
@@ -102,8 +102,8 @@ int IotsaBLERestMod::_processRequest(HPSControl command) {
     return 400;
   }
   const char *url_c = curUrl.c_str();
-  IotsaBLERestApiService* service = nullptr;
-  for(IotsaBLERestApiService* candidate : IotsaBLERestApiService::all) {
+  IotsaHpsApiService* service = nullptr;
+  for(IotsaHpsApiService* candidate : IotsaHpsApiService::all) {
     if (cmd_get && !candidate->provider_get) continue;
     if (cmd_put && !candidate->provider_put) continue;
     if (cmd_post && !candidate->provider_post) continue;
@@ -171,7 +171,7 @@ int IotsaBLERestMod::_processRequest(HPSControl command) {
   return 200;
 }
 
-void IotsaBLERestMod::setup() {
+void IotsaHpsMod::setup() {
   bleApi.setup(serviceUUID, this);
   // Explain to clients what the rgb characteristic looks like
   bleApi.addCharacteristic(urlUUID, BLE_READ|BLE_WRITE, BLE2904::FORMAT_UTF8, 0x2700, "HPS URL");
@@ -182,24 +182,24 @@ void IotsaBLERestMod::setup() {
   bleApi.addCharacteristic(securityUUID, BLE_READ, BLE2904::FORMAT_BOOLEAN, 0x2700, "HPS Security");
 }
 
-void IotsaBLERestMod::serverSetup() {
-  api.setup("/api/blerest", true, false);
-  name = "blerest";
+void IotsaHpsMod::serverSetup() {
+  api.setup("/api/blehps", true, false);
+  name = "blehps";
 }
 
-void IotsaBLERestMod::loop() {
+void IotsaHpsMod::loop() {
 }
 
-std::list<IotsaBLERestApiService*> IotsaBLERestApiService::all;
+std::list<IotsaHpsApiService*> IotsaHpsApiService::all;
 
-IotsaBLERestApiService::IotsaBLERestApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth)
+IotsaHpsApiService::IotsaHpsApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth)
 : provider(_provider),
   auth(_auth)
 {
   all.push_back(this);
 }
   
-void IotsaBLERestApiService::setup(const char* path, bool get, bool put, bool post) {
+void IotsaHpsApiService::setup(const char* path, bool get, bool put, bool post) {
   IFBLEDEBUG IotsaSerial.printf("IotsaBLERestApiService: path=%s\n", path);
   provider_path = path;
   provider_get = get;
