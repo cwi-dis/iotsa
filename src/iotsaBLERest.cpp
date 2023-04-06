@@ -48,43 +48,47 @@ bool IotsaBLERestMod::blePutHandler(UUIDstring charUUID) {
     return true;
   } 
 
-  IotsaSerial.println("IotsaBLERestMod: ble: write unknown uuid");
+  IotsaSerial.printf("IotsaBLERestMod: ble: write unknown uuid %s\n", charUUID);
   return false;
 }
 
 bool IotsaBLERestMod::bleGetHandler(UUIDstring charUUID) {
   if (charUUID == urlUUID) {
     std::string tmp = curUrl;
-    bleApi.set(charUUID, tmp);
+    bleApi.set(urlUUID, tmp);
     IFBLEDEBUG IotsaSerial.printf("IotsaBLERestMod: response url=%s\n", tmp.c_str());
     return true;
   }
   if (charUUID == bodyUUID) {
     std::string tmp = curBody;
-    bleApi.set(charUUID, tmp);
+    bleApi.set(bodyUUID, tmp);
     IFBLEDEBUG IotsaSerial.printf("IotsaBLERestMod: response body=%s\n", tmp.c_str());
     return true;
   }
   if (charUUID == headersUUID) {
-     std::string tmp = curHeaders;
-    bleApi.set(charUUID, tmp);
+    std::string tmp = curHeaders;
+    bleApi.set(headersUUID, tmp);
     IFBLEDEBUG IotsaSerial.printf("IotsaBLERestMod: headers=%s\n", tmp.c_str());
     return true;
   } 
+  if (charUUID == controlPointUUID) {
+    bleApi.set(controlPointUUID, (uint8_t)HPSControl::NONE);
+    return true;
+  }
   if (charUUID == statusUUID) {
     uint8_t data[3];
     data[0] = curHttpStatus & 0xff;
     data[1] = (curHttpStatus >> 8) & 0xff;
     data[2] = (uint8_t)curDataStatus;
-    bleApi.set(charUUID, data, 3);
+    bleApi.set(statusUUID, data, 3);
     return true;
   }
   if (charUUID == securityUUID) {
-    bleApi.set(charUUID, (uint8_t)0);
+    bleApi.set(securityUUID, (uint8_t)0);
     return true;
   }
   
-  IotsaSerial.println("IotsaBLERestMod: ble: read unknown uuid");
+  IotsaSerial.printf("IotsaBLERestMod: ble: read unknown uuid %s\n", charUUID);
   return false;
 }
 
@@ -152,21 +156,30 @@ int IotsaBLERestMod::_processRequest(HPSControl command) {
     curBody = curBody.substr(0, HPSMaxBodySize);
   } else
   if (curBody.size() == 0) {
-    curDataStatus = HPSDataStatus::NONE;
+    curDataStatus = HPSDataStatus::EMPTY;
   } else
   {
     curDataStatus = HPSDataStatus::BodyReceived;
   }
   // We don't do reply headers for now.
+  // Set the statusUUID data. This will send a notification or indication if it was requested.
+  uint8_t data[3];
+  data[0] = curHttpStatus & 0xff;
+  data[1] = (curHttpStatus >> 8) & 0xff;
+  data[2] = (uint8_t)curDataStatus;
+  bleApi.set(statusUUID, data, 3);
   return 200;
 }
 
 void IotsaBLERestMod::setup() {
   bleApi.setup(serviceUUID, this);
   // Explain to clients what the rgb characteristic looks like
-  bleApi.addCharacteristic(commandUUID, BLE_WRITE, BLE2904::FORMAT_UTF8, 0x2700, "BLE REST Command");
-  bleApi.addCharacteristic(dataUUID, BLE_WRITE, BLE2904::FORMAT_UTF8, 0x2700, "BLE REST Data");
-  bleApi.addCharacteristic(responseUUID, BLE_READ|BLE_NOTIFY, BLE2904::FORMAT_UTF8, 0x2700, "BLE REST Response");
+  bleApi.addCharacteristic(urlUUID, BLE_READ|BLE_WRITE, BLE2904::FORMAT_UTF8, 0x2700, "HPS URL");
+  bleApi.addCharacteristic(headersUUID, BLE_READ|BLE_WRITE, BLE2904::FORMAT_UTF8, 0x2700, "HPS Headers");
+  bleApi.addCharacteristic(statusUUID, BLE_READ|BLE_NOTIFY, BLE2904::FORMAT_OPAQUE, 0x2700, "HPS Status");
+  bleApi.addCharacteristic(bodyUUID, BLE_READ|BLE_WRITE, BLE2904::FORMAT_UTF8, 0x2700, "HPS Body");
+  bleApi.addCharacteristic(controlPointUUID, BLE_READ|BLE_WRITE, BLE2904::FORMAT_UINT8, 0x2700, "HPS ControlPoint");
+  bleApi.addCharacteristic(securityUUID, BLE_READ, BLE2904::FORMAT_BOOLEAN, 0x2700, "HPS Security");
 }
 
 void IotsaBLERestMod::serverSetup() {

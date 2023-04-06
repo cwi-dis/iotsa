@@ -22,7 +22,7 @@ class IotsaBLERestMod : public IotsaBLERestModBaseMod, public IotsaBLEApiProvide
     PUT=0x04
   };
   enum HPSDataStatus {
-    NONE=0,
+    EMPTY=0,
     HeadersReceived = 0x01,
     HeadersTruncated = 0x02,
     BodyReceived = 0x04,
@@ -44,11 +44,11 @@ protected:
   bool blePutHandler(UUIDstring charUUID) override;
   bool bleGetHandler(UUIDstring charUUID) override;
   static constexpr UUIDstring serviceUUID = "1823";
-  static constexpr UUIDstring controlPointUUID = "2ABA";
   static constexpr UUIDstring urlUUID = "2AB6";
-  static constexpr UUIDstring bodyUUID = "2AB9";
   static constexpr UUIDstring headersUUID = "2AB7";
   static constexpr UUIDstring statusUUID = "2AB8";
+  static constexpr UUIDstring bodyUUID = "2AB9";
+  static constexpr UUIDstring controlPointUUID = "2ABA";
   static constexpr UUIDstring securityUUID = "2ABB";
 
   std::string curUrl;
