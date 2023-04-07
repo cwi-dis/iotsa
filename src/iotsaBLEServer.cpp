@@ -261,7 +261,11 @@ void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask, uint8_
 void IotsaBleApiService::set(UUIDstring charUUID, const uint8_t *data, size_t size) {
   for(int i=0; i<nCharacteristic; i++) {
     if (characteristicUUIDs[i] == charUUID) {
-      bleCharacteristics[i]->setValue((uint8_t *)data, size);
+      BLECharacteristic* ch = bleCharacteristics[i];
+      ch->setValue((uint8_t *)data, size);
+      bool want_notify = ch->getProperties() & NIMBLE_PROPERTY::NOTIFY;
+      bool want_indicate = ch->getProperties() & NIMBLE_PROPERTY::INDICATE;
+      if(want_notify || want_indicate) ch->notify((uint8_t *)data, size, want_notify);
       return;
     }
   }

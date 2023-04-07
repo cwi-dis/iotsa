@@ -343,38 +343,45 @@ class Main(object):
         """Load target device (if not already done)"""
         if self.device:
             return
-        self.loadWifi()
+        
         if target == None:
             target = self.args.target
         if proto == None:
             proto = self.args.protocol
-        if not target or target == "auto":
-            all = self.wifi.findDevices()
-            if len(all) == 0:
-                print("%s: no iotsa devices found" % (sys.argv[0]), file=sys.stderr)
-                sys.exit(1)
-            if len(all) > 1:
-                print(
-                    "%s: multiple iotsa devices:" % (sys.argv[0]),
-                    end=" ",
-                    file=sys.stderr,
-                )
-                for a, properties in all:
-                    print(a, end=" ", file=sys.stderr)
-                print(file=sys.stderr)
-                sys.exit(1)
-            target = all[0]
-        if target:
-            ok = self.wifi.selectDevice(target)
-            if not ok:
-                sys.exit(1)
+          
+        if self.args.protocol == "hps":
+            # Special case: doesn't need tcp/ip or wifi.
+            pass
+        else:
+            self.loadWifi()
+            if not target or target == "auto":
+                all = self.wifi.findDevices()
+                if len(all) == 0:
+                    print("%s: no iotsa devices found" % (sys.argv[0]), file=sys.stderr)
+                    sys.exit(1)
+                if len(all) > 1:
+                    print(
+                        "%s: multiple iotsa devices:" % (sys.argv[0]),
+                        end=" ",
+                        file=sys.stderr,
+                    )
+                    for a, properties in all:
+                        print(a, end=" ", file=sys.stderr)
+                    print(file=sys.stderr)
+                    sys.exit(1)
+                target = all[0]
+            if target:
+                ok = self.wifi.selectDevice(target)
+                if not ok:
+                    sys.exit(1)
+            target = self.wifi.currentDevice()
         kwargs = {}
         if self.args.bearer:
             kwargs["bearer"] = self.args.bearer
         if self.args.credentials:
             kwargs["auth"] = self.args.credentials.split(":")
         self.device = api.IotsaDevice(
-            self.wifi.currentDevice(),
+            target,
             protocol=proto,
             port=self.args.port,
             noverify=self.args.noverify,

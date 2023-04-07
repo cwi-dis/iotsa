@@ -50,15 +50,15 @@ void IotsaRestApiService::_putHandlerWrapper(const char *path) {
     DynamicJsonDocument requestDocument(jsonBufSize);
     deserializeJson(requestDocument, server->arg("plain"));
     if (requestDocument.overflowed()) {
-        server->send(413, "text/plain", "JSON document overflow, use jsonBufSize");
-        IFDEBUG IotsaSerial.println("-> ERR JSON document overflow");
+        server->send(413, "text/plain", "JSON request overflow, use jsonBufSize");
+        IFDEBUG IotsaSerial.println("-> ERR JSON request overflow");
         return;
     }
     JsonObject request = requestDocument.as<JsonObject>();
     bool ok = provider->putHandler(path, request, reply);
     if (replyDocument.overflowed()) {
-        server->send(413, "text/plain", "JSON document overflow, use jsonBufSize");
-        IFDEBUG IotsaSerial.println("-> ERR JSON document overflow");
+        server->send(413, "text/plain", "JSON reply overflow, use jsonBufSize");
+        IFDEBUG IotsaSerial.println("-> ERR JSON reply overflow");
         return;
     }
     if (ok) {

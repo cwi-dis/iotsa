@@ -13,6 +13,7 @@ class BLE:
     """Handle iotsa device connectable over Bluetooth LE"""
 
     discover_timeout = 11
+    streamMTU = 500
     _currentDevice : Optional[bleak.BLEDevice]
     _currentConnection : Optional[bleak.BleakClient]
     _serviceCollection : Optional[bleak.BleakGATTServiceCollection]
@@ -26,6 +27,14 @@ class BLE:
         self._serviceCollection = None
         self.loop = asyncio.new_event_loop()
 
+    def close(self) -> None:
+        if self._currentConnection != None:
+            self.loop.run_until_complete(self._currentConnection.disconnect())
+            self._currentConnection = None
+            
+    def isConnected(self) -> bool:
+        return self._currentConnection != None
+    
     def findDevices(self) -> list[str]:
         try:
             self.loop.run_until_complete(self._asyncFindDevices())
@@ -48,7 +57,7 @@ class BLE:
         try:
             self.loop.run_until_complete(self._asyncSelectDevice(name_or_address))
         except bleak.BleakError as e:
-            print(f"ble.set({name}, ...): exception: {e}")
+            print(f"ble.set({name_or_address}, ...): exception: {e}")
         return self._currentDevice != None
 
     async def _asyncSelectDevice(self, name_or_address: str):
@@ -71,7 +80,7 @@ class BLE:
         try:
             self.loop.run_until_complete(self._asyncPrintStatus())
         except bleak.BleakError as e:
-            print(f"ble.set({name}, ...): exception: {e}")
+            print(f"ble.printsStatus: exception: {e}")
 
     async def _asyncPrintStatus(self):
         assert self._currentConnection
@@ -112,6 +121,21 @@ class BLE:
         async with self._currentConnection as client:
             await client.write_gatt_char_typed(uuid, value, response=True)
 
+    def setStreamed(self, name: str, value: bytes) -> None:
+        try:
+            self.loop.run_until_complete(self._asyncSetStreamed(name, value))
+        except bleak.BleakError as e:
+            print(f"ble.setStreamed({name}, ...): exception: {e}")
+
+    async def _asyncSetStreamed(self, name: str, value: bytes) -> None:
+        uuid = name_to_uuid(name)
+        assert self._currentConnection
+        async with self._currentConnection as client:
+            while len(value) > 0:
+                currentBuffer = value[:self.streamMTU]
+                value = value[self.streamMTU:]
+                await client.write_gatt_char(uuid, currentBuffer, response=True)
+
     def get(self, name: str) -> Any:
         self._get_rv: Any = None
         try:
@@ -129,3 +153,31 @@ class BLE:
             except bleak.BleakError as e:
                 print(e)
                 self._get_rv = None
+
+    def getStreamed(self, name: str) -> Optional[bytes]:
+        self._get_rv: Any = None
+        try:
+           self.loop.run_until_complete(self._asyncGetStreamed(name))
+        except bleak.BleakError as e:
+            print(f"ble.getStreamed({name}): exception: {e}")
+        return self._get_rv
+
+    async def _asyncGetStreamed(self, name: str):
+        uuid = name_to_uuid(name)
+        assert self._currentConnection
+        rv = b""
+        async with self._currentConnection as client:
+            while True:
+                try:
+                    currentBuffer = await client.read_gatt_char(uuid)
+                except bleak.BleakError as e:
+                    print(e)
+                    self._get_rv = None
+                    return
+                if len(currentBuffer) == 0:
+                    self._get_rv = rv
+                    return
+                rv = rv + currentBuffer
+
+
+
