@@ -3,6 +3,8 @@
 #include "iotsaHpsApi.h"
 #include "iotsaConfigFile.h"
 
+#ifdef IOTSA_WITH_HPS
+
 #ifdef IOTSA_BLE_DEBUG
 #define IFBLEDEBUG if(1)
 #else
@@ -206,3 +208,5 @@ void IotsaHpsApiService::setup(const char* path, bool get, bool put, bool post) 
   provider_put = put;
   provider_post = post;
 }
+
+#endif // IOTSA_WITH_HPS

@@ -60,5 +60,5 @@ protected:
   int _processRequest(HPSControl command);
 };
 
-#endif
+#endif // IOTSA_WITH_HPS
 #endif

@@ -3,6 +3,7 @@
 #include "iotsa.h"
 #include <list>
 
+#ifdef IOTSA_WITH_HPS
 
 class IotsaHpsApiService : public IotsaApiServiceProvider {
 public:
@@ -18,5 +19,5 @@ public:
   bool provider_post=false;
   static std::list<IotsaHpsApiService*> all;
 };
-
+#endif // IOTSA_WITH_HPS
 #endif
