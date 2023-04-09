@@ -76,6 +76,7 @@ def main():
             universal_newlines=True,
         )
         fullVersion = cmd.stdout.read().strip()
+        fullVersion = fullVersion.replace("-", "+", 1)
     shortVersion = vf.get("IOTSA_VERSION", '"unknown""')
     if not fullVersion:
         fullVersion = shortVersion
