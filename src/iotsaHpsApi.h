@@ -5,6 +5,8 @@
 
 #ifdef IOTSA_WITH_HPS
 
+class IotsaHpsServiceMod;
+
 class IotsaHpsApiService : public IotsaApiServiceProvider {
 public:
   IotsaHpsApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth);
@@ -18,6 +20,7 @@ public:
   bool provider_put=false;
   bool provider_post=false;
   static std::list<IotsaHpsApiService*> all;
+  static IotsaHpsServiceMod *_hpsMod;
 };
 #endif // IOTSA_WITH_HPS
 #endif

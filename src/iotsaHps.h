@@ -13,7 +13,7 @@
 #endif
 #define IotsaHpsModBaseMod IotsaApiMod
 
-class IotsaHpsMod : public IotsaHpsModBaseMod, public IotsaBLEApiProvider {
+class IotsaHpsServiceMod : public IotsaBaseMod, public IotsaBLEApiProvider {
   const int HPSMaxBodySize = 512;
   enum HPSControl {
     NONE=0,
@@ -29,17 +29,11 @@ class IotsaHpsMod : public IotsaHpsModBaseMod, public IotsaBLEApiProvider {
     BodyTruncated = 0x08
   };
 public:
-  using IotsaHpsModBaseMod::IotsaHpsModBaseMod;
+  using IotsaBaseMod::IotsaBaseMod;
   void setup() override;
   void loop() override;
   void serverSetup() override;
-#ifdef IOTSA_WITH_WEB
-  String info() override;
-#endif
 protected:
-  bool getHandler(const char *path, JsonObject& reply) override;
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
-
   IotsaBleApiService bleApi;
   bool blePutHandler(UUIDstring charUUID) override;
   bool bleGetHandler(UUIDstring charUUID) override;

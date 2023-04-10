@@ -129,6 +129,7 @@ void IotsaBLEServerMod::startServer() {
 bool IotsaBLEServerMod::pauseServer() {
   if (s_server) {
     BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+    if (pAdvertising == nullptr || !pAdvertising->isAdvertising()) return false;
     pAdvertising->stop();
     return true;
   }
@@ -149,9 +150,6 @@ void IotsaBLEServerMod::setup() {
     esp_bt_mem_release(ESP_BT_MODE_BTDM);
     return;
   }
-
-  IFBLEDEBUG IotsaSerial.println("BLE server start advertising and services");
-  startServer();
 }
 
 #ifdef IOTSA_WITH_API
@@ -175,6 +173,8 @@ bool IotsaBLEServerMod::putHandler(const char *path, const JsonVariant& request,
 #endif // IOTSA_WITH_API
 
 void IotsaBLEServerMod::serverSetup() {
+  IFBLEDEBUG IotsaSerial.println("BLE server start advertising and services");
+  startServer();
 #ifdef IOTSA_WITH_WEB
   server->on("/bleserver", std::bind(&IotsaBLEServerMod::handler, this));
 #endif
@@ -217,6 +217,7 @@ void IotsaBLEServerMod::loop() {
 }
 
 void IotsaBleApiService::setup(const char* serviceUUID, IotsaBLEApiProvider *_apiProvider) {
+  bool isAdvertising = IotsaBLEServerMod::pauseServer();
   IotsaBLEServerMod::createServer();
   next = IotsaBLEServerMod::s_services;
   IotsaBLEServerMod::s_services = this;
@@ -226,6 +227,7 @@ void IotsaBleApiService::setup(const char* serviceUUID, IotsaBLEApiProvider *_ap
 
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(serviceUUID);
+  if (isAdvertising) IotsaBLEServerMod::resumeServer();
 }
 
 void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask, uint8_t d2904format, uint16_t d2904unit, const char *d2901descr) {
