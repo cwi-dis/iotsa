@@ -63,6 +63,13 @@
 #endif
 #endif
 
+// If BLE support is enabled and API support is enabled we enable HPS service by default
+#ifdef IOTSA_WITH_BLE
+#ifndef IOTSA_WITHOUT_HPS
+#define IOTSA_WITH_HPS
+#endif
+#endif
+
 #ifndef IOTSA_WITHOUT_TIMEZONE
 #define IOTSA_WITH_TIMEZONE
 #endif

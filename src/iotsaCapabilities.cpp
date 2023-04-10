@@ -190,6 +190,9 @@ bool IotsaCapabilityMod::allows(const char *obj, IotsaApiOperation verb) {
 #ifdef IOTSA_WITH_COAP
   // Need to load capability from coap headers, somehow...
 #endif
+#ifdef IOTSA_WITH_HPS
+  // Need to load capabilit from hps headers.
+#endif
   if (capabilities) {
     if (capabilities->allows(obj, verb)) {
       IFDEBUGX IotsaSerial.print("Capability allows operation on ");

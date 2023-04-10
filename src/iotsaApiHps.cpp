@@ -30,7 +30,8 @@ public:
   using IotsaBaseMod::IotsaBaseMod;
   void setup() override {
     IotsaApiServiceHps::_hpsMod = this;
-    IotsaSerial.println("IotsaHpsServiceMod::setup called");
+    name = "hps";
+    IFBLEDEBUG IotsaSerial.println("IotsaHpsServiceMod::setup called");
     bleApi.setup(IotsaApiServiceHps::serviceUUID, this);
     // Explain to clients what the rgb characteristic looks like
     bleApi.addCharacteristic(IotsaApiServiceHps::urlUUID, BLE_READ|BLE_WRITE, BLE2904::FORMAT_UTF8, 0x2700, "HPS URL");
