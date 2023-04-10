@@ -30,13 +30,13 @@ public:
 };
 
 #ifdef IOTSA_WITH_REST
-#include "iotsaRestApi.h"
+#include "iotsaApiRest.h"
 #endif
 #ifdef IOTSA_WITH_COAP
-#include "iotsaCoapApi.h"
+#include "iotsaApiCoap.h"
 #endif
 #ifdef IOTSA_WITH_HPS
-#include "iotsaHpsApi.h"
+#include "iotsaApiHps.h"
 #endif
 
 //
@@ -70,13 +70,13 @@ public:
   }
 private:
 #ifdef IOTSA_WITH_REST
-  IotsaRestApiService restService;
+  IotsaApiServiceRest restService;
 #endif
 #ifdef IOTSA_WITH_COAP
-  IotsaCoapApiService coapService;
+  IotsaApiServiceCoap coapService;
 #endif
 #ifdef IOTSA_WITH_HPS
-  IotsaHpsApiService bleRestService;
+  IotsaApiServiceHps bleRestService;
 #endif
   int _dummy;
 };

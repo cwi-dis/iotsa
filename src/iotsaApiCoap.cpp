@@ -6,7 +6,7 @@
 #define COAP_PROTOCOL_DEBUG
 
 // Static variable
-IotsaCoapServiceMod* IotsaCoapApiService::_coapMod = NULL;
+IotsaCoapServiceMod* IotsaApiServiceCoap::_coapMod = NULL;
 
 class CoapEndpoint {
 public:
@@ -172,13 +172,13 @@ void IotsaCoapServiceMod::addEndpoint(CoapEndpoint *ep, const char *path) {
     coap.server(ep->getCallback(&coap), String(path));
 }
 
-IotsaCoapApiService::IotsaCoapApiService(IotsaApiProvider* _provider, IotsaApplication &_app)
+IotsaApiServiceCoap::IotsaApiServiceCoap(IotsaApiProvider* _provider, IotsaApplication &_app)
   : provider(_provider)
 { 
   if (_coapMod == NULL) _coapMod = new IotsaCoapServiceMod(_app); 
 }
 
-void IotsaCoapApiService::setup(const char* path, bool get, bool put, bool post) {
+void IotsaApiServiceCoap::setup(const char* path, bool get, bool put, bool post) {
     if (!iotsaConfig.wifiEnabled) return;
     CoapEndpoint *ep = new CoapEndpoint(provider, path, get, put, post);
     if (strncmp(path, "/api/", 5) == 0) path += 5;

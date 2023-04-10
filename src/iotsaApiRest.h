@@ -1,10 +1,10 @@
-#ifndef _IOTSARESTAPI_H_
-#define _IOTSARESTAPI_H_
+#ifndef _IOTSAAPIREST_H_
+#define _IOTSAAPIREST_H_
 #include "iotsa.h"
 
-class IotsaRestApiService : public IotsaApiServiceProvider {
+class IotsaApiServiceRest : public IotsaApiServiceProvider {
 public:
-  IotsaRestApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth)
+  IotsaApiServiceRest(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth)
   : provider(_provider),
     auth(_auth),
     server(_app.server)
@@ -29,6 +29,6 @@ public:
   virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
   virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
 protected:
-  IotsaRestApiService api;
+  IotsaApiServiceRest api;
 };
 #endif
