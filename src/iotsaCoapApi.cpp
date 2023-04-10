@@ -155,6 +155,7 @@ IotsaCoapServiceMod::IotsaCoapServiceMod(IotsaApplication &_app)
   {}
 
 void IotsaCoapServiceMod::setup() {
+    name = "coap";
     if (!iotsaConfig.wifiEnabled) return;
     coap.start();
 }
