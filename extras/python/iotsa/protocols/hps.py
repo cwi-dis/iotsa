@@ -1,10 +1,11 @@
 import socket
+import struct
 import urllib.parse
 import urllib.request
 import json as jsonmod
 
 from .abstract import IotsaAbstractProtocolHandler
-from ..consts import VERBOSE, IotsaError
+from ..consts import VERBOSE, IotsaError, HpsError
 from ..ble import BLE
 
 class IotsaHPSProtocolHandler(IotsaAbstractProtocolHandler):
@@ -65,8 +66,16 @@ class IotsaHPSProtocolHandler(IotsaAbstractProtocolHandler):
         self.client.set("hpsControlPoint", commandCode)
 
         fullStatus = self.client.get("hpsStatus")
+        
         if VERBOSE:
             print(f"HPS status {repr(fullStatus)}")
+        httpStatus, dataStatus = struct.unpack("<hb", fullStatus)
+        if VERBOSE:
+            print(f"HPS HTTP Status={httpStatus}, dataStatus=0x{dataStatus:x}")
+        if httpStatus != 200:
+            raise HpsError(f"HPS status code {httpStatus}")
+        if dataStatus != 0 and dataStatus != 0x04:
+            print(f"Warning: HPS data status=0x{dataStatus:x}", file=sys.stderr)
         rvBytes = self.client.get("hpsBody")
         if rvBytes == None or len(rvBytes) == 0:
             if VERBOSE:

@@ -15,7 +15,12 @@ class IotsaError(RuntimeError):
     pass
 
 
-class CoapError(Exception):
+class CoapError(IotsaError):
     """COAP error from iotsa package"""
+
+    pass
+
+class HpsError(IotsaError):
+    """HPS error from iotsa package"""
 
     pass

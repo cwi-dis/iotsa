@@ -56,27 +56,27 @@ protected:
   bool blePutHandler(UUIDstring charUUID) override {
     if (charUUID == IotsaApiServiceHps::controlPointUUID) {
       HPSControl command = (HPSControl)bleApi.getAsInt(charUUID);
-      IFBLEDEBUG IotsaSerial.printf("IotsaBLERestMod: request command=0x%02x\n", (int)command);
+      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: request command=0x%02x\n", (int)command);
       curHttpStatus = _processRequest(command);
       return true;
     }
     if (charUUID == IotsaApiServiceHps::urlUUID) {
       curUrl = bleApi.getAsString(charUUID);
-      IFBLEDEBUG IotsaSerial.printf("IotsaBLERestMod: request url=%s\n", curUrl.c_str());
+      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: request url=%s\n", curUrl.c_str());
       return true;
     }
     if (charUUID == IotsaApiServiceHps::bodyUUID) {
       curBody = bleApi.getAsString(charUUID);
-      IFBLEDEBUG IotsaSerial.printf("IotsaBLERestMod: request body=%s\n", curBody.c_str());
+      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: request body=%s\n", curBody.c_str());
       return true;
     }
     if (charUUID == IotsaApiServiceHps::headersUUID) {
       curHeaders = bleApi.getAsString(charUUID);
-      IFBLEDEBUG IotsaSerial.printf("IotsaBLERestMod: request headers=%s\n", curHeaders.c_str());
+      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: request headers=%s\n", curHeaders.c_str());
       return true;
     } 
 
-    IotsaSerial.printf("IotsaBLERestMod: ble: write unknown uuid %s\n", charUUID);
+    IotsaSerial.printf("IotsaHpsServiceMod: ble: write unknown uuid %s\n", charUUID);
     return false;
   }
 
@@ -84,19 +84,19 @@ protected:
     if (charUUID == IotsaApiServiceHps::urlUUID) {
       std::string tmp = curUrl;
       bleApi.set(IotsaApiServiceHps::urlUUID, tmp);
-      IFBLEDEBUG IotsaSerial.printf("IotsaBLERestMod: response url=%s\n", tmp.c_str());
+      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: response url=%s\n", tmp.c_str());
       return true;
     }
     if (charUUID == IotsaApiServiceHps::bodyUUID) {
       std::string tmp = curBody;
       bleApi.set(IotsaApiServiceHps::bodyUUID, tmp);
-      IFBLEDEBUG IotsaSerial.printf("IotsaBLERestMod: response body=%s\n", tmp.c_str());
+      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: response body=%s\n", tmp.c_str());
       return true;
     }
     if (charUUID == IotsaApiServiceHps::headersUUID) {
       std::string tmp = curHeaders;
       bleApi.set(IotsaApiServiceHps::headersUUID, tmp);
-      IFBLEDEBUG IotsaSerial.printf("IotsaBLERestMod: headers=%s\n", tmp.c_str());
+      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: headers=%s\n", tmp.c_str());
       return true;
     } 
     if (charUUID == IotsaApiServiceHps::controlPointUUID) {
@@ -116,17 +116,19 @@ protected:
       return true;
     }
     
-    IotsaSerial.printf("IotsaBLERestMod: ble: read unknown uuid %s\n", charUUID);
+    IotsaSerial.printf("IotsaHpsServiceMod: ble: read unknown uuid %s\n", charUUID);
     return false;
   }
 
   int _processRequest(HPSControl command) {
-    IFDEBUG IotsaSerial.printf("BLEREST 0x%02x %s\n", (int)command, curUrl.c_str());
+    IFDEBUG IotsaSerial.printf("HPS 0x%02x %s\n", (int)command, curUrl.c_str());
     bool cmd_get = command == HPSControl::GET;
     bool cmd_put = command == HPSControl::PUT;
     bool cmd_post = command == HPSControl::POST;
     if (!cmd_get && !cmd_put && !cmd_post) {
-      IotsaSerial.printf("IotsaBLERest: bad command 0x%02x\n", command);
+      IotsaSerial.printf("IotsaHpsServiceMod: bad command 0x%02x\n", command);
+      curDataStatus = HPSDataStatus::EMPTY;
+      curBody = "";
       return 400;
     }
     const char *url_c = curUrl.c_str();
@@ -140,7 +142,9 @@ protected:
       break;
     }
     if (service == nullptr) {
-      IotsaSerial.printf("IotsaBLERest: no api provider for url %s\n", url_c);
+      IotsaSerial.printf("IotsaHpsServiceMod: no api provider for url %s\n", url_c);
+      curDataStatus = HPSDataStatus::EMPTY;
+      curBody = "";
       return 404;
     }
     IotsaApiProvider* provider = service->provider;
@@ -150,7 +154,9 @@ protected:
     if (cmd_put || cmd_post) {
       ArduinoJson::DynamicJsonDocument request_doc(jsonBufSize);
       if (request_doc.overflowed()) {
-        IotsaSerial.println("IotsaBLERest: request too large");
+        IotsaSerial.println("IotsaHpsServiceMod: request too large");
+        curDataStatus = HPSDataStatus::EMPTY;
+        curBody = "";
         return 413;
       }
       ArduinoJson::deserializeJson(request_doc, curBody.c_str());
@@ -169,16 +175,20 @@ protected:
       ok = provider->postHandler(url_c, request, reply);
     }
     if (!ok) {
-      IotsaSerial.printf("IotsaBLERest: bad request \"%s\"\n", url_c);
+      IotsaSerial.printf("IotsaHpsServiceMod: bad request \"%s\"\n", url_c);
+      curDataStatus = HPSDataStatus::EMPTY;
+      curBody = "";
       return 400;
     }
     if (reply_doc.overflowed()) {
-      IotsaSerial.println("IotsaBLERest: reply too large");
+      IotsaSerial.println("IotsaHpsServiceMod: reply too large");
+      curDataStatus = HPSDataStatus::EMPTY;
+      curBody = "";
       return 413;
     }
     curBody = "";
     serializeJson(reply_doc, curBody);
-    IFBLEDEBUG IotsaSerial.printf("IotsaBLERest: reply(%d): %s\n", curBody.size(), curBody.c_str());
+    IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: reply(%d): %s\n", curBody.size(), curBody.c_str());
     if (curBody.size() > HPSMaxBodySize) {
       curDataStatus = HPSDataStatus::BodyTruncated;
       curBody = curBody.substr(0, HPSMaxBodySize);
@@ -208,14 +218,14 @@ IotsaApiServiceHps::IotsaApiServiceHps(IotsaApiProvider* _provider, IotsaApplica
   auth(_auth)
 {
   if (_hpsMod == NULL) {
-    IotsaSerial.println("IotsaHpsApiModule: allocate IotsaHpsServiceMod");
+    IotsaSerial.println("IotsaApiServiceHps: allocate IotsaHpsServiceMod");
     _hpsMod = new IotsaHpsServiceMod(_app); 
   }
   all.push_back(this);
 }
   
 void IotsaApiServiceHps::setup(const char* path, bool get, bool put, bool post) {
-  IFBLEDEBUG IotsaSerial.printf("IotsaBLERestApiService: path=%s\n", path);
+  IFBLEDEBUG IotsaSerial.printf("IotsaApiServiceHps: path=%s\n", path);
   provider_path = path;
   provider_get = get;
   provider_put = put;
