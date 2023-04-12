@@ -86,17 +86,16 @@ Note that HTTPS support here refers to iotsa as a server only, HTTPS client supp
 
 ## Controlling iotsa devices
 
-### iotsaControl
+### Command line tool
 
-There is a command line helper program _iotsaControl_. It will be documented here at some point. For now, install _iotsaControl_ with the following commands:
+There is a command line helper program `iotsa`. It will be documented here at some point. For now, install _iotsa_ with the following commands:
 
 ```
-cd extras
-python setup.py build
-sudo python setup.py install
+cd extras/python
+pip3 install .
 ```
 
-Then you can get a list of the available commands with `iotsaControl help` and a list of the available options with `iotsaControl --help`.
+Then you can get a list of the available commands with `iotsa help` and a list of the available options with `iotsa --help`.
 
 
 ### OTA programming

@@ -1,14 +1,14 @@
-#ifndef _IOTSACOAPAPI_H_
-#define _IOTSACOAPAPI_H_
+#ifndef _IOTSAAPICOAP_H_
+#define _IOTSAAPICOAP_H_
 #include "iotsa.h"
 
 class IotsaCoapServiceMod;
 
-class IotsaCoapApiService : public IotsaApiServiceProvider {
+class IotsaApiServiceCoap : public IotsaApiServiceProvider {
 public:
-  IotsaCoapApiService(IotsaApiProvider* _provider, IotsaApplication &_app);
-  IotsaCoapApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth)
-  : IotsaCoapApiService(_provider, _app)
+  IotsaApiServiceCoap(IotsaApiProvider* _provider, IotsaApplication &_app);
+  IotsaApiServiceCoap(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth)
+  : IotsaApiServiceCoap(_provider, _app)
   {}
   void setup(const char* path, bool get=false, bool put=false, bool post=false) override;
 private:
@@ -30,7 +30,7 @@ public:
   virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
   virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
 protected:
-  IotsaCoapApiService api;
+  IotsaApiServiceCoap api;
 };
 
 

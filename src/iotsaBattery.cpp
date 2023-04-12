@@ -368,30 +368,35 @@ void IotsaBatteryMod::loop() {
   // Check whether we should disable Wifi or sleep
   int curWakeDuration = wakeDuration;
   if (!didWakeFromSleep) curWakeDuration += bootExtraWakeDuration;
-  bool shouldDisableWifi = wifiActiveDuration && millis() > millisAtWifiWakeup + wifiActiveDuration;
+  bool shouldDisableWifi = iotsaConfig.wifiEnabled && wifiActiveDuration && millis() > millisAtWifiWakeup + wifiActiveDuration;
   bool shouldSleep = sleepMode && curWakeDuration > 0 && millis() > millisAtWakeup + curWakeDuration;
   // Again, return quickly if no sleep or wifi sleep is required.
   if (!shouldSleep && !shouldDisableWifi) return;
   // Now check for other reasons NOT to go to sleep or disable wifi
-  bool cancelSleep = pinDisableSleep >= 0 && digitalRead(pinDisableSleep) == LOW;
+  if (pinDisableSleep >= 0 && digitalRead(pinDisableSleep) == LOW) {
+    shouldSleep = false;
+    shouldDisableWifi = false;
+  }
   // Another reason is if we're running on USB power and we only sleep on battery power
   if (disableSleepOnUSBPower && pinVUSB >= 0) {
-    if (levelVUSB > 80) cancelSleep = true;
+    if (levelVUSB > 80) {
+      shouldSleep = false;
+      shouldDisableWifi = false;
+    }
   }
   // Another reason is that we are in configuration mode
-  if (iotsaConfig.inConfigurationMode()) cancelSleep = true;
-  // A final reason is if some other module is asking for an extension of the waking period
-  if (!iotsaConfig.canSleep()) cancelSleep = true;
-  // If there is a reason not to sleep we return. We also reset the wake timer.
-  if (cancelSleep) {
-    IFDEBUG IotsaSerial.println("Sleep canceled");
-    millisAtWakeup = millis();
-    millisAtWifiWakeup = millis();
-    return;
+  if (iotsaConfig.inConfigurationMode()) {
+      shouldSleep = false;
+      shouldDisableWifi = false;
+  }
+  // A final reason is if some other module is asking for an extension of the waking period.
+  // This does not extend wifi duration, though.
+  if (!iotsaConfig.canSleep()) {
+      shouldSleep = false;
   }
   if (shouldDisableWifi) {
     if (iotsaConfig.wifiEnabled) {
-      IotsaSerial.println("Disabling wifi");
+      IotsaSerial.println("Disabling wifi due to wifiActiveDuration");
       // Setting the iotsaConfig variables causes the wifi module to disable itself next loop()
       iotsaConfig.disableWifiOnBoot = true;
       iotsaConfig.wantWifiModeSwitch = true;

@@ -68,7 +68,7 @@ bool IotsaHelloMod::getHandler(const char *path, JsonObject& reply) {
 
 bool IotsaHelloMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   JsonVariant arg = request["greeting"];
-  if (arg.is<char*>()) {
+  if (arg.is<const char*>()) {
     greeting = arg.as<String>();
     return true;
   }

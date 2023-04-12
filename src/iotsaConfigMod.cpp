@@ -351,6 +351,9 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
 #ifdef IOTSA_WITH_COAP
   features.add("coap");
 #endif
+#ifdef IOTSA_WITH_HPS
+  features.add("hps");
+#endif
 #ifdef IOTSA_WITH_OTA
   features.add("ota");
 #endif

@@ -339,43 +339,107 @@ class Main(object):
                 sys.exit(1)
         return
 
-    def loadDevice(self):
+    def loadDevice(self, target=None, proto=None):
         """Load target device (if not already done)"""
         if self.device:
             return
-        self.loadWifi()
-        if not self.args.target or self.args.target == "auto":
-            all = self.wifi.findDevices()
-            if len(all) == 0:
-                print("%s: no iotsa devices found" % (sys.argv[0]), file=sys.stderr)
-                sys.exit(1)
-            if len(all) > 1:
-                print(
-                    "%s: multiple iotsa devices:" % (sys.argv[0]),
-                    end=" ",
-                    file=sys.stderr,
-                )
-                for a in all:
-                    print(a, end=" ", file=sys.stderr)
-                print(file=sys.stderr)
-                sys.exit(1)
-            self.args.target = all[0]
-        if self.args.target:
-            ok = self.wifi.selectDevice(self.args.target)
-            if not ok:
-                sys.exit(1)
+        
+        if target == None:
+            target = self.args.target
+        if proto == None:
+            proto = self.args.protocol
+          
+        if self.args.protocol == "hps":
+            # Special case: doesn't need tcp/ip or wifi.
+            pass
+        else:
+            self.loadWifi()
+            if not target or target == "auto":
+                all = self.wifi.findDevices()
+                if len(all) == 0:
+                    print("%s: no iotsa devices found" % (sys.argv[0]), file=sys.stderr)
+                    sys.exit(1)
+                if len(all) > 1:
+                    print(
+                        "%s: multiple iotsa devices:" % (sys.argv[0]),
+                        end=" ",
+                        file=sys.stderr,
+                    )
+                    for a, properties in all:
+                        print(a, end=" ", file=sys.stderr)
+                    print(file=sys.stderr)
+                    sys.exit(1)
+                target = all[0]
+            if target:
+                ok = self.wifi.selectDevice(target)
+                if not ok:
+                    sys.exit(1)
+            target = self.wifi.currentDevice()
         kwargs = {}
         if self.args.bearer:
             kwargs["bearer"] = self.args.bearer
         if self.args.credentials:
             kwargs["auth"] = self.args.credentials.split(":")
         self.device = api.IotsaDevice(
-            self.wifi.currentDevice(),
-            protocol=self.args.protocol,
+            target,
+            protocol=proto,
             port=self.args.port,
             noverify=self.args.noverify,
             **kwargs,
         )
+
+    def cmd_select(self):
+        """Select a target using the following expression, help for help. """
+        self.close()
+        self.loadWifi()
+        expression = self._getcmd()
+        if expression == 'help':
+            print('Select target using mDNS advertisements')
+            print('select overrides --target and --protocol')
+            print('select arg is key=value/key=value/...')
+            print('key can be name (hostname) or mDNS TXT key (A, P, V or modulename)')
+            print('example: name=iotsa.local')
+            print('example: name=iotsa')
+            print('example: P=http/V=2.6')
+            print('example: battery=1/bleserver=1')
+            sys.exit(1)
+        subexpressions = expression.split('/')
+        name_wanted = None
+        keyValuePairs = []
+        for subexp in subexpressions:
+            if '=' in subexp:
+                k, v = subexp.split('=')
+                keyValuePairs.append((k, v))
+            else:
+                name_wanted = subexp
+        allTargets = self.wifi.findDevices()
+        nSelected = 0
+        selected = None
+        proto = None
+        for t, properties in allTargets:
+            # Check that the name matches (if a name was given)
+            if name_wanted:
+                if name_wanted != t and name_wanted + '.local' != t:
+                    continue
+            match = True
+            # Check that the given properties match
+            for k, v in keyValuePairs:
+                if not k in properties or properties[k] != v:
+                    match = False
+            if not match:
+                continue
+            # Found a matching device
+            print(f'selected: {t}')
+            selected = t
+            proto = properties.get('P')
+            nSelected += 1
+        if not selected:
+            print(f'select: no target matches')
+            sys.exit(1)
+        if nSelected > 1:
+            print(f'select: {nSelected} targets match')
+            sys.exit(1)
+        self.loadDevice(selected, proto)
 
     def cmd_config(self):
         """Set target configuration parameters (target must be in configuration mode)"""
@@ -503,8 +567,11 @@ class Main(object):
         """List iotsa devices visible on current network"""
         self.loadWifi()
         targets = self.wifi.findDevices()
-        for t in targets:
+        for t, properties in targets:
             print(t)
+            if consts.VERBOSE:
+                for k, v in properties.items():
+                    print(f"\t{k}={v}")
 
     def cmd_allInfo(self):
         """Show all information for all modules for target"""

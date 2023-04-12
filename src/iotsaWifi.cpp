@@ -176,23 +176,35 @@ bool IotsaWifiMod::_wifiStartMDNS() {
     IotsaSerial.println("MDNS.begin(...) failed");
     return false;
   }
-#ifdef IOTSA_WITH_HTTPS
-  MDNS.addService("https", "tcp", 443);
-  // MDNS.addService("iotsa._sub._https", "tcp", 443);
-  MDNS.addService("iotsa", "tcp", 443);
+#if defined(IOTSA_WITH_HTTPS)
+  const char *proto = "tcp";
+  const char *myproto = "https";
+  const int port = 443;
+#elif defined(IOTSA_WITH_HTTP)
+  const char *proto = "tcp";
+  const char *myproto = "http";
+  const int port = 80;
+#elif defined(IOTSA_WITH_COAP)
+  const char *proto = "udp";
+  const char *myproto = "coap";
+  const int port = 5683;
 #endif
-#ifdef IOTSA_WITH_HTTP
-  MDNS.addService("http", "tcp", 80);
-  // MDNS.addService("iotsa._sub._http", "tcp", 80);
-#ifndef IOTSA_WITH_HTTPS
-  MDNS.addService("iotsa", "tcp", 80);
-#endif
-#endif
-#ifdef IOTSA_WITH_COAP
-  MDNS.addService("coap", "udp", 5683);
-  // MDNS.addService("iotsa._sub._coap", "udp", 5683);
-  MDNS.addService("iotsa", "udp", 5683);
-#endif
+  MDNS.addService(myproto, proto, port);
+  MDNS.addService("iotsa", proto, port);
+  MDNS.addServiceTxt("iotsa", proto, "P", myproto);
+  MDNS.addServiceTxt("iotsa", proto, "V", IOTSA_FULL_VERSION);
+  MDNS.addServiceTxt("iotsa", proto, "A", app.title.c_str());
+  IotsaBaseMod *m = app.firstEarlyModule;
+  while(m) {
+    MDNS.addServiceTxt("iotsa", proto, m->name.c_str(), "1");
+    m = m->nextModule;
+  }
+  m = app.firstModule;
+  while(m) {
+    MDNS.addServiceTxt("iotsa", proto, m->name.c_str(), "1");
+    m = m->nextModule;
+  }
+ 
   IFDEBUG IotsaSerial.println("MDNS responder started");
   iotsaConfig.mdnsEnabled = true;
   return true;
