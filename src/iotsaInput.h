@@ -5,6 +5,10 @@
 #include "iotsaRequest.h"
 
 #if ESP32
+#include <esp_idf_version.h>
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 0, 0) 
+// Jack _thinks_ that soc_caps.h was introduced in version 4.
+//
 // With the various variants of the esp32 SoCs we need more fine-grained tests than just ESP32
 #include "soc/soc_caps.h"
 // Check whether this SoC supports external wakeup from deep sleep
@@ -19,7 +23,11 @@
 #if SOC_PCNT_SUPPORTED
 #define IOTSA_WITH_ESP32ENCODER_LIB 1
 #endif
-#endif
+#else
+// If we don't have soc_caps.h we need a different way to determine this.
+// xxxjack to be determined.
+#endif // ESP_IDF_VERSION
+#endif // ESP32
 
 //#define IOTSA_DEBUG_INPUT
 
