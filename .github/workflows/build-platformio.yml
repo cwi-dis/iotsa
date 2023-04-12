@@ -52,10 +52,9 @@ jobs:
         - example: Temperature
         # Extra matrix entries:
         include:
-        # Add esp32c3 entry
-        #- example: Hello
-        #  board: esp32-c3-devkitm-1
-        #  build_flags: -DARDUINO_USB_MODE=1 -DARDUINO_USB_CDC_ON_BOOT=1
+        # Add esp32c3 build flags
+        - board: esp32-c3-devkitm-1
+          board_build_flags: -DARDUINO_USB_MODE=1 -DARDUINO_USB_CDC_ON_BOOT=1
         #  pio_extra_args: --project-option="lib_ignore=madhephaestus/ESP32Encoder"
         # Add Temperature with the right options for including the library
         - example: Temperature
@@ -93,6 +92,11 @@ jobs:
         - example: BLELed
           variant: withble-
           board: esp32thing
+          build_flags: -DIOTSA_WITH_BLE
+          pio_extra_args: --project-option="board_build.partitions=min_spiffs.csv"
+        - example: BLELed
+          variant: withble-
+          board: esp32-c3-devkitm-1
           build_flags: -DIOTSA_WITH_BLE
           pio_extra_args: --project-option="board_build.partitions=min_spiffs.csv"
 #        # Extra build: BLELed with only BLE (no web, http/s, rest, wifi)
@@ -138,7 +142,7 @@ jobs:
         pio ci --lib="." --project-option="lib_ldf_mode=deep+" --project-option="lib_compat_mode=strict" ${{ matrix.pio_extra_args }} --board=${{ matrix.board }} --keep-build-dir --build-dir /tmp/pio-build
       env:
         PLATFORMIO_CI_SRC: examples/${{ matrix.example }}
-        PLATFORMIO_BUILD_FLAGS: ${{ matrix.build_flags }}
+        PLATFORMIO_BUILD_FLAGS: ${{ matrix.build_flags }} ${{ matrix.board_build_flags }}
         
     - name: Upload artifact
       uses: actions/upload-artifact@v2
