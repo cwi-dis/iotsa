@@ -198,11 +198,32 @@ IotsaConfigMod::handler() {
       anyChanged = true;
     }
   }
-
-  if (anyChanged) {
-    	configSave();
-	}
-
+ if( server->hasArg("wifiDisabledOnBoot")) {
+    int newValue = server->arg("wifiDisabledOnBoot").toInt();
+    if ((bool)newValue != iotsaConfig.wifiDisabledOnBoot) {
+      if (iotsaConfig.inConfigurationMode(true)) {
+        if (needsAuthentication("config")) return;
+        iotsaConfig.wifiDisabledOnBoot = (bool)newValue;
+        anyChanged = true;
+      } else {
+        wrongMode = true;
+      }
+    }
+  }
+#ifdef IOTSA_WITH_BLE
+ if( server->hasArg("bleDisabledOnBoot")) {
+    int newValue = server->arg("bleDisabledOnBoot").toInt();
+    if ((bool)newValue != iotsaConfig.bleDisabledOnBoot) {
+      if (iotsaConfig.inConfigurationMode(true)) {
+        if (needsAuthentication("config")) return;
+        iotsaConfig.bleDisabledOnBoot = (bool)newValue;
+        anyChanged = true;
+      } else {
+        wrongMode = true;
+      }
+    }
+  }
+#endif
   String message = "<html><head><title>Iotsa configuration</title></head><body><h1>Iotsa configuration</h1>";
   if (wrongMode) {
     message += "<p><em>Error:</em> must be in configuration mode to change some of these parameters.</p>";
@@ -230,7 +251,16 @@ IotsaConfigMod::handler() {
     message += htmlEncode(iotsaConfig.hostName);
     message += " (goto configuration mode to change)<br>Configuration mode timeout: ";
     message += String(iotsaConfig.configurationModeTimeout);
-    message += " (goto configuration mode to change)</p>";
+    message += " (goto configuration mode to change)";
+    if (iotsaConfig.wifiDisabledOnBoot) {
+      message += "Wifi disabled on boot.<br>";
+    }
+#ifdef IOTSA_WITH_BLE
+    if (iotsaConfig.bleDisabledOnBoot) {
+      message += "BLE disabled on boot.<br>";
+    }
+#endif
+    message += "</p>";
 #ifdef IOTSA_WITH_HTTPS
     if (iotsaConfig.usingDefaultCertificate()) {
       message += "<p>Using factory-installed (<b>not very secure</b>) https certificate</p>";
@@ -254,7 +284,14 @@ IotsaConfigMod::handler() {
     message += "HTTPS certificate (PEM): <br><textarea name='httpsCertificate' rows='8' cols='60'></textarea><br>";
 #endif
   }
-
+  message += "<input name='wifiDisabledOnBoot' type='checkbox' value='1'";
+  if (iotsaConfig.wifiDisabledOnBoot) message += " checked";
+  message += "> Wifi disabled on boot.<br>";
+#ifdef IOTSA_WITH_BLE
+  message += "<input name='bleDisabledOnBoot' type='checkbox' value='1'";
+  if (iotsaConfig.bleDisabledOnBoot) message += " checked";
+  message += "> BLE disabled on boot.<br>";
+#endif
   message += "<input name='mode' type='radio' value='0' checked> Enter normal mode after next reboot.<br>";
   message += "<input name='mode' type='radio' value='1'> Enter configuration mode after next reboot.<br>";
   if (iotsaConfig.otaEnabled) {
@@ -311,6 +348,12 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   if (iotsaConfig.nextConfigurationMode) {
     reply["requestedModeTimeout"] = (iotsaConfig.nextConfigurationModeEndTime - millis())/1000;
   }
+  reply["wifiDisabled"] = iotsaConfig.wifiDisabled;
+  reply["wifiDisabledOnBoot"] = iotsaConfig.wifiDisabledOnBoot;
+#ifdef IOTSA_WITH_BLE
+  reply["bleDisabled"] = iotsaConfig.bleDisabled;
+  reply["bleDisabledOnBoot"] = iotsaConfig.bleDisabledOnBoot;
+#endif
   reply["iotsaVersion"] = IOTSA_VERSION;
   reply["iotsaFullVersion"] = IOTSA_FULL_VERSION;
   reply["program"] = app.title;
@@ -378,6 +421,32 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
       wrongMode = true;
     }
   }
+  if (reqObj.containsKey("wifiDisabledOnBoot")) {
+    if (iotsaConfig.inConfigurationOrFactoryMode()) {
+      iotsaConfig.wifiDisabledOnBoot = reqObj["wifiDisabledOnBoot"];
+      anyChanged = true;
+    } else {
+      wrongMode = true;
+    }
+  }
+  if (reqObj.containsKey("wifiDisabled")) {
+    iotsaConfig.wifiDisabled = reqObj["wifiDisabled"];
+    wifiDisabledChanged = true;
+  }
+#ifdef IOTSA_WITH_BLE
+  if (reqObj.containsKey("bleDisabledOnBoot")) {
+    if (iotsaConfig.inConfigurationOrFactoryMode()) {
+      iotsaConfig.bleDisabledOnBoot = reqObj["bleDisabledOnBoot"];
+      anyChanged = true;
+    } else {
+      wrongMode = true;
+    }
+  }
+  if (reqObj.containsKey("bleDisabled")) {
+    iotsaConfig.bleDisabled = reqObj["bleDisabled"];
+    bleDisabledChanged = true;
+  }
+#endif
   if (reqObj.containsKey("modeTimeout")) {
     if (iotsaConfig.inConfigurationMode()) {
       iotsaConfig.configurationModeTimeout = reqObj["modeTimeout"];
@@ -485,7 +554,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
     iotsaConfig.requestReboot(2000);
     anyChanged = true;
   }
-  return anyChanged;
+  return anyChanged||wifiDisabledChanged;
 }
 #endif // IOTSA_WITH_API
 #if defined(IOTSA_WITH_WEB)
@@ -553,11 +622,6 @@ void IotsaConfigMod::configLoad() {
 
 void IotsaConfigMod::configSave() {
   iotsaConfig.configSave();
-  IotsaConfigFileSave cf("/config/config.cfg");
-  cf.put("mode", iotsaConfig.nextConfigurationMode); // Note: nextConfigurationMode, which will be read as configurationMode
-  cf.put("hostName", iotsaConfig.hostName);
-  cf.put("rebootTimeout", iotsaConfig.configurationModeTimeout);
-  IFDEBUG IotsaSerial.println("Saved config.cfg");
 #ifdef IOTSA_WITH_HTTPS
   if (newKey && newCertificate) {
     iotsaConfigFileSaveBinary("/config/httpsKey.der", newKey, newKeyLength);
@@ -577,4 +641,14 @@ void IotsaConfigMod::loop() {
   if (iotsaConfig.nextConfigurationModeEndTime && millis() > iotsaConfig.nextConfigurationModeEndTime) {
     iotsaConfig.endConfigurationMode();
   }
+  if (wifiDisabledChanged) {
+    IotsaSerial.printf("xxxjack should set wifi disabled %d\n", (int)iotsaConfig.wifiDisabled);
+    wifiDisabledChanged = false;
+  }
+#ifdef IOTSA_WITH_BLE
+  if (bleDisabledChanged) {
+    IotsaSerial.printf("xxxjack should set ble disabled %d\n", (int)iotsaConfig.bleDisabled);
+    bleDisabledChanged = false;
+  }
+#endif
 }

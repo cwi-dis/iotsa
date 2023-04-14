@@ -35,7 +35,12 @@ private:
 public:
   bool wifiEnabled = false;
   String hostName = "";
-  bool disableWifiOnBoot = false;
+  bool wifiDisabled = false;
+  bool wifiDisabledOnBoot = false;
+#ifdef IOTSA_WITH_BLE
+  bool bleDisabled = false;
+  bool bleDisabledOnBoot = false;
+#endif
   bool mdnsEnabled = false;
 #ifdef IOTSA_WITH_HTTPS
   const uint8_t* httpsCertificate;

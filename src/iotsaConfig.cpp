@@ -245,6 +245,12 @@ void IotsaConfig::configLoad() {
   cf.get("hostName", iotsaConfig.hostName, "");
   if (iotsaConfig.hostName == "") iotsaConfig.setDefaultHostName();
   cf.get("rebootTimeout", iotsaConfig.configurationModeTimeout, CONFIGURATION_MODE_TIMEOUT);
+  cf.get("wifiDisabledOnBoot", iotsaConfig.wifiDisabledOnBoot, false);
+  iotsaConfig.wifiDisabled = iotsaConfig.wifiDisabledOnBoot;
+#ifdef IOTSA_WITH_BLE
+  cf.get("bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot, false);
+  iotsaConfig.bleDisabled = iotsaConfig.bleDisabledOnBoot;
+#endif
 #ifdef IOTSA_WITH_HTTPS
   if (iotsaConfigFileExists("/config/httpsKey.der") && iotsaConfigFileExists("/config/httpsCert.der")) {
     bool ok = iotsaConfigFileLoadBinary("/config/httpsKey.der", (uint8_t **)&iotsaConfig.httpsKey, &iotsaConfig.httpsKeyLength);
@@ -264,6 +270,10 @@ void IotsaConfig::configSave() {
   cf.put("mode", nextConfigurationMode); // Note: nextConfigurationMode, which will be read as configurationMode
   cf.put("hostName", hostName);
   cf.put("rebootTimeout", configurationModeTimeout);
+  cf.put("wifiDisabledOnBoot", iotsaConfig.wifiDisabledOnBoot);
+#ifdef IOTSA_WITH_BLE
+  cf.put("bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot);
+#endif
   // Key/cert are saved in iotsaConfigMod
   IFDEBUG IotsaSerial.println("Saved config.cfg");
 }
