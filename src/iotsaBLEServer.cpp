@@ -295,36 +295,27 @@ void IotsaBleApiService::set(UUIDstring charUUID, const String& value) {
 }
 
 
-void IotsaBleApiService::getAsBuffer(UUIDstring charUUID, uint8_t **datap, size_t *sizep) {
-  for(int i=0; i<nCharacteristic; i++) {
-    if (characteristicUUIDs[i] == charUUID) {
-      auto value = bleCharacteristics[i]->getValue();
-      if (datap) *datap = (uint8_t *)value.c_str();
-      if (sizep) *sizep = value.size();
-      return;
-    }
-  }
-  IotsaSerial.println("get: unknown characteristic");
-}
-
 int IotsaBleApiService::getAsInt(UUIDstring charUUID) {
-  size_t size;
-  uint8_t *ptr;
   int val = 0;
   int shift = 0;
-  getAsBuffer(charUUID, &ptr, &size);
-  while (size--) {
-    val = val | (*ptr++ << shift);
+  std::string buffer = getAsString(charUUID);
+  for(auto ptr = buffer.begin(); ptr != buffer.end(); ptr++) {
+    int byte = (uint8_t)*ptr;
+    val = val | (byte << shift);
     shift += 8;
   }
   return val;
 }
 
 std::string IotsaBleApiService::getAsString(UUIDstring charUUID) {
-  size_t size;
-  uint8_t *ptr;
-  getAsBuffer(charUUID, &ptr, &size);
-  return std::string((const char *)ptr, size);
+  for(int i=0; i<nCharacteristic; i++) {
+    if (characteristicUUIDs[i] == charUUID) {
+      auto value = bleCharacteristics[i]->getValue();
+      return std::string(value.c_str(), value.size());
+    }
+  }
+  IotsaSerial.println("get: unknown characteristic");
+  return "";
 }
 
 

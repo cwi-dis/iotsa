@@ -65,7 +65,7 @@ public:
   void set(UUIDstring charUUID, uint32_t value);
   void set(UUIDstring charUUID, const std::string& value);
   void set(UUIDstring charUUID, const String& value);
-  void getAsBuffer(UUIDstring charUUID, uint8_t **datap, size_t *sizep);
+  //void getAsBuffer(UUIDstring charUUID, uint8_t **datap, size_t *sizep);
   int getAsInt(UUIDstring charUUID);
   std::string getAsString(UUIDstring charUUID);
 protected:
