@@ -28,35 +28,37 @@ IotsaWifiMod::IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *
 }
 
 void IotsaWifiMod::setup() {
-  if (iotsaConfig.wifiDisabled) {
+  if (iotsaConfig.wifiDisabledOnBoot) {
     IFDEBUG IotsaSerial.println("WiFi disabled by iotsaBattery");
     WiFi.mode(WIFI_OFF);
-    iotsaConfig.wifiMode = IOTSA_WIFI_DISABLED;
+    iotsaConfig.wifiMode = iotsa_wifi_mode::IOTSA_WIFI_DISABLED;
     if (app.status) app.status->showStatus();
     iotsaConfig.wantWifiModeSwitch = false;
     return;
+  } else {
+    // Otherwise we presume Normal mode, which will revert to factory if we have no SSID.
+    iotsaConfig.wifiMode = iotsa_wifi_mode::IOTSA_WIFI_NORMAL;
   }
   configLoad();
   _wifiGotoMode();
 }
 
 void IotsaWifiMod::_wifiGotoMode() {
-  iotsa_wifi_mode newMode = IOTSA_WIFI_DISABLED;
-  if (!iotsaConfig.wifiDisabled) {
-    if (ssid.length()) {
-      newMode = IOTSA_WIFI_NORMAL;
-    } else {
-      newMode = IOTSA_WIFI_FACTORY;
+  if (iotsaConfig.wifiMode == iotsa_wifi_mode::IOTSA_WIFI_NORMAL) {
+    configLoad();
+    if (ssid.length() == 0) {
+      // If no ssid is configured we revert to fatory mode.
+      iotsaConfig.wifiMode = iotsa_wifi_mode::IOTSA_WIFI_FACTORY;
     }
   }
-  if (newMode == IOTSA_WIFI_DISABLED) {
+  if (iotsaConfig.wifiMode == IOTSA_WIFI_DISABLED) {
     _wifiStopStation();
     _wifiStopAP(IOTSA_WIFI_DISABLED);
     iotsaConfig.wifiEnabled = false;
     return;
   }
   iotsaConfig.wifiEnabled = true;
-  if (newMode == IOTSA_WIFI_FACTORY) {
+  if (iotsaConfig.wifiMode == IOTSA_WIFI_FACTORY) {
     _wifiStopStation();
     _wifiStartAP(IOTSA_WIFI_FACTORY);
   } else {

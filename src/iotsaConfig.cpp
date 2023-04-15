@@ -246,7 +246,6 @@ void IotsaConfig::configLoad() {
   if (iotsaConfig.hostName == "") iotsaConfig.setDefaultHostName();
   cf.get("rebootTimeout", iotsaConfig.configurationModeTimeout, CONFIGURATION_MODE_TIMEOUT);
   cf.get("wifiDisabledOnBoot", iotsaConfig.wifiDisabledOnBoot, false);
-  iotsaConfig.wifiDisabled = iotsaConfig.wifiDisabledOnBoot;
 #ifdef IOTSA_WITH_BLE
   cf.get("bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot, false);
   iotsaConfig.bleDisabled = iotsaConfig.bleDisabledOnBoot;

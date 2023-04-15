@@ -38,10 +38,6 @@ private:
   void configLoad() override;
   void configSave() override;
   void handler();
-  bool wifiDisabledChanged = false;
-#ifdef IOTSA_WITH_BLE
-  bool bleDisabledChanged = false;
-#endif
 #ifdef IOTSA_WITH_HTTPS
   const uint8_t* newCertificate;
   size_t newCertificateLength;

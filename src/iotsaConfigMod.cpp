@@ -348,7 +348,7 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   if (iotsaConfig.nextConfigurationMode) {
     reply["requestedModeTimeout"] = (iotsaConfig.nextConfigurationModeEndTime - millis())/1000;
   }
-  reply["wifiDisabled"] = iotsaConfig.wifiDisabled;
+  reply["wifiDisabled"] = iotsaConfig.wifiMode == iotsa_wifi_mode::IOTSA_WIFI_DISABLED;
   reply["wifiDisabledOnBoot"] = iotsaConfig.wifiDisabledOnBoot;
 #ifdef IOTSA_WITH_BLE
   reply["bleDisabled"] = iotsaConfig.bleDisabled;
@@ -410,6 +410,7 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
 
 bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
+  bool radioModeChanged = false;
   bool wrongMode = false;
   JsonObject reqObj = request.as<JsonObject>();
   if (reqObj.containsKey("hostName")) {
@@ -430,8 +431,11 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
     }
   }
   if (reqObj.containsKey("wifiDisabled")) {
-    iotsaConfig.wifiDisabled = reqObj["wifiDisabled"];
-    wifiDisabledChanged = true;
+    bool wifiDisabled = reqObj["wifiDisabled"];
+    iotsa_wifi_mode newMode = wifiDisabled ? iotsa_wifi_mode::IOTSA_WIFI_DISABLED : iotsa_wifi_mode::IOTSA_WIFI_NORMAL;
+    iotsaConfig.wifiMode = newMode;
+    iotsaConfig.wantWifiModeSwitch = true;
+    radioModeChanged = true;
   }
 #ifdef IOTSA_WITH_BLE
   if (reqObj.containsKey("bleDisabledOnBoot")) {
@@ -444,7 +448,8 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   }
   if (reqObj.containsKey("bleDisabled")) {
     iotsaConfig.bleDisabled = reqObj["bleDisabled"];
-    bleDisabledChanged = true;
+    iotsaConfig.wantBleModeSwitch = true;
+    radioModeChanged = true;
   }
 #endif
   if (reqObj.containsKey("modeTimeout")) {
@@ -554,7 +559,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
     iotsaConfig.requestReboot(2000);
     anyChanged = true;
   }
-  return anyChanged||wifiDisabledChanged;
+  return anyChanged||radioModeChanged;
 }
 #endif // IOTSA_WITH_API
 #if defined(IOTSA_WITH_WEB)
@@ -641,14 +646,4 @@ void IotsaConfigMod::loop() {
   if (iotsaConfig.nextConfigurationModeEndTime && millis() > iotsaConfig.nextConfigurationModeEndTime) {
     iotsaConfig.endConfigurationMode();
   }
-  if (wifiDisabledChanged) {
-    IotsaSerial.printf("xxxjack should set wifi disabled %d\n", (int)iotsaConfig.wifiDisabled);
-    wifiDisabledChanged = false;
-  }
-#ifdef IOTSA_WITH_BLE
-  if (bleDisabledChanged) {
-    IotsaSerial.printf("xxxjack should set ble disabled %d\n", (int)iotsaConfig.bleDisabled);
-    bleDisabledChanged = false;
-  }
-#endif
 }

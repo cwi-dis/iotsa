@@ -17,8 +17,14 @@ class IotsaConfig {
 private:
   bool configWasLoaded = false;
   bool otaEnabled = false;
+  bool wifiDisabledOnBoot = false;
   iotsa_wifi_mode wifiMode = IOTSA_WIFI_DISABLED;
   bool wantWifiModeSwitch = false;
+#ifdef IOTSA_WITH_BLE
+  bool bleDisabledOnBoot = false;
+  bool bleDisabled = false;
+  bool wantBleModeSwitch = false;
+#endif
   config_mode configurationMode = IOTSA_MODE_NORMAL;
   unsigned long configurationModeEndTime = 0;
   config_mode nextConfigurationMode = IOTSA_MODE_NORMAL;
@@ -35,12 +41,6 @@ private:
 public:
   bool wifiEnabled = false;
   String hostName = "";
-  bool wifiDisabled = false;
-  bool wifiDisabledOnBoot = false;
-#ifdef IOTSA_WITH_BLE
-  bool bleDisabled = false;
-  bool bleDisabledOnBoot = false;
-#endif
   bool mdnsEnabled = false;
 #ifdef IOTSA_WITH_HTTPS
   const uint8_t* httpsCertificate;

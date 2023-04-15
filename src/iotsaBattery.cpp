@@ -152,7 +152,9 @@ void IotsaBatteryMod::setup() {
     if (iotsaConfig.wifiEnabled) {
       IFDEBUG IotsaSerial.println("Wifi already enabled?");
     }
-    iotsaConfig.wifiDisabled = true;
+    // xxxjack unsure whether this is correct... It may get saved later, which we don't want...
+    iotsaConfig.wifiDisabledOnBoot = true;
+    iotsaConfig.wifiMode = iotsa_wifi_mode::IOTSA_WIFI_DISABLED;
   }
   if (watchdogDuration) {
     watchdogTimer = timerBegin(0, 80, true);
@@ -395,10 +397,10 @@ void IotsaBatteryMod::loop() {
       shouldSleep = false;
   }
   if (shouldDisableWifi) {
-    if (iotsaConfig.wifiEnabled) {
+    if (iotsaConfig.wifiMode != iotsa_wifi_mode::IOTSA_WIFI_DISABLED) {
       IotsaSerial.println("Disabling wifi due to wifiActiveDuration");
       // Setting the iotsaConfig variables causes the wifi module to disable itself next loop()
-      iotsaConfig.wifiDisabled = true;
+      iotsaConfig.wifiMode = iotsa_wifi_mode::IOTSA_WIFI_DISABLED;
       iotsaConfig.wantWifiModeSwitch = true;
     }
   }

@@ -117,10 +117,12 @@ void IotsaBLEServerMod::createServer() {
 
 void IotsaBLEServerMod::startServer() {
   // Start services
+  IFBLEDEBUG IotsaSerial.println("BLE start services");
   for (IotsaBleApiService *sp = s_services; sp; sp=sp->next) {
     sp->bleService->start();
   }
   // Start advertising
+  IFBLEDEBUG IotsaSerial.println("BLE start advertising");
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->setScanResponse(true);
   pAdvertising->start();
@@ -130,6 +132,7 @@ bool IotsaBLEServerMod::pauseServer() {
   if (s_server) {
     BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
     if (pAdvertising == nullptr || !pAdvertising->isAdvertising()) return false;
+    IFBLEDEBUG IotsaSerial.println("BLE pause advertising");
     pAdvertising->stop();
     return true;
   }
@@ -137,8 +140,9 @@ bool IotsaBLEServerMod::pauseServer() {
 }
 
 void IotsaBLEServerMod::resumeServer() {
-    BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-    pAdvertising->start();
+  IFBLEDEBUG IotsaSerial.println("BLE resume advertising");
+  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  pAdvertising->start();
 }
 
 void IotsaBLEServerMod::setup() {
@@ -146,6 +150,7 @@ void IotsaBLEServerMod::setup() {
   createServer();
   configLoad();
   if (!isEnabled) {
+    IFBLEDEBUG IotsaSerial.println("BLE deinit, not isEnabled");
     BLEDevice::deinit(false);
     esp_bt_mem_release(ESP_BT_MODE_BTDM);
     return;
