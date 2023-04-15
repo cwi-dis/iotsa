@@ -61,7 +61,7 @@ class BLE:
         try:
             self.loop.run_until_complete(self._asyncSelectDevice(name_or_address))
         except bleak.BleakError as e:
-            print(f"ble.set({name_or_address}, ...): exception: {e}")
+            print(f"ble.selectDevice({name_or_address}, ...): exception: {e}")
         return self._currentDevice != None
 
     async def _asyncSelectDevice(self, name_or_address: str):
