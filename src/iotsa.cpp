@@ -76,7 +76,7 @@ IotsaApplication::setup() {
 
 void
 IotsaApplication::serverSetup() {
-  if (!iotsaConfig.wifiEnabled) return;
+  // xxxjack this is wrong: if (!iotsaConfig.wifiEnabled) return;
   IotsaBaseMod *m;
 
   for (m=firstEarlyModule; m; m=m->nextModule) {
