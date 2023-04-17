@@ -248,7 +248,6 @@ void IotsaConfig::configLoad() {
   cf.get("wifiDisabledOnBoot", iotsaConfig.wifiDisabledOnBoot, false);
 #ifdef IOTSA_WITH_BLE
   cf.get("bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot, false);
-  iotsaConfig.bleDisabled = iotsaConfig.bleDisabledOnBoot;
 #endif
 #ifdef IOTSA_WITH_HTTPS
   if (iotsaConfigFileExists("/config/httpsKey.der") && iotsaConfigFileExists("/config/httpsCert.der")) {

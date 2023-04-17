@@ -103,13 +103,15 @@ protected:
   void handler();
 
   static void createServer();
-  static void startServer();
   static BLEServer *s_server;
   static IotsaBleApiService *s_services;
 
   static int adv_min;  // Minimum advertising interval (-1: default)
   static int adv_max;  // Maximum advertising interval (-1: default)
   static int tx_power; // Transmit power. -1: default. 0: -12dB. Then 3dB per increment until 7: +9dB.
+private:
+  void _startServer();
+  static void _bleGotoMode();
 };
 #else // IOTSA_WITH_BLE
 class IotsaBLEApiProvider {};

@@ -9,10 +9,13 @@ typedef std::function<void(void)> extensionCallback;
 
 typedef enum { IOTSA_MODE_NORMAL, IOTSA_MODE_CONFIG, IOTSA_MODE_OTA, IOTSA_MODE_FACTORY_RESET } config_mode;
 typedef enum { IOTSA_WIFI_DISABLED, IOTSA_WIFI_FACTORY, IOTSA_WIFI_NORMAL, IOTSA_WIFI_SEARCHING, IOTSA_WIFI_NOTFOUND} iotsa_wifi_mode;
+typedef enum { IOTSA_BLE_DISABLED, IOTSA_BLE_ENABLED } iotsa_ble_mode;
+
 class IotsaConfig {
   friend class IotsaConfigMod;
   friend class IotsaOtaMod;
   friend class IotsaWifiMod;
+  friend class IotsaBLEServerMod;
   friend class IotsaBatteryMod;
 private:
   bool configWasLoaded = false;
@@ -22,7 +25,7 @@ private:
   bool wantWifiModeSwitch = false;
 #ifdef IOTSA_WITH_BLE
   bool bleDisabledOnBoot = false;
-  bool bleDisabled = false;
+  iotsa_ble_mode bleMode = IOTSA_BLE_DISABLED;
   bool wantBleModeSwitch = false;
 #endif
   config_mode configurationMode = IOTSA_MODE_NORMAL;

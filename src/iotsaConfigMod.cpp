@@ -351,7 +351,7 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   reply["wifiDisabled"] = iotsaConfig.wifiMode == iotsa_wifi_mode::IOTSA_WIFI_DISABLED;
   reply["wifiDisabledOnBoot"] = iotsaConfig.wifiDisabledOnBoot;
 #ifdef IOTSA_WITH_BLE
-  reply["bleDisabled"] = iotsaConfig.bleDisabled;
+  reply["bleDisabled"] = iotsaConfig.bleMode == iotsa_ble_mode::IOTSA_BLE_DISABLED;
   reply["bleDisabledOnBoot"] = iotsaConfig.bleDisabledOnBoot;
 #endif
   reply["iotsaVersion"] = IOTSA_VERSION;
@@ -447,7 +447,9 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
     }
   }
   if (reqObj.containsKey("bleDisabled")) {
-    iotsaConfig.bleDisabled = reqObj["bleDisabled"];
+    bool bleDisabled = reqObj["bleDisabled"];
+    iotsa_ble_mode newMode = bleDisabled ? iotsa_ble_mode::IOTSA_BLE_DISABLED : iotsa_ble_mode::IOTSA_BLE_ENABLED;
+    iotsaConfig.bleMode = newMode;
     iotsaConfig.wantBleModeSwitch = true;
     radioModeChanged = true;
   }

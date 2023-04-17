@@ -120,20 +120,43 @@ void IotsaBLEServerMod::createServer() {
   s_server->setCallbacks(new IotsaBLEServerCallbacks());
 }
 
-void IotsaBLEServerMod::startServer() {
+void IotsaBLEServerMod::_startServer() {
   // Start services
   IFBLEDEBUG IotsaSerial.println("BLE start services");
   for (IotsaBleApiService *sp = s_services; sp; sp=sp->next) {
     sp->bleService->start();
   }
-  // Start advertising
-  IFBLEDEBUG IotsaSerial.println("BLE start advertising");
+  if (iotsaConfig.bleDisabledOnBoot) {
+    iotsaConfig.bleMode = iotsa_ble_mode::IOTSA_BLE_DISABLED;
+  } else {
+    iotsaConfig.bleMode = iotsa_ble_mode::IOTSA_BLE_ENABLED;
+  }
+  _bleGotoMode();
+}
+
+void IotsaBLEServerMod::_bleGotoMode() {
+  // if (s_server == nullptr) return;
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-  pAdvertising->setScanResponse(true);
-  pAdvertising->start();
+  if (pAdvertising == nullptr) return;
+  bool wasActive = pAdvertising->isAdvertising();
+  bool isActive = iotsaConfig.bleMode == iotsa_ble_mode::IOTSA_BLE_ENABLED;
+  if (wasActive == isActive) {
+    IFBLEDEBUG IotsaSerial.printf("BLE advertising is already %d\n", int(wasActive));
+    //return;
+  }
+  if (isActive) {
+    IFBLEDEBUG IotsaSerial.println("BLE start advertising");
+    // causes crash: esp_bt_controller_enable(esp_bt_mode_t::ESP_BT_MODE_BLE);
+    pAdvertising->start();
+  } else {
+    IFBLEDEBUG IotsaSerial.println("BLE stop advertising");
+    pAdvertising->stop();
+    // re-enabling causes crash: esp_bt_controller_disable();
+  }
 }
 
 bool IotsaBLEServerMod::pauseServer() {
+  // For now we keep pauseServer() and resumeServer(), because the use case is for light sleep.
   if (s_server) {
     BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
     if (pAdvertising == nullptr || !pAdvertising->isAdvertising()) return false;
@@ -185,8 +208,7 @@ bool IotsaBLEServerMod::putHandler(const char *path, const JsonVariant& request,
 #endif // IOTSA_WITH_API
 
 void IotsaBLEServerMod::serverSetup() {
-  IFBLEDEBUG IotsaSerial.println("BLE server start advertising and services");
-  startServer();
+  _startServer();
 #ifdef IOTSA_WITH_WEB
   server->on("/bleserver", std::bind(&IotsaBLEServerMod::handler, this));
 #endif
@@ -225,10 +247,13 @@ void IotsaBLEServerMod::configSave() {
 }
 
 void IotsaBLEServerMod::loop() {
-  static int firstLoop = 0;
-  if (firstLoop == 0) {
-    firstLoop = 1;
-    IFDEBUG IotsaSerial.println("BLE server loop");
+    if (iotsaConfig.wantBleModeSwitch) {
+      IFBLEDEBUG IotsaSerial.println("BLE mode switch requested");
+    //
+    // Either setup() or saveConfig() or configuration mode change asked to change the WiFi mode. Do so.
+    //
+    iotsaConfig.wantBleModeSwitch = false;
+    _bleGotoMode();
   }
 }
 
