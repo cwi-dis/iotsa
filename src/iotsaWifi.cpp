@@ -44,8 +44,10 @@ void IotsaWifiMod::setup() {
 }
 
 void IotsaWifiMod::_wifiGotoMode() {
-  if (iotsaConfig.wifiMode == iotsa_wifi_mode::IOTSA_WIFI_NORMAL) {
+  if (iotsaConfig.wifiMode != iotsa_wifi_mode::IOTSA_WIFI_DISABLED) {
     configLoad();
+  }
+  if (iotsaConfig.wifiMode == iotsa_wifi_mode::IOTSA_WIFI_NORMAL) {
     if (ssid.length() == 0) {
       // If no ssid is configured we revert to fatory mode.
       iotsaConfig.wifiMode = iotsa_wifi_mode::IOTSA_WIFI_FACTORY;
