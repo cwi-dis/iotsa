@@ -401,7 +401,7 @@ void IotsaBatteryMod::loop() {
       IotsaSerial.println("Disabling wifi due to wifiActiveDuration");
       // Setting the iotsaConfig variables causes the wifi module to disable itself next loop()
       iotsaConfig.wifiMode = iotsa_wifi_mode::IOTSA_WIFI_DISABLED;
-      iotsaConfig.wantWifiModeSwitch = true;
+      iotsaConfig.wantWifiModeSwitchAtMillis = millis();
     }
   }
   if (!shouldSleep) return;

@@ -22,11 +22,11 @@ private:
   bool otaEnabled = false;
   bool wifiDisabledOnBoot = false;
   iotsa_wifi_mode wifiMode = IOTSA_WIFI_DISABLED;
-  bool wantWifiModeSwitch = false;
+  uint32_t wantWifiModeSwitchAtMillis = 0;
 #ifdef IOTSA_WITH_BLE
   bool bleDisabledOnBoot = false;
   iotsa_ble_mode bleMode = IOTSA_BLE_DISABLED;
-  bool wantBleModeSwitch = false;
+  uint32_t wantBleModeSwitchAtMillis = 0;
 #endif
   config_mode configurationMode = IOTSA_MODE_NORMAL;
   unsigned long configurationModeEndTime = 0;

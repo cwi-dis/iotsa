@@ -247,12 +247,12 @@ void IotsaBLEServerMod::configSave() {
 }
 
 void IotsaBLEServerMod::loop() {
-    if (iotsaConfig.wantBleModeSwitch) {
+    if (iotsaConfig.wantBleModeSwitchAtMillis > 0 && iotsaConfig.wantBleModeSwitchAtMillis < millis()) {
       IFBLEDEBUG IotsaSerial.println("BLE mode switch requested");
     //
     // Either setup() or saveConfig() or configuration mode change asked to change the WiFi mode. Do so.
     //
-    iotsaConfig.wantBleModeSwitch = false;
+    iotsaConfig.wantBleModeSwitchAtMillis = 0;
     _bleGotoMode();
   }
 }

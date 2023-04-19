@@ -152,7 +152,7 @@ void IotsaConfig::endConfigurationMode() {
   nextConfigurationMode = IOTSA_MODE_NORMAL;
   nextConfigurationModeEndTime = 0;
   configSave();
-  wantWifiModeSwitch = true; // need to tell wifi
+  wantWifiModeSwitchAtMillis = millis(); // need to tell wifi
 }
 
 void IotsaConfig::beginConfigurationMode() {
@@ -186,7 +186,7 @@ void IotsaConfig::allowRequestedConfigurationMode() {
   nextConfigurationMode = IOTSA_MODE_NORMAL;
   nextConfigurationModeEndTime = 0;
   if (configurationMode == IOTSA_MODE_FACTORY_RESET) factoryReset();
-  wantWifiModeSwitch = true; // need to tell wifi
+  wantWifiModeSwitchAtMillis = millis(); // need to tell wifi
 }
 
 void IotsaConfig::allowRCMDescription(const char *_rcmInteractionDescription) {

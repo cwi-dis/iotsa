@@ -33,7 +33,7 @@ void IotsaWifiMod::setup() {
     WiFi.mode(WIFI_OFF);
     iotsaConfig.wifiMode = iotsa_wifi_mode::IOTSA_WIFI_DISABLED;
     if (app.status) app.status->showStatus();
-    iotsaConfig.wantWifiModeSwitch = false;
+    iotsaConfig.wantWifiModeSwitchAtMillis = 0;
     return;
   } else {
     // Otherwise we presume Normal mode, which will revert to factory if we have no SSID.
@@ -343,15 +343,15 @@ void IotsaWifiMod::configSave() {
     iotsaConfig.beginConfigurationMode();
   }
   // And we always want to connect to the new SSID as STA.
-  iotsaConfig.wantWifiModeSwitch = true;
+  iotsaConfig.wantWifiModeSwitchAtMillis = millis();
 }
 
 void IotsaWifiMod::loop() {
-  if (iotsaConfig.wantWifiModeSwitch) {
+  if (iotsaConfig.wantWifiModeSwitchAtMillis > 0 && iotsaConfig.wantWifiModeSwitchAtMillis < millis()) {
     //
     // Either setup() or saveConfig() or configuration mode change asked to change the WiFi mode. Do so.
     //
-    iotsaConfig.wantWifiModeSwitch = false;
+    iotsaConfig.wantWifiModeSwitchAtMillis = 0;
     _wifiGotoMode();
   }
   //
@@ -370,7 +370,7 @@ void IotsaWifiMod::loop() {
 #endif
   switch(iotsaConfig.wifiMode) {
   case IOTSA_WIFI_DISABLED:
-    if (curStatus != WL_IDLE_STATUS && curStatus != WL_NO_SHIELD) {
+    if (iotsaConfig.wantWifiModeSwitchAtMillis== 0 && curStatus != WL_IDLE_STATUS && curStatus != WL_NO_SHIELD) {
       IFDEBUG IotsaSerial.printf("WiFi disabled, but status=%d\n", (int)curStatus);
     }
     break;
