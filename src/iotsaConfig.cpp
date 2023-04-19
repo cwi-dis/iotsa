@@ -289,7 +289,7 @@ void IotsaConfig::printHeapSpace() {
 #ifdef ESP32
   size_t memAvail = heap_caps_get_free_size(MALLOC_CAP_8BIT);
   size_t largestBlock = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
-  IFDEBUG IotsaSerial.printf("Available heap space: %u bytes, largest block: %u bytes\n", memAvail, largestBlock);
+  IFDEBUG IotsaSerial.printf("Time since boot: %lld ms. Available heap space: %u bytes, largest block: %u bytes\n", (int64_t)millis(), memAvail, largestBlock);
 #endif
 }
 

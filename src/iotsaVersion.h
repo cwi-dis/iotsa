@@ -1,2 +1,2 @@
 #define IOTSA_VERSION "2.6"
-#define IOTSA_FULL_VERSION "v2.6+51-g084c649"
+#define IOTSA_FULL_VERSION "v2.6+52-g05263db"
