@@ -163,13 +163,15 @@ class IotsaWifi(PlatformWifi):
             try:
                 _ = socket.create_connection((deviceName, port), 20)
             except socket.timeout:
+                print(f"Timeout: {deviceName}:{port}", file=sys.stderr)
                 return False
             except socket.gaierror:
-                print("Unknown host: %s" % deviceName, file=sys.stderr)
+                print(f"Unknown host: {deviceName}", file=sys.stderr)
                 return False
             except socket.error:
                 continue
             return True
+        print(f"Neither http nor https responding: {deviceName}", file=sys.stderr)
         return False
 
     def findDevices(self) -> List[str]:
