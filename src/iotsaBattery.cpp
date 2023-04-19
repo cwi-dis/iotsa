@@ -224,6 +224,10 @@ bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, J
     bootExtraWakeDuration = reqObj["bootExtraWakeDuration"];
     anyChanged = true;
   }
+  if (reqObj.containsKey("activityExtraWakeDuration")) {
+    iotsaConfig.activityExtraWakeDuration = reqObj["activityExtraWakeDuration"];
+    anyChanged = true;
+  }
   if (reqObj.containsKey("wifiActiveDuration")) {
     wifiActiveDuration = reqObj["wifiActiveDuration"];
     anyChanged = true;
