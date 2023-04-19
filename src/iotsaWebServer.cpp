@@ -81,6 +81,7 @@ IotsaWebServerMixin::webServerSetup() {
 #endif
 #endif
   server->begin();
+  serverInitialized = true;
   IFDEBUG IotsaSerial.print(IOTSA_WEBSERVER);
   IFDEBUG IotsaSerial.println(" server started");
 }
@@ -88,6 +89,14 @@ IotsaWebServerMixin::webServerSetup() {
 void
 IotsaWebServerMixin::webServerLoop() {
   if (!iotsaConfig.wifiEnabled) return;
+  if (!serverInitialized) {
+    // Wifi is enabled but the server has not been initialized yet.
+    // Apparently wifi was disabled when we booted, so setup the server
+    // now.
+    IFDEBUG IotsaSerial.println("Setup web server after WiFi enabled");
+    webServerSetup();
+    return;
+  }
   server->handleClient();
 #if defined(IOTSA_WITH_HTTPS) && defined(IOTSA_WITH_HTTP)
   singletonTFS->server.handleClient();
