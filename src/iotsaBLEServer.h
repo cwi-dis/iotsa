@@ -85,10 +85,12 @@ public:
   void serverSetup() override;
   void loop() override;
   String info() override;
+#if 0
   static void setAdvertisingInterval(uint16_t _adv_min, uint16_t _adv_max) {
     adv_min = _adv_min;
     adv_max = _adv_max;
   }
+#endif
 
   static bool pauseServer();
   static void resumeServer();
@@ -101,12 +103,15 @@ protected:
   void handler();
 
   static void createServer();
-  static void startServer();
   static BLEServer *s_server;
   static IotsaBleApiService *s_services;
 
-  static uint16_t adv_min;
-  static uint16_t adv_max;
+  static int adv_min;  // Minimum advertising interval (-1: default)
+  static int adv_max;  // Maximum advertising interval (-1: default)
+  static int tx_power; // Transmit power. -1: default. 0: -12dB. Then 3dB per increment until 7: +9dB.
+private:
+  void _startServer();
+  static void _bleGotoMode();
 };
 #else // IOTSA_WITH_BLE
 class IotsaBLEApiProvider {};

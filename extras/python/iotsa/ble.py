@@ -27,6 +27,10 @@ class BLE:
         self._serviceCollection = None
         self.loop = asyncio.new_event_loop()
 
+    def __del__(self):
+        if self._currentConnection:
+            self.close()
+
     def close(self) -> None:
         if self._currentConnection != None:
             self.loop.run_until_complete(self._currentConnection.disconnect())
@@ -57,7 +61,7 @@ class BLE:
         try:
             self.loop.run_until_complete(self._asyncSelectDevice(name_or_address))
         except bleak.BleakError as e:
-            print(f"ble.set({name_or_address}, ...): exception: {e}")
+            print(f"ble.selectDevice({name_or_address}, ...): exception: {e}")
         return self._currentDevice != None
 
     async def _asyncSelectDevice(self, name_or_address: str):
@@ -71,10 +75,12 @@ class BLE:
             print(f"Device {name_or_address} not found")
             return
         self._currentDevice = dev
-        self._currentConnection = bleak.pythonic.client.BleakPythonicClient(
+        client = bleak.pythonic.client.BleakPythonicClient(
             self._currentDevice, 
             timeout=self.discover_timeout
         )
+        await client.connect()
+        self._currentConnection = client
 
     def printStatus(self) -> None:
         try:
@@ -84,7 +90,9 @@ class BLE:
 
     async def _asyncPrintStatus(self):
         assert self._currentConnection
-        async with self._currentConnection as client:
+        # async with self._currentConnection as client:
+        if True:
+            client = self._currentConnection
             print(f"{client.address}:")
             self._serviceCollection = await client.get_services()
             for service in self._serviceCollection.services.values():
@@ -118,7 +126,9 @@ class BLE:
     async def _asyncSet(self, name: str, value: Any) -> None:
         uuid = name_to_uuid(name)
         assert self._currentConnection
-        async with self._currentConnection as client:
+        # async with self._currentConnection as client:
+        if True:
+            client = self._currentConnection
             await client.write_gatt_char_typed(uuid, value, response=True)
 
     def setStreamed(self, name: str, value: bytes) -> None:
@@ -130,7 +140,9 @@ class BLE:
     async def _asyncSetStreamed(self, name: str, value: bytes) -> None:
         uuid = name_to_uuid(name)
         assert self._currentConnection
-        async with self._currentConnection as client:
+        # async with self._currentConnection as client:
+        if True:
+            client = self._currentConnection
             while len(value) > 0:
                 currentBuffer = value[:self.streamMTU]
                 value = value[self.streamMTU:]
@@ -147,7 +159,9 @@ class BLE:
     async def _asyncGet(self, name: str):
         uuid = name_to_uuid(name)
         assert self._currentConnection
-        async with self._currentConnection as client:
+        # async with self._currentConnection as client:
+        if True:
+            client = self._currentConnection
             try:
                 self._get_rv = await client.read_gatt_char_typed(uuid)
             except bleak.BleakError as e:
@@ -166,7 +180,9 @@ class BLE:
         uuid = name_to_uuid(name)
         assert self._currentConnection
         rv = b""
-        async with self._currentConnection as client:
+        # async with self._currentConnection as client:
+        if True:
+            client = self._currentConnection
             while True:
                 try:
                     currentBuffer = await client.read_gatt_char(uuid)

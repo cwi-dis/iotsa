@@ -150,18 +150,15 @@ protected:
     IotsaApiProvider* provider = service->provider;
     // xxxjson
     int jsonBufSize = 2048;
-    ArduinoJson::JsonObject request;
-    if (cmd_put || cmd_post) {
-      ArduinoJson::DynamicJsonDocument request_doc(jsonBufSize);
-      if (request_doc.overflowed()) {
-        IotsaSerial.println("IotsaHpsServiceMod: request too large");
-        curDataStatus = HPSDataStatus::EMPTY;
-        curBody = "";
-        return 413;
-      }
-      ArduinoJson::deserializeJson(request_doc, curBody.c_str());
-      request = request_doc.as<JsonObject>();
+    ArduinoJson::DynamicJsonDocument request_doc(jsonBufSize);
+    ArduinoJson::deserializeJson(request_doc, curBody.c_str());
+    if (request_doc.overflowed()) {
+      IotsaSerial.println("IotsaHpsServiceMod: request too large");
+      curDataStatus = HPSDataStatus::EMPTY;
+      curBody = "";
+      return 413;
     }
+    ArduinoJson::JsonObject request = request_doc.as<JsonObject>();
     ArduinoJson::DynamicJsonDocument reply_doc(jsonBufSize);
     ArduinoJson::JsonObject reply = reply_doc.to<JsonObject>();
     bool ok = false;
@@ -173,7 +170,7 @@ protected:
     } else
     if (cmd_post) {
       ok = provider->postHandler(url_c, request, reply);
-    }
+    } 
     if (!ok) {
       IotsaSerial.printf("IotsaHpsServiceMod: bad request \"%s\"\n", url_c);
       curDataStatus = HPSDataStatus::EMPTY;

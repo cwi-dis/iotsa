@@ -9,16 +9,25 @@ typedef std::function<void(void)> extensionCallback;
 
 typedef enum { IOTSA_MODE_NORMAL, IOTSA_MODE_CONFIG, IOTSA_MODE_OTA, IOTSA_MODE_FACTORY_RESET } config_mode;
 typedef enum { IOTSA_WIFI_DISABLED, IOTSA_WIFI_FACTORY, IOTSA_WIFI_NORMAL, IOTSA_WIFI_SEARCHING, IOTSA_WIFI_NOTFOUND} iotsa_wifi_mode;
+typedef enum { IOTSA_BLE_DISABLED, IOTSA_BLE_ENABLED } iotsa_ble_mode;
+
 class IotsaConfig {
   friend class IotsaConfigMod;
   friend class IotsaOtaMod;
   friend class IotsaWifiMod;
+  friend class IotsaBLEServerMod;
   friend class IotsaBatteryMod;
 private:
   bool configWasLoaded = false;
   bool otaEnabled = false;
+  bool wifiDisabledOnBoot = false;
   iotsa_wifi_mode wifiMode = IOTSA_WIFI_DISABLED;
-  bool wantWifiModeSwitch = false;
+  uint32_t wantWifiModeSwitchAtMillis = 0;
+#ifdef IOTSA_WITH_BLE
+  bool bleDisabledOnBoot = false;
+  iotsa_ble_mode bleMode = IOTSA_BLE_DISABLED;
+  uint32_t wantBleModeSwitchAtMillis = 0;
+#endif
   config_mode configurationMode = IOTSA_MODE_NORMAL;
   unsigned long configurationModeEndTime = 0;
   config_mode nextConfigurationMode = IOTSA_MODE_NORMAL;
@@ -35,7 +44,6 @@ private:
 public:
   bool wifiEnabled = false;
   String hostName = "";
-  bool disableWifiOnBoot = false;
   bool mdnsEnabled = false;
 #ifdef IOTSA_WITH_HTTPS
   const uint8_t* httpsCertificate;

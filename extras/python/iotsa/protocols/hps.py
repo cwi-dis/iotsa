@@ -56,7 +56,9 @@ class IotsaHPSProtocolHandler(IotsaAbstractProtocolHandler):
         if VERBOSE:
             print(f"HPS {method} hps://{self.bleServer}{endpoint}")
         if not self.client.isConnected():
-            self.client.selectDevice(self.bleServer)
+            ok = self.client.selectDevice(self.bleServer)
+            if not ok:
+                raise HpsError(f"Cannot connect to {self.bleServer}")
         self.client.set("hpsURL", endpoint)
         self.client.set("hpsHeaders", headers)
         if json != None:

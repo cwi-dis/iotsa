@@ -152,7 +152,7 @@ void IotsaConfig::endConfigurationMode() {
   nextConfigurationMode = IOTSA_MODE_NORMAL;
   nextConfigurationModeEndTime = 0;
   configSave();
-  wantWifiModeSwitch = true; // need to tell wifi
+  wantWifiModeSwitchAtMillis = millis(); // need to tell wifi
 }
 
 void IotsaConfig::beginConfigurationMode() {
@@ -186,7 +186,7 @@ void IotsaConfig::allowRequestedConfigurationMode() {
   nextConfigurationMode = IOTSA_MODE_NORMAL;
   nextConfigurationModeEndTime = 0;
   if (configurationMode == IOTSA_MODE_FACTORY_RESET) factoryReset();
-  wantWifiModeSwitch = true; // need to tell wifi
+  wantWifiModeSwitchAtMillis = millis(); // need to tell wifi
 }
 
 void IotsaConfig::allowRCMDescription(const char *_rcmInteractionDescription) {
@@ -245,6 +245,10 @@ void IotsaConfig::configLoad() {
   cf.get("hostName", iotsaConfig.hostName, "");
   if (iotsaConfig.hostName == "") iotsaConfig.setDefaultHostName();
   cf.get("rebootTimeout", iotsaConfig.configurationModeTimeout, CONFIGURATION_MODE_TIMEOUT);
+  cf.get("wifiDisabledOnBoot", iotsaConfig.wifiDisabledOnBoot, false);
+#ifdef IOTSA_WITH_BLE
+  cf.get("bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot, false);
+#endif
 #ifdef IOTSA_WITH_HTTPS
   if (iotsaConfigFileExists("/config/httpsKey.der") && iotsaConfigFileExists("/config/httpsCert.der")) {
     bool ok = iotsaConfigFileLoadBinary("/config/httpsKey.der", (uint8_t **)&iotsaConfig.httpsKey, &iotsaConfig.httpsKeyLength);
@@ -264,6 +268,10 @@ void IotsaConfig::configSave() {
   cf.put("mode", nextConfigurationMode); // Note: nextConfigurationMode, which will be read as configurationMode
   cf.put("hostName", hostName);
   cf.put("rebootTimeout", configurationModeTimeout);
+  cf.put("wifiDisabledOnBoot", iotsaConfig.wifiDisabledOnBoot);
+#ifdef IOTSA_WITH_BLE
+  cf.put("bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot);
+#endif
   // Key/cert are saved in iotsaConfigMod
   IFDEBUG IotsaSerial.println("Saved config.cfg");
 }
@@ -281,7 +289,7 @@ void IotsaConfig::printHeapSpace() {
 #ifdef ESP32
   size_t memAvail = heap_caps_get_free_size(MALLOC_CAP_8BIT);
   size_t largestBlock = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
-  IFDEBUG IotsaSerial.printf("Available heap space: %u bytes, largest block: %u bytes\n", memAvail, largestBlock);
+  IFDEBUG IotsaSerial.printf("Time since boot: %lld ms. Available heap space: %u bytes, largest block: %u bytes\n", (int64_t)millis(), memAvail, largestBlock);
 #endif
 }
 

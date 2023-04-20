@@ -72,6 +72,9 @@ IotsaBLEServerMod::handler() {
   if( server->hasArg("adv_max")) {
     adv_max = strtol(server->arg("adv_max").c_str(), 0, 10);
     anyChanged = true;
+  }if( server->hasArg("tx_power")) {
+    tx_power = strtol(server->arg("tx_power").c_str(), 0, 10);
+    anyChanged = true;
   }
   if (anyChanged) configSave();
 
@@ -79,8 +82,9 @@ IotsaBLEServerMod::handler() {
   String message = "<html><head><title>BLE Server module</title></head><body><h1>BLE Server module</h1>";
   message += "<form method='get'>";
   message += "BLE Enabled: <input type='text' name='isEnabled' value='" + String((int)isEnabled) + "'><br>";
-  message += "Advertising interval (min): <input type='text' name='adv_min' value='" + String(adv_min) + "'> (default: 32, unit: 0.625ms, range: 32..16384)<br>";
-  message += "Advertising interval (max): <input type='text' name='adv_max' value='" + String(adv_max) + "'> (default: 64, unit: 0.625ms, range: 32..16384)<br>";
+  message += "Advertising interval (min): <input type='text' name='adv_min' value='" + String(adv_min) + "'> (default: -1, unit: 0.625ms, range: 32..16384)<br>";
+  message += "Advertising interval (max): <input type='text' name='adv_max' value='" + String(adv_max) + "'> (default: -1, unit: 0.625ms, range: 32..16384)<br>";
+  message += "Transmit power level: <input type='text' name='tx_power' value='" + String(tx_power) + "'> (default: -1, unit: 3dbm, range: 0..7 for -12dbm to 9dbm)<br>";
   message += "<input type='submit'></form></body></html>";
   server->send(200, "text/html", message);
 }
@@ -95,8 +99,9 @@ String IotsaBLEServerMod::info() {
 
 BLEServer *IotsaBLEServerMod::s_server = 0;
 IotsaBleApiService *IotsaBLEServerMod::s_services = NULL;
-uint16_t IotsaBLEServerMod::adv_min = 0;
-uint16_t IotsaBLEServerMod::adv_max = 0;
+int IotsaBLEServerMod::adv_min = -1;
+int IotsaBLEServerMod::adv_max = -1;
+int IotsaBLEServerMod::tx_power = -1;
 
 void IotsaBLEServerMod::createServer() {
   if (s_server) return;
@@ -115,21 +120,47 @@ void IotsaBLEServerMod::createServer() {
   s_server->setCallbacks(new IotsaBLEServerCallbacks());
 }
 
-void IotsaBLEServerMod::startServer() {
+void IotsaBLEServerMod::_startServer() {
   // Start services
+  IFBLEDEBUG IotsaSerial.println("BLE start services");
   for (IotsaBleApiService *sp = s_services; sp; sp=sp->next) {
     sp->bleService->start();
   }
-  // Start advertising
+  if (iotsaConfig.bleDisabledOnBoot) {
+    iotsaConfig.bleMode = iotsa_ble_mode::IOTSA_BLE_DISABLED;
+  } else {
+    iotsaConfig.bleMode = iotsa_ble_mode::IOTSA_BLE_ENABLED;
+  }
+  _bleGotoMode();
+}
+
+void IotsaBLEServerMod::_bleGotoMode() {
+  // if (s_server == nullptr) return;
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-  pAdvertising->setScanResponse(true);
-  pAdvertising->start();
+  if (pAdvertising == nullptr) return;
+  bool wasActive = pAdvertising->isAdvertising();
+  bool isActive = iotsaConfig.bleMode == iotsa_ble_mode::IOTSA_BLE_ENABLED;
+  if (wasActive == isActive) {
+    IFBLEDEBUG IotsaSerial.printf("BLE advertising is already %d\n", int(wasActive));
+    //return;
+  }
+  if (isActive) {
+    IFBLEDEBUG IotsaSerial.println("BLE start advertising");
+    // causes crash: esp_bt_controller_enable(esp_bt_mode_t::ESP_BT_MODE_BLE);
+    pAdvertising->start();
+  } else {
+    IFBLEDEBUG IotsaSerial.println("BLE stop advertising");
+    pAdvertising->stop();
+    // re-enabling causes crash: esp_bt_controller_disable();
+  }
 }
 
 bool IotsaBLEServerMod::pauseServer() {
+  // For now we keep pauseServer() and resumeServer(), because the use case is for light sleep.
   if (s_server) {
     BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
     if (pAdvertising == nullptr || !pAdvertising->isAdvertising()) return false;
+    IFBLEDEBUG IotsaSerial.println("BLE pause advertising");
     pAdvertising->stop();
     return true;
   }
@@ -137,8 +168,9 @@ bool IotsaBLEServerMod::pauseServer() {
 }
 
 void IotsaBLEServerMod::resumeServer() {
-    BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-    pAdvertising->start();
+  IFBLEDEBUG IotsaSerial.println("BLE resume advertising");
+  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  pAdvertising->start();
 }
 
 void IotsaBLEServerMod::setup() {
@@ -146,6 +178,7 @@ void IotsaBLEServerMod::setup() {
   createServer();
   configLoad();
   if (!isEnabled) {
+    IFBLEDEBUG IotsaSerial.println("BLE deinit, not isEnabled");
     BLEDevice::deinit(false);
     esp_bt_mem_release(ESP_BT_MODE_BTDM);
     return;
@@ -157,6 +190,7 @@ bool IotsaBLEServerMod::getHandler(const char *path, JsonObject& reply) {
   reply["isEnabled"] = isEnabled;
   reply["adv_min"] = adv_min;
   reply["adv_max"] = adv_max;
+  reply["tx_power"] = tx_power;
   return true;
 }
 
@@ -167,14 +201,14 @@ bool IotsaBLEServerMod::putHandler(const char *path, const JsonVariant& request,
   }
   adv_min = request["adv_min"]|adv_min;
   adv_max = request["adv_max"]|adv_max;
+  tx_power = request["tx_power"]|tx_power;
   configSave();
   return true;
 }
 #endif // IOTSA_WITH_API
 
 void IotsaBLEServerMod::serverSetup() {
-  IFBLEDEBUG IotsaSerial.println("BLE server start advertising and services");
-  startServer();
+  _startServer();
 #ifdef IOTSA_WITH_WEB
   server->on("/bleserver", std::bind(&IotsaBLEServerMod::handler, this));
 #endif
@@ -189,9 +223,11 @@ void IotsaBLEServerMod::configLoad() {
   IotsaConfigFileLoad cf("/config/bleserver.cfg");
   cf.get("isEnabled", isEnabled, true);
   cf.get("adv_min", adv_min, adv_min);
-  if (adv_min) pAdvertising->setMinInterval(adv_min);
+  if (adv_min >= 0) pAdvertising->setMinInterval(adv_min);
   cf.get("adv_max", adv_max, adv_max);
-  if (adv_max) pAdvertising->setMaxInterval(adv_max);
+  if (adv_max >= 0) pAdvertising->setMaxInterval(adv_max);
+  cf.get("tx_power", tx_power, tx_power);
+  if (tx_power >= 0) BLEDevice::setPower((esp_power_level_t)tx_power);
 }
 
 void IotsaBLEServerMod::configSave() {
@@ -199,20 +235,25 @@ void IotsaBLEServerMod::configSave() {
   cf.put("isEnabled", isEnabled);
   cf.put("adv_min", adv_min);
   cf.put("adv_max", adv_max);
+  cf.put("tx_power", tx_power);
   if (BLEDevice::getInitialized()) {
     BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
     pAdvertising->stop();
-    if (adv_min) pAdvertising->setMinInterval(adv_min);
-    if (adv_max) pAdvertising->setMaxInterval(adv_max);
+    if (adv_min >= 0) pAdvertising->setMinInterval(adv_min);
+    if (adv_max >= 0) pAdvertising->setMaxInterval(adv_max);
+    if (tx_power >= 0) BLEDevice::setPower((esp_power_level_t)tx_power);
     pAdvertising->start();
   }
 }
 
 void IotsaBLEServerMod::loop() {
-  static int firstLoop = 0;
-  if (firstLoop == 0) {
-    firstLoop = 1;
-    IFDEBUG IotsaSerial.println("BLE server loop");
+    if (iotsaConfig.wantBleModeSwitchAtMillis > 0 && iotsaConfig.wantBleModeSwitchAtMillis < millis()) {
+      IFBLEDEBUG IotsaSerial.println("BLE mode switch requested");
+    //
+    // Either setup() or saveConfig() or configuration mode change asked to change the WiFi mode. Do so.
+    //
+    iotsaConfig.wantBleModeSwitchAtMillis = 0;
+    _bleGotoMode();
   }
 }
 

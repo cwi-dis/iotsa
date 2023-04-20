@@ -51,6 +51,7 @@ public:
   IotsaWebServerMixin(IotsaApplication* _app);
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
   IotsaWebServer *server;
+  bool serverInitialized = false;
 protected:
   IotsaApplication* app;
   void webServerSetup();

@@ -83,7 +83,8 @@ IotsaBatteryMod::handler() {
   if (sleepMode && wakeDuration) {
     uint32_t nextSleepTime = millisAtWakeup + wakeDuration;
     if (!didWakeFromSleep) nextSleepTime += bootExtraWakeDuration;
-    message += "Remaining awake for: " + String((nextSleepTime - millis())/1000.0) + "s<br>";
+    long remainAwakeMillis =  nextSleepTime - millis();
+    message += "Remaining awake for: " + String(remainAwakeMillis/1000.0) + "s<br>";
   }
   if (wifiActiveDuration) {
     message += "Wifi will be disabled in: " + String((millisAtWifiWakeup + wifiActiveDuration - millis())/1000.0) + "s<br>";
@@ -152,7 +153,9 @@ void IotsaBatteryMod::setup() {
     if (iotsaConfig.wifiEnabled) {
       IFDEBUG IotsaSerial.println("Wifi already enabled?");
     }
-    iotsaConfig.disableWifiOnBoot = true;
+    // xxxjack unsure whether this is correct... It may get saved later, which we don't want...
+    iotsaConfig.wifiDisabledOnBoot = true;
+    iotsaConfig.wifiMode = iotsa_wifi_mode::IOTSA_WIFI_DISABLED;
   }
   if (watchdogDuration) {
     watchdogTimer = timerBegin(0, 80, true);
@@ -220,6 +223,10 @@ bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, J
   }
   if (reqObj.containsKey("bootExtraWakeDuration")) {
     bootExtraWakeDuration = reqObj["bootExtraWakeDuration"];
+    anyChanged = true;
+  }
+  if (reqObj.containsKey("activityExtraWakeDuration")) {
+    iotsaConfig.activityExtraWakeDuration = reqObj["activityExtraWakeDuration"];
     anyChanged = true;
   }
   if (reqObj.containsKey("wifiActiveDuration")) {
@@ -395,11 +402,11 @@ void IotsaBatteryMod::loop() {
       shouldSleep = false;
   }
   if (shouldDisableWifi) {
-    if (iotsaConfig.wifiEnabled) {
+    if (iotsaConfig.wifiMode != iotsa_wifi_mode::IOTSA_WIFI_DISABLED) {
       IotsaSerial.println("Disabling wifi due to wifiActiveDuration");
       // Setting the iotsaConfig variables causes the wifi module to disable itself next loop()
-      iotsaConfig.disableWifiOnBoot = true;
-      iotsaConfig.wantWifiModeSwitch = true;
+      iotsaConfig.wifiMode = iotsa_wifi_mode::IOTSA_WIFI_DISABLED;
+      iotsaConfig.wantWifiModeSwitchAtMillis = millis();
     }
   }
   if (!shouldSleep) return;
