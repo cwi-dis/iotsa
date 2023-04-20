@@ -83,7 +83,8 @@ IotsaBatteryMod::handler() {
   if (sleepMode && wakeDuration) {
     uint32_t nextSleepTime = millisAtWakeup + wakeDuration;
     if (!didWakeFromSleep) nextSleepTime += bootExtraWakeDuration;
-    message += "Remaining awake for: " + String((nextSleepTime - millis())/1000.0) + "s<br>";
+    long remainAwakeMillis =  nextSleepTime - millis();
+    message += "Remaining awake for: " + String(remainAwakeMillis/1000.0) + "s<br>";
   }
   if (wifiActiveDuration) {
     message += "Wifi will be disabled in: " + String((millisAtWifiWakeup + wifiActiveDuration - millis())/1000.0) + "s<br>";
