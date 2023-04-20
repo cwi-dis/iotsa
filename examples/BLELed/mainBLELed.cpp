@@ -20,7 +20,11 @@
 #define PIN_VBAT 36 // Undefine to disable battery voltage measurements. Use 1:1 voltage divider.
 #define PIN_VUSB 37 // Undefine to disable USB voltage measurements. Use 1:1 voltage divider.
 #endif
+#ifdef ESP32C3
+#define PIN_DISABLESLEEP 9 // Define as pin to disable sleep (active low to disable)
+#else
 #define PIN_DISABLESLEEP 0 // Define as pin to disable sleep (active low to disable)
+#endif
 #endif // ESP32
 
 IotsaApplication application("Iotsa BLE LED Server");
