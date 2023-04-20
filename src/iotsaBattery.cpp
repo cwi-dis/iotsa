@@ -36,11 +36,7 @@ IotsaBatteryMod::handler() {
     wakeDuration = server->arg("wakeDuration").toInt();
     anyChanged = true;
   }
-  if( server->hasArg("wifiActiveDuration")) {
-    if (needsAuthentication()) return;
-    wifiActiveDuration = server->arg("wifiActiveDuration").toInt();
-    anyChanged = true;
-  }
+  
 #ifdef ESP32
   if( server->hasArg("watchdogDuration")) {
     if (needsAuthentication()) return;
@@ -61,6 +57,11 @@ IotsaBatteryMod::handler() {
   if( server->hasArg("disableSleepOnUSBPower")) {
     if (needsAuthentication()) return;
     disableSleepOnUSBPower = server->arg("disableSleepOnUSBPower").toInt();
+    anyChanged = true;
+  }
+  if( server->hasArg("disableSleepOnWiFi")) {
+    if (needsAuthentication()) return;
+    disableSleepOnWiFi = server->arg("disableSleepOnWiFi").toInt();
     anyChanged = true;
   }
   if( server->hasArg("correctionVBat")) {
@@ -86,9 +87,6 @@ IotsaBatteryMod::handler() {
     long remainAwakeMillis =  nextSleepTime - millis();
     message += "Remaining awake for: " + String(remainAwakeMillis/1000.0) + "s<br>";
   }
-  if (wifiActiveDuration) {
-    message += "Wifi will be disabled in: " + String((millisAtWifiWakeup + wifiActiveDuration - millis())/1000.0) + "s<br>";
-  }
   if (pinVBat >= 0) {
     message += "Battery level: " + String(levelVBat) + "%<br>";
   }
@@ -108,11 +106,12 @@ IotsaBatteryMod::handler() {
   message += "Wake duration (ms): <input name='wakeDuration' value='" + String(wakeDuration) + "'><br>";
   message += "Extra wake duration after activity (ms): <input name='activityExtraWakeDuration' value='" + String(iotsaConfig.activityExtraWakeDuration) + "'><br>";
   message += "Extra wake duration after poweron/reset (ms): <input name='bootExtraWakeDuration' value='" + String(bootExtraWakeDuration) + "'><br>";
-  message += "WiFi duration after poweron/reset/deepsleep (ms): <input name='wifiActiveDuration' value='" + String(wifiActiveDuration) + "'><br>";
   if (pinVUSB >= 0) {
-    message += "<input type='radio' name='disableSleepOnUSBPower' value='0'" + String(disableSleepOnUSBPower?"":" checked") + ">Sleep or disable WiFi on both USB or battery power<br>";
-    message += "<input type='radio' name='disableSleepOnUSBPower' value='1'" + String(disableSleepOnUSBPower?" checked":"") + ">Only sleep or disable WiFi on battery power<br>";
+    message += "<input type='radio' name='disableSleepOnUSBPower' value='0'" + String(disableSleepOnUSBPower?"":" checked") + ">Sleep on both USB or battery power<br>";
+    message += "<input type='radio' name='disableSleepOnUSBPower' value='1'" + String(disableSleepOnUSBPower?" checked":"") + ">Disable sleep on USB power<br>";
   }
+  message += "<input type='radio' name='disableSleepOnWiFi' value='0'" + String(disableSleepOnWiFi?"":" checked") + ">Sleep independent of WiFi<br>";
+  message += "<input type='radio' name='disableSleepOnWiFi' value='1'" + String(disableSleepOnWiFi?" checked":"") + ">Disable sleep if WiFi is active<br>";
   if (pinVBat >= 0) {
     message += "Battery voltage correction factor: <input name='correctionVBat' value='" + String(correctionVBat) + "'><br>";
   }
@@ -140,23 +139,7 @@ void IotsaBatteryMod::setup() {
   configLoad();
 #ifdef ESP32
   didWakeFromSleep = (esp_sleep_get_wakeup_cause() != 0);
-  // If we are awaking from sleep we may want to disable WiFi
-  //
-  // NOTE: there is a bug in the revision 1 ESP32 hardware, which causes issues with wakeup from hibernate
-  // to _not_ record this as a wakeup but in stead as an external reset (even though the info printed at
-  // boot time is correct). For this reason it may be better to use deep sleep in stead of hibernate.
-  // Various workarounds I've tried did not work.
-  // See https://github.com/espressif/esp-idf/issues/494 for a description.
-  //
-  if (wifiActiveDuration > 0 && didWakeFromSleep) {
-    IFDEBUG IotsaSerial.println("Disabling wifi");
-    if (iotsaConfig.wifiEnabled) {
-      IFDEBUG IotsaSerial.println("Wifi already enabled?");
-    }
-    // xxxjack unsure whether this is correct... It may get saved later, which we don't want...
-    iotsaConfig.wifiDisabledOnBoot = true;
-    iotsaConfig.wifiMode = iotsa_wifi_mode::IOTSA_WIFI_DISABLED;
-  }
+  
   if (watchdogDuration) {
     watchdogTimer = timerBegin(0, 80, true);
     timerAttachInterrupt(watchdogTimer, &watchdogTimerTriggered, true);
@@ -186,7 +169,6 @@ bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
   reply["wakeDuration"] = wakeDuration;
   reply["bootExtraWakeDuration"] = bootExtraWakeDuration;
   reply["activityExtraWakeDuration"] = iotsaConfig.activityExtraWakeDuration;
-  reply["wifiActiveDuration"] = wifiActiveDuration;
   reply["postponeSleep"] = iotsaConfig.postponeSleep(0);
 #ifdef ESP32
   reply["watchdogDuration"] = watchdogDuration;
@@ -199,6 +181,7 @@ bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
   if (pinVUSB >= 0) {
     reply["levelVUSB"] = levelVUSB;
     reply["disableSleepOnUSBPower"] = disableSleepOnUSBPower;
+    reply["disableSleepOnWiFi"] = disableSleepOnWiFi;
   }
   return true;
 }
@@ -229,10 +212,6 @@ bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, J
     iotsaConfig.activityExtraWakeDuration = reqObj["activityExtraWakeDuration"];
     anyChanged = true;
   }
-  if (reqObj.containsKey("wifiActiveDuration")) {
-    wifiActiveDuration = reqObj["wifiActiveDuration"];
-    anyChanged = true;
-  }
 #ifdef ESP32
   if (reqObj.containsKey("watchdogDuration")) {
     watchdogDuration = reqObj["watchdogDuration"];
@@ -245,6 +224,10 @@ bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, J
   }
   if (pinVUSB >= 0 && reqObj.containsKey("disableSleepOnUSBPower")) {
     disableSleepOnUSBPower = reqObj["disableSleepOnUSBPower"];
+    anyChanged = true;
+  }
+  if (reqObj.containsKey("disableSleepOnWiFi")) {
+    disableSleepOnWiFi = reqObj["disableSleepOnWiFi"];
     anyChanged = true;
   }
   if (anyChanged) configSave();
@@ -298,12 +281,12 @@ void IotsaBatteryMod::configLoad() {
   cf.get("bootExtraWakeDuration", bootExtraWakeDuration, 0);
   cf.get("activityExtraWakeDuration", iotsaConfig.activityExtraWakeDuration, 0);
   cf.get("sleepDuration", sleepDuration, 0);
-  cf.get("wifiActiveDuration", wifiActiveDuration, 0);
 #ifdef ESP32
   cf.get("watchdogDuration", watchdogDuration, 0);
 #endif
   cf.get("correctionVBat", correctionVBat, 1.0);
   cf.get("disableSleepOnUSBPower", disableSleepOnUSBPower, 0);
+  cf.get("disableSleepOnWiFi", disableSleepOnWiFi, 0);
   millisAtWakeup = 0;
 }
 
@@ -314,7 +297,6 @@ void IotsaBatteryMod::configSave() {
   cf.put("bootExtraWakeDuration", bootExtraWakeDuration);
   cf.put("activityExtraWakeDuration", iotsaConfig.activityExtraWakeDuration);
   cf.put("sleepDuration", sleepDuration);
-  cf.put("wifiActiveDuration", wifiActiveDuration);
 #ifdef ESP32
   cf.put("watchdogDuration", watchdogDuration);
 #endif
@@ -324,6 +306,7 @@ void IotsaBatteryMod::configSave() {
   if (pinVUSB >= 0) {
     cf.put("disableSleepOnUSBPower", disableSleepOnUSBPower);
   }
+  cf.put("disableSleepOnWiFi", disableSleepOnWiFi);
   millisAtWakeup = 0;
 }
 
@@ -333,7 +316,6 @@ void IotsaBatteryMod::extendCurrentMode() {
     timerWrite(watchdogTimer, 0);
   }
 #endif
-  millisAtWifiWakeup = millis();
   millisAtWakeup = millis();
   IFDEBUG IotsaSerial.println("Battery: extend mode");
 }
@@ -354,7 +336,6 @@ void IotsaBatteryMod::loop() {
 #endif
     _readVoltages();
   }
-  if (millisAtWifiWakeup == 0) millisAtWifiWakeup = millis();
   // If a reboot or configuration mode change has been requested (probably over BLE) we do so now.
   if (doSoftReboot) {
     if (doSoftReboot == 2) {
@@ -371,44 +352,36 @@ void IotsaBatteryMod::loop() {
     doSoftReboot = 0;
   }
   // Return quickly if no sleep or wifi sleep is required.
-  if (sleepMode == IOTSA_SLEEP_NONE && wifiActiveDuration == 0) return;
+  if (sleepMode == IOTSA_SLEEP_NONE) return;
   // Check whether we should disable Wifi or sleep
   int curWakeDuration = wakeDuration;
   if (!didWakeFromSleep) curWakeDuration += bootExtraWakeDuration;
-  bool shouldDisableWifi = iotsaConfig.wifiEnabled && wifiActiveDuration && millis() > millisAtWifiWakeup + wifiActiveDuration;
   bool shouldSleep = sleepMode && curWakeDuration > 0 && millis() > millisAtWakeup + curWakeDuration;
   // Again, return quickly if no sleep or wifi sleep is required.
-  if (!shouldSleep && !shouldDisableWifi) return;
+  if (!shouldSleep) return;
   // Now check for other reasons NOT to go to sleep or disable wifi
+  if (disableSleepOnWiFi && iotsaConfig.wifiMode != iotsa_wifi_mode::IOTSA_WIFI_DISABLED) {
+    return;
+  }
   if (pinDisableSleep >= 0 && digitalRead(pinDisableSleep) == LOW) {
     shouldSleep = false;
-    shouldDisableWifi = false;
   }
   // Another reason is if we're running on USB power and we only sleep on battery power
   if (disableSleepOnUSBPower && pinVUSB >= 0) {
     if (levelVUSB > 80) {
       shouldSleep = false;
-      shouldDisableWifi = false;
     }
   }
   // Another reason is that we are in configuration mode
   if (iotsaConfig.inConfigurationMode()) {
       shouldSleep = false;
-      shouldDisableWifi = false;
   }
   // A final reason is if some other module is asking for an extension of the waking period.
   // This does not extend wifi duration, though.
   if (!iotsaConfig.canSleep()) {
       shouldSleep = false;
   }
-  if (shouldDisableWifi) {
-    if (iotsaConfig.wifiMode != iotsa_wifi_mode::IOTSA_WIFI_DISABLED) {
-      IotsaSerial.println("Disabling wifi due to wifiActiveDuration");
-      // Setting the iotsaConfig variables causes the wifi module to disable itself next loop()
-      iotsaConfig.wifiMode = iotsa_wifi_mode::IOTSA_WIFI_DISABLED;
-      iotsaConfig.wantWifiModeSwitchAtMillis = millis();
-    }
-  }
+  
   if (!shouldSleep) return;
 #ifdef ESP32
   if (watchdogTimer) timerAlarmDisable(watchdogTimer);
