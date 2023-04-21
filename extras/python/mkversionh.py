@@ -69,7 +69,7 @@ def main():
         fullVersion = os.environ['IOTSA_FULL_VERSION']
     else:
         cmd = subprocess.Popen(
-            "git describe --match 'v*'",
+            "git describe --always --match 'v*'",
             shell=True,
             cwd=baseDir,
             stdout=subprocess.PIPE,
@@ -78,6 +78,9 @@ def main():
         fullVersion = cmd.stdout.read().strip()
         fullVersion = fullVersion.replace("-", "+", 1)
     shortVersion = vf.get("IOTSA_VERSION", '"unknown""')
+    if fullVersion and not '+' in fullVersion:
+        # git describe returned just a SHA
+        fullVersion = eval(shortVersion) + "+sha." + fullVersion
     if not fullVersion:
         fullVersion = shortVersion
     if not '"' in fullVersion:
