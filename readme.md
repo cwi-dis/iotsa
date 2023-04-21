@@ -677,7 +677,12 @@ The 3D-printable case for a iotsa board is also available at Thingyverse: <http:
 Notes to self, mainly, on creating a new release:
 
 - Update version number in `library.properties` and `library.json`.
-- Run `IOTSA_FULL_VERSION=vX.Y.Z python3 extras/python/mkversionh.py`.
+- Run
+
+ ```
+ IOTSA_FULL_VERSION=vX.Y.Z python3 extras/python/mkversionh.py
+  sh ./extras/ignore-version-changes.sh off
+  ```
 - Update `changelog.txt` with version number and date.
 - Commit, Push
 - If a real version: merge into `master` and tag on master (otherwise tag on `develop`)
@@ -686,3 +691,4 @@ Notes to self, mainly, on creating a new release:
 	- Update `changelog.txt` again on `develop`.
 	- Ensure release is available on platformIO library registry.
 	- Ensure release is available in Arduino library registry.
+- You probably want to run `sh ./extras/ignore-version-changes.sh on` again after all is done.
