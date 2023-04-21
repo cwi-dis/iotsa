@@ -181,8 +181,8 @@ bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
   if (pinVUSB >= 0) {
     reply["levelVUSB"] = levelVUSB;
     reply["disableSleepOnUSBPower"] = disableSleepOnUSBPower;
-    reply["disableSleepOnWiFi"] = disableSleepOnWiFi;
   }
+  reply["disableSleepOnWiFi"] = disableSleepOnWiFi;
   return true;
 }
 
