@@ -11,7 +11,17 @@
 #define IFBLEDEBUG if(0)
 #endif
 
+
+class IotsaHpsServiceEntryPoint {
+  public:
+   const char *api_path;
+   IotsaApiProvider *provider;
+   IotsaAuthenticationProvider* auth;
+};
+
 class IotsaHpsServiceMod : public IotsaBaseMod, public IotsaBLEApiProvider {
+  friend class IotsaApiServiceHps;
+
   const int HPSMaxBodySize = 512;
   enum HPSControl {
     NONE=0,
@@ -52,6 +62,10 @@ protected:
   HPSControl curControl;
   uint16_t curHttpStatus;
   HPSDataStatus curDataStatus;
+
+  static std::list<IotsaHpsServiceEntryPoint*> getEntryPoints;
+  static std::list<IotsaHpsServiceEntryPoint*> putEntryPoints;
+  static std::list<IotsaHpsServiceEntryPoint*> postEntryPoints;
 
   bool blePutHandler(UUIDstring charUUID) override {
     if (charUUID == IotsaApiServiceHps::controlPointUUID) {
@@ -132,22 +146,22 @@ protected:
       return 400;
     }
     const char *url_c = curUrl.c_str();
-    IotsaApiServiceHps* service = nullptr;
-    for(IotsaApiServiceHps* candidate : IotsaApiServiceHps::all) {
-      if (cmd_get && !candidate->provider_get) continue;
-      if (cmd_put && !candidate->provider_put) continue;
-      if (cmd_post && !candidate->provider_post) continue;
-      if (strcmp(candidate->provider_path, url_c) != 0) continue;
-      service = candidate;
-      break;
+    IotsaApiProvider* provider = nullptr;
+    std::list<IotsaHpsServiceEntryPoint *>&epList =
+      (cmd_get ? getEntryPoints :
+      cmd_put ? putEntryPoints :
+                postEntryPoints);
+    for(IotsaHpsServiceEntryPoint* ep : epList) {
+      if (strcmp(url_c, ep->api_path) == 0) {
+        provider = ep->provider;
+      }
     }
-    if (service == nullptr) {
-      IotsaSerial.printf("IotsaHpsServiceMod: no api provider for url %s\n", url_c);
+    if (provider == nullptr) {
+      IotsaSerial.printf("IotsaHpsServiceMod: no api provider for command 0x%x url %s\n", command, url_c);
       curDataStatus = HPSDataStatus::EMPTY;
       curBody = "";
       return 404;
     }
-    IotsaApiProvider* provider = service->provider;
     // xxxjson
     int jsonBufSize = 2048;
     ArduinoJson::DynamicJsonDocument request_doc(jsonBufSize);
@@ -208,25 +222,36 @@ protected:
 };
 
 IotsaHpsServiceMod* IotsaApiServiceHps::_hpsMod = NULL;
-std::list<IotsaApiServiceHps*> IotsaApiServiceHps::all;
+std::list<IotsaHpsServiceEntryPoint*> IotsaHpsServiceMod::getEntryPoints;
+std::list<IotsaHpsServiceEntryPoint*> IotsaHpsServiceMod::putEntryPoints;
+std::list<IotsaHpsServiceEntryPoint*> IotsaHpsServiceMod::postEntryPoints;
 
 IotsaApiServiceHps::IotsaApiServiceHps(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth)
-: provider(_provider),
-  auth(_auth)
+: auth(_auth)
 {
   if (_hpsMod == NULL) {
     IotsaSerial.println("IotsaApiServiceHps: allocate IotsaHpsServiceMod");
     _hpsMod = new IotsaHpsServiceMod(_app); 
   }
-  all.push_back(this);
+  provider = _provider;
 }
   
 void IotsaApiServiceHps::setup(const char* path, bool get, bool put, bool post) {
   IFBLEDEBUG IotsaSerial.printf("IotsaApiServiceHps: path=%s\n", path);
-  provider_path = path;
-  provider_get = get;
-  provider_put = put;
-  provider_post = post;
+  // The IotsaHpsServiceEntryPoint are immutable so we can add it to multiple lists
+  IotsaHpsServiceEntryPoint *entry = new IotsaHpsServiceEntryPoint();
+  entry->api_path = path;
+  entry->provider = provider;
+  entry->auth = auth;
+  if (get) {
+    IotsaHpsServiceMod::getEntryPoints.push_back(entry);
+  }
+  if (put) {
+    IotsaHpsServiceMod::putEntryPoints.push_back(entry);
+  }
+  if (post) {
+    IotsaHpsServiceMod::postEntryPoints.push_back(entry);
+  }
 }
 
 #endif // IOTSA_WITH_HPS

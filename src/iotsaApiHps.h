@@ -14,6 +14,7 @@ public:
   void setup(const char* path, bool get=false, bool put=false, bool post=false) override;
 private:
   IotsaAuthenticationProvider* auth;
+  IotsaApiProvider* provider;
 public:
   static constexpr UUIDstring serviceUUID = "1823";
   static constexpr UUIDstring urlUUID = "2AB6";
@@ -22,12 +23,6 @@ public:
   static constexpr UUIDstring bodyUUID = "2AB9";
   static constexpr UUIDstring controlPointUUID = "2ABA";
   static constexpr UUIDstring securityUUID = "2ABB";
-  IotsaApiProvider* provider; 
-  const char *provider_path=nullptr;
-  bool provider_get=false;
-  bool provider_put=false;
-  bool provider_post=false;
-  static std::list<IotsaApiServiceHps*> all;
   static IotsaHpsServiceMod *_hpsMod;
 };
 #endif // IOTSA_WITH_HPS
