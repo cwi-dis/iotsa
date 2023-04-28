@@ -78,7 +78,7 @@ class IotsaHPSProtocolHandler(IotsaAbstractProtocolHandler):
         if httpStatus != 200:
             raise HpsError(f"HPS status code {httpStatus}")
         if dataStatus != 0 and dataStatus != 0x04:
-            print(f"Warning: HPS data status=0x{dataStatus:x}", file=sys.stderr)
+            raise HpsError(f"HPS data status=0x{dataStatus:x}")
         rvBytes = self.client.get("hpsBody")
         if rvBytes == None or len(rvBytes) == 0:
             if VERBOSE:
