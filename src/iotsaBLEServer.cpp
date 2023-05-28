@@ -116,7 +116,12 @@ void IotsaBLEServerMod::createServer() {
   #endif
 
   BLEDevice::init(iotsaConfig.hostName.c_str());
-  s_server = BLEDevice::createServer();
+  if (tx_power >= 0) {
+    BLEDevice::setPower((esp_power_level_t)tx_power);
+    BLEDevice::setPower((esp_power_level_t)tx_power, esp_ble_power_type_t::ESP_BLE_PWR_TYPE_ADV);
+    BLEDevice::setPower((esp_power_level_t)tx_power, esp_ble_power_type_t::ESP_BLE_PWR_TYPE_SCAN);
+  }
+s_server = BLEDevice::createServer();
   s_server->setCallbacks(new IotsaBLEServerCallbacks());
 }
 
@@ -227,7 +232,11 @@ void IotsaBLEServerMod::configLoad() {
   cf.get("adv_max", adv_max, adv_max);
   if (adv_max >= 0) pAdvertising->setMaxInterval(adv_max);
   cf.get("tx_power", tx_power, tx_power);
-  if (tx_power >= 0) BLEDevice::setPower((esp_power_level_t)tx_power);
+  if (tx_power >= 0) {
+    BLEDevice::setPower((esp_power_level_t)tx_power);
+    BLEDevice::setPower((esp_power_level_t)tx_power, esp_ble_power_type_t::ESP_BLE_PWR_TYPE_ADV);
+    BLEDevice::setPower((esp_power_level_t)tx_power, esp_ble_power_type_t::ESP_BLE_PWR_TYPE_SCAN);
+  }
 }
 
 void IotsaBLEServerMod::configSave() {
@@ -241,7 +250,11 @@ void IotsaBLEServerMod::configSave() {
     pAdvertising->stop();
     if (adv_min >= 0) pAdvertising->setMinInterval(adv_min);
     if (adv_max >= 0) pAdvertising->setMaxInterval(adv_max);
-    if (tx_power >= 0) BLEDevice::setPower((esp_power_level_t)tx_power);
+    if (tx_power >= 0) {
+      BLEDevice::setPower((esp_power_level_t)tx_power);
+      BLEDevice::setPower((esp_power_level_t)tx_power, esp_ble_power_type_t::ESP_BLE_PWR_TYPE_ADV);
+      BLEDevice::setPower((esp_power_level_t)tx_power, esp_ble_power_type_t::ESP_BLE_PWR_TYPE_SCAN);
+    }
     pAdvertising->start();
   }
 }
