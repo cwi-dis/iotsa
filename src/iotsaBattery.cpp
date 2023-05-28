@@ -321,6 +321,16 @@ void IotsaBatteryMod::extendCurrentMode() {
   SLEEP_DEBUG IotsaSerial.println("Battery: extend mode");
 }
 
+void IotsaBatteryMod::_notifySleepWakeup(bool sleep) {
+  for(IotsaBaseMod* m=app.firstEarlyModule; m != nullptr; m=m->nextModule) {
+    m->sleepWakeupNotification(sleep);
+  }
+  for(IotsaBaseMod* m=app.firstModule; m != nullptr; m=m->nextModule) {
+    m->sleepWakeupNotification(sleep);
+  }
+
+}
+
 void IotsaBatteryMod::loop() {
 #ifdef ESP32
   if (watchdogTimer) {
@@ -398,7 +408,7 @@ void IotsaBatteryMod::loop() {
   IFDEBUG IotsaSerial.print(sleepDuration);
   IFDEBUG IotsaSerial.print(" mode ");
   IFDEBUG IotsaSerial.println(sleepMode);
-
+  _notifySleepWakeup(true);
   if(sleepMode == IOTSA_SLEEP_DELAY) {
     // This isn't really sleeping, it's just a delay. Not sure it is actually useful.
     delay(sleepDuration);
@@ -410,6 +420,7 @@ void IotsaBatteryMod::loop() {
       timerAlarmEnable(watchdogTimer);
     }
 #endif
+    _notifySleepWakeup(false);
     return;
   }
 #ifdef ESP32
@@ -441,6 +452,7 @@ void IotsaBatteryMod::loop() {
       timerWrite(watchdogTimer, 0);
       timerAlarmEnable(watchdogTimer);
     }
+    _notifySleepWakeup(false);
     return;
   }
   // Before sleeping we turn off the radios.

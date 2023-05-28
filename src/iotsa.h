@@ -56,6 +56,7 @@ class IotsaApplication : public IotsaWebServerMixin {
   friend class IotsaConfigMod;
   friend class IotsaWifiMod;
   friend class IotsaWebServerMixin;
+  friend class IotsaBatteryMod;
 public:
   IotsaApplication(const char *_title);
   // Explicitly disable copy constructor and assignment
@@ -93,6 +94,7 @@ class IotsaBaseMod {
   friend class IotsaConfigMod;
   friend class IotsaWifiMod;
   friend class IotsaWebServerMixin;
+  friend class IotsaBatteryMod;
 public:
   IotsaBaseMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
   : app(_app), 
@@ -120,6 +122,7 @@ public:
   virtual void serverSetup();
   virtual bool needsAuthentication(const char *right=NULL);
   virtual bool needsAuthentication(const char *obj, IotsaApiOperation verb);
+  virtual void sleepWakeupNotification(bool sleep) {}
 
 protected:
   IotsaApplication &app;
