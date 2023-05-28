@@ -7,6 +7,7 @@
 #include <esp_bt.h>
 #endif
 
+#define SLEEP_DEBUG if(0)
 #ifdef ESP32
 // the watchdog timer, for rebooting on hangs
 hw_timer_t *watchdogTimer = NULL;
@@ -317,7 +318,7 @@ void IotsaBatteryMod::extendCurrentMode() {
   }
 #endif
   millisAtWakeup = millis();
-  IFDEBUG IotsaSerial.println("Battery: extend mode");
+  SLEEP_DEBUG IotsaSerial.println("Battery: extend mode");
 }
 
 void IotsaBatteryMod::loop() {
@@ -365,21 +366,25 @@ void IotsaBatteryMod::loop() {
   }
   if (pinDisableSleep >= 0 && digitalRead(pinDisableSleep) == LOW) {
     shouldSleep = false;
+    SLEEP_DEBUG IotsaSerial.printf("iotsaBattery: no sleep, pinDisableSleep=%d level LOW\n", pinDisableSleep);
   }
   // Another reason is if we're running on USB power and we only sleep on battery power
   if (disableSleepOnUSBPower && pinVUSB >= 0) {
     if (levelVUSB > 80) {
       shouldSleep = false;
+      SLEEP_DEBUG IotsaSerial.printf("iotsaBattery: no sleep, USB power\n");
     }
   }
   // Another reason is that we are in configuration mode
   if (iotsaConfig.inConfigurationMode()) {
+      SLEEP_DEBUG IotsaSerial.printf("iotsaBattery: no sleep, in configuration mode\n");
       shouldSleep = false;
   }
   // A final reason is if some other module is asking for an extension of the waking period.
   // This does not extend wifi duration, though.
   if (!iotsaConfig.canSleep()) {
       shouldSleep = false;
+      SLEEP_DEBUG IotsaSerial.printf("iotsaBattery: no sleep, canSleep() return false\n");
   }
   
   if (!shouldSleep) return;
@@ -450,7 +455,7 @@ void IotsaBatteryMod::loop() {
   // Time to go to sleep.
   esp_deep_sleep_start();
   // We should not return here, but get a reboot later.
-  IFDEBUG IotsaSerial.println("esp_deep_sleep_start() failed?");
+  IotsaSerial.println("esp_deep_sleep_start() failed?");
 #else
   // For esp8266 only deep-sleep is implemented.
   ESP.deepSleep(sleepDuration*1000LL);
