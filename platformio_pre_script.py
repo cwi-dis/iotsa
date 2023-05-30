@@ -20,7 +20,6 @@ try:
     myDir = os.path.dirname(__file__)
 except NameError:
     myDir = os.getcwd()
-print("platformio_pre_script: env: ", env.Dump(), file=sys.stderr)
 # Create the version.h file
 mkversionPath = os.path.join(myDir, "extras", "python", "mkversionh.py")
 exec(open(mkversionPath).read())
@@ -62,3 +61,5 @@ if programVersion:
 # And change the firmware name
 if programName:
     env.Replace(PROGNAME=programName)
+
+# print("platformio_pre_script: env: ", env.Dump(), file=sys.stderr)
