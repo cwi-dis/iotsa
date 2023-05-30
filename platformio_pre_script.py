@@ -33,3 +33,5 @@ print(f"platformio_pre_script: programVersion: {programVersion}", file=sys.stder
 env["BUILD_FLAGS"].append(f'-DIOTSA_CONFIG_PROGRAM_NAME=\\"{programName}\\"')
 env["BUILD_FLAGS"].append(f'-DIOTSA_CONFIG_PROGRAM_REPO=\\"{programRepo}\\"')
 env["BUILD_FLAGS"].append(f'-DIOTSA_CONFIG_PROGRAM_VERSION=\\"{programVersion}\\"')
+# And change the firmware name
+env.Replace(PROGNAME=programName)
