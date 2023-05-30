@@ -362,11 +362,14 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   reply["has_httpsKey"] = IOTSA_FS.exists("/config/httpsKey.der");
   reply["has_httpsCert"] = IOTSA_FS.exists("/config/httpsCert.der");
 #endif
-#ifdef IOTSA_CONFIG_PROGRAM_SOURCE
-  reply["programSource"] = IOTSA_CONFIG_PROGRAM_SOURCE;
+#ifdef IOTSA_CONFIG_PROGRAM_NAME
+  reply["programName"] = IOTSA_CONFIG_PROGRAM_NAME;
 #endif
 #ifdef IOTSA_CONFIG_PROGRAM_VERSION
   reply["programVersion"] = IOTSA_CONFIG_PROGRAM_VERSION;
+#endif
+#ifdef IOTSA_CONFIG_PROGRAM_REPO
+  reply["programRepo"] = IOTSA_CONFIG_PROGRAM_REPO;
 #endif
 #ifdef ARDUINO_VARIANT
   reply["board"] = ARDUINO_VARIANT;
