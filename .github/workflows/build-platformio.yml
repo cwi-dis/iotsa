@@ -143,12 +143,13 @@ jobs:
       env:
         PLATFORMIO_CI_SRC: examples/${{ matrix.example }}
         PLATFORMIO_BUILD_FLAGS: ${{ matrix.build_flags }} ${{ matrix.board_build_flags }}
+        IOTSA_CONFIG_PROGRAM_NAME: ${{ matrix.example }}-${{ matrix.variant }}${{ matrix.board }}
         
     - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
         name: ${{ matrix.example }}-${{ matrix.variant }}${{ matrix.board }}.bin
-        path: /tmp/pio-build/.pio/build/${{ matrix.board }}/firmware.bin        
+        path: /tmp/pio-build/.pio/build/${{ matrix.board }}/*.bin        
   #
   # Job#2 - dispatch build event to dependent repositories
   #

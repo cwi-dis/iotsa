@@ -20,7 +20,7 @@ try:
     myDir = os.path.dirname(__file__)
 except NameError:
     myDir = os.getcwd()
-#print("platformio_pre_script: env: ", env.Dump(), file=sys.stderr)
+print("platformio_pre_script: env: ", env.Dump(), file=sys.stderr)
 # Create the version.h file
 mkversionPath = os.path.join(myDir, "extras", "python", "mkversionh.py")
 exec(open(mkversionPath).read())
@@ -38,6 +38,10 @@ if not os.path.exists(os.path.join(projectDir, ".git")):
         projectDir = attempt
 print(f"platformio_pre_script: projectDir: {projectDir}", file=sys.stderr)
 programName = env['PIOENV']
+# This happens with pio ci: the platformio.ini doesn't have the program name.
+# Get it from the github actions matrix environment variable.
+if "IOTSA_CONFIG_PROGRAM_NAME" in env["ENV"]:
+    programName = env["ENV"].get("IOTSA_CONFIG_PROGRAM_NAME")
 programRepo = commandOutput("git config --get remote.origin.url", projectDir)
 if programRepo.endswith('.git'):
     programRepo = programRepo[:-4]
