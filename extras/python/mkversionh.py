@@ -8,7 +8,7 @@ import subprocess
 # Import("env")
 # print("mkversionh: env: ", env.Dump(), file=sys.stderr)
 
-VERBOSE=False
+VERBOSE=True
 
 DEFINE_PAT = re.compile(r"^#define\s+(?P<name>\w+)\s+(?P<value>.*)\s+$")
 
