@@ -148,8 +148,7 @@ jobs:
 # For some reason the program name change isn't picked up by pio ci.
     - name: Copy build output
       run: |
-        cp /tmp/pio-build/.pio/build/${{ matrix.board }}/firmware.bin ${{ matrix.example }}-${{ matrix.variant }}${{ matrix.board }}.bin
-#       cp /tmp/pio-build/.pio/build/${{ matrix.board }}/${{ matrix.example }}-${{ matrix.variant }}${{ matrix.board }}.bin ${{ matrix.example }}-${{ matrix.variant }}${{ matrix.board }}.bin
+        cp /tmp/pio-build/.pio/build/${{ matrix.board }}/${{ matrix.example }}-${{ matrix.variant }}${{ matrix.board }}.bin ${{ matrix.example }}-${{ matrix.variant }}${{ matrix.board }}.bin
 
     - name: Upload artifact
       uses: actions/upload-artifact@v2
