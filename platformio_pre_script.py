@@ -48,6 +48,7 @@ def fixEnv(thisEnv):
     if programRepo.endswith('.git'):
         programRepo = programRepo[:-4]
     programRepo = programRepo.replace('ssh://git@github.com/', 'https://github.com/')
+    programRepo = programRepo.replace('git@github.com:', 'https://github.com/')
     programVersion = commandOutput("git describe --always --match 'v*'", projectDir)
     print(f"platformio_pre_script: programName: {programName}", file=sys.stderr)
     print(f"platformio_pre_script: programRepo: {programRepo}", file=sys.stderr)
