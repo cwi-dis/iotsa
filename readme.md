@@ -690,5 +690,5 @@ Notes to self, mainly, on creating a new release:
 - After a real release:
 	- Update `changelog.txt` again on `develop`.
 	- Ensure release is available on platformIO library registry.
-	- Ensure release is available in Arduino library registry.
+	- Ensure release is available in Arduino library registry. The log file is at <https://downloads.arduino.cc/libraries/logs/github.com/cwi-dis/iotsa/>
 - You probably want to run `sh ./extras/ignore-version-changes.sh on` again after all is done.
