@@ -65,8 +65,11 @@ def main():
     if "version" in libraryData:
         vf.define("IOTSA_VERSION", '"' + libraryData["version"] + '"')
 
+    shortVersion = vf.get("IOTSA_VERSION", '"unknown""')
+
     if 'IOTSA_FULL_VERSION' in os.environ:
         fullVersion = os.environ['IOTSA_FULL_VERSION']
+        shortVersion = fullVersion
     else:
         cmd = subprocess.Popen(
             "git describe --always --match 'v*'",
@@ -77,10 +80,9 @@ def main():
         )
         fullVersion = cmd.stdout.read().strip()
         fullVersion = fullVersion.replace("-", "+", 1)
-    shortVersion = vf.get("IOTSA_VERSION", '"unknown""')
-    if fullVersion and not '+' in fullVersion:
-        # git describe returned just a SHA
-        fullVersion = eval(shortVersion) + "+sha." + fullVersion
+        if fullVersion and not '+' in fullVersion:
+            # git describe returned just a SHA
+            fullVersion = eval(shortVersion) + "+sha." + fullVersion
     if not fullVersion:
         fullVersion = shortVersion
     if not '"' in fullVersion:
