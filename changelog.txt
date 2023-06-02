@@ -1,6 +1,9 @@
-iotsa 2.6.x - In development
+iotsa 2.7 - 03-Jun-2023
 
 - Added support for esp32c3
+- Added support for HPS (HTTP Proxy Service) over BLE, which allows making API calls over Bluetooth.
+- Power management and enabling and disabling of wifi and ble redesigned
+- Added more versioning information to /api/config
 
 iotsa 2.6 - 07-Oct-2022
 

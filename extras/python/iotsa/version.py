@@ -1,2 +1,2 @@
-__version__ = "v2.6+70-g19358eb"
-__shortversion__ = "2.6"
+__version__ = "2.7"
+__shortversion__ = 2.7
