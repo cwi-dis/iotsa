@@ -2,6 +2,7 @@ import sys
 import os
 import subprocess
 Import("env")
+# Import("projenv")
 
 def commandOutput(command, baseDir):
     cmd = subprocess.Popen(
@@ -24,7 +25,7 @@ except NameError:
 mkversionPath = os.path.join(myDir, "extras", "python", "mkversionh.py")
 exec(open(mkversionPath).read())
 
-def fixEnv(thisEnv, thisEnvName):
+def fixEnv(thisEnv):
     # Get information on this specific program (target). Finding the project directory is difficult:
     # when running with 'pio ci' the PROJECT_DIR points to the temporary project directory copy, which
     # doesn't dontain the .git administration. Then, we revert to looking at the CWD or PWD environment variables.
@@ -51,22 +52,16 @@ def fixEnv(thisEnv, thisEnvName):
     print(f"platformio_pre_script: programName: {programName}", file=sys.stderr)
     print(f"platformio_pre_script: programRepo: {programRepo}", file=sys.stderr)
     print(f"platformio_pre_script: programVersion: {programVersion}", file=sys.stderr)
-    # Add to the build_flags
-    if not "BUILD_FLAGS" in thisEnv:
-        thisEnv["BUILD_FLAGS"] = []
-    if programName:
-        thisEnv["BUILD_FLAGS"].append(f'-DIOTSA_CONFIG_PROGRAM_NAME=\\"{programName}\\"')
-    if programRepo:
-        thisEnv["BUILD_FLAGS"].append(f'-DIOTSA_CONFIG_PROGRAM_REPO=\\"{programRepo}\\"')
-    if programVersion:
-        thisEnv["BUILD_FLAGS"].append(f'-DIOTSA_CONFIG_PROGRAM_VERSION=\\"{programVersion}\\"')
+    thisEnv.Append(CPPDEFINES=[
+        ("IOTSA_CONFIG_PROGRAM_NAME", thisEnv.StringifyMacro(programName)),
+        ("IOTSA_CONFIG_PROGRAM_REPO", thisEnv.StringifyMacro(programRepo)),
+        ("IOTSA_CONFIG_PROGRAM_VERSION", thisEnv.StringifyMacro(programVersion)),
+    ])
     # And change the firmware name
-    if programName:
-        thisEnv.Replace(PROGNAME=programName)
+#    if programName:
+#        thisEnv.Replace(PROGNAME=programName)
 
-    print("platformio_pre_script: env ", thisEnvName,": ", thisEnv.Dump(), file=sys.stderr)
-
-fixEnv(env, "env")
-defaultEnv = DefaultEnvironment()
-if not defaultEnv is env:
-    fixEnv(defaultEnv, "DefaultEnvironment")
+#for e in [env, projenv, DefaultEnvironment()]:
+for e in [env, DefaultEnvironment()]:
+    fixEnv(e)
+# print("platformio_pre_script: env ", thisEnvName,": ", thisEnv.Dump(), file=sys.stderr)
