@@ -440,6 +440,12 @@ class Main(object):
             print(f'select: {nSelected} targets match')
             sys.exit(1)
         self.loadDevice(selected, proto)
+        
+    def cmd_version(self):
+        """Print version information about the target"""
+        self.loadDevice()
+        ext = self.device.getApi("version")
+        ext.printStatus()
 
     def cmd_config(self):
         """Set target configuration parameters (target must be in configuration mode)"""

@@ -336,6 +336,25 @@ String IotsaConfigMod::info() {
 
 #ifdef IOTSA_WITH_API
 bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
+  if (strcmp(path, "/api/version") == 0) {
+    reply["iotsaVersion"] = IOTSA_VERSION;
+    reply["iotsaFullVersion"] = IOTSA_FULL_VERSION;
+#ifdef IOTSA_CONFIG_PROGRAM_NAME
+    reply["programName"] = IOTSA_CONFIG_PROGRAM_NAME;
+#endif
+#ifdef IOTSA_CONFIG_PROGRAM_VERSION
+    reply["programVersion"] = IOTSA_CONFIG_PROGRAM_VERSION;
+#endif
+#ifdef IOTSA_CONFIG_PROGRAM_REPO
+    reply["programRepo"] = IOTSA_CONFIG_PROGRAM_REPO;
+#endif
+#ifdef ARDUINO_VARIANT
+    reply["board"] = ARDUINO_VARIANT;
+#elif defined(ARDUINO_BOARD)
+    reply["board"] = ARDUINO_BOARD;
+#endif
+    return true;
+  }
   reply["hostName"] = iotsaConfig.hostName;
   reply["modeTimeout"] = iotsaConfig.configurationModeTimeout;
   reply["currentMode"] = int(iotsaConfig.configurationMode);
@@ -354,31 +373,16 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   reply["bleDisabled"] = iotsaConfig.bleMode == iotsa_ble_mode::IOTSA_BLE_DISABLED;
   reply["bleDisabledOnBoot"] = iotsaConfig.bleDisabledOnBoot;
 #endif
-  reply["iotsaVersion"] = IOTSA_VERSION;
-  reply["iotsaFullVersion"] = IOTSA_FULL_VERSION;
   reply["program"] = app.title;
 #ifdef IOTSA_WITH_HTTPS
   reply["defaultCert"] = iotsaConfig.usingDefaultCertificate();
   reply["has_httpsKey"] = IOTSA_FS.exists("/config/httpsKey.der");
   reply["has_httpsCert"] = IOTSA_FS.exists("/config/httpsCert.der");
 #endif
-#ifdef IOTSA_CONFIG_PROGRAM_NAME
-  reply["programName"] = IOTSA_CONFIG_PROGRAM_NAME;
-#endif
-#ifdef IOTSA_CONFIG_PROGRAM_VERSION
-  reply["programVersion"] = IOTSA_CONFIG_PROGRAM_VERSION;
-#endif
-#ifdef IOTSA_CONFIG_PROGRAM_REPO
-  reply["programRepo"] = IOTSA_CONFIG_PROGRAM_REPO;
-#endif
-#ifdef ARDUINO_VARIANT
-  reply["board"] = ARDUINO_VARIANT;
-#elif defined(ARDUINO_BOARD)
-  reply["board"] = ARDUINO_BOARD;
-#endif
   reply["bootCause"] = iotsaConfig.getBootReason();
   reply["uptime"] = millis() / 1000;
   JsonArray modules = reply.createNestedArray("modules");
+  modules.add("version");
   for (IotsaBaseMod *m=app.firstEarlyModule; m; m=m->nextModule) {
     if (m->name != "")
       modules.add(m->name);
@@ -621,6 +625,7 @@ void IotsaConfigMod::serverSetup() {
 #endif
 #ifdef IOTSA_WITH_API
   api.setup("/api/config", true, true);
+  api.setup("/api/version", true);
   name = "config";
 #endif
 }
