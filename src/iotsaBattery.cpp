@@ -356,7 +356,15 @@ void IotsaBatteryMod::loop() {
       } else {
         IFDEBUG IotsaSerial.println("Configmode change from BLE requested but not allowed");
       }
+    } else if (doSoftReboot == 3) {
+      // Enable WiFi
+      iotsa_wifi_mode newMode = iotsa_wifi_mode::IOTSA_WIFI_NORMAL;
+      iotsaConfig.wifiMode = newMode;
+      iotsaConfig.wantWifiModeSwitchAtMillis = millis()+1000;
+      IFDEBUG IotsaSerial.println("Enable WiFi from BLE");
+   
     } else {
+      // doSoftReboot is probably 1. Reboot.
       IFDEBUG IotsaSerial.println("Reboot from BLE");
       ESP.restart();
     }
