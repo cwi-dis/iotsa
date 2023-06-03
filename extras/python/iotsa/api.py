@@ -280,8 +280,8 @@ class IotsaDevice:
         """Print all config settings and their values"""
         status = self.config.getAll()
         print("%s:" % self.ipAddress)
-        print("  program:        ", status.pop("program", "unknown"))
-        print("  last boot:      ", end=" ")
+        print("  program:           ", status.pop("program", "unknown"))
+        print("  last boot:         ", end=" ")
         lastboot = status.pop("uptime")
         if not lastboot:
             print("???", end=" ")
@@ -304,7 +304,7 @@ class IotsaDevice:
             print("(%s)" % lastreason, end=" ")
         print()
         print(
-            "  runmode:        ", self.modeName(status.pop("currentMode", 0)), end=" "
+            "  runmode:           ", self.modeName(status.pop("currentMode", 0)), end=" "
         )
         timeout = status.pop("currentModeTimeout", None)
         if timeout:
@@ -314,20 +314,22 @@ class IotsaDevice:
             print("     NOTE:         on private WiFi network")
         reqMode = status.pop("requestedMode", None)
         if reqMode:
-            print("  requested mode: ", self.modeName(reqMode), end=" ")
+            print("  requested mode:    ", self.modeName(reqMode), end=" ")
             timeout = status.pop("requestedModeTimeout", "???")
             if timeout:
                 print("(needs reboot within %s seconds)" % timeout, end=" ")
             print()
-        print("  hostName:       ", status.pop("hostName", ""))
-        iotsaVersion = status.pop("iotsaVersion", "???")
-        print("  iotsa:          ", status.pop("iotsaFullVersion", iotsaVersion))
-        print("  modules:        ", end=" ")
+        print("  hostName:          ", status.pop("hostName", ""))
+        print("  modules:           ", end=" ")
         for m in status.pop("modules", ["???"]):
             print(m, end=" ")
         print()
+        print("  features:          ", end=" ")
+        for m in status.pop("features", ["???"]):
+            print(m, end=" ")
+        print()
         for k, v in list(status.items()):
-            print("  %-16s %s" % (k + ":", v))
+            print("  %-19s %s" % (k + ":", v))
 
     def modeName(self, mode: int) -> str:
         """Convert iotsa runtime mode integer to descriptive string"""
