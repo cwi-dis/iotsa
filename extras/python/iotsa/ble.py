@@ -33,6 +33,7 @@ class BLE:
 
     def close(self) -> None:
         if self._currentConnection != None:
+            assert self._currentConnection
             self.loop.run_until_complete(self._currentConnection.disconnect())
             self._currentConnection = None
             

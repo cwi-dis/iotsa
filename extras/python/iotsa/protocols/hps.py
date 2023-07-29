@@ -51,6 +51,7 @@ class IotsaHPSProtocolHandler(IotsaAbstractProtocolHandler):
         "PUT" : 0x04
     }
     def request(self, method, endpoint, json=None, files=None, retryCount=5):
+        assert self.client
         endpoint = self.basePath + endpoint
         headers = ""
         data = jsonmod.dumps(json)

@@ -3,7 +3,7 @@ import time
 import os
 import socket
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 from .mdns import PlatformMDNSCollector
 
@@ -43,6 +43,7 @@ if sys.platform == "darwin":
                 p = subprocess.Popen(
                     cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True
                 )
+                assert p.stdout
                 data = p.stdout.readlines()
                 for line in data:
                     line = line.strip()
@@ -174,14 +175,14 @@ class IotsaWifi(PlatformWifi):
         print(f"Neither http nor https responding: {deviceName}", file=sys.stderr)
         return False
 
-    def findDevices(self) -> List[str]:
+    def findDevices(self) -> List[tuple[str, Dict[str, str]]]:
         """Return list of all iotsa devices visible on current network(s)"""
         if self._isConfigNetwork():
             if self._checkDevice("192.168.4.1"):
-                return ["192.168.4.1"]
+                return [("192.168.4.1", {})]
         collect = PlatformMDNSCollector()
         devices = collect.run()
-        rv = []
+        rv : List[tuple[str, Dict[str, str]]] = []
         # Remove final dot (.) that can be appended (certificate matching doesn't like this)
         for name, properties in devices:
             if name[-1:] == ".":
@@ -201,4 +202,5 @@ class IotsaWifi(PlatformWifi):
 
     def currentDevice(self) -> str:
         """Return the currently selected iotsa device"""
+        assert self.device
         return self.device

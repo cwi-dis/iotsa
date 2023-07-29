@@ -7,6 +7,7 @@ from .abstract import IotsaAbstractProtocolHandler
 
 # We disable warnings about invalid certificates: we expect them and they provide no meaningful information
 import urllib3
+import urllib3.exceptions
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 

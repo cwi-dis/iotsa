@@ -5,7 +5,7 @@ import requests
 import time
 import os
 import subprocess
-from typing import Optional
+from typing import Optional, Any, Iterable, List
 import urllib.request, urllib.parse, urllib.error
 import socket
 
@@ -24,21 +24,22 @@ def ipv4_getaddrinfo(host, port, family=0, socktype=0, proto=0, flags=0):
 
 class Main(object):
     """Main commandline program"""
-
-    def __init__(self):
+    
+    def __init__(self) -> None:
         self.wifi: Optional[api.IotsaWifi] = None
         self.device: Optional[api.IotsaDevice] = None
-        self.dfu: Optional[api.dfu] = None
+        self.dfu: Optional[api.DFU] = None
         self.ble: Optional[api.BLE] = None
-        self.cmdlist: list[str] = []
+        self.cmdlist: List[str] = []
 
     def __del__(self):
         self.close()
 
     @classmethod
-    def _helpinfo(cls):
+    def _helpinfo(cls) -> str:
         """Return available command help"""
         # Get attributes that refer to commands
+        names : Iterable[str]
         names = dir(cls)
         names = filter(lambda x: x.startswith("cmd_"), names)
         names = sorted(names)
@@ -48,18 +49,20 @@ class Main(object):
             rv.append("%-10s\t%s" % (name[4:], handler.__doc__))
         return "\n".join(rv)
 
-    def close(self):
+    def close(self) -> None:
         self.wifi = None
         if self.device:
             self.device.close()
         self.device = None
 
-    def run(self):
+    def run(self) -> None:
         """Run the main commandline program"""
         self.parseArgs()
-        self.cmdlist = self.args.command
-        if type(self.cmdlist) != type([]):
-            self.cmdlist = [self.cmdlist]
+        command = self.args.command
+        if type(command) != type([]):
+            self.cmdlist = [command]
+        else:
+            self.cmdlist = command
         try:
             while True:
                 cmd = self._getcmd()
@@ -82,6 +85,13 @@ class Main(object):
                     )
                     print("%s: %s" % (sys.argv[0], arg), file=sys.stderr)
                     sys.exit(2)
+
+                except api.CoapError as arg:
+                    print(
+                        "%s: %s: CoapError %s" % (sys.argv[0], cmd, arg),
+                        file=sys.stderr,
+                    )
+                    sys.exit(1)
                 except api.IotsaError as arg:
                     print(
                         "%s: %s: IotsaError %s" % (sys.argv[0], cmd, arg),
@@ -94,16 +104,10 @@ class Main(object):
                         file=sys.stderr,
                     )
                     sys.exit(1)
-                except api.CoapError as arg:
-                    print(
-                        "%s: %s: CoapError %s" % (sys.argv[0], cmd, arg),
-                        file=sys.stderr,
-                    )
-                    sys.exit(1)
         finally:
             self.close()
 
-    def parseArgs(self):
+    def parseArgs(self) -> None:
         """Command line argument handling"""
         epilog = "Available commands:\n" + Main._helpinfo()
         parser = argparse.ArgumentParser(
@@ -223,14 +227,16 @@ class Main(object):
                     os.environ["REQUESTS_CA_BUNDLE"] = cf
                     break
 
-    def _getcmd(self):
+    def _getcmd(self) -> Optional[str]:
         """Helper method to handle multiple commands"""
         if not self.cmdlist:
             return None
         return self.cmdlist.pop(0)
 
-    def _getnamevalue(self, modName):
+    def _getnamevalue(self, modName : str) -> tuple[Optional[str], Any]:
         """Helper method to return name=value or name=type:value arguments"""
+        name : str
+        value : Any
         subCmd = self._getcmd()
         if not subCmd or subCmd == "--":
             return None, None
@@ -266,6 +272,7 @@ class Main(object):
             )
         else:
             # No type specified. Try to convert to int or float.
+            nvalue : int | float
             try:
                 nvalue = int(value)
                 value = nvalue
@@ -285,18 +292,18 @@ class Main(object):
                     pass
         return name, value
 
-    def _ungetcmd(self, cmd):
+    def _ungetcmd(self, cmd : str) -> None:
         """Helper method to handle multiple commands"""
         self.cmdlist.insert(0, cmd)
 
-    def loadDFU(self):
+    def loadDFU(self) -> None:
         """Load DFU driver (to allow flashing over USB or Serial Link for dead iotsa device)"""
         if self.dfu:
             return
         self.dfu = api.DFU(self.args.serial)
         self.dfu.dfuWait()
 
-    def loadBLE(self, loadTarget=True):
+    def loadBLE(self, loadTarget=True) -> None:
         """Load Bluetooth LE driver"""
         if self.ble:
             return
@@ -324,7 +331,7 @@ class Main(object):
             if not ok:
                 sys.exit(1)
 
-    def loadWifi(self):
+    def loadWifi(self) -> None:
         """Load WiFi network (if not already done)"""
         if self.wifi:
             return
@@ -339,7 +346,7 @@ class Main(object):
                 sys.exit(1)
         return
 
-    def loadDevice(self, target=None, proto=None):
+    def loadDevice(self, target : Optional[str]=None, proto : Optional[str]=None) -> None:
         """Load target device (if not already done)"""
         if self.device:
             return
@@ -354,6 +361,7 @@ class Main(object):
             pass
         else:
             self.loadWifi()
+            assert self.wifi
             if not target or target == "auto":
                 all = self.wifi.findDevices()
                 if len(all) == 0:
@@ -369,12 +377,13 @@ class Main(object):
                         print(a, end=" ", file=sys.stderr)
                     print(file=sys.stderr)
                     sys.exit(1)
-                target = all[0]
+                target = all[0][0]
             if target:
                 ok = self.wifi.selectDevice(target)
                 if not ok:
                     sys.exit(1)
             target = self.wifi.currentDevice()
+        assert target
         kwargs = {}
         if self.args.bearer:
             kwargs["bearer"] = self.args.bearer
@@ -388,11 +397,13 @@ class Main(object):
             **kwargs,
         )
 
-    def cmd_select(self):
+    def cmd_select(self) -> None:
         """Select a target using the following expression, help for help. """
         self.close()
         self.loadWifi()
+        assert self.wifi
         expression = self._getcmd()
+        assert expression
         if expression == 'help':
             print('Select target using mDNS advertisements')
             print('select overrides --target and --protocol')
@@ -441,15 +452,17 @@ class Main(object):
             sys.exit(1)
         self.loadDevice(selected, proto)
         
-    def cmd_version(self):
+    def cmd_version(self) -> None:
         """Print version information about the target"""
         self.loadDevice()
+        assert self.device
         ext = self.device.getApi("version")
         ext.printStatus()
 
-    def cmd_config(self):
+    def cmd_config(self) -> None:
         """Set target configuration parameters (target must be in configuration mode)"""
         self.loadDevice()
+        assert self.device
         #if self.device.config.get("currentMode", 0) != 1 and not self.device.config.get(
         #    "privateWifi", 0
         #):
@@ -474,63 +487,71 @@ class Main(object):
             sys.exit(1)
         self.device.config.commit()
 
-    def cmd_configMode(self):
+    def cmd_configMode(self) -> None:
         """Ask target to go into configuration mode"""
         self.loadDevice()
+        assert self.device
         self.device.gotoMode("config", wait=False, verbose=True)
 
-    def cmd_configWait(self):
+    def cmd_configWait(self) -> None:
         """Ask target to go into configuration mode and wait until it is (probably after user intervention)"""
         self.loadDevice()
+        assert self.device
         self.device.gotoMode("config", wait=True, verbose=True)
 
-    def cmd_factoryReset(self):
+    def cmd_factoryReset(self) -> None:
         """Ask device to do a factory-reset"""
         self.loadDevice()
+        assert self.device
         self.device.gotoMode("factoryReset", wait=False, verbose=True)
 
-    def cmd_info(self):
+    def cmd_info(self) -> None:
         """Show information on current target"""
         self.loadDevice()
+        assert self.device
         self.device.printStatus()
 
-    def cmd_networks(self):
+    def cmd_networks(self) -> None:
         """List iotsa wifi networks"""
         self.loadWifi()
+        assert self.wifi
         networks = self.wifi.findNetworks()
         for n in networks:
             print(n)
 
-    def cmd_ota(self):
+    def cmd_ota(self) -> None:
         """Upload new firmware to target (target must be in ota mode)"""
         filename = self._getcmd()
         if not filename:
             print("%s: ota requires a filename or URL" % sys.argv[0], file=sys.stderr)
             sys.exit(1)
         self.loadDevice()
+        assert self.device
         self.device.ota(filename)
 
-    def cmd_otaMode(self):
+    def cmd_otaMode(self) -> None:
         """Ask target to go into over-the-air programming mode"""
         self.loadDevice()
-        self.loadDevice()
+        assert self.device
         self.device.gotoMode("ota", wait=False, verbose=True)
 
-    def cmd_otaWait(self):
+    def cmd_otaWait(self) -> None:
         """Ask target to go into over-the-air programming mode and wait until it is (probably after user intervention)"""
         self.loadDevice()
+        assert self.device
         self.device.gotoMode("ota", wait=True, verbose=True)
 
-    def cmd_dfuMode(self):
+    def cmd_dfuMode(self) -> None:
         """Check whether there is a target connected in DFU mode (via USB or serial port)"""
         self.loadDFU()
 
-    def cmd_dfuClear(self):
+    def cmd_dfuClear(self) -> None:
         """Completely erase flash of target connected in DFU mode (via USB or serial port)"""
         self.loadDFU()
+        assert self.dfu
         self.dfu.dfuClear()
 
-    def cmd_dfuLoad(self):
+    def cmd_dfuLoad(self) -> None:
         """Load new firmware to target connected in DFU mode (via USB or serial port)"""
         filename = self._getcmd()
         if not filename:
@@ -539,27 +560,32 @@ class Main(object):
             )
             sys.exit(1)
         self.loadDFU()
-        ok = self.dfu.dfuLoad(filename)
-        ok = self.dfu.dfuRun()
+        assert self.dfu
+        self.dfu.dfuLoad(filename)
+        self.dfu.dfuRun()
 
-    def cmd_bleTargets(self):
+    def cmd_bleTargets(self) -> None:
         """List iotsa devices accessible over BLE"""
         self.loadBLE(loadTarget=False)
+        assert self.ble
         all = self.ble.findDevices()
         for d in all:
             print(d)
 
-    def cmd_bleInfo(self):
+    def cmd_bleInfo(self) -> None:
         """Get information on BLE iotsa device"""
         self.loadBLE()
+        assert self.ble
         self.ble.printStatus()
 
-    def cmd_ble(self):
+    def cmd_ble(self) -> None:
         """Get or set BLE characteristic on iotsa device"""
         self.loadBLE()
+        assert self.ble
         # Note we don't use getnamevalue: ble.set() will know the type to convert
         # to so we simply pass strings.
         subcommand = self._getcmd()
+        assert subcommand
         if "=" in subcommand:
             # Set command
             name, value = subcommand.split("=")
@@ -569,9 +595,10 @@ class Main(object):
             value = self.ble.get(subcommand)
             print(value)
 
-    def cmd_targets(self):
+    def cmd_targets(self) -> None:
         """List iotsa devices visible on current network"""
         self.loadWifi()
+        assert self.wifi
         targets = self.wifi.findDevices()
         for t, properties in targets:
             print(t)
@@ -579,13 +606,14 @@ class Main(object):
                 for k, v in properties.items():
                     print(f"\t{k}={v}")
 
-    def cmd_allInfo(self):
+    def cmd_allInfo(self) -> None:
         """Show all information for all modules for target"""
         self.loadDevice()
+        assert self.device
         all = self.device.getAll()
         self._printall(all, 0)
 
-    def _printall(self, d, indent):
+    def _printall(self, d : Any, indent : int) -> None:
         if isinstance(d, dict):
             print()
             for k, v in d.items():
@@ -599,16 +627,18 @@ class Main(object):
         else:
             print(repr(d))
 
-    def cmd_wifiInfo(self):
+    def cmd_wifiInfo(self) -> None:
         """Show WiFi information for target"""
         self.loadDevice()
+        assert self.device
         wifi = self.device.getApi("wificonfig")
         wifi.printStatus()
 
-    def cmd_wifiConfig(self):
+    def cmd_wifiConfig(self) -> None:
         """Set WiFi parameters (target must be in configuration or private WiFi mode)
         Parameters are name=value, or optionally name=type:value for example name=int:0"""
         self.loadDevice()
+        assert self.device
         wifi = self.device.getApi("wificonfig")
         wifi.transaction()
         anyDone = False
@@ -627,9 +657,10 @@ class Main(object):
             sys.exit(1)
         wifi.commit()
 
-    def cmd_xInfo(self):
+    def cmd_xInfo(self) -> None:
         """Show target information for a specific module, next argument is module name"""
         self.loadDevice()
+        assert self.device
         modName = self._getcmd()
         if not modName:
             print("%s: xInfo requires a module name" % sys.argv[0], file=sys.stderr)
@@ -637,10 +668,11 @@ class Main(object):
         ext = self.device.getApi(modName)
         ext.printStatus()
 
-    def cmd_xConfig(self):
+    def cmd_xConfig(self) -> None:
         """Configure a specific module on the target, next argument is module name
         Parameters are name=value, or optionally name=type:value for example name=int:0"""
         self.loadDevice()
+        assert self.device
         modName = self._getcmd()
         if not modName:
             print("%s: xConfig requires a module name" % sys.argv[0], file=sys.stderr)
@@ -662,13 +694,16 @@ class Main(object):
             sys.exit(1)
         ext.commit()
 
-    def cmd_reboot(self):
+    def cmd_reboot(self) -> None:
         """Reboot the target"""
         self.loadDevice()
+        assert self.device
         self.device.reboot()
 
-    def cmd_certificate(self):
+    def cmd_certificate(self) -> None:
         """Install https certificate. Arguments are keyfile and certfile (in PEM or DER)"""
+        key : str | bytes | None = None
+        cert : str | bytes | None = None
         keyFilename = self._getcmd()
         certFilename = self._getcmd()
         if not keyFilename or not certFilename:
@@ -696,6 +731,9 @@ class Main(object):
                 file=sys.stderr,
             )
         self.loadDevice()
+        assert self.device
+        assert key
+        assert cert
         self.device.uploadCertificate(key, cert)
 
 
