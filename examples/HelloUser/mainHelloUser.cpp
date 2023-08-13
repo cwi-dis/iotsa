@@ -12,10 +12,7 @@
 //
 
 #include "iotsa.h"
-#include "iotsaWifi.h"
 #include "iotsaUser.h"
-
-#define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 
 //
 // Hello "name" module. Greets visitors to the /hello page, and allows
@@ -92,12 +89,7 @@ IotsaApplication application("Iotsa Hello World Server"); // The application fra
 //
 IotsaUserMod myAuthenticator(application, "owner");  // Our authenticator module
 
-IotsaWifiMod wifiMod(application, &myAuthenticator);  // The network configuration module (authenticated)
-
-#ifdef WITH_OTA
-#include "iotsaOta.h"
-IotsaOtaMod otaMod(application, &myAuthenticator);  // The over-the-air updater module (authenticated)
-#endif
+#include "iotsaStandardModules.h"
 
 IotsaHelloMod helloMod(application, &myAuthenticator); // Our hello module (authenticated)
 

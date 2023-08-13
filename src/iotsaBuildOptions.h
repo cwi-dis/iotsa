@@ -32,6 +32,10 @@
 #define IOTSA_WITH_HTTP_OR_HTTPS
 #endif
 
+#ifndef IOTSA_WITHOUT_OTA
+#define IOTSA_WITH_OTA
+#endif
+
 #ifndef IOTSA_WITHOUT_WEB
 // web support (including uploads) is enabled by default
 #define IOTSA_WITH_WEB
@@ -106,8 +110,12 @@
 #error IOTSA WEB support requires HTTP or HTTPS support
 #endif
 
-#if defined(IOTSA_WITH_API) && !(defined(IOTSA_WITH_REST) || defined(IOTSA_WITH_COAP))
-#error IOTSA API support requires REST or COAP
+#if defined(IOTSA_WITH_OTA) && !(defined(IOTSA_WITH_HTTP) || defined(IOTSA_WITH_HTTPS))
+#error IOTSA OTA support requires HTTP or HTTPS support
+#endif
+
+#if defined(IOTSA_WITH_API) && !(defined(IOTSA_WITH_REST) || defined(IOTSA_WITH_COAP) || defined(IOTSA_WITH_HPS))
+#error IOTSA API support requires REST or COAP or HPS
 #endif
 
 #if defined(IOTSA_WITH_BLE) && !defined(ESP32)

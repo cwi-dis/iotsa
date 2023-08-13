@@ -10,9 +10,7 @@
 
 IotsaApplication application("Ringer Server");
 
-// Configure modules we need
-IotsaWifiMod wifiMod(application);  // wifi is always needed
-IotsaOtaMod otaMod(application);    // we want OTA for updating the software (will not work with esp-201)
+#include "iotsaStandardModules.h"
 
 //
 // Buzzer configuration and implementation

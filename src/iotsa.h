@@ -31,6 +31,7 @@ extern Print *iotsaOverrideSerial;
 #define IotsaSerial (*iotsaOverrideSerial)
 
 class IotsaBaseMod;
+class IotsaAuthMod;
 class IotsaConfigMod;
 
 //
@@ -53,6 +54,7 @@ public:
 
 class IotsaApplication : public IotsaWebServerMixin {
   friend class IotsaBaseMod;
+  friend class IotsaAuthMod;
   friend class IotsaConfigMod;
   friend class IotsaWifiMod;
   friend class IotsaWebServerMixin;
@@ -69,6 +71,8 @@ public:
   void serverSetup();
   void loop();
   IotsaStatusInterface *status;
+  static IotsaApplication* applicationPtr;
+  static IotsaAuthMod* authenticatorPtr;
 protected:
   IotsaBaseMod *firstModule;
   IotsaBaseMod *firstEarlyModule;
@@ -154,7 +158,14 @@ protected:
 
 class IotsaAuthMod : public IotsaMod, public IotsaAuthenticationProvider {
 public:
-  using IotsaMod::IotsaMod;	// Inherit constructor
+  IotsaAuthMod(IotsaApplication &_app)
+  : IotsaMod(_app)
+  {
+    if (IotsaApplication::authenticatorPtr != nullptr) {
+      IotsaSerial.println("IotsaAuthMod() called more than once");
+    }
+    IotsaApplication::authenticatorPtr = this;
+  }
 };
 
 class IotsaConfigFileLoad;

@@ -12,12 +12,8 @@
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 
 IotsaApplication application("Iotsa Hello World Server with API");
-IotsaWifiMod wifiMod(application);
 
-#ifdef WITH_OTA
-#include "iotsaOta.h"
-IotsaOtaMod otaMod(application);
-#endif
+#include "iotsaStandardModules.h"
 
 //
 // Hello "name" module. Greets visitors to the /hello page, and allows

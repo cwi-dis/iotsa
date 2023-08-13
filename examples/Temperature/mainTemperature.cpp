@@ -11,15 +11,9 @@
 #define DHT_PIN 13
 #define DHT_TYPE DHT21
 
-#define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
-
 IotsaApplication application("Iotsa Temperature Server");
-IotsaWifiMod wifiMod(application);
 
-#ifdef WITH_OTA
-#include "iotsaOta.h"
-IotsaOtaMod otaMod(application);
-#endif
+#include "iotsaStandardModules.h"
 
 //
 // Temperature module. Gets temperature and humidity data from a DHT21 module.

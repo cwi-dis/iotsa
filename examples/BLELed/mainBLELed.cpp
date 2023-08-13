@@ -28,24 +28,9 @@
 #endif // ESP32
 
 IotsaApplication application("Iotsa BLE LED Server");
-#ifdef IOTSA_WITH_WIFI
-IotsaWifiMod wifiMod(application);
-#endif
 
-#ifdef WITH_OTA
-#include "iotsaOta.h"
-IotsaOtaMod otaMod(application);
-#endif
+#include "iotsaStandardModules.h"
 
-#ifdef WITH_BATTERY
-#include "iotsaBattery.h"
-IotsaBatteryMod batteryMod(application);
-#endif
-
-#include "iotsaBLEServer.h"
-#ifdef IOTSA_WITH_BLE
-IotsaBLEServerMod bleserverMod(application);
-#endif
 //
 // LED module. 
 //

@@ -10,6 +10,9 @@
 // Will be overridden if the iotsaLogger module is included.
 Print *iotsaOverrideSerial = &Serial;
 
+IotsaApplication* IotsaApplication::applicationPtr = nullptr;
+IotsaAuthMod* IotsaApplication::authenticatorPtr = nullptr;
+
 IotsaApplication::IotsaApplication(const char *_title)
 : IotsaWebServerMixin(this),
   status(NULL),
@@ -18,6 +21,10 @@ IotsaApplication::IotsaApplication(const char *_title)
   title(_title),
   haveOTA(false)
 {
+  if (applicationPtr != nullptr) {
+    IotsaSerial.println("IotsaApplication() should only be called once");
+  }
+  applicationPtr = this;
 }
 
 void
