@@ -52,6 +52,8 @@ jobs:
         - example: Temperature
         # Extra matrix entries:
         include:
+        - board: esp32thing
+          pio_extra_args: --project-option="board_build.partitions=min_spiffs.csv"
         # Add esp32c3 build flags
         - board: esp32-c3-devkitm-1
           board_build_flags: -DARDUINO_USB_MODE=1 -DARDUINO_USB_CDC_ON_BOOT=1
