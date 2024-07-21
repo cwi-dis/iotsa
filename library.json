@@ -52,7 +52,7 @@
         {
             "platforms" : ["espressif32"],
             "name" : "esp32_https_server_compat",
-            "version" : "https://github.com/jackjansen/esp32_https_server_compat#exp-jack-sha-header"
+            "version" : "https://github.com/jackjansen/esp32_https_server_compat#for-iotsa"
         }
     ],
     "examples" : [
