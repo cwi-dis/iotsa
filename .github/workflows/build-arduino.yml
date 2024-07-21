@@ -45,7 +45,7 @@ jobs:
       uses: actions/checkout@v2
       
     - name: Cache pip
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -53,16 +53,16 @@ jobs:
           ${{ runner.os }}-pip-
    
     - name: Cache Arduino CLI
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/.arduino15
-        key: ${{ runner.os }}-${{ hashFiles('*_index.json') }}
+        key: ${{ runner.os }}-arduino-${{ hashFiles('*_index.json') }}
    
     - name: Cache Arduino libraries
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/Arduino/libraries
-        key: ${{ runner.os }}-${{ hashFiles('**/library.properties') }}
+        key: ${{ runner.os }}-arduinolibs-${{ hashFiles('**/library.properties') }}
    
     - name: Setup Arduino CLI
       uses: arduino/setup-arduino-cli@v2
@@ -75,10 +75,10 @@ jobs:
     - name: Install Arduino platforms and libraries
       run: |
         arduino-cli core update-index
-        arduino-cli core update-index --additional-urls "https://arduino.esp8266.com/stable/package_esp8266com_index.json,https://dl.espressif.com/dl/package_esp32_index.json"
-        arduino-cli core install "esp32:esp32" --additional-urls "https://dl.espressif.com/dl/package_esp32_index.json"
-
-        arduino-cli core install "esp8266:esp8266" --additional-urls "https://arduino.esp8266.com/stable/package_esp8266com_index.json"
+        arduino-cli core update-index --additional-urls "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
+        arduino-cli core update-index --additional-urls "https://arduino.esp8266.com/stable/package_esp8266com_index.json"
+        arduino-cli core install "esp32:esp32"
+        arduino-cli core install "esp8266:esp8266"
 
         arduino-cli lib install "Adafruit NeoPixel"
         arduino-cli lib install "ArduinoJson"
