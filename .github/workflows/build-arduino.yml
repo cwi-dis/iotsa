@@ -13,7 +13,6 @@ on:
       iotsa_ref:
         description: 'iotsa branch, ref or sha'
         required: true
-        detault: develop
 
 jobs:
   build:
@@ -84,8 +83,8 @@ jobs:
         arduino-cli lib install "Adafruit NeoPixel"
         arduino-cli lib install "ArduinoJson"
         arduino-cli lib install "CoAP simple library"
-        arduino-cli lib install "ESP32_HTTPS_Server"
-        arduino-cli lib install "esp32_https_server_compat"
+        #        arduino-cli lib install "ESP32_idf5_HTTPS_Server"
+        #        arduino-cli lib install "esp32_idf5_https_server_compat"
         arduino-cli lib install "DHT sensor library"
         arduino-cli lib install "Adafruit Unified Sensor"
         arduino-cli lib install "Ds1302"
@@ -106,6 +105,20 @@ jobs:
         path: CustomLibrary_LittleFS
         ref: '1.0' 
 
+    - name: Checkout custom library esp32_idf5_https_server
+      uses: actions/checkout@v2
+      with:
+        repository: jackjansen/esp32_idf5_https_server
+        path: CustomLibrary_esp32_idf5_https_server
+        ref: 'v1.1.0' 
+
+    - name: Checkout custom library esp32_idf5_https_server_compat
+      uses: actions/checkout@v2
+      with:
+        repository: jackjansen/esp32_idf5_https_server_compat
+        path: CustomLibrary_esp32_idf5_https_server_compat
+        ref: 'v1.1.0' 
+    
     - name: Install iotsa and custom libraries
       run: |
         mkdir -p ~/Arduino/libraries
@@ -113,6 +126,9 @@ jobs:
         ls -l
         ln -fs $PWD ~/Arduino/libraries/iotsa
         ln -fs $PWD/CustomLibrary_ArduinoJWT ~/Arduino/libraries/ArduinoJWT
+        ln -fs $PWD/CustomLibrary_LittleFS ~/Arduino/libraries/LittleFS
+        ln -fs $PWD/CustomLibrary_esp32_idf5_https_server ~/Arduino/libraries/esp32_idf5_https_server
+        ln -fs $PWD/CustomLibrary_esp32_idf5_https_server_compat ~/Arduino/libraries/esp32_idf5_https_server_compat
         ln -fs $PWD/CustomLibrary_LittleFS ~/Arduino/libraries/LittleFS
         ls -l ~/Arduino/libraries
         ls -lL ~/Arduino/libraries
@@ -126,7 +142,7 @@ jobs:
 #      with:
 #        platform-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json,https://dl.espressif.com/dl/package_esp32_index.json
 #        arduino-board-fqbn: ${{ matrix. arduino-board-fqbn }}
-#        required-libraries: Adafruit NeoPixel,ArduinoJson,CoAP simple library,ESP32_HTTPS_Server,esp32_https_server_compat,DHT sensor library,Adafruit Unified Sensor
+#        required-libraries: Adafruit NeoPixel,ArduinoJson,CoAP simple library,ESP32_idf5_HTTPS_Server,esp32_idf5_https_server_compat,DHT sensor library,Adafruit Unified Sensor
 
     - name: Uninstall iotsa and custom libraries
       run: |
