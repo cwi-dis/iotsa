@@ -74,6 +74,7 @@ jobs:
         
     - name: Install Arduino platforms and libraries
       run: |
+        arduino-cli config init
         echo xxxjack before anything
         arduino-cli core list --all
         arduino-cli core update-index
@@ -84,10 +85,10 @@ jobs:
         arduino-cli core install "esp32:esp32"
         arduino-cli core install "esp8266:esp8266" --additional-urls "https://arduino.esp8266.com/stable/package_esp8266com_index.json"
         echo xxxjack after install esp32 and esp8266
-        arduino-cli list --all
+        arduino-cli core list --all
         arduino-cli core upgrade
         echo xxxjack after upgrade
-        arduino-cli list --all
+        arduino-cli core list --all
         arduino-cli lib install "Adafruit NeoPixel"
         arduino-cli lib install "ArduinoJson"
         arduino-cli lib install "CoAP simple library"
