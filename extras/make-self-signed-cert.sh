@@ -26,7 +26,7 @@ x*)
 	HOSTNAME=$1
 	;;
 esac
-BITS=1024
+BITS=2048
 C=$PWD
 pushd /tmp
 
