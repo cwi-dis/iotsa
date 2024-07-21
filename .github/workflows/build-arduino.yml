@@ -65,7 +65,7 @@ jobs:
         key: ${{ runner.os }}-${{ hashFiles('**/library.properties') }}
    
     - name: Setup Arduino CLI
-      uses: arduino/setup-arduino-cli@v1.1.1
+      uses: arduino/setup-arduino-cli@v2
 
     - name: Install pyserial
       run: |
