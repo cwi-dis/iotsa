@@ -13,7 +13,7 @@ IotsaConfig iotsaConfig;
 
 
 #ifdef IOTSA_WITH_HTTPS
-#include "iotsaConfigDefaultCert512.h"
+#include "iotsaConfigDefaultCert.h"
 #endif
 
 void IotsaConfig::loop() {

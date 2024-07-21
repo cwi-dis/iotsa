@@ -1,5 +1,7 @@
 // Default key and certificate for https service
-// The certificate is stored in PMEM
+// The certificate is stored in PMEM.
+// Regenerate with extras/make-self-signed-cert.sh and copy the key and
+// certificate date in here.
 static const uint8_t defaultHttpsCertificate[] PROGMEM = {
 
   0x30, 0x82, 0x03, 0x3c, 0x30, 0x82, 0x02, 0x24, 0xa0, 0x03, 0x02, 0x01,
