@@ -89,6 +89,7 @@ jobs:
         arduino-cli core upgrade
         echo xxxjack after upgrade
         arduino-cli core list --all
+        arduino-cli lib list
         arduino-cli lib install "Adafruit NeoPixel"
         arduino-cli lib install "ArduinoJson"
         arduino-cli lib install "CoAP simple library"
@@ -101,7 +102,7 @@ jobs:
         arduino-cli lib install --git-url https://github.com/jackjansen/esp32_idf5_https_server
         arduino-cli lib install --git-url https://github.com/jackjansen/esp32_idf5_https_server_compat
         arduino-cli lib install --git-url https://github.com/yutter/ArduinoJWT
-
+        arduino-cli lib list
     - name: Install iotsa library
       run: |
         mkdir -p ~/Arduino/libraries
