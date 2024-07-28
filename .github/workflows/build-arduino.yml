@@ -110,15 +110,8 @@ jobs:
     - name: Build ${{ matrix.example }} ${{ matrix.board }}
       run: |
         arduino-cli compile --fqbn ${{ matrix.board }} ${{ matrix.example }}
-#    - name: Arduino build
-#      uses: ArminJo/arduino-test-compile@v3
-#      with:
-#        platform-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json,https://dl.espressif.com/dl/package_esp32_index.json
-#        arduino-board-fqbn: ${{ matrix. arduino-board-fqbn }}
-#        required-libraries: Adafruit NeoPixel,ArduinoJson,CoAP simple library,ESP32_idf5_HTTPS_Server,esp32_idf5_https_server_compat,DHT sensor library,Adafruit Unified Sensor
 
     - name: Uninstall iotsa and custom libraries
       run: |
         rm -f ~/Arduino/libraries/iotsa
-        rm -f ~/Arduino/libraries/ArduinoJWT
-        rm -f ~/Arduino/libraries/LittleFS
+        ls -la ~/Arduino/libraries
