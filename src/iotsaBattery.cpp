@@ -5,6 +5,10 @@
 #ifdef ESP32
 #include <esp_wifi.h>
 #include <esp_bt.h>
+#if ESP_ARDUINO_VERSION_MAJOR > 2
+#include "esp_system.h"
+#include "rom/ets_sys.h"
+#endif
 #endif
 
 #define SLEEP_DEBUG if(0)
@@ -142,11 +146,17 @@ void IotsaBatteryMod::setup() {
   didWakeFromSleep = (esp_sleep_get_wakeup_cause() != 0);
   
   if (watchdogDuration) {
+#if ESP_ARDUINO_VERSION_MAJOR <= 2
     watchdogTimer = timerBegin(0, 80, true);
     timerAttachInterrupt(watchdogTimer, &watchdogTimerTriggered, true);
-    IFDEBUG IotsaSerial.printf("Watchdog: %d ms\n", watchdogDuration);
     timerAlarmWrite(watchdogTimer, watchdogDuration*1000, false);
     timerAlarmEnable(watchdogTimer);
+#else
+    watchdogTimer = timerBegin(1000000);
+    timerAttachInterrupt(watchdogTimer, &watchdogTimerTriggered);
+    timerAlarm(watchdogTimer, watchdogDuration*1000, true, 0);
+#endif
+    IFDEBUG IotsaSerial.printf("Watchdog: %d ms\n", watchdogDuration);
   }
 #endif
 #ifdef IOTSA_WITH_BLE
@@ -314,7 +324,11 @@ void IotsaBatteryMod::configSave() {
 void IotsaBatteryMod::extendCurrentMode() {
 #ifdef ESP32
   if (watchdogTimer) {
+#if ESP_ARDUINO_VERSION_MAJOR <= 2
     timerWrite(watchdogTimer, 0);
+#else
+    timerAlarm(watchdogTimer, watchdogDuration*1000, false, 0);
+#endif
   }
 #endif
   millisAtWakeup = millis();
@@ -407,7 +421,13 @@ void IotsaBatteryMod::loop() {
   
   if (!shouldSleep) return;
 #ifdef ESP32
-  if (watchdogTimer) timerAlarmDisable(watchdogTimer);
+  if (watchdogTimer) {
+#if ESP_ARDUINO_VERSION_MAJOR <= 2
+    timerAlarmDisable(watchdogTimer);
+#else
+    timerDetachInterrupt(watchdogTimer);
+#endif
+  }
 #endif
   // We go to sleep, in some form.
   IFDEBUG IotsaSerial.print("Going to sleep at ");
@@ -424,8 +444,12 @@ void IotsaBatteryMod::loop() {
     didWakeFromSleep = true;
 #ifdef ESP32
     if (watchdogTimer) {
+#if ESP_ARDUINO_VERSION_MAJOR <= 2
       timerWrite(watchdogTimer, 0);
       timerAlarmEnable(watchdogTimer);
+#else
+      timerAlarm(watchdogTimer, watchdogDuration*1000, true, 0);
+#endif
     }
 #endif
     _notifySleepWakeup(false);
@@ -457,8 +481,13 @@ void IotsaBatteryMod::loop() {
     }
 #endif
     if (watchdogTimer) {
+#if ESP_ARDUINO_VERSION_MAJOR <= 2
       timerWrite(watchdogTimer, 0);
       timerAlarmEnable(watchdogTimer);
+#else
+      timerWrite(watchdogTimer, 0);
+      timerAlarm(watchdogTimer, watchdogDuration*1000, false, 0);
+#endif
     }
     _notifySleepWakeup(false);
     return;
