@@ -2,6 +2,7 @@
 #include <base64.h>
 #ifdef ESP32
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 #else
 #include <ESP8266HTTPClient.h>
 #endif
