@@ -91,7 +91,6 @@ bool IotsaWifiMod::_wifiStartStation() {
     IotsaSerial.println("WiFi.begin(...) failed");
     return false;
   }
-  WiFi.setAutoConnect(true);
   WiFi.setAutoReconnect(true);
   IFDEBUG IotsaSerial.println("");
   iotsaConfig.wifiMode = IOTSA_WIFI_SEARCHING;
