@@ -108,7 +108,7 @@ jobs:
 
     - name: Build ${{ matrix.example }} ${{ matrix.board }}
       run: |
-        arduino-cli compile --fqbn ${{ matrix.board }} ${{ matrix.example }}
+        arduino-cli compile --fqbn ${{ matrix.board }} --build-property build.partitions=min_spiffs ${{ matrix.example }}
 
     - name: Uninstall iotsa and custom libraries
       run: |
