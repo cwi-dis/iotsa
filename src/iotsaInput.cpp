@@ -280,7 +280,7 @@ RotaryEncoder::RotaryEncoder(int _pinA, int _pinB)
   accelMillis(0)
 {
 #ifdef IOTSA_WITH_ESP32ENCODER_LIB
-  ESP32Encoder::useInternalWeakPullResistors=UP;
+  ESP32Encoder::useInternalWeakPullResistors=puType::up;
   // Sigh... It seems we (or ESP32Encoder?) had reversed the pins... Or the edges...
   _encoder->attachHalfQuad(_pinB, _pinA);
   _encoder->clearCount();
