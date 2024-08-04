@@ -19,7 +19,7 @@ IotsaFilesUploadMod::uploadHandler() {
     IFDEBUG IotsaSerial.print("Uploading ");
     IFDEBUG IotsaSerial.println(_uploadfilename);
     if(IOTSA_FS.exists(_uploadfilename)) IOTSA_FS.remove(_uploadfilename);
-#ifndef IOTSA_WITH_LEGACY_SPIFFS
+#ifndef IOTSA_WITH_LEGACY_SPIFFS_xxxjack
     _uploadFile = IOTSA_FS.open(_uploadfilename, "w", true);
 #else
     _uploadFile = IOTSA_FS.open(_uploadfilename, "w");

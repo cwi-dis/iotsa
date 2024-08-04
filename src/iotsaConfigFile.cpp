@@ -98,7 +98,7 @@ IotsaConfigFileSave::IotsaConfigFileSave(String filename) {
 }
 
 IotsaConfigFileSave::IotsaConfigFileSave(const char *filename) {
-#ifndef IOTSA_WITH_LEGACY_SPIFFS
+#ifndef IOTSA_WITH_LEGACY_SPIFFS_xxxjack
   // FS.open() needs extra create argument true to create intermediate directories
   fp = IOTSA_FS.open(filename, "w", true);
 #else
