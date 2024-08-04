@@ -14,18 +14,9 @@
 #define IOTSA_FS SPIFFS
 #define IOTSA_FS_NAME "SPIFFS"
 #else
-#if defined(ESP32) && !defined(PLATFORMIO)
-// Use Lorol LittleFS when building for Arduino. It uses slightly different include file name.
-#include <LITTLEFS.h>
-#define IOTSA_FS LITTLEFS
-#else
 // Use normal (as of 2022) LittleFS on esp32 or esp8266.
 #include <LittleFS.h>
 #define IOTSA_FS LittleFS
-#if defined(ESP32)
-#define IOTSA_FS_OPEN_3ARGS // Open has a third create parameter
-#endif
-#endif
 #define IOTSA_FS_NAME "LittleFS"
 #endif
 
