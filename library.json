@@ -42,7 +42,7 @@
             "platforms" : ["espressif32"],
             "owner" : "madhephaestus",
             "name" : "ESP32Encoder",
-            "version" : "https://github.com/jackjansen/ESP32Encoder#exp-jack-esp32c3"
+            "version" : "https://github.com/madhephaestus/ESP32Encoder"
         },
         {
             "platforms" : ["espressif32"],
@@ -52,7 +52,7 @@
         {
             "platforms" : ["espressif32"],
             "name" : "esp32_idf5_https_server_compat",
-            "version" : "https://github.com/jackjansen/esp32_idf5_https_server_compat#for-iotsa"
+            "version" : "https://github.com/jackjansen/esp32_idf5_https_server_compat"
         }
     ],
     "examples" : [
