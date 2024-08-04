@@ -75,7 +75,7 @@ jobs:
     - name: Install Arduino platforms and libraries
       run: |
         arduino-cli core list --all
-        arduino-cli config init
+        arduino-cli config init --overwrite
         arduino-cli config set library.enable_unsafe_install true
         arduino-cli config add board_manager.additional_urls "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
         arduino-cli config add board_manager.additional_urls "https://arduino.esp8266.com/stable/package_esp8266com_index.json"
