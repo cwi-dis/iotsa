@@ -96,12 +96,11 @@ jobs:
         arduino-cli lib install "DHT sensor library"
         arduino-cli lib install "Adafruit Unified Sensor"
         arduino-cli lib install "Ds1302"
-        arduino-cli lib install "ESP32Encoder@0.9.1"
+        arduino-cli lib install "ESP32Encoder"
+        arduino-cli lib install "LittleFS"
         arduino-cli lib install --git-url https://github.com/yutter/ArduinoJWT
-        arduino-cli lib install --git-url https://github.com/lorol/LITTLEFS#1.0
         arduino-cli lib install --git-url https://github.com/jackjansen/esp32_idf5_https_server
         arduino-cli lib install --git-url https://github.com/jackjansen/esp32_idf5_https_server_compat
-        arduino-cli lib install --git-url https://github.com/yutter/ArduinoJWT
         arduino-cli lib list
     - name: Install iotsa library
       run: |
