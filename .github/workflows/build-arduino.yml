@@ -40,6 +40,9 @@ jobs:
 # Temporarily disabled:
 #        - examples/BLELed
         - examples/Temperature
+        include:
+        - board: esp32:esp32:esp32thing
+          partition_scheme: --board-options PartitionScheme=min_spiffs
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -108,7 +111,7 @@ jobs:
 
     - name: Build ${{ matrix.example }} ${{ matrix.board }}
       run: |
-        arduino-cli compile --fqbn ${{ matrix.board }} --board-options PartitionScheme=min_spiffs ${{ matrix.example }}
+        arduino-cli compile --fqbn ${{ matrix.board }} ${{ matrix.partition_scheme }} ${{ matrix.example }}
 
     - name: Uninstall iotsa and custom libraries
       run: |
