@@ -229,6 +229,7 @@ IotsaConfigMod::handler() {
     message += "<p><em>Error:</em> must be in configuration mode to change some of these parameters.</p>";
   }
   if (anyChanged) {
+    configSave();
     message += "<p>Settings saved to Flash.</p>";
     if (hostnameChanged) {
       message += "<p><em>Rebooting device to change hostname</em>.</p>";
