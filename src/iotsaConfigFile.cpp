@@ -11,7 +11,7 @@ IotsaConfigFileLoad::IotsaConfigFileLoad(String filename) {
 IotsaConfigFileLoad::IotsaConfigFileLoad(const char *filename) {
   fp = IOTSA_FS.open(filename, "r");
   if (!fp) {
-    IotsaSerial.printf("IotsaConfigFileLoad: %s not found\n", filename);
+    IotsaSerial.printf("IotsaConfigFileLoad: %s: file not found\n", filename);
   }
 }
 
@@ -106,11 +106,14 @@ IotsaConfigFileSave::IotsaConfigFileSave(const char *filename) {
 #endif
   if (!fp) {
     IotsaSerial.printf("IotsaConfigFileSave: %s not created\n", filename);
+  } else {
+    IFDEBUG IotsaSerial.printf("IotsaConfigFileSave: created %s\n", filename);
   }
 }
 
 IotsaConfigFileSave::~IotsaConfigFileSave() {
   fp.close();
+  IFDEBUG IotsaSerial.printf("IotsaConfigFileSave: closed\n");
 }
 
 void IotsaConfigFileSave::put(String name, int value) {
