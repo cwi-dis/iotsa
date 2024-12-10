@@ -154,7 +154,7 @@ jobs:
 #       cp /tmp/pio-build/.pio/build/${{ matrix.board }}/${{ matrix.example }}-${{ matrix.variant }}${{ matrix.board }}.bin ${{ matrix.example }}-${{ matrix.variant }}${{ matrix.board }}.bin
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.example }}-${{ matrix.variant }}${{ matrix.board }}.bin
         path: ${{ matrix.example }}-${{ matrix.variant }}${{ matrix.board }}.bin
