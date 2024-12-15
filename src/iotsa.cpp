@@ -37,7 +37,7 @@ IotsaApplication::setup() {
   // xxxjack Unsure about this. We always open the Serial port,
   // so log messages that aren't flagged with IFDEBUG always work.
   // But this means the serial port cannot be used for other things.
-  Serial.begin(115200);
+  Serial.begin(IOTSA_SERIAL_SPEED);
   IFDEBUG IotsaSerial.println("Serial opened");
   IFDEBUG IotsaSerial.print("Opening " IOTSA_FS_NAME " (may take long)...");
   bool ok = IOTSA_FS.begin();

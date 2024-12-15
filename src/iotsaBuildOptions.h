@@ -4,6 +4,10 @@
 // Silence obnoxious warning that we can do nothing about
 #define ESP_OPENSSL_SUPPRESS_LEGACY_WARNING
 
+#ifndef IOTSA_SERIAL_SPEED
+#define IOTSA_SERIAL_SPEED 115200
+#endif
+
 #ifndef IOTSA_WITHOUT_DEBUG
 // Debug prints are enabled by default
 #define IOTSA_WITH_DEBUG
