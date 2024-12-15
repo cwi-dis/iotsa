@@ -8,7 +8,6 @@ unreleased
 - LittleFS is now the standard filesystem
 - Use arduino-cli for Arduino builds
 
-
 iotsa 2.7 - 03-Jun-2023
 
 - Added support for esp32c3
