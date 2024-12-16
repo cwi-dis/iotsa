@@ -25,7 +25,7 @@
         {
             "name" : "ArduinoJson",
             "owner" : "bblanchon",
-            "version" : "7.1.0"
+            "version" : "^6.21.5"
         },
         {
             "name" : "ArduinoJWT",
