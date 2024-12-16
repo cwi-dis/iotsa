@@ -48,7 +48,8 @@
         {
             "platforms" : ["espressif32"],
             "owner" : "h2zero",
-            "name" : "NimBLE-Arduino"
+            "name" : "NimBLE-Arduino",
+            "version" : "^1.4.3"
         },
         {
             "platforms" : ["espressif32"],
