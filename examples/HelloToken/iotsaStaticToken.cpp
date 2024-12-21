@@ -56,11 +56,11 @@ void IotsaStaticTokenObject::getHandler(JsonObject& reply) {
 bool IotsaStaticTokenObject::putHandler(const JsonVariant& request) {
   bool anyChanged;
   JsonObject reqObj = request.as<JsonObject>();
-  if (reqObj.containsKey("token")) {
+  if (reqObj["token"].is<const char *>()) {
     token = reqObj["token"].as<String>();
     anyChanged = true;
   }
-  if (reqObj.containsKey("rights")) {
+  if (reqObj["rights"].is<const char *>()) {
     rights = reqObj["rights"].as<String>();
     anyChanged = true;
   }

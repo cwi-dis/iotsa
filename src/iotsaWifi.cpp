@@ -302,11 +302,11 @@ bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, Json
     return false;
   }
   JsonObject reqObj = request.as<JsonObject>();
-  if (reqObj.containsKey("ssid")) {
+  if (reqObj["ssid"].is<const char *>()) {
     ssid = reqObj["ssid"].as<String>();
     anyChanged = true;
   }
-  if (reqObj.containsKey("ssidPassword")) {
+  if (reqObj["ssidPassword"].is<const char *>()) {
     ssidPassword = reqObj["ssidPassword"].as<String>();
     anyChanged = true;
   }

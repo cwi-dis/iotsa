@@ -200,44 +200,44 @@ bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
 bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
-  if (reqObj.containsKey("postponeSleep")) {
+  if (reqObj["postponeSleep"].is<int>()) {
     iotsaConfig.postponeSleep(reqObj["postponeSleep"].as<int>());
   }
-  if (reqObj.containsKey("sleepMode")) {
+  if (reqObj["sleepMode"].is<int>()) {
     sleepMode = (IotsaSleepMode)reqObj["sleepMode"].as<int>();
     anyChanged = true;
   }
-  if (reqObj.containsKey("sleepDuration")) {
+  if (reqObj["sleepDuration"].is<int>()) {
     sleepDuration = reqObj["sleepDuration"];
     anyChanged = true;
   }
-  if (reqObj.containsKey("wakeDuration")) {
+  if (reqObj["wakeDuration"].is<int>()) {
     wakeDuration = reqObj["wakeDuration"];
     anyChanged = true;
   }
-  if (reqObj.containsKey("bootExtraWakeDuration")) {
+  if (reqObj["bootExtraWakeDuration"].is<int>()) {
     bootExtraWakeDuration = reqObj["bootExtraWakeDuration"];
     anyChanged = true;
   }
-  if (reqObj.containsKey("activityExtraWakeDuration")) {
+  if (reqObj["activityExtraWakeDuration"].is<int>()) {
     iotsaConfig.activityExtraWakeDuration = reqObj["activityExtraWakeDuration"];
     anyChanged = true;
   }
 #ifdef ESP32
-  if (reqObj.containsKey("watchdogDuration")) {
+  if (reqObj["watchdogDuration"].is<int>()) {
     watchdogDuration = reqObj["watchdogDuration"];
     anyChanged = true;
   }
 #endif
-  if (pinVBat >= 0 && reqObj.containsKey("correctionVBat")) {
+  if (pinVBat >= 0 && reqObj["correctionVBat"].is<float>()) {
     correctionVBat = reqObj["correctionVBat"];
     anyChanged = true;
   }
-  if (pinVUSB >= 0 && reqObj.containsKey("disableSleepOnUSBPower")) {
+  if (pinVUSB >= 0 && reqObj["disableSleepOnUSBPower"].is<bool>()) {
     disableSleepOnUSBPower = reqObj["disableSleepOnUSBPower"];
     anyChanged = true;
   }
-  if (reqObj.containsKey("disableSleepOnWiFi")) {
+  if (reqObj["disableSleepOnWiFi"].is<bool>()) {
     disableSleepOnWiFi = reqObj["disableSleepOnWiFi"];
     anyChanged = true;
   }
