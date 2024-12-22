@@ -13,11 +13,7 @@ void IotsaApiServiceRest::_getHandlerWrapper(const char *path) {
     IFDEBUG IotsaSerial.print("GET api ");
     IFDEBUG IotsaSerial.println(path);
     iotsaConfig.postponeSleep(0);
-    int jsonBufSize = 2048;
-    if (server->hasArg("jsonBufSize")) {
-        jsonBufSize = server->arg("jsonBufSize").toInt();
-    }
-    DynamicJsonDocument replyDocument(jsonBufSize);
+    JsonDocument replyDocument;
     JsonObject reply = replyDocument.to<JsonObject>();
     bool ok = provider->getHandler(path, reply);
     if (replyDocument.overflowed()) {
@@ -41,13 +37,9 @@ void IotsaApiServiceRest::_putHandlerWrapper(const char *path) {
     IFDEBUG IotsaSerial.print("PUT api ");
     IFDEBUG IotsaSerial.println(path);
     iotsaConfig.postponeSleep(0);
-    int jsonBufSize = 2048;
-    if (server->hasArg("jsonBufSize")) {
-        jsonBufSize = server->arg("jsonBufSize").toInt();
-    }
-    DynamicJsonDocument replyDocument(jsonBufSize);
+    JsonDocument replyDocument;
     JsonObject reply = replyDocument.to<JsonObject>();
-    DynamicJsonDocument requestDocument(jsonBufSize);
+    JsonDocument requestDocument;
     deserializeJson(requestDocument, server->arg("plain"));
     if (requestDocument.overflowed()) {
         server->send(413, "text/plain", "JSON request overflow, use jsonBufSize");
@@ -77,13 +69,9 @@ void IotsaApiServiceRest::_postHandlerWrapper(const char *path) {
     IFDEBUG IotsaSerial.print("POST api ");
     IFDEBUG IotsaSerial.println(path);
     iotsaConfig.postponeSleep(0);
-    int jsonBufSize = 2048;
-    if (server->hasArg("jsonBufSize")) {
-        jsonBufSize = server->arg("jsonBufSize").toInt();
-    }
-    DynamicJsonDocument replyDocument(jsonBufSize);
+    JsonDocument replyDocument;
     JsonObject reply = replyDocument.to<JsonObject>();
-    DynamicJsonDocument requestDocument(jsonBufSize);
+    JsonDocument requestDocument;
     deserializeJson(requestDocument, server->arg("plain"));
     if (requestDocument.overflowed()) {
         server->send(413, "text/plain", "JSON document overflow, use jsonBufSize");

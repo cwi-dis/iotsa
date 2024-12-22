@@ -54,7 +54,7 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
         IFDEBUG IotsaSerial.println(path);
         ok = get;
         if (ok) {
-            DynamicJsonDocument replyDocument(2048);
+            JsonDocument replyDocument;
             JsonObject reply = replyDocument.to<JsonObject>();
             ok = provider->getHandler(path, reply);
             if (ok) {
@@ -74,9 +74,9 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
 #ifdef COAP_PROTOCOL_DEBUG
             IotsaSerial.print("payload "); IotsaSerial.println(dataBuffer);
 #endif
-            DynamicJsonDocument requestDocument(2048);
+            JsonDocument requestDocument;
             deserializeJson(requestDocument, dataBuffer);
-            DynamicJsonDocument replyDocument(2048);
+            JsonDocument replyDocument;
             JsonObject request = requestDocument.as<JsonObject>();
             JsonObject reply = replyDocument.to<JsonObject>();
 
@@ -98,9 +98,9 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
 #ifdef COAP_PROTOCOL_DEBUG
             IotsaSerial.print("payload "); IotsaSerial.println(dataBuffer);
 #endif
-            DynamicJsonDocument requestDocument(2048);
+            JsonDocument requestDocument;
             deserializeJson(requestDocument, dataBuffer);
-            DynamicJsonDocument replyDocument(2048);
+            JsonDocument replyDocument;
             JsonObject request = requestDocument.as<JsonObject>();
             JsonObject reply = replyDocument.to<JsonObject>();
             ok = provider->postHandler(path, request, reply);

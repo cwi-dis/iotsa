@@ -240,7 +240,7 @@ void IotsaCapabilityMod::loadCapabilitiesFromRequest() {
     IFDEBUGX IotsaSerial.println("Did not decode correctly with key");
     return;
   }
-  DynamicJsonDocument jsonDocument(2048);
+  JsonDocument jsonDocument;
   deserializeJson(jsonDocument, payload);
   JsonObject root = jsonDocument.to<JsonObject>();
   

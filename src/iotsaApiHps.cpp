@@ -163,8 +163,7 @@ protected:
       return 404;
     }
     // xxxjson
-    int jsonBufSize = 2048;
-    ArduinoJson::DynamicJsonDocument request_doc(jsonBufSize);
+    ArduinoJson::JsonDocument request_doc;
     ArduinoJson::deserializeJson(request_doc, curBody.c_str());
     if (request_doc.overflowed()) {
       IotsaSerial.println("IotsaHpsServiceMod: request too large");
@@ -173,7 +172,7 @@ protected:
       return 413;
     }
     ArduinoJson::JsonObject request = request_doc.as<JsonObject>();
-    ArduinoJson::DynamicJsonDocument reply_doc(jsonBufSize);
+    ArduinoJson::JsonDocument reply_doc;
     ArduinoJson::JsonObject reply = reply_doc.to<JsonObject>();
     bool ok = false;
     if (cmd_get) {
