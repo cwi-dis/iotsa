@@ -39,8 +39,7 @@ bool IotsaNothingMod::getHandler(const char *path, JsonObject& reply) {
 bool IotsaNothingMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
-  if (reqObj.containsKey("argument")) {
-    argument = reqObj["argument"].as<String>();
+  if (getFromRequest<const char *>(reqObj, "argument", argument)) {
     anyChanged = true;
   }
   if (anyChanged) configSave();

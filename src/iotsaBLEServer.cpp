@@ -200,7 +200,9 @@ bool IotsaBLEServerMod::getHandler(const char *path, JsonObject& reply) {
 }
 
 bool IotsaBLEServerMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
-  if (request.containsKey("isEnabled") && request["isEnabled"] != isEnabled) {
+  JsonObject reqObj = request.as<JsonObject>();
+  bool newEnabled = isEnabled;
+  if (getFromRequest<bool>(reqObj, "isEnabled", newEnabled) && newEnabled != isEnabled) {
     isEnabled = request["isEnabled"];
     iotsaConfig.requestReboot(4000);
   }

@@ -167,19 +167,17 @@ bool IotsaNtpMod::getHandler(const char *path, JsonObject& reply) {
 bool IotsaNtpMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
-  if (reqObj.containsKey("ntpServer")) {
-    ntpServer = reqObj["ntpServer"].as<String>();
+  if (getFromRequest<const char *>(reqObj, "ntpServer", ntpServer)) {
     anyChanged = true;
   }
 #ifdef IOTSA_WITH_TIMEZONE
-  if (reqObj.containsKey("tzDescription")) {
+  String newTz;
+  if (getFromRequest<const char *>(reqObj, "tzDescription", newTz)) {
     String newTz = reqObj["tzDescription"].as<String>();
-    parseTimezone(newTz);
     anyChanged = true;
   }
 #else
-  if (reqObj.containsKey("minutesWest")) {
-    minutesWestFromUtc = reqObj["minutesWest"];
+  if (getFromRequest<int>(reqObj, "minutesWest", minutesWestFromUtc)) {
     anyChanged = true;
   }
 #endif

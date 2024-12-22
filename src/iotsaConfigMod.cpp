@@ -419,59 +419,28 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
 bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
   bool radioModeChanged = false;
-  bool wrongMode = false;
+
   JsonObject reqObj = request.as<JsonObject>();
-  if (reqObj.containsKey("hostName")) {
-    if (iotsaConfig.inConfigurationOrFactoryMode()) {
-      iotsaConfig.hostName = reqObj["hostName"].as<String>();
-      anyChanged = true;
-      reply["needsReboot"] = true;
-    } else {
-      wrongMode = true;
-    }
-  }
-  if (reqObj.containsKey("wifiDisabledOnBoot")) {
-    if (iotsaConfig.inConfigurationOrFactoryMode()) {
-      iotsaConfig.wifiDisabledOnBoot = reqObj["wifiDisabledOnBoot"];
-      anyChanged = true;
-    } else {
-      wrongMode = true;
-    }
-  }
-  if (reqObj.containsKey("wifiDisabled")) {
-    bool wifiDisabled = reqObj["wifiDisabled"];
+  // First look for arguments that are also valid in normal mode.
+  bool wifiDisabled;
+  if (getFromRequest<bool>(reqObj, "wifiDisabled", wifiDisabled)) {
     iotsa_wifi_mode newMode = wifiDisabled ? iotsa_wifi_mode::IOTSA_WIFI_DISABLED : iotsa_wifi_mode::IOTSA_WIFI_NORMAL;
     iotsaConfig.wifiMode = newMode;
     iotsaConfig.wantWifiModeSwitchAtMillis = millis()+1000;
     radioModeChanged = true;
   }
 #ifdef IOTSA_WITH_BLE
-  if (reqObj.containsKey("bleDisabledOnBoot")) {
-    if (iotsaConfig.inConfigurationOrFactoryMode()) {
-      iotsaConfig.bleDisabledOnBoot = reqObj["bleDisabledOnBoot"];
-      anyChanged = true;
-    } else {
-      wrongMode = true;
-    }
-  }
-  if (reqObj.containsKey("bleDisabled")) {
-    bool bleDisabled = reqObj["bleDisabled"];
+  bool bleDisabled;
+  if (getFromRequest<bool>(reqObj, "bleDisabled", bleDisabled)) {
     iotsa_ble_mode newMode = bleDisabled ? iotsa_ble_mode::IOTSA_BLE_DISABLED : iotsa_ble_mode::IOTSA_BLE_ENABLED;
     iotsaConfig.bleMode = newMode;
     iotsaConfig.wantBleModeSwitchAtMillis = millis()+1000;
     radioModeChanged = true;
   }
 #endif
-  if (reqObj.containsKey("modeTimeout")) {
-    if (iotsaConfig.inConfigurationMode()) {
-      iotsaConfig.configurationModeTimeout = reqObj["modeTimeout"];
-      anyChanged = true;
-    } else {
-      wrongMode = true;
-    }
-  }
-  if (reqObj.containsKey("requestedMode")) {
-    iotsaConfig.nextConfigurationMode = config_mode(reqObj["requestedMode"].as<int>());
+  int reqModeInt;
+  if (getFromRequest<int>(reqObj, "requestedMode", reqModeInt)) {
+    iotsaConfig.nextConfigurationMode = config_mode(reqModeInt);
     anyChanged = iotsaConfig.nextConfigurationMode != config_mode(0);
     if (anyChanged) {
       iotsaConfig.nextConfigurationModeEndTime = millis() + iotsaConfig.configurationModeTimeout*1000;
@@ -480,90 +449,101 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
       reply["needsReboot"] = true;
     }
   }
+  if (!iotsaConfig.inConfigurationOrFactoryMode()) {
+    IFDEBUG IotsaSerial.println("Not in config mode");
+    if (reqObj["reboot"]) {
+      iotsaConfig.requestReboot(2000);
+      anyChanged = true;
+    }
+    return anyChanged||radioModeChanged;
+  }
+  if (getFromRequest<const char *>(reqObj, "hostName", iotsaConfig.hostName)) {
+    anyChanged = true;
+    reply["needsReboot"] = true;
+  }
+  if (getFromRequest<bool>(reqObj, "wifiDisabledOnBoot", iotsaConfig.wifiDisabledOnBoot)) {
+    anyChanged = true;
+  }
+#ifdef IOTSA_WITH_BLE
+  if (getFromRequest<bool>(reqObj, "bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot)) {
+    anyChanged = true;
+  }
+#endif
+  if (getFromRequest<int>(reqObj, "modeTimeout", iotsaConfig.configurationModeTimeout)) {
+    anyChanged = true;
+  }
+
 #ifdef IOTSA_WITH_HTTPS
   // Set parameter defaultCert to true to remove any key/certificate
-  if (reqObj.containsKey("defaultCert") && reqObj["defaultCert"]) {
-    if (iotsaConfig.inConfigurationMode()) {
-      IOTSA_FS.remove("/config/httpsKey.der");
-      IOTSA_FS.remove("/config/httpsCert.der");
-    } else {
-      wrongMode = true;
-    }
+  bool defaultCert;
+  if (getFromRequest<bool>(reqObj, "defaultCert", defaultCert) && defaultCert) {
+    IOTSA_FS.remove("/config/httpsKey.der");
+    IOTSA_FS.remove("/config/httpsCert.der");
   }
   // Allow setting of https key as PEM. Note that using POST with file upload will
   // work more often due to memory constraints and the size of keys and certificates.
-  if (reqObj.containsKey("httpsKey")) {
-    if (iotsaConfig.inConfigurationMode()) {
-      const char *b64Value = reqObj["httpsKey"];
-      static const char *head = "-----BEGIN RSA PRIVATE KEY-----";
-      static const char *tail = "-----END RSA PRIVATE KEY-----";
-      char *headPos = strstr(b64Value, head);
-      char *tailPos = strstr(b64Value, tail);
-      if (headPos == b64Value && tailPos) {
-        b64Value += strlen(head);
-        *tailPos = '\0';
+  const char *b64Value = nullptr;
+  if (getFromRequest<const char *>(reqObj, "httpsKey", b64Value) && b64Value)) {
+    static const char *head = "-----BEGIN RSA PRIVATE KEY-----";
+    static const char *tail = "-----END RSA PRIVATE KEY-----";
+    char *headPos = strstr(b64Value, head);
+    char *tailPos = strstr(b64Value, tail);
+    if (headPos == b64Value && tailPos) {
+      b64Value += strlen(head);
+      *tailPos = '\0';
+    } else {
+      IFDEBUG IotsaSerial.println("req httpsKey not PEM");
+      b64Value = "";
+    }
+    int b64len = strlen(b64Value);
+    IFDEBUG IotsaSerial.println("req has httpsKey");
+    char *tmpValue = (char *)malloc(base64_decode_expected_len(b64len));
+    if (tmpValue) {
+      int decodedLen = base64_decode_chars(b64Value, b64len, tmpValue);
+      if (decodedLen > 0) {
+        newKey = (uint8_t *)tmpValue;
+        newKeyLength = decodedLen;
+        anyChanged = true;
       } else {
-        IFDEBUG IotsaSerial.println("req httpsKey not PEM");
-        b64Value = "";
-      }
-      int b64len = strlen(b64Value);
-      IFDEBUG IotsaSerial.println("req has httpsKey");
-      char *tmpValue = (char *)malloc(base64_decode_expected_len(b64len));
-      if (tmpValue) {
-        int decodedLen = base64_decode_chars(b64Value, b64len, tmpValue);
-        if (decodedLen > 0) {
-          newKey = (uint8_t *)tmpValue;
-          newKeyLength = decodedLen;
-          anyChanged = true;
-        } else {
-          IFDEBUG IotsaSerial.println("could not decode httpsKey");
-        }
-      } else {
-        IFDEBUG IotsaSerial.println("httpsKey malloc failed");
+        IFDEBUG IotsaSerial.println("could not decode httpsKey");
       }
     } else {
-      wrongMode = true;
+      IFDEBUG IotsaSerial.println("httpsKey malloc failed");
     }
   }
   // Allow setting of https certificate as PEM. Note that using POST with file upload will
   // work more often due to memory constraints and the size of keys and certificates.
-  if (reqObj.containsKey("httpsCertificate")) {
-    if (iotsaConfig.inConfigurationMode()) {
-      const char *b64Value = reqObj["httpsCertificate"];
-      static const char *head = "-----BEGIN CERTIFICATE-----";
-      static const char *tail = "-----END CERTIFICATE-----";
-      char *headPos = strstr(b64Value, head);
-      char *tailPos = strstr(b64Value, tail);
-      if (headPos == b64Value && tailPos) {
-        b64Value += strlen(head);
-        *tailPos = '\0';
+  b64Value = nullptr;
+  if (getFromRequest<const char *>(reqObj, "httpsCertificate", b64Value) && b64Value)) {
+    const char *b64Value = reqObj["httpsCertificate"];
+    static const char *head = "-----BEGIN CERTIFICATE-----";
+    static const char *tail = "-----END CERTIFICATE-----";
+    char *headPos = strstr(b64Value, head);
+    char *tailPos = strstr(b64Value, tail);
+    if (headPos == b64Value && tailPos) {
+      b64Value += strlen(head);
+      *tailPos = '\0';
+    } else {
+      IFDEBUG IotsaSerial.println("req httpsCertificate not PEM");
+      b64Value = "";
+    }
+    int b64len = strlen(b64Value);
+    IFDEBUG IotsaSerial.println("req has httpsCertificate");
+    char *tmpValue = (char *)malloc(base64_decode_expected_len(b64len));
+    if (tmpValue) {
+      int decodedLen = base64_decode_chars(b64Value, b64len, tmpValue);
+      if (decodedLen > 0) {
+        newCertificate = (uint8_t *)tmpValue;
+        newCertificateLength = decodedLen;
+        anyChanged = true;
       } else {
-        IFDEBUG IotsaSerial.println("req httpsCertificate not PEM");
-        b64Value = "";
-      }
-      int b64len = strlen(b64Value);
-      IFDEBUG IotsaSerial.println("req has httpsCertificate");
-      char *tmpValue = (char *)malloc(base64_decode_expected_len(b64len));
-      if (tmpValue) {
-        int decodedLen = base64_decode_chars(b64Value, b64len, tmpValue);
-        if (decodedLen > 0) {
-          newCertificate = (uint8_t *)tmpValue;
-          newCertificateLength = decodedLen;
-          anyChanged = true;
-        } else {
-          IFDEBUG IotsaSerial.println("could not decode httpsCertificate");
-        }
-      } else {
-        IFDEBUG IotsaSerial.println("httpsCertificate malloc failed");
+        IFDEBUG IotsaSerial.println("could not decode httpsCertificate");
       }
     } else {
-      wrongMode = true;
+      IFDEBUG IotsaSerial.println("httpsCertificate malloc failed");
     }
   }
 #endif // IOTSA_WITH_HTTPS
-  if (wrongMode) {
-    IFDEBUG IotsaSerial.println("Not in config mode");
-  }
   if (anyChanged) configSave();
   if (reqObj["reboot"]) {
     iotsaConfig.requestReboot(2000);

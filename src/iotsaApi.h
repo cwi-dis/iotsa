@@ -10,6 +10,13 @@ public:
 #ifdef IOTSA_WITH_API
   virtual void getHandler(JsonObject& reply) = 0;
   virtual bool putHandler(const JsonVariant& request) = 0;
+  template <typename JT, typename CT>  bool getFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
+    if (reqObj[name].is<JT>()) {
+      var = reqObj[name].as<CT>();
+      return true;
+    }
+    return false;
+  }
 #endif
 };
 
@@ -20,6 +27,13 @@ public:
   virtual bool getHandler(const char *path, JsonObject& reply) = 0;
   virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) = 0;
   virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) = 0;
+  template <typename JT, typename CT>  bool getFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
+    if (reqObj[name].is<JT>()) {
+      var = reqObj[name].as<CT>();
+      return true;
+    }
+    return false;
+  }
 };
 
 class IotsaApiServiceProvider {
@@ -90,6 +104,13 @@ public:
   virtual bool getHandler(const char *path, JsonObject& reply) override { return false; }
   virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
   virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
+  template <typename JT, typename CT>  bool getFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
+    if (reqObj[name].is<JT>()) {
+      var = reqObj[name].as<CT>();
+      return true;
+    }
+    return false;
+  }
 protected:
   IotsaApiService api;
 };

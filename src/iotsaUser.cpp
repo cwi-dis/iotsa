@@ -121,12 +121,10 @@ bool IotsaUserMod::putHandler(const char *path, const JsonVariant& request, Json
     String old = reqObj["old_password"].as<String>();
     if (old != password) return false;
   }
-  if (reqObj.containsKey("username")) {
-    username = reqObj["username"].as<String>();
+  if (getFromRequest<const char *>(reqObj, "username", username)) {
     anyChanged = true;
   }
-  if (reqObj.containsKey("password")) {
-    password = reqObj["password"].as<String>();
+  if (getFromRequest<const char *>(reqObj, "password", password)) {
     anyChanged = true;
   }
   if (anyChanged) configSave();

@@ -122,8 +122,8 @@ bool IotsaRtcMod::getHandler(const char *path, JsonObject& reply) {
 bool IotsaRtcMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
-  if (reqObj.containsKey("isoTime")) {
-    const char * time = reqObj["isoTime"].as<const char *>();
+  const char *time = nullptr;
+  if (getFromRequest<const char *>(reqObj, "isoTime", time)) {
     anyChanged = setIsoTime(time);
   }
   return anyChanged;

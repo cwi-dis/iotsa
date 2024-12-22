@@ -193,21 +193,11 @@ bool IotsaButtonMod::putHandler(const char *path, const JsonVariant& request, Js
               any = true;
           }
           const JsonObject reqObj = r.as<JsonObject>();
-          if (reqObj.containsKey("onPress")) {
+          if (getFromRequest<bool>(reqObj, "onPress", buttons[i].sendOnPress)) {
             any = true;
-#if ARDUINOJSON_VERSION_MAJOR >= 6
-            buttons[i].sendOnPress = reqObj["onPress"];
-#else
-            buttons[i].sendOnPress = reqObj.get<bool>("onPress");
-#endif
           }
-          if (reqObj.containsKey("onRelease")) {
+          if (getFromRequest<bool>(reqObj, "onRelease", buttons[i].sendOnRelease)) {
             any = true;
-#if ARDUINOJSON_VERSION_MAJOR >= 6
-            buttons[i].sendOnRelease = reqObj["onRelease"];
-#else
-            buttons[i].sendOnRelease = reqObj.get<bool>("onRelease");
-#endif
           }          
       }
   } else {
@@ -219,21 +209,11 @@ bool IotsaButtonMod::putHandler(const char *path, const JsonVariant& request, Js
         any = true;
       }
       const JsonObject reqObj = request.as<JsonObject>();
-      if (reqObj.containsKey("onPress")) {
+      if (getFromRequest<bool>(reqObj, "onPress", buttons[idx].sendOnPress)) {
         any = true;
-#if ARDUINOJSON_VERSION_MAJOR >= 6
-        buttons[idx].sendOnPress = reqObj["onPress"];
-#else
-        buttons[idx].sendOnPress = reqObj.get<bool>("onPress");
-#endif
       }
-      if (reqObj.containsKey("onRelease")) {
+      if (getFromRequest<bool>(reqObj, "onRelease", buttons[idx].sendOnRelease)) {
         any = true;
-#if ARDUINOJSON_VERSION_MAJOR >= 6
-        buttons[idx].sendOnRelease = reqObj["onRelease"];
-#else
-        buttons[idx].sendOnRelease = reqObj.get<bool>("onRelease");
-#endif
       }          
   }
   if (any) configSave();

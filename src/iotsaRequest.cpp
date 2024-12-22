@@ -211,21 +211,17 @@ bool IotsaRequest::putHandler(const JsonVariant& request) {
   if (!request.is<JsonObject>()) return false;
   bool any = false;
   const JsonObject& reqObj = request.as<JsonObject>();
-  if (reqObj.containsKey("url")) {
+  if (getFromRequest<const char *>(reqObj, "url", url)) {
     any = true;
-    url = reqObj["url"].as<String>();
   }
-  if (reqObj.containsKey(SSL_INFO_NAME)) {
+  if (getFromRequest<const char *>(reqObj, SSL_INFO_NAME, sslInfo)) {
     any = true;
-    sslInfo = reqObj[SSL_INFO_NAME].as<String>();
   }
-  if (reqObj.containsKey("credentials")) {
+  if (getFromRequest<const char *>(reqObj, "credentials", credentials)) {
     any = true;
-    credentials = reqObj["credentials"].as<String>();
   }
-  if (reqObj.containsKey("token")) {
+  if (getFromRequest<const char *>(reqObj, "token", token)) {
     any = true;
-    token = reqObj["token"].as<String>();
   }
   return any;
 }

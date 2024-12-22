@@ -302,6 +302,13 @@ bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, Json
     return false;
   }
   JsonObject reqObj = request.as<JsonObject>();
+  if (getFromRequest<const char *>(reqObj, "ssid", ssid)) {
+    anyChanged = true;
+  }
+  if (getFromRequest<const char *>(reqObj, "ssidPassword", ssidPassword)) {
+    anyChanged = true;
+  }
+#if 0
   if (reqObj["ssid"].is<const char *>()) {
     ssid = reqObj["ssid"].as<String>();
     anyChanged = true;
@@ -310,6 +317,7 @@ bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, Json
     ssidPassword = reqObj["ssidPassword"].as<String>();
     anyChanged = true;
   }
+#endif
   if (anyChanged) configSave();
   if (reqObj["reboot"]) {
     iotsaConfig.requestReboot(2000);

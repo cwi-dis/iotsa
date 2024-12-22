@@ -131,12 +131,10 @@ bool IotsaCapabilityMod::putHandler(const char *path, const JsonVariant& request
   if (!iotsaConfig.inConfigurationMode()) return false;
   bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
-  if (reqObj.containsKey("trustedIssuer")) {
-    trustedIssuer = reqObj["trustedIssuer"].as<String>();
+  if (getFromRequest<const char *>(reqObj, "trustedIssuer", trustedIssuer)) {
     anyChanged = true;
   }
-  if (reqObj.containsKey("issuerKey")) {
-    issuerKey = reqObj["issuerKey"].as<String>();
+  if (getFromRequest<const char *>(reqObj, "issuerKey", issuerKey)) {
     anyChanged = true;
   }
   if (anyChanged) {
@@ -256,8 +254,8 @@ void IotsaCapabilityMod::loadCapabilitiesFromRequest() {
     return;
   }
 
-  if (root.containsKey("aud")) {
-    JsonVariant audience = root["aud"];
+  if (root["aud"].is<const char *>()) {
+    String audience = root["aud"].as<String>();
     String myFullName = iotsaConfig.hostName + ".local";
 #ifdef IOTSA_WITH_HTTPS
     String myUrl = "https://" + myFullName;
@@ -268,7 +266,7 @@ void IotsaCapabilityMod::loadCapabilitiesFromRequest() {
       IFDEBUGX IotsaSerial.print("Audience did not match, wtd=");
       IFDEBUGX IotsaSerial.print(myFullName);
       IFDEBUGX IotsaSerial.print(", got=");
-      IFDEBUGX IotsaSerial.println(audience.as<String>());
+      IFDEBUGX IotsaSerial.println(audience);
       return;
     }
   }
