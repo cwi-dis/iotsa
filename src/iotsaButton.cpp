@@ -151,17 +151,9 @@ void IotsaButtonMod::loop() {
 #ifdef IOTSA_WITH_API
 bool IotsaButtonMod::getHandler(const char *path, JsonObject& reply) {
   if (strcmp(path, "/api/buttons") == 0) {
-#if ARDUINOJSON_VERSION_MAJOR >= 6
-    JsonArray rv = reply.createNestedArray("buttons");
-#else
-    JsonArray& rv = reply.createNestedArray("buttons");
-#endif
+    JsonArray rv = reply["buttons"].to<JsonArray>();
     for (Button *b=buttons; b<buttons+nButton; b++) {
-#if ARDUINOJSON_VERSION_MAJOR >= 6
-        JsonObject bRv = rv.createNestedObject();
-#else
-        JsonObject& bRv = rv.createNestedObject();
-#endif
+        JsonObject bRv = rv.add<JsonObject>();
         b->req.getHandler(bRv);
         bRv["state"] = b->buttonState;
         bRv["onPress"] = b->sendOnPress;

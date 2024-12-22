@@ -161,9 +161,9 @@ String IotsaMultiUserMod::info() {
 bool IotsaMultiUserMod::getHandler(const char *path, JsonObject& reply) {
   if (strcmp(path, "/api/users") == 0) {
     reply["multi"] = true;
-    JsonArray usersList = reply.createNestedArray("users");
+    JsonArray usersList = reply["users"].to<JsonArray>();
     for (auto u: users) {
-      JsonObject user = usersList.createNestedObject();
+      JsonObject user = usersList.add<JsonObject>();
       u.getHandler(user);
     }
     return true;

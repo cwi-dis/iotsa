@@ -382,7 +382,7 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
 #endif
   reply["bootCause"] = iotsaConfig.getBootReason();
   reply["uptime"] = millis() / 1000;
-  JsonArray modules = reply.createNestedArray("modules");
+  JsonArray modules = reply["modules"].to<JsonArray>();
   modules.add("version");
   for (IotsaBaseMod *m=app.firstEarlyModule; m; m=m->nextModule) {
     if (m->name != "")
@@ -392,7 +392,7 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
     if (m->name != "")
       modules.add(m->name);
   }
-  JsonArray features = reply.createNestedArray("features");
+  JsonArray features = reply["features"].to<JsonArray>();
 #ifdef IOTSA_WITH_HTTP
   features.add("http");
 #endif
