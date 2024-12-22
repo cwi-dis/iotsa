@@ -191,6 +191,11 @@ class Main(object):
             help="Serial port to use for DFU commands (default: automatically select)",
         )
         parser.add_argument(
+            "--pausefordebug",
+            action="store_true", 
+            help="Pause at begin and end of run (to allow attaching debugger or profiler)"
+        )
+        parser.add_argument(
             "--version",
             action="store_true",
             help="Print version and exit"
@@ -198,6 +203,14 @@ class Main(object):
         parser.add_argument("command", nargs="*", help="Command to run")
         self.cmd_help = parser.print_help
         self.args = parser.parse_args()
+        if self.args.pausefordebug:
+            answer=None
+            while answer != 'Y':
+                print(f"{sys.argv[0]}: starting, pid={os.getpid()}. Press Y to continue -", flush=True)
+                answer = sys.stdin.readline()
+                answer = answer.strip()
+            print(f"{sys.argv[0]}: started.")
+
         if self.args.version:
             print(__version__)
             sys.exit(0)
