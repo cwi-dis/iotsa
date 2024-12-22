@@ -95,6 +95,15 @@ cd extras/python
 pip3 install .
 ```
 
+Alternatively, for development, do
+
+```
+python3 -m venv .venv
+. .venv/bin/activate
+cd extras/python
+pip install -e .
+```
+
 Then you can get a list of the available commands with `iotsa help` and a list of the available options with `iotsa --help`.
 
 
