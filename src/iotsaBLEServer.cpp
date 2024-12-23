@@ -44,7 +44,7 @@ public:
     IFBLEDEBUG IotsaSerial.printf("BLE char onNotify %s\n", pCharacteristic->getUUID().toString().c_str());
     iotsaConfig.postponeSleep(0);
   }
-	void onStatus(BLECharacteristic* pCharacteristic, Status s, uint32_t code) {
+	void onStatus(BLECharacteristic* pCharacteristic, uint32_t code) {
     iotsaConfig.postponeSleep(0);
     IFBLEDEBUG IotsaSerial.printf("BLE char onStatus\n");
   }
@@ -118,8 +118,6 @@ void IotsaBLEServerMod::createServer() {
   BLEDevice::init(iotsaConfig.hostName.c_str());
   if (tx_power >= 0) {
     BLEDevice::setPower((esp_power_level_t)tx_power);
-    BLEDevice::setPower((esp_power_level_t)tx_power, esp_ble_power_type_t::ESP_BLE_PWR_TYPE_ADV);
-    BLEDevice::setPower((esp_power_level_t)tx_power, esp_ble_power_type_t::ESP_BLE_PWR_TYPE_SCAN);
   }
 s_server = BLEDevice::createServer();
   s_server->setCallbacks(new IotsaBLEServerCallbacks());
@@ -236,8 +234,6 @@ void IotsaBLEServerMod::configLoad() {
   cf.get("tx_power", tx_power, tx_power);
   if (tx_power >= 0) {
     BLEDevice::setPower((esp_power_level_t)tx_power);
-    BLEDevice::setPower((esp_power_level_t)tx_power, esp_ble_power_type_t::ESP_BLE_PWR_TYPE_ADV);
-    BLEDevice::setPower((esp_power_level_t)tx_power, esp_ble_power_type_t::ESP_BLE_PWR_TYPE_SCAN);
   }
 }
 
@@ -247,15 +243,13 @@ void IotsaBLEServerMod::configSave() {
   cf.put("adv_min", adv_min);
   cf.put("adv_max", adv_max);
   cf.put("tx_power", tx_power);
-  if (BLEDevice::getInitialized()) {
+  if (BLEDevice::isInitialized()) {
     BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
     pAdvertising->stop();
     if (adv_min >= 0) pAdvertising->setMinInterval(adv_min);
     if (adv_max >= 0) pAdvertising->setMaxInterval(adv_max);
     if (tx_power >= 0) {
       BLEDevice::setPower((esp_power_level_t)tx_power);
-      BLEDevice::setPower((esp_power_level_t)tx_power, esp_ble_power_type_t::ESP_BLE_PWR_TYPE_ADV);
-      BLEDevice::setPower((esp_power_level_t)tx_power, esp_ble_power_type_t::ESP_BLE_PWR_TYPE_SCAN);
     }
     pAdvertising->start();
   }
