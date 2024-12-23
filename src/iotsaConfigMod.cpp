@@ -483,7 +483,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   // Allow setting of https key as PEM. Note that using POST with file upload will
   // work more often due to memory constraints and the size of keys and certificates.
   const char *b64Value = nullptr;
-  if (getFromRequest<const char *>(reqObj, "httpsKey", b64Value) && b64Value)) {
+  if (getFromRequest<const char *>(reqObj, "httpsKey", b64Value) && b64Value) {
     static const char *head = "-----BEGIN RSA PRIVATE KEY-----";
     static const char *tail = "-----END RSA PRIVATE KEY-----";
     char *headPos = strstr(b64Value, head);
@@ -514,7 +514,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   // Allow setting of https certificate as PEM. Note that using POST with file upload will
   // work more often due to memory constraints and the size of keys and certificates.
   b64Value = nullptr;
-  if (getFromRequest<const char *>(reqObj, "httpsCertificate", b64Value) && b64Value)) {
+  if (getFromRequest<const char *>(reqObj, "httpsCertificate", b64Value) && b64Value) {
     const char *b64Value = reqObj["httpsCertificate"];
     static const char *head = "-----BEGIN CERTIFICATE-----";
     static const char *tail = "-----END CERTIFICATE-----";
