@@ -48,7 +48,7 @@ jobs:
       uses: actions/checkout@v2
       
     - name: Cache pip
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -56,13 +56,13 @@ jobs:
           ${{ runner.os }}-pip-
    
     - name: Cache Arduino CLI
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.arduino15
         key: ${{ runner.os }}-arduino-${{ hashFiles('*_index.json') }}
    
     - name: Cache Arduino libraries
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/Arduino/libraries
         key: ${{ runner.os }}-arduinolibs-${{ hashFiles('**/library.properties') }}
