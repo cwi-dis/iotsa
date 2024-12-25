@@ -249,25 +249,39 @@ void ValueInput::bindVar(float& _var, float _min, float _max, float _stepSize) {
 }
 
 
-void ValueInput::_changeValue(int steps) {
+bool ValueInput::_changeValue(int steps) {
+  bool reachedLimit = false;
   value += steps;
   IFDEBUG IotsaSerial.printf("ValueInput callback increment %d value %d", steps, value);
   if (intVar) {
     *intVar += steps*intStep;
-    if (*intVar < intMin) *intVar = intMin;
-    if (*intVar > intMax) *intVar = intMax;
+    if (*intVar < intMin) {
+      *intVar = intMin;
+      reachedLimit = true;
+    }
+    if (*intVar > intMax) {
+      *intVar = intMax;
+      reachedLimit = true;
+    }
     IFDEBUG IotsaSerial.printf(" intVar %d", *intVar);
   }
   if (floatVar) {
     *floatVar += steps*floatStep;
-    if (*floatVar < floatMin) *floatVar = floatMin;
-    if (*floatVar > floatMax) *floatVar = floatMax;
+    if (*floatVar < floatMin) {
+      *floatVar = floatMin; 
+      reachedLimit = true;
+    }
+    if (*floatVar > floatMax) {
+      *floatVar = floatMax;
+      reachedLimit = true;
+    }
     IFDEBUG IotsaSerial.printf(" floatVar %f", *floatVar);
   }
   IFDEBUG IotsaSerial.println();
   if (activationCallback) {
     activationCallback();
   }
+  return reachedLimit;
 }
 
 RotaryEncoder::RotaryEncoder(int _pinA, int _pinB)
@@ -358,8 +372,8 @@ UpDownButtons::UpDownButtons(Button& _up, Button& _down, bool _useState)
   useState(_useState),
   stateVar(NULL)
 {
-  up.setCallback(std::bind(&UpDownButtons::_upPressed, this));
-  down.setCallback(std::bind(&UpDownButtons::_downPressed, this));
+  up.setCallback(std::bind(&UpDownButtons::_upPressedCallback, this));
+  down.setCallback(std::bind(&UpDownButtons::_downPressedCallback, this));
   up.setRepeat(500, 100);
   down.setRepeat(500, 100);
 }
@@ -382,7 +396,7 @@ void UpDownButtons::loop() {
   down.loop();
 }
 
-bool UpDownButtons::_upPressed() {
+bool UpDownButtons::_upPressedCallback() {
   if (!up.pressed) return true;
   if (useState) {
     // The buttons double as on/off buttons. A short press means "on"
@@ -398,7 +412,7 @@ bool UpDownButtons::_upPressed() {
   return true;
 }
 
-bool UpDownButtons::_downPressed() {
+bool UpDownButtons::_downPressedCallback() {
   if (useState) {
     // The buttons double as on/off buttons. A short press means "off"
     // only longer press (repeats) means "decrease". We determine
@@ -415,5 +429,50 @@ bool UpDownButtons::_downPressed() {
   }
   if (!down.pressed) return true;
   _changeValue(-1);
+  return true;
+}
+
+
+CyclingButton::CyclingButton(Button& _button)
+: ValueInput(),
+  state(false),
+  button(_button),
+  stateVar(NULL)
+{
+  button.setCallback(std::bind(&CyclingButton::_pressedCallback, this));
+  button.setRepeat(500, 100);
+}
+
+void CyclingButton::bindStateVar(bool& _var) {
+  stateVar = &_var;
+}
+
+void CyclingButton::setStateCallback(ActivationCallbackType callback) {
+  stateCallback = callback;
+}
+
+void CyclingButton::setup() {
+  button.setup();
+}
+
+void CyclingButton::loop() {
+  button.loop();
+}
+
+bool CyclingButton::_pressedCallback() {
+  if (button.pressed) {
+    // The button was pressed. We ignore the first press.
+    if (button.repeatCount == 0) return true;
+    if (_changeValue(direction)) {
+      direction = -direction;
+    }
+  } else {
+    // The button was released. If this was a short press we toggle on/off.
+    if (button.repeatCount == 0) {
+      state = !state;
+      if (stateVar) *stateVar = state;
+      if (stateCallback) stateCallback();
+    }
+  }
   return true;
 }

@@ -49,8 +49,8 @@ protected:
 class Button : public Input {
 public:
   Button(int _pin, bool _actOnPress, bool _actOnRelease, bool _wake=false);
-  void setup();
-  void loop();
+  void setup() override;
+  void loop() override;
   void setRepeat(uint32_t _firstRepeat, uint32_t _minRepeat);
   void bindVar(bool& _var, bool _toggle);
   bool pressed;
@@ -74,7 +74,7 @@ protected:
 class Touchpad : public Button {
 public:
   Touchpad(int _pin, bool _actOnPress, bool _actOnRelease, bool _wake=false);
-  void setup();
+  void setup() override;
   // void loop() is used from Button
   bool pressed;
   uint32_t duration;
@@ -82,7 +82,7 @@ public:
   uint16_t dbg_lastValue;
 #endif
 protected:
-  bool _getState();
+  virtual bool _getState() override;
 #ifdef IOTSA_DEBUG_INPUT
 public:
 #endif
@@ -97,7 +97,7 @@ public:
   void bindVar(float& _var, float _min, float _max, float _stepSize);
   int value;
 protected:
-  void _changeValue(int steps);
+  bool _changeValue(int steps);
   int *intVar, intMin, intMax, intStep;
   float *floatVar, floatMin, floatMax, floatStep;
 };
@@ -107,8 +107,8 @@ class ESP32Encoder;
 class RotaryEncoder : public ValueInput {
 public:
   RotaryEncoder(int _pinA, int _pinB);
-  void setup();
-  void loop();
+  void setup() override;
+  void loop() override;
   void setAcceleration(uint32_t _accelMillis);
   uint32_t duration;
 protected:
@@ -127,18 +127,34 @@ protected:
 class UpDownButtons : public ValueInput {
 public:
   UpDownButtons(Button& _up, Button& _down, bool _useState=false);
-  void setup();
-  void loop();
+  void setup() override;
+  void loop() override;
   void bindStateVar(bool& _var);
   void setStateCallback(ActivationCallbackType callback);
   bool state;
 protected:
   Button& up;
   Button& down;
-  bool _upPressed();
-  bool _downPressed();
+  bool _upPressedCallback();
+  bool _downPressedCallback();
   bool useState;
   bool *stateVar;
+  ActivationCallbackType stateCallback;
+};
+
+class CyclingButton : public ValueInput {
+public:
+  CyclingButton(Button& _button);
+  void setup() override;
+  void loop() override;
+  void bindStateVar(bool& _var);
+  void setStateCallback(ActivationCallbackType callback);
+  bool state;
+protected:
+  Button& button;
+  bool _pressedCallback();
+  bool *stateVar;
+  int direction = 1;
   ActivationCallbackType stateCallback;
 };
 
