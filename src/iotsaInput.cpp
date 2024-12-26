@@ -460,16 +460,26 @@ void CyclingButton::loop() {
 }
 
 bool CyclingButton::_pressedCallback() {
+  IotsaSerial.printf("CyclingButton callback for pressed %d repeat %d, state=%d\n", button.pressed, button.repeatCount, state);
   if (button.pressed) {
-    // The button was pressed. We ignore the first press.
+    // We ignore the first press. We take action on repeat (turn on and increase level)
+    // or release (toggle on/off).
     if (button.repeatCount == 0) return true;
+    // The button was pressed. We turn on the light if it was off.
+    if (!state) {
+      state = true;
+      if (stateVar) *stateVar = state;
+      if (stateCallback) stateCallback();
+    }
     if (_changeValue(direction)) {
+      IotsaSerial.printf("CyclingButton reached limit, now dir=%d", direction);
       direction = -direction;
     }
   } else {
     // The button was released. If this was a short press we toggle on/off.
     if (button.repeatCount == 0) {
       state = !state;
+      IotsaSerial.printf("CyclingButton state=%d\n", state);
       if (stateVar) *stateVar = state;
       if (stateCallback) stateCallback();
     }
