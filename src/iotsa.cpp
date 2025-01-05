@@ -39,6 +39,11 @@ IotsaApplication::setup() {
   // But this means the serial port cannot be used for other things.
   Serial.begin(IOTSA_SERIAL_SPEED);
   IFDEBUG IotsaSerial.println("Serial opened");
+#ifdef IOTSA_DELAY_ON_BOOT
+  IFDEBUG IotsaSerial.print("Delaying " #IOTSA_DELAY_ON_BOOT " seconds on boot...");
+  delay(IOTSA_DELAY_ON_BOOT*1000);
+  IFDEBUG IotsaSerial.print("Delayed " #IOTSA_DELAY_ON_BOOT " seconds on boot...");
+#endif
   IFDEBUG IotsaSerial.print("Opening " IOTSA_FS_NAME " (may take long)...");
   bool ok = IOTSA_FS.begin();
   IFDEBUG IotsaSerial.println(" done.");
