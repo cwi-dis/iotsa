@@ -293,7 +293,7 @@ void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask, uint8_
   newChar->setCallbacks(new IotsaBLECharacteristicCallbacks(charUUID, apiProvider));
 #ifdef IOTSA_WITH_NIMBLE
   BLEDescriptor *d2901 = newChar->createDescriptor("2901");
-  BLE2904 *d2904 = (BLE2904 *)newChar->createDescriptor("2904");
+  BLE2904 *d2904 = newChar->create2904();
 #else
   BLEDescriptor *d2901 = new BLEDescriptor("2901");
   BLE2904 *d2904 = new BLE2904();
