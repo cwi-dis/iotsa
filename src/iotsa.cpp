@@ -40,9 +40,9 @@ IotsaApplication::setup() {
   Serial.begin(IOTSA_SERIAL_SPEED);
   IFDEBUG IotsaSerial.println("Serial opened");
 #ifdef IOTSA_DELAY_ON_BOOT
-  IFDEBUG IotsaSerial.print("Delaying " #IOTSA_DELAY_ON_BOOT " seconds on boot...");
+  IFDEBUG IotsaSerial.printf("Delaying %d seconds on boot...\n", IOTSA_DELAY_ON_BOOT);
   delay(IOTSA_DELAY_ON_BOOT*1000);
-  IFDEBUG IotsaSerial.print("Delayed " #IOTSA_DELAY_ON_BOOT " seconds on boot...");
+  IFDEBUG IotsaSerial.printf("Delayed %d seconds on boot...\n", IOTSA_DELAY_ON_BOOT);
 #endif
   IFDEBUG IotsaSerial.print("Opening " IOTSA_FS_NAME " (may take long)...");
   bool ok = IOTSA_FS.begin();
