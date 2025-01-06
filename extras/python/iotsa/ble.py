@@ -116,6 +116,10 @@ class BLE:
                         print(
                             f"    {uuid_to_name(char.uuid)} cannot read, uuid={char.uuid} description={char.description} error={e}"
                         )
+                    except AssertionError as e:
+                        print(
+                            f"    {uuid_to_name(char.uuid)} cannot read, uuid={char.uuid} description={char.description} error={e}"
+                        )
                     sys.stdout.flush()
 
     def set(self, name: str, value: Any) -> None:
