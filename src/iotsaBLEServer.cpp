@@ -10,16 +10,15 @@
 #define IFBLEDEBUG if(0)
 #endif
 
-class IotsaBLEServerCallbacks : public BLEServerCallbacks {
-	void onConnect(BLEServer* pServer) {
+class IotsaBLEServerCallbacks : public NimBLEServerCallbacks {
+	void onConnect(BLEServer* pServer, NimBLEConnInfo& connInfo) override {
     IFBLEDEBUG IotsaSerial.printf("BLE connect\n");
     iotsaConfig.pauseSleep();
   }
-	void onDisconnect(BLEServer* pServer) {
-    IFBLEDEBUG IotsaSerial.printf("BLE Disconnect\n");
+	void onDisconnect(BLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override {
+    IFBLEDEBUG IotsaSerial.printf("BLE Disconnect reason %d\n", reason);
     iotsaConfig.resumeSleep();
     pServer->startAdvertising();
-
   }
 };
 
