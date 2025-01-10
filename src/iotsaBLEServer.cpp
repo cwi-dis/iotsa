@@ -23,26 +23,22 @@ class IotsaBLEServerCallbacks : public BLEServerCallbacks {
   }
 };
 
-class IotsaBLECharacteristicCallbacks : public BLECharacteristicCallbacks {
+class IotsaBLECharacteristicCallbacks : public NimBLECharacteristicCallbacks {
 public:
   IotsaBLECharacteristicCallbacks(UUIDstring _charUUID, IotsaBLEApiProvider *_api)
   : charUUID(_charUUID),
     api(_api)
   {}
 
-	void onRead(BLECharacteristic* pCharacteristic) {
+	void onRead(BLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override {
     IFBLEDEBUG IotsaSerial.printf("BLE char onRead %s\n", pCharacteristic->getUUID().toString().c_str());
     iotsaConfig.postponeSleep(0);
     api->bleGetHandler(charUUID);
   }
-	void onWrite(BLECharacteristic* pCharacteristic) {
+	void onWrite(BLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override {
     IFBLEDEBUG IotsaSerial.printf("BLE char onWrite %s\n", pCharacteristic->getUUID().toString().c_str());
     iotsaConfig.postponeSleep(0);
     api->blePutHandler(charUUID);
-  }
-	void onNotify(BLECharacteristic* pCharacteristic) {
-    IFBLEDEBUG IotsaSerial.printf("BLE char onNotify %s\n", pCharacteristic->getUUID().toString().c_str());
-    iotsaConfig.postponeSleep(0);
   }
 	void onStatus(BLECharacteristic* pCharacteristic, uint32_t code) {
     iotsaConfig.postponeSleep(0);
