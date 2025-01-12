@@ -173,7 +173,7 @@ bool IotsaButtonMod::getHandler(const char *path, JsonObject& reply) {
 }
 
 bool IotsaButtonMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
-  bool any = false;
+  bool anyChanged = false;
   if (strcmp(path, "/api/buttons") == 0) {
       if (!request.is<JsonArray>()) {
         return false;
@@ -182,14 +182,14 @@ bool IotsaButtonMod::putHandler(const char *path, const JsonVariant& request, Js
       for (int i=0; i<nButton; i++) {
           const JsonVariant r = all[i];
           if (buttons[i].req.putHandler(r)) {
-              any = true;
+              anyChanged = true;
           }
           const JsonObject reqObj = r.as<JsonObject>();
-          if (getFromRequest<bool>(reqObj, "onPress", buttons[i].sendOnPress)) {
-            any = true;
+          if (getFromRequest<int>(reqObj, "onPress", buttons[i].sendOnPress)) {
+            anyChanged = true;
           }
-          if (getFromRequest<bool>(reqObj, "onRelease", buttons[i].sendOnRelease)) {
-            any = true;
+          if (getFromRequest<int>(reqObj, "onRelease", buttons[i].sendOnRelease)) {
+            anyChanged = true;
           }          
       }
   } else {
@@ -198,18 +198,19 @@ bool IotsaButtonMod::putHandler(const char *path, const JsonVariant& request, Js
       int idx = num.toInt();
       Button *b = buttons + idx;
       if (b->req.putHandler(request)) {
-        any = true;
+        anyChanged = true;
       }
       const JsonObject reqObj = request.as<JsonObject>();
-      if (getFromRequest<bool>(reqObj, "onPress", buttons[idx].sendOnPress)) {
-        any = true;
+      if (getFromRequest<int>(reqObj, "onPress", buttons[idx].sendOnPress)) {
+        anyChanged = true;
       }
-      if (getFromRequest<bool>(reqObj, "onRelease", buttons[idx].sendOnRelease)) {
-        any = true;
+      if (getFromRequest<int>(reqObj, "onRelease", buttons[idx].sendOnRelease)) {
+        anyChanged = true;
       }          
   }
-  if (any) configSave();
-  return any;
+  // xxxjack cannot use checkUnhandled() because of the array of buttons
+  if (anyChanged) configSave();
+  return anyChanged;
 }
 #endif // IOTSA_WITH_API
 

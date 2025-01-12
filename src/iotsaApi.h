@@ -104,14 +104,24 @@ public:
   virtual bool getHandler(const char *path, JsonObject& reply) override { return false; }
   virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
   virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
+protected:
   template <typename JT, typename CT>  bool getFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
     if (reqObj[name].is<JT>()) {
       var = reqObj[name].as<CT>();
+      reqObj.remove(name);
       return true;
     }
+    // IFDEBUG IotsaSerial.printf("xxxjack IotsaApi parameter %s not found\n", name);
     return false;
   }
-protected:
+  bool checkUnhandled(const JsonObject& reqObj) {
+    bool rv = false;
+    for (JsonPair kv : reqObj) {
+      rv = true;
+      IFDEBUG IotsaSerial.printf("Unhandled IotsaApi parameter: %s\n", kv.key().c_str());
+    }
+    return rv;
+  }
   IotsaApiService api;
 };
 

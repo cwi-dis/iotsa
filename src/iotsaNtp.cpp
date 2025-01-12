@@ -182,6 +182,7 @@ bool IotsaNtpMod::putHandler(const char *path, const JsonVariant& request, JsonO
   }
 #endif
   if (anyChanged) configSave();
+  checkUnhandled(reqObj);
   return anyChanged;
 }
 #endif // IOTSA_WITH_API

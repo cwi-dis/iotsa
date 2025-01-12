@@ -43,6 +43,7 @@ bool IotsaNothingMod::putHandler(const char *path, const JsonVariant& request, J
     anyChanged = true;
   }
   if (anyChanged) configSave();
+  checkUnhandled(reqObj);
   return anyChanged;
 }
 #endif // IOTSA_WITH_API

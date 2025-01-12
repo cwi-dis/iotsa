@@ -194,16 +194,19 @@ bool IotsaBLEServerMod::getHandler(const char *path, JsonObject& reply) {
 
 bool IotsaBLEServerMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   JsonObject reqObj = request.as<JsonObject>();
+  bool anyChanged = false;
   bool newEnabled = isEnabled;
-  if (getFromRequest<bool>(reqObj, "isEnabled", newEnabled) && newEnabled != isEnabled) {
+  if (getFromRequest<int>(reqObj, "isEnabled", newEnabled) && newEnabled != isEnabled) {
+    anyChanged = true;
     isEnabled = request["isEnabled"];
     iotsaConfig.requestReboot(4000);
   }
-  adv_min = request["adv_min"]|adv_min;
-  adv_max = request["adv_max"]|adv_max;
-  tx_power = request["tx_power"]|tx_power;
-  configSave();
-  return true;
+  if (getFromRequest<int>(reqObj, "adv_min", adv_min)) anyChanged = true;
+  if (getFromRequest<int>(reqObj, "adv_max", adv_max)) anyChanged = true;
+  if (getFromRequest<int>(reqObj, "tx_power", tx_power)) anyChanged = true;
+  if (anyChanged) configSave();
+  checkUnhandled(reqObj);
+  return anyChanged;
 }
 #endif // IOTSA_WITH_API
 

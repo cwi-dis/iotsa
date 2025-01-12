@@ -423,7 +423,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   JsonObject reqObj = request.as<JsonObject>();
   // First look for arguments that are also valid in normal mode.
   bool wifiDisabled;
-  if (getFromRequest<bool>(reqObj, "wifiDisabled", wifiDisabled)) {
+  if (getFromRequest<int>(reqObj, "wifiDisabled", wifiDisabled)) {
     iotsa_wifi_mode newMode = wifiDisabled ? iotsa_wifi_mode::IOTSA_WIFI_DISABLED : iotsa_wifi_mode::IOTSA_WIFI_NORMAL;
     iotsaConfig.wifiMode = newMode;
     iotsaConfig.wantWifiModeSwitchAtMillis = millis()+1000;
@@ -431,7 +431,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   }
 #ifdef IOTSA_WITH_BLE
   bool bleDisabled;
-  if (getFromRequest<bool>(reqObj, "bleDisabled", bleDisabled)) {
+  if (getFromRequest<int>(reqObj, "bleDisabled", bleDisabled)) {
     iotsa_ble_mode newMode = bleDisabled ? iotsa_ble_mode::IOTSA_BLE_DISABLED : iotsa_ble_mode::IOTSA_BLE_ENABLED;
     iotsaConfig.bleMode = newMode;
     iotsaConfig.wantBleModeSwitchAtMillis = millis()+1000;
@@ -450,7 +450,9 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
     }
   }
   if (!iotsaConfig.inConfigurationOrFactoryMode()) {
-    IFDEBUG IotsaSerial.println("Not in config mode");
+    if (checkUnhandled(reqObj)) {
+      IotsaSerial.println("Unhandled IotsaApi parameters, not in config mode");
+    }
     if (reqObj["reboot"]) {
       iotsaConfig.requestReboot(2000);
       anyChanged = true;
@@ -461,11 +463,11 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
     anyChanged = true;
     reply["needsReboot"] = true;
   }
-  if (getFromRequest<bool>(reqObj, "wifiDisabledOnBoot", iotsaConfig.wifiDisabledOnBoot)) {
+  if (getFromRequest<int>(reqObj, "wifiDisabledOnBoot", iotsaConfig.wifiDisabledOnBoot)) {
     anyChanged = true;
   }
 #ifdef IOTSA_WITH_BLE
-  if (getFromRequest<bool>(reqObj, "bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot)) {
+  if (getFromRequest<int>(reqObj, "bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot)) {
     anyChanged = true;
   }
 #endif
@@ -548,6 +550,9 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   if (reqObj["reboot"]) {
     iotsaConfig.requestReboot(2000);
     anyChanged = true;
+  }
+  if (checkUnhandled(reqObj)) {
+    IotsaSerial.println("Unhandled IotsaApi parameters");
   }
   return anyChanged||radioModeChanged;
 }

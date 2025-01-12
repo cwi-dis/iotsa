@@ -126,6 +126,7 @@ bool IotsaRtcMod::putHandler(const char *path, const JsonVariant& request, JsonO
   if (getFromRequest<const char *>(reqObj, "isoTime", time)) {
     anyChanged = setIsoTime(time);
   }
+  checkUnhandled(reqObj);
   return anyChanged;
 }
 #endif // IOTSA_WITH_API
