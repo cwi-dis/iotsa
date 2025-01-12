@@ -2,10 +2,11 @@ unreleased
 
 - Use platform espressif32@6.9
 - Use platform espressif8266@4.0
-- Use arduino framework v2
-- Use esp32_idf_5_https_server and server_compat
+- Use arduino framework v2 (known as framework-arduinoespressif32 v3.2 under platformio, sigh)
+- Use esp32_idf_5_https_server and esp32_idf_5_https_server_compat
 - Https key size upped to 2048 bits
 - LittleFS is now the standard filesystem
+- ArduinoJson version upped to 7.2
 - Use arduino-cli for Arduino builds
 
 iotsa 2.7 - 03-Jun-2023

@@ -33,7 +33,8 @@
         },
         {
             "name" : "CoAP simple library",
-            "version" : "https://github.com/jackjansen/CoAP-simple-library"
+            "owner" : "hirotakaster",
+            "version" : "^1.3.28"
         },
         {
             "name" : "Ds1302",
