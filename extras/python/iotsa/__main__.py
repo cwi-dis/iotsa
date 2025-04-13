@@ -314,7 +314,6 @@ class Main(object):
         if self.dfu:
             return
         self.dfu = api.DFU(self.args.serial)
-        self.dfu.dfuWait()
 
     def loadBLE(self, loadTarget=True) -> None:
         """Load Bluetooth LE driver"""
@@ -557,6 +556,8 @@ class Main(object):
     def cmd_dfuMode(self) -> None:
         """Check whether there is a target connected in DFU mode (via USB or serial port)"""
         self.loadDFU()
+        assert self.dfu
+        self.dfu.dfuWait()
 
     def cmd_dfuClear(self) -> None:
         """Completely erase flash of target connected in DFU mode (via USB or serial port)"""
@@ -576,6 +577,14 @@ class Main(object):
         assert self.dfu
         self.dfu.dfuLoad(filename)
         self.dfu.dfuRun()
+
+    def cmd_dfuEsptool(self) -> None:
+        """Run esptool.py on connected target. All further arguments are passed to to esptool"""
+        args = self.cmdlist
+        self.cmdlist = []
+        self.loadDFU()
+        assert self.dfu
+        self.dfu.dfuTool(args)
 
     def cmd_bleTargets(self) -> None:
         """List iotsa devices accessible over BLE"""

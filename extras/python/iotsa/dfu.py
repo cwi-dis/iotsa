@@ -1,7 +1,7 @@
 import os
 import esptool
 import urllib.request
-from typing import Optional
+from typing import Optional, List
 
 from .consts import IotsaError, VERBOSE
 
@@ -15,16 +15,20 @@ class DFU:
 
     def __init__(self, port: Optional[str] = None):
         self.port = port
+        self.verbose = VERBOSE
 
     def _run(self, cmd: str, args: list[str] = [], nostub=False) -> None:
         """Run a single esptool command"""
-        command = ["--after", "no_reset"]
+        # command = ["--after", "no_reset"]
+        command = []
         if self.port:
             command += ["--port", self.port]
         if nostub:
             command += ["--no-stub"]
         command += [cmd]
         command += args
+        if self.verbose:
+            print(f"+ esptool {' '.join(command)}")
         try:
             esptool.main(command)
         except esptool.FatalError as e:
@@ -62,3 +66,6 @@ class DFU:
         if not os.path.exists(filename):
             filename, _ = urllib.request.urlretrieve(filename)
         self._run("write_flash", args=["0", filename])
+
+    def dfuTool(self, args : List[str]):
+        self._run(args[0], args[1:])
