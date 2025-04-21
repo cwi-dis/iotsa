@@ -3,10 +3,18 @@
 #include <time.h>
 #include <stdlib.h>
 
+#define WITH_LIBC_NTP
+
+#if defined(WITH_LIBC_NTP) && !defined(IOTSA_WITH_TIMEZONE)
+#error WITH_LIBC_NTP requires IOTSA_WITH_TIMEZONE
+#endif
+
+#ifndef WITH_LIBC_NTP
 #define NTP_INTERVAL  600 // How often to ask for an NTP reading
 #define NTP_MIN_INTERVAL 20 // How often to ask if we have no NTP reading yet
 
 const unsigned int NTP_PORT = 123;
+#endif
 
 unsigned long IotsaNtpMod::utcTime()
 {
@@ -141,6 +149,7 @@ String IotsaNtpMod::info() {
 #endif // IOTSA_WITH_WEB
 
 void IotsaNtpMod::setup() {
+#ifndef WITH_LIBC_NTP
   nextNtpRequest = millis() + 1000; // Try after 1 second
   int ok = udp.begin(NTP_PORT);
   if (ok) {
@@ -148,6 +157,7 @@ void IotsaNtpMod::setup() {
   } else {
     IotsaSerial.println("ntp: udp init failed");
   }
+#endif
   configLoad();
 }
 
@@ -221,6 +231,7 @@ void IotsaNtpMod::configSave() {
 }
 
 void IotsaNtpMod::loop() {
+#ifndef WITH_LIBC_NTP
   unsigned long now = millis();
   // Check for clock rollover
   if (now < lastMillis) {
@@ -310,13 +321,18 @@ void IotsaNtpMod::loop() {
     gotInitialSync = true;
     IFDEBUG { IotsaSerial.print("ntp: Now(utc)="); IotsaSerial.print(utcTime()); IotsaSerial.print(" now(local)="); IotsaSerial.println(localTime()); }
   }
+#endif
 }
 
 #ifdef IOTSA_WITH_TIMEZONE
 void IotsaNtpMod::parseTimezone(const String& newDesc) {
   tzDescription = newDesc;
+#ifdef ESP8266
+  configTime(newDesc.c_str(), ntpServer);
+#else
   setenv("TZ", newDesc.c_str(), 1);
   tzset();
+#endif
 }
 #else
 void IotsaNtpMod::_setupTimezone() {
