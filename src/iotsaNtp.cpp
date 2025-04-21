@@ -328,7 +328,7 @@ void IotsaNtpMod::loop() {
 void IotsaNtpMod::parseTimezone(const String& newDesc) {
   tzDescription = newDesc;
 #ifdef ESP8266
-  configTime(newDesc.c_str(), ntpServer);
+  configTime(newDesc.c_str(), ntpServer.c_str());
 #else
   setenv("TZ", newDesc.c_str(), 1);
   tzset();
