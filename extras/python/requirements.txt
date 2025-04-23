@@ -1,5 +1,5 @@
 requests
 esptool
 zeroconf
-git+https://github.com/rgerganov/CoAPthon3
-git+https://github.com/jackjansen/bleak@new-typed-attributes
+CoAPThon3 @ git+https://github.com/rgerganov/CoAPthon3
+bleaktyped @ git+https://github.com/jackjansen/bleaktyped

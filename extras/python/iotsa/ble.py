@@ -2,8 +2,7 @@ import sys
 import asyncio
 import re
 from typing import Any, Optional
-import bleak
-import bleak.pythonic.client
+from bleaktyped import BLEDevice, BleakClient, BleakGATTServiceCollection, BleakError, BleakScanner, BleakTypedClient
 from .bleIotsaUUIDs import name_to_uuid, uuid_to_name
 
 IOTSA_BATTERY_SERVICE = "0000180f-0000-1000-8000-00805f9b34fb"
@@ -14,9 +13,9 @@ class BLE:
 
     discover_timeout = 11
     streamMTU = 500
-    _currentDevice : Optional[bleak.BLEDevice]
-    _currentConnection : Optional[bleak.BleakClient]
-    _serviceCollection : Optional[bleak.BleakGATTServiceCollection]
+    _currentDevice : Optional[BLEDevice]
+    _currentConnection : Optional[BleakClient]
+    _serviceCollection : Optional[BleakGATTServiceCollection]
     loop : asyncio.AbstractEventLoop
 
     def __init__(self):
@@ -43,12 +42,12 @@ class BLE:
     def findDevices(self) -> list[str]:
         try:
             self.loop.run_until_complete(self._asyncFindDevices())
-        except bleak.BleakError as e:
+        except BleakError as e:
             print(f"ble.findDevices: exception: {e}")
         return self._allDevices
 
     async def _asyncFindDevices(self):
-        candidates = await bleak.BleakScanner.discover(timeout=self.discover_timeout)
+        candidates = await BleakScanner.discover(timeout=self.discover_timeout)
         # Iotsa devices have a battery service, and a reboot charcteristic in that service.
         # So filter for those.
         iotsaCandidates = []
@@ -61,22 +60,22 @@ class BLE:
     def selectDevice(self, name_or_address: str) -> bool:
         try:
             self.loop.run_until_complete(self._asyncSelectDevice(name_or_address))
-        except bleak.BleakError as e:
+        except BleakError as e:
             print(f"ble.selectDevice({name_or_address}, ...): exception: {e}")
         return self._currentDevice != None
 
     async def _asyncSelectDevice(self, name_or_address: str):
         if re.fullmatch("[0-9a-fA-F:-]*", name_or_address):
-            dev = await bleak.BleakScanner.find_device_by_address(name_or_address)
+            dev = await BleakScanner.find_device_by_address(name_or_address)
         else:
-            dev = await bleak.BleakScanner.find_device_by_filter(
+            dev = await BleakScanner.find_device_by_filter(
                 lambda d, ad: bool(d.name) and d.name.lower() == name_or_address
             )
         if not dev:
             print(f"Device {name_or_address} not found")
             return
         self._currentDevice = dev
-        client = bleak.pythonic.client.BleakPythonicClient(
+        client = BleakTypedClient(
             self._currentDevice, 
             timeout=self.discover_timeout
         )
@@ -86,7 +85,7 @@ class BLE:
     def printStatus(self) -> None:
         try:
             self.loop.run_until_complete(self._asyncPrintStatus())
-        except bleak.BleakError as e:
+        except BleakError as e:
             print(f"ble.printsStatus: exception: {e}")
 
     async def _asyncPrintStatus(self):
@@ -112,7 +111,7 @@ class BLE:
                             )
                         else:
                             print(f"    {uuid_to_name(char.uuid)}: {value}")
-                    except bleak.BleakError as e:
+                    except BleakError as e:
                         print(
                             f"    {uuid_to_name(char.uuid)} cannot read, uuid={char.uuid} description={char.description} error={e}"
                         )
@@ -125,7 +124,7 @@ class BLE:
     def set(self, name: str, value: Any) -> None:
         try:
             self.loop.run_until_complete(self._asyncSet(name, value))
-        except bleak.BleakError as e:
+        except BleakError as e:
             print(f"ble.set({name}, ...): exception: {e}")
 
     async def _asyncSet(self, name: str, value: Any) -> None:
@@ -139,7 +138,7 @@ class BLE:
     def setStreamed(self, name: str, value: bytes) -> None:
         try:
             self.loop.run_until_complete(self._asyncSetStreamed(name, value))
-        except bleak.BleakError as e:
+        except BleakError as e:
             print(f"ble.setStreamed({name}, ...): exception: {e}")
 
     async def _asyncSetStreamed(self, name: str, value: bytes) -> None:
@@ -157,7 +156,7 @@ class BLE:
         self._get_rv: Any = None
         try:
            self.loop.run_until_complete(self._asyncGet(name))
-        except bleak.BleakError as e:
+        except BleakError as e:
             print(f"ble.get({name}): exception: {e}")
         return self._get_rv
 
@@ -169,7 +168,7 @@ class BLE:
             client = self._currentConnection
             try:
                 self._get_rv = await client.read_gatt_char_typed(uuid)
-            except bleak.BleakError as e:
+            except BleakError as e:
                 print(e)
                 self._get_rv = None
 
@@ -177,7 +176,7 @@ class BLE:
         self._get_rv: Any = None
         try:
            self.loop.run_until_complete(self._asyncGetStreamed(name))
-        except bleak.BleakError as e:
+        except BleakError as e:
             print(f"ble.getStreamed({name}): exception: {e}")
         return self._get_rv
 
@@ -191,7 +190,7 @@ class BLE:
             while True:
                 try:
                     currentBuffer = await client.read_gatt_char(uuid)
-                except bleak.BleakError as e:
+                except BleakError as e:
                     print(e)
                     self._get_rv = None
                     return

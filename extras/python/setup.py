@@ -71,7 +71,12 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=["requests", "esptool", "zeroconf", "CoAPThon3", "bleak"],
+    install_requires=[
+        "requests", 
+        "esptool", 
+        "zeroconf", 
+        "CoAPThon3 @ git+https://github.com/rgerganov/CoAPthon3", 
+        "bleaktyped @ git+https://github.com/jackjansen/bleaktyped"],
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:
