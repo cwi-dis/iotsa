@@ -8,6 +8,7 @@ unreleased
 - LittleFS is now the standard filesystem
 - ArduinoJson version upped to 7.2
 - Use arduino-cli for Arduino builds
+- Use bleaktyped python package in stead of bleak
 
 iotsa 2.7 - 03-Jun-2023
 

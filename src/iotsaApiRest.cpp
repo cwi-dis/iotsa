@@ -17,8 +17,8 @@ void IotsaApiServiceRest::_getHandlerWrapper(const char *path) {
     JsonObject reply = replyDocument.to<JsonObject>();
     bool ok = provider->getHandler(path, reply);
     if (replyDocument.overflowed()) {
-        server->send(413, "text/plain", "JSON document overflow, use jsonBufSize");
-        IFDEBUG IotsaSerial.println("-> ERR JSON document overflow");
+        server->send(413, "text/plain", "JSON document too big for memory");
+        IFDEBUG IotsaSerial.println("-> ERR JSON document too big for memory");
         return;
     }
     if (ok) {
@@ -42,15 +42,15 @@ void IotsaApiServiceRest::_putHandlerWrapper(const char *path) {
     JsonDocument requestDocument;
     deserializeJson(requestDocument, server->arg("plain"));
     if (requestDocument.overflowed()) {
-        server->send(413, "text/plain", "JSON request overflow, use jsonBufSize");
-        IFDEBUG IotsaSerial.println("-> ERR JSON request overflow");
+        server->send(413, "text/plain", "JSON request too big for memory");
+        IFDEBUG IotsaSerial.println("-> ERR JSON request too big for memory");
         return;
     }
     JsonObject request = requestDocument.as<JsonObject>();
     bool ok = provider->putHandler(path, request, reply);
     if (replyDocument.overflowed()) {
-        server->send(413, "text/plain", "JSON reply overflow, use jsonBufSize");
-        IFDEBUG IotsaSerial.println("-> ERR JSON reply overflow");
+        server->send(413, "text/plain", "JSON reply too big for memory");
+        IFDEBUG IotsaSerial.println("-> ERR JSON reply too big for memory");
         return;
     }
     if (ok) {
@@ -74,15 +74,15 @@ void IotsaApiServiceRest::_postHandlerWrapper(const char *path) {
     JsonDocument requestDocument;
     deserializeJson(requestDocument, server->arg("plain"));
     if (requestDocument.overflowed()) {
-        server->send(413, "text/plain", "JSON document overflow, use jsonBufSize");
-        IFDEBUG IotsaSerial.println("-> ERR JSON document overflow");
+        server->send(413, "text/plain", "JSON document too big for memory");
+        IFDEBUG IotsaSerial.println("-> ERR JSON document too big for memory");
         return;
     }
     JsonObject request = requestDocument.as<JsonObject>();
     bool ok = provider->postHandler(path, request, reply);
     if (replyDocument.overflowed()) {
-        server->send(413, "text/plain", "JSON document overflow, use jsonBufSize");
-        IFDEBUG IotsaSerial.println("-> ERR JSON document overflow");
+        server->send(413, "text/plain", "JSON document too big for memory");
+        IFDEBUG IotsaSerial.println("-> ERR JSON document too big for memory");
         return;
     }
     if (ok) {
