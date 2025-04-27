@@ -182,7 +182,7 @@ jobs:
         - cwi-dis/iotsaGPIO
         - cwi-dis/iotsaMotorServer
         - cwi-dis/iotsaNeoClock
-        - cwi-dis/iotsaOLED
+        - cwi-dis/iotsaOLEDServer
         - cwi-dis/iotsaRGBWSensor
         - cwi-dis/iotsaResponseTime
         - cwi-dis/iotsaSensor

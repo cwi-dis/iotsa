@@ -562,10 +562,10 @@ Allows web access (or REST access) to analog and digital input and output pins.
 
 Drives an OLED display, such as an i2c 4x40 character module. Support for a buzzer (to attract user attention) and buttons (programmable to trigger actions by accessing programmable URLs) is included.
 
-### [iotsaOLED](http://github.com/cwi-dis/iotsaOLED)
+### [iotsaOLEDServer](http://github.com/cwi-dis/iotsaOLEDServer)
 
-![build-platformio](https://github.com/cwi-dis/iotsaOLED/workflows/build-platformio/badge.svg)
-![build-arduino](https://github.com/cwi-dis/iotsaOLED/workflows/build-arduino/badge.svg)
+![build-platformio](https://github.com/cwi-dis/iotsaOLEDServer/workflows/build-platformio/badge.svg)
+![build-arduino](https://github.com/cwi-dis/iotsaOLEDServer/workflows/build-arduino/badge.svg)
 
 Drives an LCD display, such as an Adafruit SSD1306. Same external API as _iotsaDisplayServer_, but also allows Bluetooth LE control.
 
