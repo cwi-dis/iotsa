@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.7] - 2023-06-03
 
+### Added
+
+- Added support for esp32c3
+- Added support for HPS (HTTP Proxy Service) over BLE, which allows making API calls over Bluetooth.
+
 ### Changed
 
 - Added support for esp32c3
@@ -30,14 +35,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.6] - 2022-10-07
 
+### Added
+
+- Added API for per-module objects.
+- Added IotsaRtcMod to control ds1302 realtime clock module.
+
 ### Changed
 
 - Various changes to configuration mode: can now be enabled (by the iotsa program) with other
   interaction than reboot. AP enabled while in configuration mode.
 - iotsaBatteryMod sleep modes rationalized. Added various features for postponing sleep.
 - Python iotsa package, including iotsa (formerly iotsaConfig) as a script entry point.
-- Added API for per-module objects.
-- Added IotsaRtcMod to control ds1302 realtime clock module.
 - Prefer libc timezone handling over Timezone library.
 - Handle JSON buffer overflow, added jsonBufSize URL parameter.
 - Moved to Arduino framework 3.0.
@@ -55,19 +63,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.4] - 2020-04-18
 
-### Changed
+### Added
 
 - Added BLE support (esp32 only): iotsa devices can now be a Bluetooth LE server.
 - Added IotsaBatteryMod which enables power-saving for battery-operated devices.
+- Added IotsaInput module for handling buttons, touchpads (esp32 only) and rotary encoders.
+
+### Changed
+
 - Fixed building of iotsa without WiFi support.
 - Refactored various classes to enable wifi-less operation and different webserver implementations.
 - Allow use of esp32_https_server_compat as http or https server (esp32 only). Enabled by default.
 - WiFi can now switch between AP en STAtion mode on the fly, and is handled in loop() so
   boot is much faster.
-- Added IotsaInput module for handling buttons, touchpads (esp32 only) and rotary encoders.
 - Versioning scheme changed: even minor numbers are stable, odd numbers are work-in-progress.
 
-# [2.2] - 2019-12-03
+## [2.2] - 2019-12-03
 
 ### Changed
 
