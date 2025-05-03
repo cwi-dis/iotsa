@@ -1,4 +1,13 @@
-unreleased
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [unreleased]
+
+### Changed
 
 - Use platform espressif32@6.9
 - Use platform espressif8266@4.0
@@ -10,14 +19,18 @@ unreleased
 - Use arduino-cli for Arduino builds
 - Use bleaktyped python package in stead of bleak
 
-iotsa 2.7 - 03-Jun-2023
+## [2.7] - 2023-06-03
+
+### Changed
 
 - Added support for esp32c3
 - Added support for HPS (HTTP Proxy Service) over BLE, which allows making API calls over Bluetooth.
 - Power management and enabling and disabling of wifi and ble redesigned
 - Added more versioning information to /api/config
 
-iotsa 2.6 - 07-Oct-2022
+## [2.6] - 2022-10-07
+
+### Changed
 
 - Various changes to configuration mode: can now be enabled (by the iotsa program) with other
   interaction than reboot. AP enabled while in configuration mode.
@@ -34,11 +47,15 @@ iotsa 2.6 - 07-Oct-2022
 - Python 2 support dropped, and type annotations added to Python module.
 - LittleFS is now default filesystem (but SPIFFS can be selected with a define).
 
-iotsa 2.4.1 - 23-Apr-2020
+## [2.4.1] - 2020-04-23
+
+### Changed
 
 - Version number reported was wrong. Fixed.
 
-iotsa 2.4 - 18-Apr-2020
+## [2.4] - 2020-04-18
+
+### Changed
 
 - Added BLE support (esp32 only): iotsa devices can now be a Bluetooth LE server.
 - Added IotsaBatteryMod which enables power-saving for battery-operated devices.
@@ -50,7 +67,9 @@ iotsa 2.4 - 18-Apr-2020
 - Added IotsaInput module for handling buttons, touchpads (esp32 only) and rotary encoders.
 - Versioning scheme changed: even minor numbers are stable, odd numbers are work-in-progress.
 
-iotsa 2.2 - 03-Dec-2019
+# [2.2] - 2019-12-03
+
+### Changed
 
 - Updated to PlatformIO 4
 - newer version of esp8266 and esp32 Arduino frameworks
@@ -58,21 +77,27 @@ iotsa 2.2 - 03-Dec-2019
 - Rationalized PlatformIO/Arduino support
 - Backups and file listing implemented on esp32
 
-iotsa 2.1 - 02-Jun-2019
+## [2.1] - 2019-06-02
+
+### Changed
 
 - Got rid of default password, it provides no extra security.
 - Allow uploading of certificate/key as DER with POST requests.
 - Write-only REST attributes now always have a "has_" boolean in the read interface to signal that they exist and are set.
 - REST read interface was made more consistent.
 
-iotsa 2.0.1 - 01-Jul-2018
+## [2.0.1] - 2018-07-01
+
+### Changed
 
 - Various changes to make https (server side) more usable, such as
   interfacing to the Igor Certificate Authority, and forwarding http
   requests to https. Added some scripts to help create certificates.
 - Bug fixes for some security issues (which allowed config changes when not in config mode)
 
-iotsa 2.0 - 31-May-2018
+## [2.0] - 2018-05-31
+
+### Changed
 
 - The API has changed in an incompatible way: you no longer need to create the IotsaWebServer object
   yourself. The IotsaApplication constructor does this, if needed.
@@ -82,30 +107,37 @@ iotsa 2.0 - 31-May-2018
 - COAP is supported (as an alternative to, or in addition to, REST access).
 - HTTPS is supported, as an alternative to HTTP.
 
-iotsa 1.8.1 - 25-May-2018
+## [1.8.1] - 2018-05-18
+
+### Changed
 
 - Fixed issue with platformio not finding ESP8266HttpClient.h
 
-iotsa 1.8 - 15-Apr-2018
+## [1.8] - 2018-04-25
+
+### Changed
 
 - IotsaRequest and IotsaButton modules added.
 
-iotsa 1.7.2 - 8-Apr-2018
+## [1.7.2] - 2018-04-08
+
+### Changed
 
 - Enabled (experimental) esp32 support again.
 - Various fixes to iotsaControl and how it interfaces to iotsa boards
 
-iotsa 1.7.1 - 30-Mar-2018
+## [1.7.1] - 2018-03-30
+
+### Changed
 
 - Added iotsaControl module and program to allow programmatic configuration of iotsa devices.
 - Added more variables to /api/config for iotsaControl.
 - Fixed case error in Esp.h include which stopped travis builds from working.
-
-iotsa 1.6.1
-
 - Added iotsaVersion.h and return version info in config api.
 
-iotsa 1.6 - 26-Mar-2018
+## [1.6] - 2018-03-26
+
+### Changed
 
 - WiFi config and general config have been split into two modules (listening on /wifi and /config, and the
   respective /api endpoints). All general configuration parameters are now in a global iotsaConfig structure.
@@ -116,32 +148,48 @@ iotsa 1.6 - 26-Mar-2018
 - All web form argument handling has been converted to no longer using looping over the arguments.
 - Default timeouts for reprogramming and configuration mode and such set to 5 minutes.
 
-iotsa 1.5 - 8-Mar-2018
+## [1.5] - 2018-03-08
+
+### Changed
 
 - Added support for capability-based access to resources.
 
-iotsa 1.4 - 6-Mar-2018
+## [1.4] - 2018-03-06
+
+### Changed
 
 - Fixed serious issue in design of access control.
 
-iotsa 1.2.1 - 5-Mar-2018
+### Changed
+
+## [1.2.1] - 2018-03-05
+
+### Changed
 
 - Fixed typo in ArduinoJson dependency
 
-iotsa 1.2.0 - 28-Feb-2018
+## [1.2.0] - 2018-02-28
+
+### Changed
 
 - Added unified REST access through IotsaApiMod.
 - Adadpted IotsaAuthMode to allow fine-grained access control over API methods.
 
-iotsa 1.1.0 - 29-Jan-2018
+## [1.1.0] - 2018-01-29
+
+### Changed
 
 - Ported to platformIO (in addition to Arduino IDE)
 
-iotsa 1.0.1 - 17-Jul-2017
+## [1.0.1] - 2017-07-17
+
+### Changed
 
 - Added IotsaMod::htmlEncode() method to help escaping strings embedded in the HTML.
 - Documentation updates
 
-iotsa 1.0 - April 2017
+## [1.0] - 2017-04-01
+
+### Changed
 
 - Initial github release.
