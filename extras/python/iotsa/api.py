@@ -40,6 +40,8 @@ class IotsaEndpoint:
         self.didLoad = False
         self.inTransaction = False
 
+    def __repr__(self) -> str:
+        return f"IotsaEndpoint(endpoint={repr(self.endpoint)},device={repr(self.device)})"
     def load(self) -> None:
         """Load all data from the endpoint (unless cached data is available)"""
         if self.didLoad and self.cache:
@@ -263,7 +265,7 @@ class IotsaDevice:
     def __getattr__(self, name):
         return self.getApi(name)
 
-    def getAll(self) -> dict[str, IotsaEndpoint]:
+    def getAll(self) -> dict[str, Any]:
         """Get dictionary of all modules (except config, which is already in self.config)"""
         all = self.config.getAll()
         moduleNames = all.get("modules", [])
@@ -275,6 +277,7 @@ class IotsaDevice:
             modData = None
             try:
                 modData = api.getAll()
+                print(f"xxxjack mod={m}, api={api}, modData={modData}")
             except IotsaError as arg:
                 print(f"getAll: module {m}: {arg}", file=sys.stderr)
             modules[m] = modData
