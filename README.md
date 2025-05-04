@@ -696,7 +696,8 @@ Notes to self, mainly, on creating a new release:
  IOTSA_FULL_VERSION=vX.Y.Z python3 extras/python/mkversionh.py
   sh ./extras/ignore-version-changes.sh off
   ```
-- Update `CHAMGELOG.md` with version number and date.
+- Examine `extras/python/iotsa/version.py` and `src/iotsaVersion.h` to ensure the script has not created any syntax errors or such:-)
+- Update `CHANGELOG.md` with version number and date.
 - Commit, Push
 - If a real version: merge into `master` and tag on master (otherwise tag on `develop`)
 - This should build the release (to be seen that this works)

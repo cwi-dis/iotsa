@@ -66,7 +66,8 @@ def main():
         vf.define("IOTSA_VERSION", '"' + libraryData["version"] + '"')
 
     shortVersion = vf.get("IOTSA_VERSION", '"unknown""')
-
+    assert shortVersion
+    assert type(shortVersion) == str
     if 'IOTSA_FULL_VERSION' in os.environ:
         fullVersion = os.environ['IOTSA_FULL_VERSION']
         shortVersion = fullVersion
@@ -78,6 +79,7 @@ def main():
             stdout=subprocess.PIPE,
             universal_newlines=True,
         )
+        assert cmd.stdout
         fullVersion = cmd.stdout.read().strip()
         fullVersion = fullVersion.replace("-", "+", 1)
         if fullVersion and not '+' in fullVersion:
@@ -87,6 +89,8 @@ def main():
         fullVersion = shortVersion
     if not '"' in fullVersion:
         fullVersion = '"' + fullVersion + '"'
+    if not '"' in shortVersion:
+        shortVersion = '"' + shortVersion + '"'
     vf.define("IOTSA_FULL_VERSION", fullVersion)
     if vf.changed:
         vf.save()
