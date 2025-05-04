@@ -272,7 +272,12 @@ class IotsaDevice:
             if m == "config":
                 continue
             api = self.getApi(m)
-            modules[m] = api.getAll()
+            modData = None
+            try:
+                modData = api.getAll()
+            except IotsaError as arg:
+                print(f"getAll: module {m}: {arg}", file=sys.stderr)
+            modules[m] = modData
         all["modules"] = modules
         return all
 
