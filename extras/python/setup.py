@@ -75,6 +75,7 @@ setup(
         "requests", 
         "esptool", 
         "zeroconf", 
+        "debugpy",
         "CoAPThon3 @ git+https://github.com/rgerganov/CoAPthon3", 
         "bleaktyped @ git+https://github.com/jackjansen/bleaktyped"],
     # List additional groups of dependencies here (e.g. development

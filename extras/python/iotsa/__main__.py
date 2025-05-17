@@ -196,6 +196,11 @@ class Main(object):
             help="Pause at begin and end of run (to allow attaching debugger or profiler)"
         )
         parser.add_argument(
+            "--debugpy",
+            action="store_true",
+            help="Pause and wait for debugpy to attach"
+        )
+        parser.add_argument(
             "--version",
             action="store_true",
             help="Print version and exit"
@@ -203,6 +208,10 @@ class Main(object):
         parser.add_argument("command", nargs="*", help="Command to run")
         self.cmd_help = parser.print_help
         self.args = parser.parse_args()
+        if self.args.debugpy:
+            import debugpy
+            debugpy.listen(5678)
+            debugpy.wait_for_client()
         if self.args.pausefordebug:
             answer=None
             while answer != 'Y':
