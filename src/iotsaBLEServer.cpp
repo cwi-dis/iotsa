@@ -111,10 +111,11 @@ void IotsaBLEServerMod::createServer() {
   #endif
 
   BLEDevice::init(iotsaConfig.hostName.c_str());
+  BLEDevice::setMTU(BLE_ATT_MTU_MAX);
   if (tx_power >= 0) {
     BLEDevice::setPower((esp_power_level_t)tx_power);
   }
-s_server = BLEDevice::createServer();
+  s_server = BLEDevice::createServer();
   s_server->setCallbacks(new IotsaBLEServerCallbacks());
 }
 
@@ -270,7 +271,7 @@ void IotsaBleApiService::setup(const char* serviceUUID, IotsaBLEApiProvider *_ap
   next = IotsaBLEServerMod::s_services;
   IotsaBLEServerMod::s_services = this;
   apiProvider = _apiProvider;
-  IFBLEDEBUG IotsaSerial.printf("create ble service %s to 0x%x\n", serviceUUID, (uint32_t)apiProvider);
+  IFBLEDEBUG IotsaSerial.printf("IotsaBleApiService: create ble service %s to 0x%x\n", serviceUUID, (uint32_t)apiProvider);
   bleService = IotsaBLEServerMod::s_server->createService(serviceUUID);
 
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
@@ -279,12 +280,12 @@ void IotsaBleApiService::setup(const char* serviceUUID, IotsaBLEApiProvider *_ap
 }
 
 void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask, uint8_t d2904format, uint16_t d2904unit, const char *d2901descr) {
-  IFBLEDEBUG IotsaSerial.printf("add ble characteristic %s mask %d\n", charUUID, mask);
+  IFBLEDEBUG IotsaSerial.printf("IotsaBleApiService: add ble characteristic %s mask %d\n", charUUID, mask);
   nCharacteristic++;
   characteristicUUIDs = (UUIDstring *)realloc((void *)characteristicUUIDs, nCharacteristic*sizeof(UUIDstring));
   bleCharacteristics = (BLECharacteristic **)realloc((void *)bleCharacteristics, nCharacteristic*sizeof(BLECharacteristic *));
   if (characteristicUUIDs == NULL || bleCharacteristics == NULL) {
-    IotsaSerial.println("addCharacteristic out of memory");
+    IotsaSerial.println("IotsaBleApiService: addCharacteristic out of memory");
     return;
   }
   BLECharacteristic *newChar = bleService->createCharacteristic(charUUID, mask);
@@ -309,17 +310,29 @@ void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask, uint8_
 }
 
 void IotsaBleApiService::set(UUIDstring charUUID, const uint8_t *data, size_t size) {
+  IFBLEDEBUG IotsaSerial.printf("IotsaBleApiService: set(%s) len=%d\n", charUUID, size);
   for(int i=0; i<nCharacteristic; i++) {
     if (characteristicUUIDs[i] == charUUID) {
       BLECharacteristic* ch = bleCharacteristics[i];
+      ch->setValue(NULL, 0);
       ch->setValue((uint8_t *)data, size);
+      if (ch->getLength() != size) {
+        IotsaSerial.printf("IotsaBleApiService: set: size=%d expected %d\n", ch->getLength(), size);
+      }
       bool want_notify = ch->getProperties() & NIMBLE_PROPERTY::NOTIFY;
       bool want_indicate = ch->getProperties() & NIMBLE_PROPERTY::INDICATE;
-      if(want_notify || want_indicate) ch->notify((uint8_t *)data, size, want_notify);
+      if(want_notify) {
+        IFBLEDEBUG IotsaSerial.printf("IotsaBleApiService: send notify %s len=%d\n", charUUID, size);
+        ch->notify((uint8_t *)data, size);
+      }
+      if (want_indicate) {
+        IFBLEDEBUG IotsaSerial.printf("IotsaBleApiService: send indicate %s len=%d\n", charUUID, size);
+        ch->indicate((uint8_t *)data, size);
+      }
       return;
     }
   }
-  IotsaSerial.println("set: unknown characteristic");
+  IotsaSerial.printf("IotsaBleApiService: set: unknown characteristic %s\n", charUUID);
 }
 
 void IotsaBleApiService::set(UUIDstring charUUID, uint8_t value) {
@@ -362,7 +375,7 @@ std::string IotsaBleApiService::getAsString(UUIDstring charUUID) {
       return std::string(value.c_str(), value.size());
     }
   }
-  IotsaSerial.println("get: unknown characteristic");
+  IotsaSerial.println("IotsaBleApiService: get: unknown characteristic");
   return "";
 }
 

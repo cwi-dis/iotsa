@@ -95,29 +95,32 @@ protected:
   }
 
   bool bleGetHandler(UUIDstring charUUID) override {
+    IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: bleGetHandler(%s)\n", charUUID);
     if (charUUID == IotsaApiServiceHps::urlUUID) {
       std::string tmp = curUrl;
-      bleApi.set(IotsaApiServiceHps::urlUUID, tmp);
       IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: response url=%s\n", tmp.c_str());
+      bleApi.set(IotsaApiServiceHps::urlUUID, tmp);
       return true;
     }
     if (charUUID == IotsaApiServiceHps::bodyUUID) {
       std::string tmp = curBody;
-      bleApi.set(IotsaApiServiceHps::bodyUUID, tmp);
       IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: response body=%s\n", tmp.c_str());
+      bleApi.set(IotsaApiServiceHps::bodyUUID, tmp);
       return true;
     }
     if (charUUID == IotsaApiServiceHps::headersUUID) {
       std::string tmp = curHeaders;
-      bleApi.set(IotsaApiServiceHps::headersUUID, tmp);
       IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: headers=%s\n", tmp.c_str());
+      bleApi.set(IotsaApiServiceHps::headersUUID, tmp);
       return true;
     } 
     if (charUUID == IotsaApiServiceHps::controlPointUUID) {
+      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: control point\n");
       bleApi.set(IotsaApiServiceHps::controlPointUUID, (uint8_t)HPSControl::NONE);
       return true;
     }
     if (charUUID == IotsaApiServiceHps::statusUUID) {
+      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: status\n");
       uint8_t data[3];
       data[0] = curHttpStatus & 0xff;
       data[1] = (curHttpStatus >> 8) & 0xff;
@@ -126,6 +129,7 @@ protected:
       return true;
     }
     if (charUUID == IotsaApiServiceHps::securityUUID) {
+      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: security\n");
       bleApi.set(IotsaApiServiceHps::securityUUID, (uint8_t)0);
       return true;
     }
@@ -198,9 +202,8 @@ protected:
     }
     curBody = "";
     serializeJson(reply_doc, curBody);
-    IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: reply(%d): %s\n", curBody.size(), curBody.c_str());
     if (curBody.size() > HPSMaxBodySize) {
-      curDataStatus = HPSDataStatus::BodyTruncated;
+      curDataStatus = (HPSDataStatus)(HPSDataStatus::BodyTruncated | HPSDataStatus::BodyReceived);
       curBody = curBody.substr(0, HPSMaxBodySize);
     } else
     if (curBody.size() == 0) {
@@ -209,6 +212,7 @@ protected:
     {
       curDataStatus = HPSDataStatus::BodyReceived;
     }
+    IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: reply(%d, status=0x%x): %s\n", curBody.size(), (int)curDataStatus, curBody.c_str());
     // We don't do reply headers for now.
     // Set the statusUUID data. This will send a notification or indication if it was requested.
     uint8_t data[3];
