@@ -211,7 +211,9 @@ class Main(object):
         if self.args.debugpy:
             import debugpy
             debugpy.listen(5678)
+            print(f"{sys.argv[0]}: waiting for debugpy attach on 5678", flush=True)
             debugpy.wait_for_client()
+            print(f"{sys.argv[0]}: debugger attached")        
         if self.args.pausefordebug:
             answer=None
             while answer != 'Y':
