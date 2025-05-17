@@ -77,9 +77,9 @@ class IotsaHPSProtocolHandler(IotsaAbstractProtocolHandler):
         if VERBOSE:
             print(f"HPS HTTP Status={httpStatus}, dataStatus=0x{dataStatus:x}")
         if httpStatus != 200:
-            raise HpsError(f"HPS status code {httpStatus}")
+            raise HpsError(f"hps://{self.bleServer}{endpoint}: HPS status code {httpStatus}")
         if dataStatus != 0 and dataStatus != 0x04:
-            raise HpsError(f"HPS data status=0x{dataStatus:x}")
+            raise HpsError(f"hps://{self.bleServer}{endpoint}: HPS data status=0x{dataStatus:x}")
         rvBytes = self.client.get("hpsBody")
         if rvBytes == None or len(rvBytes) == 0:
             if VERBOSE:
