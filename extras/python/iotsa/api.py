@@ -102,7 +102,8 @@ class IotsaEndpoint:
     def getAll(self) -> dict[str, Any]:
         """Return dictionary with all values"""
         self.load()
-        return copy.deepcopy(self.status)
+        rv = copy.deepcopy(self.status)
+        return rv
 
     def set(self, name: str, value: Any) -> None:
         """Set a value immedeately (if not in a transaction) or remember the set operation for the commit
@@ -277,7 +278,6 @@ class IotsaDevice:
             modData = None
             try:
                 modData = api.getAll()
-                print(f"xxxjack mod={m}, api={api}, modData={modData}")
             except IotsaError as arg:
                 print(f"getAll: module {m}: {arg}", file=sys.stderr)
             modules[m] = modData
@@ -410,6 +410,7 @@ class IotsaDevice:
 
     def reboot(self):
         """Reboot the iotsa device"""
+        assert self.protocolHandler
         self.protocolHandler.put("config", json={"reboot": True})
 
     def _find_espota(self):
