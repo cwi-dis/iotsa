@@ -411,6 +411,11 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
 #ifdef IOTSA_WITH_BLE
   features.add("ble");
 #endif
+#ifdef IOTSA_WITH_LEGACY_SPIFFS
+  features.add("spiffs");
+#else
+  features.add("littlefs");
+#endif
   if (iotsaConfig.mdnsEnabled) features.add("mdns");
 
   return true;
