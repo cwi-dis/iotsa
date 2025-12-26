@@ -20,6 +20,22 @@ public:
 #endif
 };
 
+#ifdef IOTSA_WITH_API
+// Specialization, so that bools can be retrieved from int fields as well
+template<> inline bool IotsaApiModObject::getFromRequest<bool,bool>(const JsonObject& reqObj, const char *name, bool& var) {
+  if (reqObj[name].is<bool>()) {
+    var = reqObj[name].as<bool>();
+    return true;
+  }
+  if (reqObj[name].is<int>()) {
+    int ival = reqObj[name].as<int>();
+    var = (ival != 0);
+    return true;
+  }
+  return false;
+}
+#endif
+
 class IotsaApiProvider  {
 public:
   IotsaApiProvider() {}
