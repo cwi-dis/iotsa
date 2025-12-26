@@ -94,7 +94,7 @@ class BLE:
         if True:
             client = self._currentConnection
             print(f"{client.address}:")
-            self._serviceCollection = await client.get_services()
+            self._serviceCollection = client.services
             for service in self._serviceCollection.services.values():
                 if self.verbose:
                     print(
