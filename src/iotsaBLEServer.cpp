@@ -158,7 +158,7 @@ bool IotsaBLEServerMod::pauseServer() {
   // For now we keep pauseServer() and resumeServer(), because the use case is for light sleep.
   if (s_server) {
     BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-    if (pAdvertising == nullptr || !pAdvertising->isAdvertising()) return false;
+    if (pAdvertising == nullptr || !pAdvertising->isAdvertising()) return true;
     IFBLEDEBUG IotsaSerial.println("BLE pause advertising");
     pAdvertising->stop();
     return true;
