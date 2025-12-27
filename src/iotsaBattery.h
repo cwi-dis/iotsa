@@ -64,6 +64,8 @@ protected:
   float correctionVBat = 1.0;
   float rangeVUSB = 1.8;
   int pinDisableSleep = -1;
+  int cpuFrequencyBoot = 0;
+  int cpuFrequencySleep = 0;
   uint8_t levelVBat;
   uint8_t levelVUSB;
 #ifdef IOTSA_WITH_BLE

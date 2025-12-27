@@ -74,6 +74,26 @@ IotsaBatteryMod::handler() {
     correctionVBat = server->arg("correctionVBat").toFloat();
     anyChanged = true;
   }
+#ifdef ESP32
+  if( server->hasArg("cpuFrequencyBoot")) {
+    if (needsAuthentication()) return;
+    cpuFrequencyBoot = server->arg("cpuFrequencyBoot").toInt();
+    anyChanged = true;
+  }
+  if( server->hasArg("cpuFrequencySleep")) {
+    if (needsAuthentication()) return;
+    cpuFrequencySleep = server->arg("cpuFrequencySleep").toInt();
+    anyChanged = true;
+  }
+  if (server->hasArg("cpuFrequency")) {
+    int freq = server->arg("cpuFrequency").toInt();
+    if (freq != 0) {
+      setCpuFrequencyMhz(freq);
+      IFDEBUG IotsaSerial.printf("Set CPU frequency to %d MHz\n", freq);
+    }
+    anyChanged = true;
+  }
+#endif
   if (anyChanged) {
     iotsaConfig.extendCurrentMode();
     configSave();
@@ -122,7 +142,11 @@ IotsaBatteryMod::handler() {
   }
 #ifdef ESP32
   message += "Watchdog timer duration (ms): <input name='watchdogDuration' value='" + String(watchdogDuration) + "'><br>";
-#endif
+  message += "CPU frequency on boot (MHz): <input name='cpuFrequencyBoot' value='" + String(cpuFrequencyBoot) + "'><br>";
+  message += "CPU frequency on first sleep (MHz): <input name='cpuFrequencySleep' value='" + String(cpuFrequencySleep) + "'><br>";
+  int freq = getCpuFrequencyMhz();
+  message += "Current CPU frequency (MHz): <input name='cpuFrequency' value='" + String(freq) + "'><br>";
+  #endif
   message += "<input type='submit'></form>";
   server->send(200, "text/html", message);
 }
@@ -183,6 +207,9 @@ bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
   reply["postponeSleep"] = iotsaConfig.postponeSleep(0);
 #ifdef ESP32
   reply["watchdogDuration"] = watchdogDuration;
+  reply["cpuFrequency"] = getCpuFrequencyMhz();
+  reply["cpuFrequencyBoot"] = cpuFrequencyBoot;
+  reply["cpuFrequencySleep"] = cpuFrequencySleep;
 #endif
   _readVoltages();
   if (pinVBat >= 0) {
@@ -226,6 +253,20 @@ bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, J
 #ifdef ESP32
   if (reqObj["watchdogDuration"].is<int>()) {
     watchdogDuration = reqObj["watchdogDuration"];
+    anyChanged = true;
+  }
+  if (reqObj["cpuFrequencyBoot"].is<int>()) {
+    cpuFrequencyBoot = reqObj["cpuFrequencyBoot"];
+    anyChanged = true;
+  }
+  if (reqObj["cpuFrequencySleep"].is<int>()) {
+    cpuFrequencySleep = reqObj["cpuFrequencySleep"];
+    anyChanged = true;
+  }
+  if (reqObj["cpuFrequency"].is<int>()) {
+    int freq = reqObj["cpuFrequency"];
+    setCpuFrequencyMhz(freq);
+    IFDEBUG IotsaSerial.printf("Set CPU frequency to %d MHz\n", freq);
     anyChanged = true;
   }
 #endif
@@ -294,6 +335,12 @@ void IotsaBatteryMod::configLoad() {
   cf.get("sleepDuration", sleepDuration, 0);
 #ifdef ESP32
   cf.get("watchdogDuration", watchdogDuration, 0);
+  cf.get("cpuFrequencyBoot", cpuFrequencyBoot, 0);
+  cf.get("cpuFrequencySleep", cpuFrequencySleep, 0);
+  if (cpuFrequencyBoot > 0) {
+    setCpuFrequencyMhz(cpuFrequencyBoot);
+    IFDEBUG IotsaSerial.printf("Set CPU frequency to %d MHz on boot\n", cpuFrequencyBoot);
+  }
 #endif
   cf.get("correctionVBat", correctionVBat, 1.0);
   cf.get("disableSleepOnUSBPower", disableSleepOnUSBPower, 0);
@@ -310,6 +357,8 @@ void IotsaBatteryMod::configSave() {
   cf.put("sleepDuration", sleepDuration);
 #ifdef ESP32
   cf.put("watchdogDuration", watchdogDuration);
+  cf.put("cpuFrequencyBoot", cpuFrequencyBoot);
+  cf.put("cpuFrequencySleep", cpuFrequencySleep);
 #endif
   if (pinVBat >= 0) {
     cf.put("correctionVBat", correctionVBat);
@@ -437,6 +486,14 @@ void IotsaBatteryMod::loop() {
   IFDEBUG IotsaSerial.print(" mode ");
   IFDEBUG IotsaSerial.println(sleepMode);
   _notifySleepWakeup(true);
+  if (cpuFrequencySleep != 0) {
+    static bool haveSetSleepFreq = false;
+    if (!haveSetSleepFreq) {
+      IFDEBUG IotsaSerial.printf("Setting CPU frequency to %d MHz for sleep\n", cpuFrequencySleep);
+      haveSetSleepFreq = true;
+      setCpuFrequencyMhz(cpuFrequencySleep);
+    }
+  }
   if(sleepMode == IOTSA_SLEEP_DELAY) {
     // This isn't really sleeping, it's just a delay. Not sure it is actually useful.
     delay(sleepDuration);
