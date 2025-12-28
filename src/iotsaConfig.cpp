@@ -73,10 +73,10 @@ const char* IotsaConfig::getBootReason() {
       reason = reasons[(int)rip->reason];
     }
 #else
-  RESET_REASON r = rtc_get_reset_reason(0);
+  RESET_REASON r1 = rtc_get_reset_reason(0);
   RESET_REASON r2 = rtc_get_reset_reason(1);
+  static char reasonBuffer[64];
   // Determine best reset reason
-  if (r == TG0WDT_SYS_RESET || r == RTCWDT_RTC_RESET) r = r2;
   static const char *reasons[] = {
     "0",
     "power",
@@ -96,9 +96,14 @@ const char* IotsaConfig::getBootReason() {
     "brownout",
     "rtcWatchdogRtc"
   };
-  if ((int)r < sizeof(reasons)/sizeof(reasons[0])) {
-    reason = reasons[(int)r];
+  if ((int)r1 < sizeof(reasons)/sizeof(reasons[0])) {
+    strcpy(reasonBuffer, reasons[(int)r1]);
   }
+  strcpy(reasonBuffer + strlen(reasonBuffer), "/");
+  if ((int)r2 < sizeof(reasons)/sizeof(reasons[0])) {
+    strcat(reasonBuffer, reasons[(int)r2]);
+  }
+  reason = reasonBuffer;
 #endif
   }
   return reason;
