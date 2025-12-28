@@ -56,6 +56,7 @@ protected:
   uint32_t watchdogDuration = 0;
   bool disableSleepOnUSBPower = 0;
   bool disableSleepOnWiFi = 0;
+  bool disableWiFiOnSleep = false;
   void _readVoltages();
   int pinVBat = -1;
   int pinVUSB = -1;

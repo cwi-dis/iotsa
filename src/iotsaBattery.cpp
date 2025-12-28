@@ -69,6 +69,11 @@ IotsaBatteryMod::handler() {
     disableSleepOnWiFi = server->arg("disableSleepOnWiFi").toInt();
     anyChanged = true;
   }
+  if (server->hasArg("disableWiFiOnSleep")) {
+    if (needsAuthentication()) return;
+    disableWiFiOnSleep = server->arg("disableWiFiOnSleep").toInt();
+    anyChanged = true;
+  } 
   if( server->hasArg("correctionVBat")) {
     if (needsAuthentication()) return;
     correctionVBat = server->arg("correctionVBat").toFloat();
@@ -137,6 +142,8 @@ IotsaBatteryMod::handler() {
   }
   message += "<input type='radio' name='disableSleepOnWiFi' value='0'" + String(disableSleepOnWiFi?"":" checked") + ">Sleep independent of WiFi<br>";
   message += "<input type='radio' name='disableSleepOnWiFi' value='1'" + String(disableSleepOnWiFi?" checked":"") + ">Disable sleep if WiFi is active<br>";
+  message += "<input type='radio' name='disableWiFiOnSleep' value='0'" + String(disableWiFiOnSleep?"":" checked") + ">Keep WiFi state on sleep<br>";
+  message += "<input type='radio' name='disableWiFiOnSleep' value='1'" + String(disableWiFiOnSleep?" checked":"") + ">Disable WiFi on sleep<br>";
   if (pinVBat >= 0) {
     message += "Battery voltage correction factor: <input name='correctionVBat' value='" + String(correctionVBat) + "'><br>";
   }
@@ -221,6 +228,7 @@ bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
     reply["disableSleepOnUSBPower"] = disableSleepOnUSBPower;
   }
   reply["disableSleepOnWiFi"] = disableSleepOnWiFi;
+  reply["disableWiFiOnSleep"] = disableWiFiOnSleep;
   return true;
 }
 
@@ -280,6 +288,10 @@ bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, J
   }
   if (reqObj["disableSleepOnWiFi"].is<bool>()) {
     disableSleepOnWiFi = reqObj["disableSleepOnWiFi"];
+    anyChanged = true;
+  }
+  if (reqObj["disableWiFiOnSleep"].is<bool>()) {
+    disableWiFiOnSleep = reqObj["disableWiFiOnSleep"];
     anyChanged = true;
   }
   if (anyChanged) configSave();
@@ -345,6 +357,7 @@ void IotsaBatteryMod::configLoad() {
   cf.get("correctionVBat", correctionVBat, 1.0);
   cf.get("disableSleepOnUSBPower", disableSleepOnUSBPower, 0);
   cf.get("disableSleepOnWiFi", disableSleepOnWiFi, 0);
+  cf.get("disableWiFiOnSleep", disableWiFiOnSleep, 0);
   millisAtWakeup = 0;
 }
 
@@ -367,6 +380,7 @@ void IotsaBatteryMod::configSave() {
     cf.put("disableSleepOnUSBPower", disableSleepOnUSBPower);
   }
   cf.put("disableSleepOnWiFi", disableSleepOnWiFi);
+  cf.put("disableWiFiOnSleep", disableWiFiOnSleep);
   millisAtWakeup = 0;
 }
 
@@ -478,6 +492,17 @@ void IotsaBatteryMod::loop() {
 #endif
   }
 #endif
+  if (disableWiFiOnSleep && iotsaConfig.wifiEnabled) {
+    static bool haveDisabledWiFi = false;
+    if (!haveDisabledWiFi) {
+      IFDEBUG IotsaSerial.println("Will disable WiFi for sleep");
+      haveDisabledWiFi = true;
+      iotsaConfig.wifiMode = iotsa_wifi_mode::IOTSA_WIFI_DISABLED;
+      iotsaConfig.wantWifiModeSwitchAtMillis = millis() + 1000;
+      iotsaConfig.postponeSleep(2000); // give time to disable wifi
+      return;
+    }
+  }
   // We go to sleep, in some form.
   IFDEBUG IotsaSerial.print("Going to sleep at ");
   IFDEBUG IotsaSerial.print(millis());
