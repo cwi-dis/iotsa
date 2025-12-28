@@ -73,6 +73,23 @@ const char* IotsaConfig::getBootReason() {
       reason = reasons[(int)rip->reason];
     }
 #else
+#if 1
+    esp_reset_reason_t r = esp_reset_reason();
+    switch(r) {
+      case ESP_RST_UNKNOWN: reason = "unknown"; break;
+      case ESP_RST_POWERON: reason = "power"; break;
+      case ESP_RST_EXT: reason = "externalReset"; break;
+      case ESP_RST_SW: reason = "softwareReboot"; break;
+      case ESP_RST_PANIC: reason = "panic"; break;
+      case ESP_RST_INT_WDT: reason = "interruptWatchdog"; break;
+      case ESP_RST_TASK_WDT: reason = "taskWatchdog"; break;
+      case ESP_RST_WDT: reason = "hardwareWatchdog"; break;
+      case ESP_RST_DEEPSLEEP: reason = "deepSleepAwake"; break;
+      case ESP_RST_BROWNOUT: reason = "brownout"; break;
+      case ESP_RST_SDIO: reason = "sdioReset"; break;
+      default: reason = "other"; break;
+    }
+#else
   RESET_REASON r1 = rtc_get_reset_reason(0);
   RESET_REASON r2 = rtc_get_reset_reason(1);
   static char reasonBuffer[64];
@@ -104,6 +121,7 @@ const char* IotsaConfig::getBootReason() {
     strcat(reasonBuffer, reasons[(int)r2]);
   }
   reason = reasonBuffer;
+#endif
 #endif
   }
   return reason;
