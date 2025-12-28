@@ -4,6 +4,7 @@ import re
 from typing import Any, Optional
 from bleaktyped import BLEDevice, BleakClient, BleakGATTServiceCollection, BleakError, BleakScanner, BleakTypedClient
 from .bleIotsaUUIDs import name_to_uuid, uuid_to_name
+from .consts import VERBOSE
 
 IOTSA_BATTERY_SERVICE = "0000180f-0000-1000-8000-00805f9b34fb"
 IOTSA_REBOOT_CHARACTERISTIC = ""
@@ -19,7 +20,7 @@ class BLE:
     loop : asyncio.AbstractEventLoop
 
     def __init__(self):
-        self.verbose = False
+        self.verbose = VERBOSE
         self._allDevices: list[str] = []
         self._currentDevice = None
         self._currentConnection = None
@@ -103,22 +104,25 @@ class BLE:
                 else:
                     print(f"  {uuid_to_name(service.uuid)}:")
                 for char in service.characteristics:
-                    try:
-                        value = await client.read_gatt_char_typed(char.uuid)
-                        if self.verbose:
+                    if 'read' in char.properties:
+                        try:
+                            value = await client.read_gatt_char_typed(char.uuid)
+                            if self.verbose:
+                                print(
+                                    f"    {uuid_to_name(char.uuid)}: {value} # uuid={char.uuid} description={char.description}"
+                                )
+                            else:
+                                print(f"    {uuid_to_name(char.uuid)}: {value}")
+                        except BleakError as e:
                             print(
-                                f"    {uuid_to_name(char.uuid)}: {value} # uuid={char.uuid} description={char.description}"
+                                f"    # {uuid_to_name(char.uuid)} cannot read, uuid={char.uuid} description={char.description} error={e}"
                             )
-                        else:
-                            print(f"    {uuid_to_name(char.uuid)}: {value}")
-                    except BleakError as e:
-                        print(
-                            f"    {uuid_to_name(char.uuid)} cannot read, uuid={char.uuid} description={char.description} error={e}"
-                        )
-                    except AssertionError as e:
-                        print(
-                            f"    {uuid_to_name(char.uuid)} cannot read, uuid={char.uuid} description={char.description} error={e}"
-                        )
+                        except AssertionError as e:
+                            print(
+                                f"    {uuid_to_name(char.uuid)} cannot read, uuid={char.uuid} description={char.description} error={e}"
+                            )
+                    else:
+                        print(f"    # {uuid_to_name(char.uuid)} cannot read, only {','.join(char.properties)} allowed, uuid={char.uuid} description={char.description}")
                     sys.stdout.flush()
 
     def set(self, name: str, value: Any) -> None:
