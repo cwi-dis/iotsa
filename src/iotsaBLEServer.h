@@ -93,7 +93,7 @@ public:
 #endif
 
   static bool pauseServer();
-  static void resumeServer();
+  static void resumeServer(int duration=0); // duration=0 means advertise indefinitely
 protected:
   bool isEnabled;
   bool getHandler(const char *path, JsonObject& reply) override;

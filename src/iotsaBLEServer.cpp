@@ -16,7 +16,7 @@ class IotsaBLEServerCallbacks : public NimBLEServerCallbacks {
     iotsaConfig.pauseSleep();
   }
 	void onDisconnect(BLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override {
-    IFBLEDEBUG IotsaSerial.printf("BLE Disconnect reason %d\n", reason);
+    IFBLEDEBUG IotsaSerial.printf("BLE Disconnect reason %d, restart advertising\n", reason);
     iotsaConfig.resumeSleep();
     pServer->startAdvertising();
   }
@@ -166,10 +166,21 @@ bool IotsaBLEServerMod::pauseServer() {
   return false;
 }
 
-void IotsaBLEServerMod::resumeServer() {
-  IFBLEDEBUG IotsaSerial.println("BLE resume advertising");
+void IotsaBLEServerMod::resumeServer(int duration) {
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-  pAdvertising->start();
+  // 70 ms is approx the time it takes to do a full advertising cycle at the minimum interval of 20ms,
+  // with 10ms margin added to allow a connection to be established.
+  const int minAdvertisingDuration = 70;
+  const int extraDurationForConnecting = 30;
+  if (duration == 0 || duration < minAdvertisingDuration + extraDurationForConnecting) {
+    IFBLEDEBUG IotsaSerial.println("BLE resume advertising");
+    pAdvertising->start();
+    return;
+  } else {
+    duration -= extraDurationForConnecting;
+    IFBLEDEBUG IotsaSerial.printf("BLE resume advertising for %d ms\n", duration);
+    pAdvertising->start(duration);
+  }
 }
 
 void IotsaBLEServerMod::setup() {
@@ -234,6 +245,11 @@ void IotsaBLEServerMod::configLoad() {
   if (tx_power >= 0) {
     BLEDevice::setPower((esp_power_level_t)tx_power);
   }
+#ifdef IOTSA_BLE_DEBUG
+  pAdvertising->setAdvertisingCompleteCallback([](BLEAdvertising* adv) {
+    IFBLEDEBUG IotsaSerial.println("BLE advertising complete callback");
+  });
+#endif
 }
 
 void IotsaBLEServerMod::configSave() {

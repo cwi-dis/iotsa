@@ -559,7 +559,7 @@ void IotsaBatteryMod::loop() {
 #ifdef IOTSA_WITH_BLE
     if (btActive) {
       IFDEBUG IotsaSerial.println("Re-activate ble");
-      IotsaBLEServerMod::resumeServer();
+      IotsaBLEServerMod::resumeServer(wakeDuration);
     }
 #endif
     if (watchdogTimer) {
