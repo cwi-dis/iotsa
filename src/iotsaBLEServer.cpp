@@ -140,8 +140,8 @@ void IotsaBLEServerMod::_bleGotoMode() {
   bool wasActive = pAdvertising->isAdvertising();
   bool isActive = iotsaConfig.bleMode == iotsa_ble_mode::IOTSA_BLE_ENABLED;
   if (wasActive == isActive) {
-    IFBLEDEBUG IotsaSerial.printf("BLE advertising is already %d\n", int(wasActive));
-    //return;
+    IFBLEDEBUG IotsaSerial.printf("BLE advertising is already %s\n", isActive ? "active" : "inactive");
+    return;
   }
   if (isActive) {
     IFBLEDEBUG IotsaSerial.println("BLE start advertising");
@@ -271,10 +271,10 @@ void IotsaBLEServerMod::configSave() {
 }
 
 void IotsaBLEServerMod::loop() {
-    if (iotsaConfig.wantBleModeSwitchAtMillis > 0 && iotsaConfig.wantBleModeSwitchAtMillis < millis()) {
+  if (iotsaConfig.wantBleModeSwitchAtMillis > 0 && iotsaConfig.wantBleModeSwitchAtMillis < millis()) {
       IFBLEDEBUG IotsaSerial.println("BLE mode switch requested");
     //
-    // Either setup() or saveConfig() or configuration mode change asked to change the WiFi mode. Do so.
+    // Either setup() or saveConfig() or configuration mode change asked to change the BLE mode. Do so.
     //
     iotsaConfig.wantBleModeSwitchAtMillis = 0;
     _bleGotoMode();
@@ -292,7 +292,7 @@ void IotsaBleApiService::setup(const char* serviceUUID, IotsaBLEApiProvider *_ap
 
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(serviceUUID);
-  if (isAdvertising) IotsaBLEServerMod::resumeServer();
+  // xxxjack wrong: if (isAdvertising) IotsaBLEServerMod::resumeServer();
 }
 
 void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask, uint8_t d2904format, uint16_t d2904unit, const char *d2901descr) {
