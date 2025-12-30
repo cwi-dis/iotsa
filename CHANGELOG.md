@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased]
 
 - Allow setting CPU speed to conserve battery (#98)
+- Added workaround for some esp32c3 boards (#99)
 
 ## [2.8.1] - 2025-05-04
 
