@@ -41,6 +41,7 @@ private:
   IotsaConfigMod configMod;
   String ssid;
   String ssidPassword;
+  bool wifiPowerReduction;
   unsigned long searchTimeoutMillis;
 };
 #elif IOTSA_WITH_PLACEHOLDERS

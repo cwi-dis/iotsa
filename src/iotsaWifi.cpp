@@ -87,6 +87,10 @@ bool IotsaWifiMod::_wifiStartStation() {
   IFDEBUG IotsaSerial.print("Connecting to ");
   IFDEBUG IotsaSerial.println(ssid);
   wl_status_t sts = WiFi.begin(ssid.c_str(), ssidPassword.c_str());
+  if (wifiPowerReduction) {
+    WiFi.setTxPower(WIFI_POWER_8_5dBm);
+    IFDEBUG IotsaSerial.println("WiFi power reduction enabled");
+  }
   if (sts == WL_CONNECT_FAILED) {
     IotsaSerial.println("WiFi.begin(...) failed");
     return false;
@@ -235,6 +239,17 @@ IotsaWifiMod::handler() {
       wrongMode = true;
     }
   }
+  if (server->hasArg("wifiPowerReduction")) {
+    int val = server->arg("wifiPowerReduction").toInt();
+    if ((bool) val != wifiPowerReduction) {
+      if (iotsaConfig.inConfigurationOrFactoryMode()) {
+        wifiPowerReduction = (bool)val;
+        anyChanged = true;
+      } else {
+        wrongMode = true;
+      }
+    }
+  }
   if (anyChanged) {
     configSave();
   }
@@ -254,7 +269,12 @@ IotsaWifiMod::handler() {
   message += ", see <a href='/config'>/config</a> to change.</p>";
   message += "<form method='get'>Network: <input name='ssid' value='";
   message += htmlEncode(ssid);
-  message += "'><br>Password: <input type='password' name='ssidPassword'><br><input type='submit'></form>";
+  message += "'><br>Password: <input type='password' name='ssidPassword'>";
+  message += "<br>WiFi Power Reduction: <input type='checkbox' name='wifiPowerReduction'";
+  if (wifiPowerReduction) message += " checked";
+  message += "><br> (work around issue on some esp32c3 boards)<br>";
+  message += "<br><input type='submit'>";
+  message += "</form>";
   message += "</body></html>";
   server->send(200, "text/html", message);
 #if 0
@@ -292,13 +312,14 @@ String IotsaWifiMod::info() {
 bool IotsaWifiMod::getHandler(const char *path, JsonObject& reply) {
   reply["ssid"] = ssid;
   reply["has_ssidPassword"] = ssidPassword.length() > 0;
+  reply["wifiPowerReduction"] = wifiPowerReduction;
   return true;
 }
 
 bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
   if (!iotsaConfig.inConfigurationOrFactoryMode()) {
-    IFDEBUG IotsaSerial.println("Not in config mode");
+    IFDEBUG IotsaSerial.println("wificonfig: Not in config mode");
     return false;
   }
   JsonObject reqObj = request.as<JsonObject>();
@@ -308,7 +329,9 @@ bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, Json
   if (getFromRequest<const char *>(reqObj, "ssidPassword", ssidPassword)) {
     anyChanged = true;
   }
-
+  if (getFromRequest<bool>(reqObj, "wifiPowerReduction", wifiPowerReduction)) {
+    anyChanged = true;
+  }
   if (anyChanged) configSave();
   if (reqObj["reboot"]) {
     iotsaConfig.requestReboot(2000);
@@ -332,12 +355,20 @@ void IotsaWifiMod::configLoad() {
   IotsaConfigFileLoad cf("/config/wifi.cfg");
   cf.get("ssid", ssid, "");
   cf.get("ssidPassword", ssidPassword, "");
+  cf.get("wifiPowerReduction", wifiPowerReduction, 
+#ifdef ESP32C3
+    true
+#else
+    false
+#endif
+  );  
 }
 
 void IotsaWifiMod::configSave() {
   IotsaConfigFileSave cf("/config/wifi.cfg");
   cf.put("ssid", ssid);
   cf.put("ssidPassword", ssidPassword);
+  cf.put("wifiPowerReduction", wifiPowerReduction);
   IFDEBUG IotsaSerial.println("Saved wifi.cfg");
   // If we were in factory mode enable config mode (so we keep the AP)
   if (iotsaConfig.wifiMode == IOTSA_WIFI_FACTORY) {
