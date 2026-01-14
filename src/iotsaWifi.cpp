@@ -74,7 +74,8 @@ void IotsaWifiMod::_wifiGotoMode() {
         _wifiStartAP(IOTSA_WIFI_SEARCHING);
       }
     } else {
-      _wifiStopAP(IOTSA_WIFI_SEARCHING);
+      // Try by Jack: continue in AP mode if we were in AP mode.
+      // _wifiStopAP(IOTSA_WIFI_SEARCHING);
     }
     _wifiStartStation();
   }
@@ -82,7 +83,7 @@ void IotsaWifiMod::_wifiGotoMode() {
 
 bool IotsaWifiMod::_wifiStartStation() {
   WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() | (int)WIFI_STA);
-  IotsaSerial.printf("WiFi.mode(%d)", newMode);
+  IotsaSerial.printf("WiFi.mode(%d)\n", newMode);
   if (!WiFi.mode(newMode)) {
     IotsaSerial.printf("WiFi.mode(WIFI_STA (%d)) failed", (int)newMode);
     return false;
@@ -108,7 +109,7 @@ bool IotsaWifiMod::_wifiStartStation() {
 
 void IotsaWifiMod::_wifiStopStation() {
   WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() & ~(int)WIFI_STA);
-  IotsaSerial.printf("WiFi.mode(%d)", newMode);
+  IotsaSerial.printf("WiFi.mode(%d)\n", newMode);
   if (!WiFi.mode(newMode)) {
     IotsaSerial.printf("WiFi.mode(not WIFI_STA (%d)) failed", (int)newMode);
     return;
@@ -144,7 +145,7 @@ void IotsaWifiMod::_wifiStartStationFailed() {
 bool IotsaWifiMod::_wifiStartAP(iotsa_wifi_mode mode) {
   String networkName = "config-" + iotsaConfig.hostName;
   WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() | (int)WIFI_AP);
-  IotsaSerial.printf("WiFi.mode(%d)", newMode);
+  IotsaSerial.printf("WiFi.mode(%d)\n", newMode);
   if (!WiFi.mode(newMode)) {
     IotsaSerial.printf("WiFi.mode(WIFI_AP (%d)) failed", (int)newMode);
     return false;
@@ -166,7 +167,7 @@ bool IotsaWifiMod::_wifiStartAP(iotsa_wifi_mode mode) {
 
 void IotsaWifiMod::_wifiStopAP(iotsa_wifi_mode mode) {
   WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() & ~(int)WIFI_AP);
-  IotsaSerial.printf("WiFi.mode(%d)", newMode);
+  IotsaSerial.printf("WiFi.mode(%d)\n", newMode);
   if (!WiFi.mode(newMode)) {
     IotsaSerial.printf("WiFi.mode(WIFI_AP (%d)) failed", (int)newMode);
     return;
