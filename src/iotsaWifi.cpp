@@ -30,7 +30,9 @@ IotsaWifiMod::IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *
 void IotsaWifiMod::setup() {
   if (iotsaConfig.wifiDisabledOnBoot) {
     IFDEBUG IotsaSerial.println("WiFi disabled by iotsaBattery");
-    WiFi.mode(WIFI_OFF);
+    WiFiMode_t newMode = WIFI_OFF;
+    IotsaSerial.printf("WiFi.mode(%d)", newMode);
+    WiFi.mode(newMode);
     iotsaConfig.wifiMode = iotsa_wifi_mode::IOTSA_WIFI_DISABLED;
     if (app.status) app.status->showStatus();
     iotsaConfig.wantWifiModeSwitchAtMillis = 0;
@@ -80,6 +82,7 @@ void IotsaWifiMod::_wifiGotoMode() {
 
 bool IotsaWifiMod::_wifiStartStation() {
   WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() | (int)WIFI_STA);
+  IotsaSerial.printf("WiFi.mode(%d)", newMode);
   if (!WiFi.mode(newMode)) {
     IotsaSerial.printf("WiFi.mode(WIFI_STA (%d)) failed", (int)newMode);
     return false;
@@ -105,6 +108,7 @@ bool IotsaWifiMod::_wifiStartStation() {
 
 void IotsaWifiMod::_wifiStopStation() {
   WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() & ~(int)WIFI_STA);
+  IotsaSerial.printf("WiFi.mode(%d)", newMode);
   if (!WiFi.mode(newMode)) {
     IotsaSerial.printf("WiFi.mode(not WIFI_STA (%d)) failed", (int)newMode);
     return;
@@ -140,6 +144,7 @@ void IotsaWifiMod::_wifiStartStationFailed() {
 bool IotsaWifiMod::_wifiStartAP(iotsa_wifi_mode mode) {
   String networkName = "config-" + iotsaConfig.hostName;
   WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() | (int)WIFI_AP);
+  IotsaSerial.printf("WiFi.mode(%d)", newMode);
   if (!WiFi.mode(newMode)) {
     IotsaSerial.printf("WiFi.mode(WIFI_AP (%d)) failed", (int)newMode);
     return false;
@@ -161,6 +166,7 @@ bool IotsaWifiMod::_wifiStartAP(iotsa_wifi_mode mode) {
 
 void IotsaWifiMod::_wifiStopAP(iotsa_wifi_mode mode) {
   WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() & ~(int)WIFI_AP);
+  IotsaSerial.printf("WiFi.mode(%d)", newMode);
   if (!WiFi.mode(newMode)) {
     IotsaSerial.printf("WiFi.mode(WIFI_AP (%d)) failed", (int)newMode);
     return;
@@ -171,7 +177,9 @@ void IotsaWifiMod::_wifiStopAP(iotsa_wifi_mode mode) {
 }
 
 void IotsaWifiMod::_wifiOff() {
-  WiFi.mode(WIFI_OFF);
+  WiFiMode_t newMode = WIFI_OFF;
+  IotsaSerial.printf("WiFi.mode(%d)", newMode);
+  WiFi.mode(newMode);
   iotsaConfig.wifiMode = IOTSA_WIFI_DISABLED;
   if (app.status) app.status->showStatus();
   IFDEBUG IotsaSerial.println("WiFi turned off");
@@ -275,6 +283,22 @@ IotsaWifiMod::handler() {
   message += "><br> (work around issue on some esp32c3 boards)<br>";
   message += "<br><input type='submit'>";
   message += "</form>";
+  if (iotsaConfig.inConfigurationOrFactoryMode()) {
+    uint8_t baseMac[6];
+    char baseMacStr[32];
+    esp_err_t ret = esp_wifi_get_mac(WIFI_IF_STA, baseMac);
+    if (ret == ESP_OK) {
+      snprintf(baseMacStr, sizeof(baseMacStr), "%02x:%02x:%02x:%02x:%02x:%02x",
+                    baseMac[0], baseMac[1], baseMac[2],
+                    baseMac[3], baseMac[4], baseMac[5]);
+      message += "<p>WiFi MAC address: <code>";
+      message += baseMacStr;
+      message += "</code></p>";
+    } else {
+      message += "<p>Cannot determine MAC address.</p>";
+    }
+  }
+
   message += "</body></html>";
   server->send(200, "text/html", message);
 #if 0
