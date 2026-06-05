@@ -1,5 +1,7 @@
 # iotsa board - your tiny IoT web server
 
+> **Note:** This guide is specifically for the custom _iotsa board_, an ESP8266/ESP-12 based PCB designed by Jack Jansen. If you are choosing hardware for a new project, see the [README](../README.md#choosing-hardware) instead — ESP32-based boards are recommended for new projects.
+
 Congratulations with your new iotsa WiFi web server,
 ready for you to start building strange and wondrous Internet of Things devices!
 

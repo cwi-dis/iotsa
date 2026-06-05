@@ -16,6 +16,18 @@ This software is licensed under the [MIT license](LICENSE.txt) by the CWI DIS gr
 
 Note that the build badges above are for the [develop branch](https://github.com/cwi-dis/iotsa/tree/develop), for the iotsa library itself and the examples. Build status for iotsa applications against the develop branch can be found below.
 
+## Choosing hardware
+
+For new projects, the recommended hardware is any modern **ESP32-based board**. The iotsa framework supports a wide range of ESP32 boards; boards known to work well include the Lolin32, SparkFun ESP32Thing, Pico32, and ESP32-C3 variants. Pick a board that suits your project's form factor and power requirements and use the matching `[env:...]` in `platformio.ini`.
+
+The custom **iotsa board** (an ESP8266/ESP-12 based PCB) remains a good choice in certain situations:
+
+- **Custom hardware integration:** The board includes an experiment area large enough for a DIP-20 IC and discrete components, making it easy to add custom circuitry (a solenoid driver, relay, RFID reader, etc.) without a separate perfboard.
+- **Reliable wired programming fallback:** The board has a 6-pin FTDI header plus Reset and Program buttons, so you can always reprogram it over USB even if OTA fails.
+- **Existing deployed projects:** Several iotsa applications (such as _iotsaDoorOpener_ and _iotsaNeoClock_) were designed for this board and use its experiment area.
+
+If you have an iotsa board, see [docs/gettingStarted.md](docs/gettingStarted.md) for hardware-specific setup instructions.
+
 ## Installation and use for developers
 
 Iotsa can be used with both the [Arduino IDE](https://www.arduino.cc/en/main/software) and with the [PlatformIO](https://platformio.org) build system (which can be used from within VSCode or from the command line). The Arduino IDE is easiest to get started with, but PlatformIO is more powerful if you want to target multiple device types, use _Git_ integration, etc.
