@@ -18,7 +18,7 @@ Note that the build badges above are for the [develop branch](https://github.com
 
 ## Installation and use for developers
 
-Iotsa can be used with both the [Arduino IDE](https://www.arduino.cc/en/main/software) and with the [PlatformIO](https://platformio.org) build system (which can be used from within Atom or VSCode or from the command line). The Arduino IDE is easiest to get started with, but PlatformIO is more powerful if you want to target multiple device types, use _Git_ integration, etc.
+Iotsa can be used with both the [Arduino IDE](https://www.arduino.cc/en/main/software) and with the [PlatformIO](https://platformio.org) build system (which can be used from within VSCode or from the command line). The Arduino IDE is easiest to get started with, but PlatformIO is more powerful if you want to target multiple device types, use _Git_ integration, etc.
 
 ### Arduino IDE
 
@@ -82,8 +82,8 @@ If a iotsa application is built with `IOTSA_WITH_HTTPS` if will initially use a 
 
 After building and flashing your software for the first time you should create a new, unique, key and certificate. There are three ways to do this, using scripts in the `extras` directory:
 
-- `extras/name-self-signed-cert.sh` creates a self-signed certificate. This can be copied into your source code (before building and flashing).
-- `extras/make-csr-step{1,2,3}.sh` these create a key and self-signed or CA-signed certificate that can be uploaded to the iotsa device using `iotsaControl`.
+- `extras/make-self-signed-cert.sh` creates a self-signed certificate. This can be copied into your source code (before building and flashing).
+- `extras/make-csr-step{1,2,3}.sh` these create a key and self-signed or CA-signed certificate that can be uploaded to the iotsa device using `iotsa`.
 - `extras/make-igor-signed-cert.sh` creates a key and certificate signed by your [Igor](https://github.com/cwi-dis/igor) CA and uploads it to your device.
 
 Note that HTTPS support here refers to iotsa as a server only, HTTPS client support (for the _iotsaButton_ and _iotsaRequest_ modules) is completely independent.
@@ -129,11 +129,6 @@ If you have enabled over-the-air programming <http://yourdevicename.local/config
       avahi-browse _services._dns-sd._udp
       ```
 
-      or, on either, use the convenience script
-
-      ```
-      [...]/iotsa/extras/refreshOTA.sh
-      ```
   - Use the normal _Upload_ command to flash your new program.
 - _For PlatformIO_: 
   - Visit <http://yourdevicename.local> and note the IP address.
@@ -143,10 +138,10 @@ If you have enabled over-the-air programming <http://yourdevicename.local/config
   platformio run -t upload --upload-port yourdevicename.local
   ```
 
-- _For PlatformIO, using iotsaControl_:
-	- Build using `platformio run` or the plaformio IDE integration commands.
-	- `iotsaControl --target yourdevicename.local otaWait ota ./.pioenvs/nodemcuv2/firmware.bin`
-	- Power cycle the device when _iotsaControl_ asks you to do so.
+- _For PlatformIO, using iotsa_:
+	- Build using `platformio run` or the platformio IDE integration commands.
+	- `iotsa --target yourdevicename.local otaWait ota ./.pio/build/nodemcuv2/firmware.bin`
+	- Power cycle the device when _iotsa_ asks you to do so.
 	
 ## General design philosophy
 
@@ -343,7 +338,7 @@ bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply
 ```
 These methods are called on incoming REST or COAP calls. The request parameter object (or array, or value) is in `request`, store results in `reply` (which is already an initialized empty object). Return `true` for success, `false` for any failure (which will not return the reply object to the caller).
 
-The actual implementations are in _iotsaRestApi.h_ and _iotsaCoapApi.h_, but these are transparently renamed or combined.
+The actual implementations are in _iotsaApiRest.h_ and _iotsaApiCoap.h_, but these are transparently renamed or combined.
 
 ### iotsaConfig.h
 
@@ -355,7 +350,7 @@ configuration information, such as hostname and which mode we are running in. Yo
 Handles control over the `iotsaConfig` object and general configuration such as factory reset and (if enabled) over-the-air programming.
 This is technically a module, but unlike other modules it is not really optional (unless
 your iotsa board is running with WiFi disabled). It should _not_ be instantiated in your
-program, this happens automatically. This module also opens and/or initializes the SPIFFS filesystem.
+program, this happens automatically. This module also opens and/or initializes the LittleFS filesystem.
 
 If the iotsa server is operating in normal (production) mode a user can access URL `/config` to request configuration mode, factory reset or ota-programming mode. The user must then _demonstrate physical access_ within 5 minutes to switch the iotsa server to its new mode, for another 5 minutes. If nothing happens during this period the server reverts to normal mode.
 
@@ -393,7 +388,7 @@ Allows implementing a module using two simple C functions. See the _hello_ secti
 
 ### iotsaConfigFile.h
 
-Two classes to save and load configuration variables to a file (on the SPIFFS file system in the flash memory chip). `IotsaConfigFileLoad` is used to load configuration values and `IotsaConfigFileSave` to store them. 
+Two classes to save and load configuration variables to a file (on the LittleFS file system in the flash memory chip). `IotsaConfigFileLoad` is used to load configuration values and `IotsaConfigFileSave` to store them. 
 
 The general paradigm is that in your `setup()` function you create a local (stack based) loader variable with 
 
@@ -443,15 +438,15 @@ More documentation will be forthcoming.
 
 ### iotsaFiles.h
 
-Allows read access to files stored in `/data` on the SPIFFS file system (in the flash memory chip). Could be used for a simple web server. Requires _IOTSA\_WITH\_WEB_.
+Allows read access to files stored in `/data` on the LittleFS file system (in the flash memory chip). Could be used for a simple web server. Requires _IOTSA\_WITH\_WEB_.
 
 ### iotsaFilesUpload.h
 
-Allows write access to files stored in `/data` on the SPIFFS filesystem (where _iotsaFiles_ reads from), through `POST` requests to the `/upload` URL. Requires _IOTSA\_WITH\_WEB_.
+Allows write access to files stored in `/data` on the LittleFS filesystem (where _iotsaFiles_ reads from), through `POST` requests to the `/upload` URL. Requires _IOTSA\_WITH\_WEB_.
 
 ### iotsaFilesBackup.h
 
-Creates a backup of the complete SPIFFS filesystem (including `/data` and `/config`) as a tarfile when you access URL `/backup.tar`. Can be used to clone iotsa devices. Requires _IOTSA\_WITH\_WEB_.
+Creates a backup of the complete LittleFS filesystem (including `/data` and `/config`) as a tarfile when you access URL `/backup.tar`. Can be used to clone iotsa devices. Requires _IOTSA\_WITH\_WEB_.
 
 ### iotsaInput.h
 
@@ -531,11 +526,11 @@ has no users, and allows all rights always.
 - [Temperature](examples/Temperature/Temperature.ino) measures temperature with a slightly more complicated sensor, a DHT21.
 - [Led](examples/Led/Led.ino) controls the color of a NeoPixel LED, and can set up repeating patterns. Uses _iotsaLed_ module.
 - [BLELed](examples/BLELed/BLELed.ino) controls the color of a NeoPixel LED. Can be controlled over Bluetooth LE when built for an esp32 board.
-- [Ringer](examples/Ringer/Ringer.ino) 
+- [Ringer](examples/Ringer/Ringer.ino) sounds a buzzer when a GET request is received. Pairs with _Button_ to implement a remote doorbell.
 - [HelloPasswd](examples/HelloPasswd/HelloPasswd.ino) The same "Hello" server, but now using a _IotsaAuthMod_ for access control (you need to provide username "admin" and password "admin" to change the greeting name). Builds with HTTPS support by default (when using platformIO).
 - [HelloUser](examples/HelloUser/HelloUser.ino) Another "Hello" server that needs authentication, but this time using _IotsaUserMod_ so the password can be changed. Builds with HTTPS support by default (when using platformIO).
+- [HelloRights](examples/HelloRights/HelloRights.ino) Another "Hello" server that uses _IotsaCapabilities_ for rights-based access control.
 - [HelloToken](examples/HelloToken/HelloToken.ino) Another "Hello" server that needs authentication, but this time using a token, where tokens can be created that give certain rights. Not very useful except as an example. Builds with HTTPS support by default (when using platformIO).
-- [HelloUser](examples/HelloUser/HelloUser.ino) Another "Hello" server that needs authentication, but this time using _IotsaUserMod_ so the password can be changed. Builds with HTTPS support by default (when using platformIO).
 - [Log](examples/Log/Log.ino) Example of using the _iotsaLogger_ module.
 
 ## more projects using iotsa
@@ -700,7 +695,7 @@ Notes to self, mainly, on creating a new release:
 - Update `CHANGELOG.md` with version number and date.
 - Commit, Push
 - If a real version: merge into `master` and tag on master (otherwise tag on `develop`)
-- This should build the release (to be seen that this works)
+- This should trigger the release build via GitHub Actions.
 - After a real release:
 	- Update `changelog.txt` again on `develop`.
 	- Ensure release is available on platformIO library registry.
