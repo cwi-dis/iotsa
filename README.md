@@ -20,6 +20,11 @@ Note that the build badges above are for the [develop branch](https://github.com
 
 For new projects, the recommended hardware is any modern **ESP32-based board**. Pick a board that suits your project's form factor and power requirements and use the matching `[env:...]` in `platformio.ini`.
 
+**Flash size and OTA:** Over-the-air programming requires enough flash to hold two copies of the firmware plus the LittleFS filesystem. On a 4 MB board this generally works, but including large features like BLE can push firmware size up. Common workarounds:
+- Use a `min_spiffs.csv` partition layout — reduces LittleFS space but keeps OTA.
+- Use `no_ota.csv` — gives the full flash to a single firmware image, disabling OTA entirely.
+- Reduce firmware size by excluding optional modules (e.g. omitting BLE or HTTPS).
+
 The custom **iotsa board** (an ESP8266/ESP-12 based PCB) remains a good choice in certain situations:
 
 - **Custom hardware integration:** The board includes an experiment area large enough for a DIP-20 IC and discrete components, making it easy to add custom circuitry (a solenoid driver, relay, RFID reader, etc.) without a separate perfboard.
@@ -30,15 +35,17 @@ If you have an iotsa board, see [docs/gettingStarted.md](docs/gettingStarted.md)
 
 ### Supported hardware variants
 
-| Hardware | Status | Notes |
-|---|---|---|
-| ESP32 (original, Xtensa) | **Supported** | Tested in CI (esp32thing). Lolin32, Pico32, ESP32dev also known to work but not in CI — _a selection should be added to CI_. Full feature support: BLE, sleep/wakeup, touch, rotary encoder. |
-| ESP32-C3 (RISC-V) | **Supported** | Tested in CI (esp32-c3-devkitm-1). Known limitations: no analog voltage reading, no deep-sleep wakeup, no rotary encoder (no PCNT hardware), no touch sensor input. WiFi power reduction defaults on as a hardware workaround. |
-| ESP8266 / ESP-12 | **Supported** | Tested in CI (nodemcuv2), used by the iotsa board. No BLE. |
-| ESP32-S3 | **Untested** | Profile similar to original ESP32 (BLE, touch, USB OTG). Likely works — _feedback welcome_. |
-| ESP32-C6 | **Untested** | RISC-V like C3, adds WiFi 6 and Bluetooth 5.3. Likely similar to C3 — _feedback welcome_. |
-| ESP32-S2 | **Untested** | No Bluetooth. BLE-dependent features will not work. _Feedback welcome on what does work._ |
-| ESP32-H2 | **Not supported** | No WiFi. The framework assumes WiFi throughout; not a viable target. |
+Ordered from most to least capable for general use:
+
+| Hardware | Flash / OTA | Status | Notes |
+|---|---|---|---|
+| ESP32 (original, Xtensa) | 4 MB. OTA works; use `min_spiffs.csv` when BLE is enabled. Lolin32 + BLE is large enough to require `no_ota.csv`. | **Supported** | Tested in CI (esp32thing). Lolin32, Pico32, ESP32dev also known to work — _a selection should be added to CI_. Full features: BLE, sleep/wakeup, touch, rotary encoder. |
+| ESP32-C3 (RISC-V) | 4 MB (devkit, supermini): OTA works with `min_spiffs.csv`. LCD board variant has 2 MB and is very tightly constrained. | **Supported** | Tested in CI (esp32-c3-devkitm-1). Limitations: no analog voltage reading, no deep-sleep wakeup, no rotary encoder (no PCNT), no touch. WiFi power reduction defaults on as a hardware workaround. |
+| ESP8266 / ESP-12 | 4 MB. OTA works. | **Supported** | Tested in CI (nodemcuv2). Used by the iotsa board. No BLE. |
+| ESP32-S3 | 4 MB+. OTA likely works. | **Untested** | Profile similar to original ESP32 (BLE, touch, USB OTG). Likely works — _feedback welcome_. |
+| ESP32-C6 | 4 MB. OTA likely works. | **Untested** | RISC-V like C3, adds WiFi 6 and Bluetooth 5.3. Likely similar to C3 — _feedback welcome_. |
+| ESP32-S2 | 4 MB. OTA likely works. | **Untested** | No Bluetooth; BLE-dependent features will not work. _Feedback welcome on what does work._ |
+| ESP32-H2 | — | **Not supported** | No WiFi. Not a viable target. |
 
 ## Installation and use for developers
 
