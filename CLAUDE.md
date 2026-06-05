@@ -85,6 +85,12 @@ The tool discovers devices via mDNS, communicates over HTTP/HTTPS (REST), CoAP, 
 
 On push to `develop` or a version tag, it dispatches rebuild events to all downstream iotsa application repos.
 
+## Module interface status
+
+A detailed analysis of which interfaces (web UI, REST, BLE) each module exposes, known
+inconsistencies, and what to check in sibling repos is in
+[`docs/module-interface-status.md`](docs/module-interface-status.md).
+
 ## Branch strategy
 
 - `develop` — active development
