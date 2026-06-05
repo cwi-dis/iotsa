@@ -47,7 +47,7 @@ To download your new program to the device:
 
 * Use a web browser to visit _/wificonfig_ on your device.
 * On the **WiFi configuration** page, select the _Enable over-the-air update after next reboot_ option and press _Submit_.
-* Now you need to either press the _Reset_ button on the iotsa, or remove power, wait a few seconds and reconnect power. You should do this within 2 minutes (if you are too late you simply start at the top of this list again).
+* Now you need to either press the _Reset_ button on the iotsa, or remove power, wait a few seconds and reconnect power. You should do this within a few minutes (if you are too late you simply start at the top of this list again).
 * In the Arduino IDE, with menu _Tools_ -> _Port_ -> _Network Port_ select your device.
 	* Sometimes ota-programmable devices are slow to appear because of mDNS issues. On a Mac, run the following command in a _Terminal_ window to speed up discovery:
 	

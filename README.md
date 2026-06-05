@@ -46,7 +46,7 @@ $ platformio run --target upload
 
 On reboot, the board will first initialize the SPIFFS flash filesystem (if needed) and then create a WiFi network with a name similar to _config-iotsa1234_. Connect a device to that network and visit <http://192.168.4.1>. Configure your device name (at <http://192.168.4.1/config>) and WiFi name and password (at <http://192.168.4.1/wificonfig>), and after reboot the iotsa board should connect to your network and be visible as <http://yourdevicename.local>.
 
-When the device is running normally you can visit <http://yourdevicename.local/config> and request the device to go into configuration mode, or to do a factory reset. After requesting this you have 5 minutes to power cycle the device to make it go into configuration mode again (see previous paragraph) or do a complete factory reset. When in configuration mode you have five minutes to change the configuration (device name, WiFi name, password, maybe other parameters) before the device reverts to normal operation. The idea behind this sequence (_request configuration mode_, then _power cycle_, then _change parameters_) is that you need both network acccess and physical access before you can do a disruptive operation on the device.
+When the device is running normally you can visit <http://yourdevicename.local/config> and request the device to go into configuration mode, or to do a factory reset. After requesting this you have a few minutes to power cycle the device to make it go into configuration mode again (see previous paragraph) or do a complete factory reset. When in configuration mode you have a few minutes to change the configuration (device name, WiFi name, password, maybe other parameters) before the device reverts to normal operation. The idea behind this sequence (_request configuration mode_, then _power cycle_, then _change parameters_) is that you need both network acccess and physical access before you can do a disruptive operation on the device.
 
 ### Build time options
 
@@ -113,7 +113,7 @@ Then you can get a list of the available commands with `iotsa help` and a list o
 
 ### OTA programming
 
-If you have enabled over-the-air programming <http://yourdevicename.local/config> will also allow you to request the device to go into programmable mode. Again, you have 5 minutes to power cycle and then 5 minutes to reprogram:
+If you have enabled over-the-air programming <http://yourdevicename.local/config> will also allow you to request the device to go into programmable mode. Again, you have a few minutes to power cycle and then a few minutes to reprogram:
 
 - _For Arduino IDE_: 
   - In _Tools_ -> _Port_ -> _Network Port_ select your device.
@@ -352,7 +352,7 @@ This is technically a module, but unlike other modules it is not really optional
 your iotsa board is running with WiFi disabled). It should _not_ be instantiated in your
 program, this happens automatically. This module also opens and/or initializes the LittleFS filesystem.
 
-If the iotsa server is operating in normal (production) mode a user can access URL `/config` to request configuration mode, factory reset or ota-programming mode. The user must then _demonstrate physical access_ within 5 minutes to switch the iotsa server to its new mode, for another 5 minutes. If nothing happens during this period the server reverts to normal mode.
+If the iotsa server is operating in normal (production) mode a user can access URL `/config` to request configuration mode, factory reset or ota-programming mode. The user must then _demonstrate physical access_ within a few minutes to switch the iotsa server to its new mode, for another few minutes. If nothing happens during this period the server reverts to normal mode.
 
 > The intention of _demonstrating physical access_ is that any "dangerous" operation requires both network access (to request the operation) and physical access. The user can always turn power on and off to demonstrate physical access, but a iotsa program can allow different methods (such as pressing a certain button a number of times in quick succession).
 
@@ -496,7 +496,7 @@ Support for _DS1302_ realtime clock chip, which usually comes on a board with ba
 
 ### iotsaOta.h
 
-Allows Over-the-air reprogramming of a iotsa server. After ota-programming has been enabled the device will show up (for 5 minutes) in the Arduino IDE, menu _Tools_ -> _Port_, under the _Network Ports_ section. Select it, and press the checkmark on your sketch to upload. Requires _IOTSA\_WITH\_HTTP_ or _IOTSA\_WITH\_HTTPS_.
+Allows Over-the-air reprogramming of a iotsa server. After ota-programming has been enabled the device will show up (for a few minutes) in the Arduino IDE, menu _Tools_ -> _Port_, under the _Network Ports_ section. Select it, and press the checkmark on your sketch to upload. Requires _IOTSA\_WITH\_HTTP_ or _IOTSA\_WITH\_HTTPS_.
 
 ### iotsaRequest.h
 
