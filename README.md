@@ -18,7 +18,7 @@ Note that the build badges above are for the [develop branch](https://github.com
 
 ## Choosing hardware
 
-For new projects, the recommended hardware is any modern **ESP32-based board**. The iotsa framework supports a wide range of ESP32 boards; boards known to work well include the Lolin32, SparkFun ESP32Thing, Pico32, and ESP32-C3 variants. Pick a board that suits your project's form factor and power requirements and use the matching `[env:...]` in `platformio.ini`.
+For new projects, the recommended hardware is any modern **ESP32-based board**. Pick a board that suits your project's form factor and power requirements and use the matching `[env:...]` in `platformio.ini`.
 
 The custom **iotsa board** (an ESP8266/ESP-12 based PCB) remains a good choice in certain situations:
 
@@ -27,6 +27,18 @@ The custom **iotsa board** (an ESP8266/ESP-12 based PCB) remains a good choice i
 - **Existing deployed projects:** Several iotsa applications (such as _iotsaDoorOpener_ and _iotsaNeoClock_) were designed for this board and use its experiment area.
 
 If you have an iotsa board, see [docs/gettingStarted.md](docs/gettingStarted.md) for hardware-specific setup instructions.
+
+### Supported hardware variants
+
+| Hardware | Status | Notes |
+|---|---|---|
+| ESP32 (original, Xtensa) | **Supported** | Tested in CI (esp32thing). Lolin32, Pico32, ESP32dev also known to work but not in CI — _a selection should be added to CI_. Full feature support: BLE, sleep/wakeup, touch, rotary encoder. |
+| ESP32-C3 (RISC-V) | **Supported** | Tested in CI (esp32-c3-devkitm-1). Known limitations: no analog voltage reading, no deep-sleep wakeup, no rotary encoder (no PCNT hardware), no touch sensor input. WiFi power reduction defaults on as a hardware workaround. |
+| ESP8266 / ESP-12 | **Supported** | Tested in CI (nodemcuv2), used by the iotsa board. No BLE. |
+| ESP32-S3 | **Untested** | Profile similar to original ESP32 (BLE, touch, USB OTG). Likely works — _feedback welcome_. |
+| ESP32-C6 | **Untested** | RISC-V like C3, adds WiFi 6 and Bluetooth 5.3. Likely similar to C3 — _feedback welcome_. |
+| ESP32-S2 | **Untested** | No Bluetooth. BLE-dependent features will not work. _Feedback welcome on what does work._ |
+| ESP32-H2 | **Not supported** | No WiFi. The framework assumes WiFi throughout; not a viable target. |
 
 ## Installation and use for developers
 
