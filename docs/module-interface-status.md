@@ -144,3 +144,8 @@ same checks:
 - Does any application code call `rtcMod.localHours()` / `rtcMod.localMinutes()` /
   `rtcMod.isoTime()` directly? It should not — those methods return UTC, not local time. All
   local-time access should go through `ntpMod`. (See cwi-dis/iotsa#104.)
+- Does application code call `ntpMod.localHours()` / `ntpMod.localMinutes()` / `ntpMod.isoTime()`
+  etc.? These wrappers date from when ESP8266 lacked a full POSIX time library. All current boards
+  have `localtime()` / `strftime()` / `time()` available. Application code using the module
+  methods should be migrated to standard POSIX calls; the module methods are candidates for
+  deprecation in iotsaNtp itself.
