@@ -141,3 +141,6 @@ same checks:
   round-tripped through a config file so they survive reboot.
 - Are all REST/web-writable fields also persisted in the config file — and vice versa, are all
   config-file fields also exposed via REST or web (so they can be changed without reflashing)?
+- Does any application code call `rtcMod.localHours()` / `rtcMod.localMinutes()` /
+  `rtcMod.isoTime()` directly? It should not — those methods return UTC, not local time. All
+  local-time access should go through `ntpMod`. (See cwi-dis/iotsa#104.)
