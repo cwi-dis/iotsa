@@ -439,6 +439,30 @@ and then repeatedly call `cf.put("name", variable)`.
 
 ## available standard modules
 
+### Module categories
+
+Modules fall into six groups, roughly in order of how fundamental they are:
+
+**Core stack** — present in almost every device; together they determine how and when the device runs and communicates:
+`iotsaConfigMod.h`, `iotsaWifi.h`, `iotsaBLEServer.h`, `iotsaBattery.h`
+
+**Auth** — pick one or combine to control access to the device's endpoints:
+`iotsaUser.h`, `iotsaMultiUser.h`, `iotsaCapabilities.h`
+
+**Time** — network time sync and hardware clock backup; use together for off-network time keeping:
+`iotsaNtp.h`, `iotsaRtc.h`
+
+**Hardware I/O** — peripheral wrappers for common physical inputs and the status LED:
+`iotsaLed.h`, `iotsaButton.h`, `iotsaInput.h`
+
+**Maintenance** — OTA updates, debug logging, and flash filesystem access:
+`iotsaOta.h`, `iotsaLogger.h`, `iotsaFiles.h`, `iotsaFilesUpload.h`, `iotsaFilesBackup.h`
+
+**Application scaffolding** — helpers for writing application code; not framework features in their own right:
+`iotsaSimple.h`, `iotsaRequest.h`, `iotsaNothing.h`
+
+Note: `iotsaConfigMod.h`, `iotsaWifi.h`, and `iotsaSimple.h` are described in the framework section above; all others are described alphabetically below.
+
 ### iotsaBattery.h
 
 Allows sleeping, hibernating and shutting down WiFi of your iotsa device to conserve battery power.
