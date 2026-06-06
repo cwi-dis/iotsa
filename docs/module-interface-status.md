@@ -149,3 +149,8 @@ same checks:
   have `localtime()` / `strftime()` / `time()` available. Application code using the module
   methods should be migrated to standard POSIX calls; the module methods are candidates for
   deprecation in iotsaNtp itself.
+- Does the repo use `IotsaWifiMod` unconditionally? It should be guarded with
+  `#ifdef IOTSA_WITH_WIFI` to support BLE-only builds. (See cwi-dis/iotsa#105.)
+- Does custom code call into `IotsaBatteryMod` for sleep inhibit or run-mode decisions? Note that
+  `IotsaBatteryMod` is slated to be split into `IotsaRunmodeMod` (sleep/wake/CPU) and a smaller
+  voltage-reading module. (See cwi-dis/iotsa#106.)
