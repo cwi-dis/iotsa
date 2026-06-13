@@ -43,7 +43,7 @@ iotsa -t yourdevice.local xInfo modulename
 iotsa -t yourdevice.local xConfig modulename key=value
 ```
 
-Parameters are `name=value`, or `name=type:value` to force a type (e.g. `count=int:5`).
+Parameters are `name=value`. Values are auto-coerced: `true`/`false` become booleans, anything that looks like an integer becomes an int, then a float, otherwise it stays a string. Use `name=type:value` to override (e.g. `name=str:123` to pass a number as a string).
 
 ### WiFi information and configuration
 
