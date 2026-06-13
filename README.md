@@ -123,23 +123,17 @@ Note that HTTPS support here refers to iotsa as a server only, HTTPS client supp
 
 ### Command line tool
 
-There is a command line helper program `iotsa`. It will be documented here at some point. For now, install _iotsa_ with the following commands:
+There is a command line helper program `iotsa`. See [extras/python/README.md](extras/python/README.md) for full documentation and usage examples.
 
-```
-cd extras/python
-pip3 install .
-```
+To install from the repo root:
 
-Alternatively, for development, do
-
-```
+```sh
 python3 -m venv .venv
-. .venv/bin/activate
-cd extras/python
-pip install -e .
+source .venv/bin/activate
+pip install -e extras/python/
 ```
 
-Then you can get a list of the available commands with `iotsa help` and a list of the available options with `iotsa --help`.
+Then use `iotsa --help` for a list of all options and commands.
 
 
 ### OTA programming
