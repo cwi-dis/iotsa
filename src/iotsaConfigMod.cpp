@@ -452,6 +452,9 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
       reply["requestedMode"] = int(iotsaConfig.nextConfigurationMode);
       reply["requestedModeTimeout"] = (iotsaConfig.nextConfigurationModeEndTime - millis())/1000;
       reply["needsReboot"] = true;
+      // Save immediately: the early return below skips the configSave() at the end of
+      // this function, so a mode request from normal mode would not survive a reboot.
+      configSave();
     }
   }
   if (!iotsaConfig.inConfigurationOrFactoryMode()) {
