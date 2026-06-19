@@ -54,7 +54,7 @@ class BLE:
         iotsaCandidates = []
         for d, adv in devices_and_advertisement_data_map.values():
             if IOTSA_BATTERY_SERVICE in adv.service_uuids:
-                iotsaCandidates.append(d.address)
+                iotsaCandidates.append(adv.local_name or d.name or d.address)
         if iotsaCandidates:
             self._allDevices = iotsaCandidates
 
