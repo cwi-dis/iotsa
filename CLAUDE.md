@@ -58,6 +58,19 @@ Arduino IDE and arduino-cli are also supported.
 - **First flash / wired:** `pio run -e <env> -t upload` over USB
 - **Subsequent updates:** OTA via the Python control tool (see below)
 
+### OTA workflow — order matters
+
+Always follow this sequence: **edit → build (to verify) → commit → rebuild → flash.**
+
+If you build before committing, the firmware embeds the previous HEAD hash as `programVersion`, so the running device reports the wrong version. The rebuild after committing is fast (only the version string changes) but important for traceability.
+
+```bash
+pio run -e <env>                              # verify it builds
+git commit ...
+pio run -e <env>                              # rebuild with correct hash
+iotsa -t <host> otaWait ota .pio/build/<env>/firmware.bin
+```
+
 ## Python control tool
 
 Located in `extras/python/`. The repo root has a `.venv` (Python 3.13) for local development.
