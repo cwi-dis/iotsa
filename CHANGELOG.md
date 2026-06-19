@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added workaround for some esp32c3 boards (#99)
 - Show WiFi MAC address when in config or factory mode (#102)
 - Fix `bleTargets` showing UUIDs instead of device names on macOS (#111)
+- Document `--protocol hps` in help text
 
 ## [2.8.1] - 2025-05-04
 

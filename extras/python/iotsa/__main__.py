@@ -138,7 +138,7 @@ class Main(object):
             "--protocol",
             action="store",
             metavar="PROTO",
-            help="Access protocol (default: http, allowed: https, coap)",
+            help="Access protocol (default: http, allowed: https, coap, hps)",
         )
         parser.add_argument(
             "--port",
