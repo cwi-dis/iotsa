@@ -28,6 +28,7 @@ IotsaWifiMod::IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *
 }
 
 void IotsaWifiMod::setup() {
+  configLoad();
   if (iotsaConfig.wifiDisabledOnBoot) {
     IFDEBUG IotsaSerial.println("WiFi disabled by iotsaBattery");
     WiFiMode_t newMode = WIFI_OFF;
@@ -41,7 +42,6 @@ void IotsaWifiMod::setup() {
     // Otherwise we presume Normal mode, which will revert to factory if we have no SSID.
     iotsaConfig.wifiMode = iotsa_wifi_mode::IOTSA_WIFI_NORMAL;
   }
-  configLoad();
   _wifiGotoMode();
 }
 
