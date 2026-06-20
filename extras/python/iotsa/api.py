@@ -278,7 +278,7 @@ class IotsaDevice:
             modData = None
             try:
                 modData = api.getAll()
-            except IotsaError as arg:
+            except (IotsaError, requests.exceptions.HTTPError) as arg:
                 print(f"getAll: module {m}: {arg}", file=sys.stderr)
             modules[m] = modData
         all["modules"] = modules

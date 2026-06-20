@@ -19,7 +19,7 @@ class IotsaHpsServiceEntryPoint {
    IotsaAuthenticationProvider* auth;
 };
 
-class IotsaHpsServiceMod : public IotsaBaseMod, public IotsaBLEApiProvider {
+class IotsaHpsServiceMod : public IotsaApiMod, public IotsaBLEApiProvider {
   friend class IotsaApiServiceHps;
 
   const int HPSMaxBodySize = 512;
@@ -37,7 +37,13 @@ class IotsaHpsServiceMod : public IotsaBaseMod, public IotsaBLEApiProvider {
     BodyTruncated = 0x08
   };
 public:
-  using IotsaBaseMod::IotsaBaseMod;
+  IotsaHpsServiceMod(IotsaApplication &_app) : IotsaApiMod(_app) {}
+  void serverSetup() override {
+    api.setup("/api/hps", true, false, false);
+  }
+  bool getHandler(const char *path, JsonObject& reply) override {
+    return true;
+  }
   void setup() override {
     IotsaApiServiceHps::_hpsMod = this;
     name = "hps";

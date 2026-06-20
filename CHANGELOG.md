@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix `bleTargets` showing UUIDs instead of device names on macOS (#111)
 - Document `--protocol hps` in help text
 - Fix wificonfig reporting empty SSID when WiFi disabled on boot
+- Fix allInfo crashing on 404 from hps module; hps now returns empty REST response
 
 ## [2.8.1] - 2025-05-04
 
