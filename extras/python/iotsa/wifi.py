@@ -31,7 +31,6 @@ class AbstractPlatformWifi(ABC):
 
 if sys.platform == "darwin":
     import subprocess
-    import plistlib
 
     class PlatformWifi(AbstractPlatformWifi):
         """MacOS WiFi handling"""
@@ -59,18 +58,48 @@ if sys.platform == "darwin":
         def platformListWifiNetworks(self) -> List[str]:
             if VERBOSE:
                 print("Listing wifi networks (OSX)")
-            p = subprocess.Popen(
-                "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport --scan --xml",
-                shell=True,
-                stdout=subprocess.PIPE,
-            )
-            assert p.stdout
-            data = plistlib.load(p.stdout, fmt=plistlib.FMT_XML)
-            wifiNames = [d["SSID_STR"] for d in data]
-            wifiNames.sort()
+            wifiNames = self._scanWithCoreWLAN()
+            if wifiNames is None:
+                wifiNames = self._scanWithWifiCli()
+            if wifiNames is None:
+                raise UserIntervention(
+                    "WiFi scan returned no results.\n"
+                    "CoreWLAN requires Location Services permission for Terminal or Python\n"
+                    "(System Settings > Privacy & Security > Location Services).\n"
+                    "Alternatively, install wifi-cli: brew install rgeraskin/homebrew/wifi-cli"
+                )
             if VERBOSE:
                 print("Wifi networks found:", wifiNames)
             return wifiNames
+
+        def _scanWithCoreWLAN(self) -> Optional[List[str]]:
+            """Try CoreWLAN scan. Returns list of SSIDs, or None if location permission is missing."""
+            import CoreWLAN
+            iface = CoreWLAN.CWWiFiClient.sharedWiFiClient().interface()
+            networks, err = iface.scanForNetworksWithName_error_(None, None)
+            if err:
+                return None
+            # Without location permission, networks are returned but with null SSIDs
+            result = sorted(set(n.ssid() for n in networks if n.ssid()))
+            if not result:
+                return None
+            return result
+
+        def _scanWithWifiCli(self) -> Optional[List[str]]:
+            """Try wifi-cli scan. Returns list of SSIDs, or None if wifi-cli is not installed."""
+            import json
+            import shutil
+            if not shutil.which("wifi-cli"):
+                return None
+            p = subprocess.run(
+                ["wifi-cli", "--json", "scan"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            if p.returncode != 0:
+                return None
+            data = json.loads(p.stdout)
+            return sorted(entry["ssid"] for entry in data if "ssid" in entry)
 
         def platformJoinWifiNetwork(self, ssid: str, password: str) -> bool:
             if VERBOSE:

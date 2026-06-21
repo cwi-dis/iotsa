@@ -72,12 +72,13 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
-        "requests", 
-        "esptool", 
-        "zeroconf", 
+        "requests",
+        "esptool",
+        "zeroconf",
         "debugpy",
-        "CoAPThon3 @ git+https://github.com/rgerganov/CoAPthon3", 
-        "bleaktyped @ git+https://github.com/jackjansen/bleaktyped"],
+        "CoAPThon3 @ git+https://github.com/rgerganov/CoAPthon3",
+        "bleaktyped @ git+https://github.com/jackjansen/bleaktyped",
+        "pyobjc-framework-CoreWLAN; sys_platform == 'darwin'"],
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:
