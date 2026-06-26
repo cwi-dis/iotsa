@@ -206,6 +206,11 @@ class Main(object):
             action="store_true",
             help="Print version and exit"
         )
+        parser.add_argument(
+            "--force",
+            action="store_true",
+            help="Force operation even if sanity checks fail"
+        )
         parser.add_argument("command", nargs="*", help="Command to run")
         self.cmd_help = parser.print_help
         self.args = parser.parse_args()
@@ -695,6 +700,33 @@ class Main(object):
             sys.exit(1)
         self.loadDevice()
         assert self.device
+        # Sanity check: compare backup program name and module set against live device
+        config_path = os.path.join(dirname, "config.json")
+        if os.path.exists(config_path):
+            with open(config_path) as f:
+                backup_config = json.load(f)
+            live = self.device.getAll()
+            ok = True
+            backup_program = backup_config.get("program")
+            live_program = live.get("program")
+            if backup_program != live_program:
+                print("Warning: program mismatch: backup=%r, device=%r" % (backup_program, live_program), file=sys.stderr)
+                ok = False
+            backup_modules = set(fn[:-5] for fn in os.listdir(dirname) if fn.endswith(".json") and fn != "config.json")
+            live_modules = set(live.get("modules", {}).keys())
+            only_in_backup = backup_modules - live_modules
+            only_on_device = live_modules - backup_modules
+            if only_in_backup:
+                print("Warning: modules in backup but not on device: %s" % ", ".join(sorted(only_in_backup)), file=sys.stderr)
+                ok = False
+            if only_on_device:
+                print("Warning: modules on device but not in backup: %s" % ", ".join(sorted(only_on_device)), file=sys.stderr)
+                ok = False
+            if not ok:
+                if not self.args.force:
+                    print("Aborting. Use --force to restore anyway.", file=sys.stderr)
+                    sys.exit(1)
+                print("--force specified, continuing despite warnings.", file=sys.stderr)
         for filename in sorted(os.listdir(dirname)):
             if not filename.endswith(".json"):
                 continue
