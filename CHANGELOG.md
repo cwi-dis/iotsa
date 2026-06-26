@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix wificonfig reporting empty SSID when WiFi disabled on boot
 - Fix allInfo crashing on 404 from hps module; hps now returns empty REST response
 - Fix `iotsa networks` broken on macOS since airport tool removed; now uses CoreWLAN with wifi-cli fallback (#97)
+- Add `backup` and `restore` commands to save/restore all module configs as JSON files
 
 ## [2.8.1] - 2025-05-04
 

@@ -5,6 +5,7 @@ import requests
 import time
 import os
 import subprocess
+import json
 from typing import Optional, Any, Iterable, List
 import urllib.request, urllib.parse, urllib.error
 import socket
@@ -659,6 +660,67 @@ class Main(object):
                 self._printall(v, indent + 4)
         else:
             print(repr(d))
+
+    def cmd_backup(self) -> None:
+        """Save all module configs to a directory as JSON files, one per module"""
+        dirname = self._getcmd()
+        if not dirname:
+            print("%s: backup requires a directory name" % sys.argv[0], file=sys.stderr)
+            sys.exit(1)
+        self.loadDevice()
+        assert self.device
+        all = self.device.getAll()
+        os.makedirs(dirname, exist_ok=True)
+        # Save top-level config module
+        config_data = {k: v for k, v in all.items() if k != "modules"}
+        config_path = os.path.join(dirname, "config.json")
+        with open(config_path, "w") as f:
+            json.dump(config_data, f, indent=2)
+        print("Saved %s" % config_path)
+        # Save each module separately
+        for modname, moddata in all.get("modules", {}).items():
+            modpath = os.path.join(dirname, "%s.json" % modname)
+            with open(modpath, "w") as f:
+                json.dump(moddata, f, indent=2)
+            print("Saved %s" % modpath)
+
+    def cmd_restore(self) -> None:
+        """Restore module configs from a backup directory (skips config.json)"""
+        dirname = self._getcmd()
+        if not dirname:
+            print("%s: restore requires a directory name" % sys.argv[0], file=sys.stderr)
+            sys.exit(1)
+        if not os.path.isdir(dirname):
+            print("%s: restore: directory not found: %s" % (sys.argv[0], dirname), file=sys.stderr)
+            sys.exit(1)
+        self.loadDevice()
+        assert self.device
+        for filename in sorted(os.listdir(dirname)):
+            if not filename.endswith(".json"):
+                continue
+            modname = filename[:-5]
+            if modname == "config":
+                print("Skipping config.json (read-only device identity)")
+                continue
+            modpath = os.path.join(dirname, filename)
+            with open(modpath) as f:
+                moddata = json.load(f)
+            if moddata is None:
+                print("Skipping %s (no data)" % modname)
+                continue
+            print("Restoring %s..." % modname, end=" ", flush=True)
+            ext = self.device.getApi(modname)
+            ext.transaction()
+            for k, v in moddata.items():
+                ext.set(k, v)
+            try:
+                ext.commit()
+                print("ok")
+            except api.UserIntervention as e:
+                print("needs reboot")
+                print("  %s" % e)
+            except (api.IotsaError, requests.exceptions.HTTPError) as e:
+                print("error: %s" % e)
 
     def cmd_wifiInfo(self) -> None:
         """Show WiFi information for target"""
