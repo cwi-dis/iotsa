@@ -541,7 +541,7 @@ class Main(object):
         self.device.printStatus()
 
     def cmd_networks(self) -> None:
-        """List iotsa wifi networks"""
+        """List WiFi networks visible to this Mac (not the device). Use this to find the config AP name of a fresh/factory-reset iotsa device (shows up as config-iotsa<suffix>), then pass that name to --ssid."""
         self.loadWifi()
         assert self.wifi
         networks = self.wifi.findNetworks()
