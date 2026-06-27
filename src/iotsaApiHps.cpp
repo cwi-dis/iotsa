@@ -59,6 +59,7 @@ public:
   }
 
   void loop() override {}
+  String info() override { return ""; }
 protected:
   IotsaBleApiService bleApi;
 
