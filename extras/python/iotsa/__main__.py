@@ -120,7 +120,7 @@ class Main(object):
             "--ssid",
             action="store",
             metavar="SSID",
-            help="Connect to WiFi network named SSID",
+            help="Switch Mac WiFi to network SSID before running commands, then switch back. Use this to reach a fresh/factory-reset device on its config AP (e.g. --ssid config-iotsa<suffix>).",
         )
         parser.add_argument(
             "--ssidpw",
