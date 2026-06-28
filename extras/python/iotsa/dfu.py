@@ -1,7 +1,37 @@
+import io
 import os
 import struct
 import urllib.request
+import zlib
 from typing import Optional, List
+
+# otadata struct layout and CRC formula sourced from:
+#   ~/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/
+#   include/bootloader_support/include/esp_flash_partitions.h
+#
+# typedef struct {
+#     uint32_t ota_seq;
+#     uint8_t  seq_label[20];
+#     uint32_t ota_state;
+#     uint32_t crc;  /* CRC32 of ota_seq field only */
+# } esp_ota_select_entry_t;   // 32 bytes total
+#
+# CRC = esp_rom_crc32_le(UINT32_MAX, &entry.ota_seq, 4)
+# Python equivalent (verified empirically against real device otadata):
+#   zlib.crc32(struct.pack('<I', ota_seq), 0xFFFFFFFF) & 0xFFFFFFFF
+
+OTADATA_ENTRY_BYTES = 32
+OTADATA_STATE_OFFSET = 24
+OTADATA_CRC_OFFSET = 28
+
+OTA_STATES = {
+    0: 'new',
+    1: 'pending_verify',
+    2: 'valid',
+    3: 'invalid',
+    4: 'aborted',
+    0xFFFFFFFF: 'undefined',
+}
 
 import esptool
 import esptool.cmds as esptool_cmds
@@ -246,6 +276,81 @@ class DFU:
     def flashApp(self, filename: str) -> None:
         """Flash app binary to ota_0 partition."""
         self.writePartition('ota_0', filename)
+
+    # --- OTA data ---
+
+    def _otadata_crc(self, ota_seq: int) -> int:
+        """CRC32 over the 4-byte ota_seq, as esp_rom_crc32_le(UINT32_MAX, &ota_seq, 4)."""
+        return zlib.crc32(struct.pack('<I', ota_seq), 0xFFFFFFFF) & 0xFFFFFFFF
+
+    def _parse_otadata_entry(self, data: bytes) -> dict:
+        """Parse one 32-byte otadata entry from a 4096-byte sector."""
+        ota_seq   = struct.unpack_from('<I', data, 0)[0]
+        ota_state = struct.unpack_from('<I', data, OTADATA_STATE_OFFSET)[0]
+        stored_crc = struct.unpack_from('<I', data, OTADATA_CRC_OFFSET)[0]
+        if ota_seq == 0xFFFFFFFF or ota_seq == 0:
+            return {'erased': True, 'valid': False}
+        computed_crc = self._otadata_crc(ota_seq)
+        return {
+            'erased': False,
+            'valid': stored_crc == computed_crc,
+            'ota_seq': ota_seq,
+            'ota_state': ota_state,
+            'ota_state_name': OTA_STATES.get(ota_state, f'unknown({ota_state:#010x})'),
+            'crc_ok': stored_crc == computed_crc,
+        }
+
+    def getOtadata(self) -> List[dict]:
+        """Read and parse both otadata entries (one per 4096-byte sector)."""
+        data = self.readPartition('otadata')
+        assert data is not None
+        return [
+            self._parse_otadata_entry(data[0:]),
+            self._parse_otadata_entry(data[4096:]),
+        ]
+
+    def getActiveOtaSlot(self) -> str:
+        """Return subtype name of the partition that will boot next (e.g. 'ota_0', 'factory')."""
+        entries = self.getOtadata()
+        table = self.getPartitionTable()
+        ota_parts = [p for p in table if p.type == 'app' and p.subtype.startswith('ota_')]
+        n = len(ota_parts)
+        best_seq = max(
+            (e['ota_seq'] for e in entries if e.get('valid')),
+            default=0
+        )
+        if best_seq == 0 or n == 0:
+            factory = next((p for p in table if p.type == 'app' and p.subtype == 'factory'), None)
+            return 'factory' if factory else 'ota_0'
+        return f'ota_{(best_seq - 1) % n}'
+
+    def setOtaSlot(self, slot_name: str) -> None:
+        """Rewrite otadata to make the named OTA slot active on next boot."""
+        table = self.getPartitionTable()
+        ota_parts = [p for p in table if p.type == 'app' and p.subtype.startswith('ota_')]
+        slot_idx = next(
+            (i for i, p in enumerate(ota_parts) if p.subtype == slot_name or p.name == slot_name),
+            None
+        )
+        if slot_idx is None:
+            available = [p.subtype for p in ota_parts]
+            raise IotsaError(f"OTA slot {slot_name!r} not found. Available: {available}")
+        ota_seq = slot_idx + 1
+        entry = bytearray(b'\xff' * 4096)
+        struct.pack_into('<I', entry, 0, ota_seq)
+        entry[4:24] = b'\x00' * 20         # seq_label: zeros (no SHA-256 hash)
+        struct.pack_into('<I', entry, OTADATA_STATE_OFFSET, 2)  # ota_state: valid
+        struct.pack_into('<I', entry, OTADATA_CRC_OFFSET, self._otadata_crc(ota_seq))
+        self.erasePartition('otadata')
+        p = self.findPartition('otadata')
+        esp = self._connect()
+        esptool_cmds.write_flash(esp, [(p.offset, io.BytesIO(bytes(entry)))])
+        if VERBOSE:
+            print(f"+ otadata set: {slot_name} (ota_seq={ota_seq})")
+
+    def clearOtadata(self) -> None:
+        """Erase otadata so bootloader defaults to factory (or ota_0 if no factory)."""
+        self.erasePartition('otadata')
 
     # --- Raw passthrough ---
 

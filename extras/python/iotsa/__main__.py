@@ -577,13 +577,16 @@ class Main(object):
         'info':       'Show chip info and partition table',
         'jsoninfo':   'Show chip info and partition table as JSON',
         'backup':     'Read entire flash to file: dfu backup <file>',
-        'restore':    'Write file to flash at offset 0: dfu restore <file>',
+        'restore':    'Write file/url to flash at offset 0: dfu restore <file|url>',
         'clear':      'Erase entire flash',
         'flash':      'Flash firmware to ota_0 partition: dfu flash <file|url>',
-        'flashfs':    'Flash filesystem image to spiffs partition: dfu flashfs <file>',
+        'flashfs':    'Flash filesystem to spiffs partition (shortcut for flashpart spiffs): dfu flashfs <file|url>',
         'clearfs':    'Erase spiffs/littlefs partition',
         'backuppart': 'Read named partition to file: dfu backuppart <name> <file>',
-        'flashpart':  'Write file to named partition: dfu flashpart <name> <file>',
+        'flashpart':  'Write file/url to named partition: dfu flashpart <name> <file|url>',
+        'otainfo':    'Show otadata: which slot is active and state of each entry',
+        'otaset':     'Set active OTA boot slot: dfu otaset <ota_0|ota_1|...>',
+        'otaclear':   'Erase otadata so bootloader defaults to factory (or ota_0)',
         'lsfs':       'List files in LittleFS/spiffs partition',
         'extractfs':  'Extract LittleFS/spiffs partition to directory: dfu extractfs <dir>',
         'esptool':    'Raw esptool passthrough (v5 hyphen-style commands): dfu esptool <args...>',
@@ -691,6 +694,36 @@ class Main(object):
             print(f"{sys.argv[0]}: dfu flashpart requires a partition name and filename", file=sys.stderr)
             sys.exit(1)
         self.dfu.writePartition(partname, filename)
+
+    def _dfu_otainfo(self) -> None:
+        assert self.dfu
+        entries = self.dfu.getOtadata()
+        active = self.dfu.getActiveOtaSlot()
+        print(f"Active slot on next boot: {active}")
+        print()
+        for i, e in enumerate(entries):
+            print(f"Entry {i} (sector {i}):")
+            if e.get('erased'):
+                print("  erased")
+            else:
+                crc_note = "ok" if e['crc_ok'] else "BAD"
+                print(f"  ota_seq:   {e['ota_seq']} -> slot ota_{e['ota_seq'] - 1}")
+                print(f"  ota_state: {e['ota_state_name']}")
+                print(f"  crc:       {crc_note}")
+
+    def _dfu_otaset(self) -> None:
+        assert self.dfu
+        slot = self._getcmd()
+        if not slot:
+            print(f"{sys.argv[0]}: dfu otaset requires a slot name (e.g. ota_0)", file=sys.stderr)
+            sys.exit(1)
+        self.dfu.setOtaSlot(slot)
+        print(f"otadata updated: {slot} will be active on next boot")
+
+    def _dfu_otaclear(self) -> None:
+        assert self.dfu
+        self.dfu.clearOtadata()
+        print("otadata erased: bootloader will default to factory (or ota_0)")
 
     def _dfu_mount_littlefs(self, partition_name: str = 'spiffs'):
         """Read named partition from device and return a mounted LittleFS object."""

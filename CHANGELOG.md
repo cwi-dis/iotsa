@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix allInfo crashing on 404 from hps module; hps now returns empty REST response
 - Fix `iotsa networks` broken on macOS since airport tool removed; now uses CoreWLAN with wifi-cli fallback (#97)
 - Add `backup` and `restore` commands to save/restore all module configs as JSON files
+- Rework `dfu` as subcommands (`dfu info`, `dfu flash`, `dfu backup`, `dfu flashfs`, `dfu lsfs`, `dfu extractfs`, etc.); add partition-table awareness, LittleFS read support, and OTA slot management (`dfu otainfo`, `dfu otaset`, `dfu otaclear`)
 
 ## [2.8.1] - 2025-05-04
 
