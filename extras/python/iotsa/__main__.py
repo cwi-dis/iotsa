@@ -55,6 +55,9 @@ class Main(object):
         if self.device:
             self.device.close()
         self.device = None
+        if self.dfu:
+            self.dfu.close()
+        self.dfu = None
 
     def run(self) -> None:
         """Run the main commandline program"""
@@ -570,37 +573,182 @@ class Main(object):
         assert self.device
         self.device.gotoMode("ota", wait=True, verbose=True)
 
-    def cmd_dfuMode(self) -> None:
-        """Check whether there is a target connected in DFU mode (via USB or serial port)"""
-        self.loadDFU()
-        assert self.dfu
-        self.dfu.dfuWait()
+    _DFU_SUBCOMMANDS = {
+        'info':       'Show chip info and partition table',
+        'jsoninfo':   'Show chip info and partition table as JSON',
+        'backup':     'Read entire flash to file: dfu backup <file>',
+        'restore':    'Write file to flash at offset 0: dfu restore <file>',
+        'clear':      'Erase entire flash',
+        'flash':      'Flash firmware to ota_0 partition: dfu flash <file|url>',
+        'flashfs':    'Flash filesystem image to spiffs partition: dfu flashfs <file>',
+        'clearfs':    'Erase spiffs/littlefs partition',
+        'backuppart': 'Read named partition to file: dfu backuppart <name> <file>',
+        'flashpart':  'Write file to named partition: dfu flashpart <name> <file>',
+        'lsfs':       'List files in LittleFS/spiffs partition',
+        'extractfs':  'Extract LittleFS/spiffs partition to directory: dfu extractfs <dir>',
+        'esptool':    'Raw esptool passthrough (v5 hyphen-style commands): dfu esptool <args...>',
+        'help':       'Show this help',
+    }
 
-    def cmd_dfuClear(self) -> None:
-        """Completely erase flash of target connected in DFU mode (via USB or serial port)"""
-        self.loadDFU()
-        assert self.dfu
-        self.dfu.dfuClear()
-
-    def cmd_dfuLoad(self) -> None:
-        """Load new firmware to target connected in DFU mode (via USB or serial port)"""
-        filename = self._getcmd()
-        if not filename:
-            print(
-                "%s: dfuLoad requires a filename or URL" % sys.argv[0], file=sys.stderr
-            )
+    def cmd_dfu(self) -> None:
+        """USB/serial flash operations. Use 'dfu help' for subcommands."""
+        sub = self._getcmd()
+        if not sub or sub == 'help':
+            print("dfu subcommands:")
+            for name, desc in self._DFU_SUBCOMMANDS.items():
+                print(f"  {name:<12} {desc}")
+            return
+        if sub not in self._DFU_SUBCOMMANDS:
+            print(f"{sys.argv[0]}: dfu: unknown subcommand {sub!r}. Use 'dfu help'.", file=sys.stderr)
             sys.exit(1)
         self.loadDFU()
         assert self.dfu
-        self.dfu.dfuLoad(filename)
-        self.dfu.dfuRun()
+        handler = getattr(self, f'_dfu_{sub}')
+        handler()
 
-    def cmd_dfuEsptool(self) -> None:
-        """Run esptool.py on connected target. All further arguments are passed to to esptool"""
-        args = self.cmdlist
-        self.cmdlist = []
-        self.loadDFU()
+    def _dfu_info(self) -> None:
         assert self.dfu
+        chip = self.dfu.getChipInfo()
+        size = self.dfu.getFlashSize()
+        table = self.dfu.getPartitionTable()
+        print(f"Chip:     {chip['description']}")
+        print(f"Features: {', '.join(chip['features'])}")
+        print(f"Crystal:  {chip['crystal_mhz']} MHz")
+        print(f"MAC:      {chip['mac']}")
+        print(f"Flash:    {size // (1024 * 1024)}MB ({size} bytes)")
+        print()
+        print(f"{'Name':<16} {'Type':<6} {'Subtype':<12} {'Offset':>10} {'Size':>10}")
+        print("-" * 58)
+        for p in table:
+            print(f"{p.name:<16} {p.type:<6} {p.subtype:<12} {p.offset:#10x} {p.size:#10x}")
+
+    def _dfu_jsoninfo(self) -> None:
+        assert self.dfu
+        import json
+        chip = self.dfu.getChipInfo()
+        size = self.dfu.getFlashSize()
+        table = self.dfu.getPartitionTable()
+        print(json.dumps({
+            'chip': chip,
+            'flash_size': size,
+            'partitions': [vars(p) for p in table],
+        }, indent=2))
+
+    def _dfu_backup(self) -> None:
+        assert self.dfu
+        filename = self._getcmd()
+        if not filename:
+            print(f"{sys.argv[0]}: dfu backup requires a filename", file=sys.stderr)
+            sys.exit(1)
+        self.dfu.backupFlash(filename)
+
+    def _dfu_restore(self) -> None:
+        assert self.dfu
+        filename = self._getcmd()
+        if not filename:
+            print(f"{sys.argv[0]}: dfu restore requires a filename", file=sys.stderr)
+            sys.exit(1)
+        self.dfu.restoreFlash(filename)
+
+    def _dfu_clear(self) -> None:
+        assert self.dfu
+        self.dfu.eraseFlash()
+
+    def _dfu_flash(self) -> None:
+        assert self.dfu
+        filename = self._getcmd()
+        if not filename:
+            print(f"{sys.argv[0]}: dfu flash requires a filename or URL", file=sys.stderr)
+            sys.exit(1)
+        self.dfu.flashApp(filename)
+
+    def _dfu_flashfs(self) -> None:
+        assert self.dfu
+        filename = self._getcmd()
+        if not filename:
+            print(f"{sys.argv[0]}: dfu flashfs requires a filename", file=sys.stderr)
+            sys.exit(1)
+        self.dfu.writePartition('spiffs', filename)
+
+    def _dfu_clearfs(self) -> None:
+        assert self.dfu
+        self.dfu.erasePartition('spiffs')
+
+    def _dfu_backuppart(self) -> None:
+        assert self.dfu
+        partname = self._getcmd()
+        filename = self._getcmd()
+        if not partname or not filename:
+            print(f"{sys.argv[0]}: dfu backuppart requires a partition name and filename", file=sys.stderr)
+            sys.exit(1)
+        self.dfu.readPartition(partname, filename)
+
+    def _dfu_flashpart(self) -> None:
+        assert self.dfu
+        partname = self._getcmd()
+        filename = self._getcmd()
+        if not partname or not filename:
+            print(f"{sys.argv[0]}: dfu flashpart requires a partition name and filename", file=sys.stderr)
+            sys.exit(1)
+        self.dfu.writePartition(partname, filename)
+
+    def _dfu_mount_littlefs(self, partition_name: str = 'spiffs'):
+        """Read named partition from device and return a mounted LittleFS object."""
+        assert self.dfu
+        try:
+            import littlefs
+        except ImportError:
+            print(f"{sys.argv[0]}: littlefs-python is required. Install with: pip install littlefs-python", file=sys.stderr)
+            sys.exit(1)
+        data = self.dfu.readPartition(partition_name)
+        assert data is not None
+        block_size = 4096  # standard ESP32 flash sector size
+        fs = littlefs.LittleFS(block_size=block_size, block_count=len(data) // block_size)
+        fs.context.buffer = bytearray(data)
+        fs.mount()
+        return fs
+
+    def _dfu_lsfs(self) -> None:
+        assert self.dfu
+        fs = self._dfu_mount_littlefs()
+        def ls(path: str, indent: int = 0) -> None:
+            for name in sorted(fs.listdir(path)):
+                full = path.rstrip('/') + '/' + name
+                stat = fs.stat(full)
+                if stat.type == 2:  # directory
+                    print('  ' * indent + name + '/')
+                    ls(full, indent + 1)
+                else:
+                    print('  ' * indent + f"{name} ({stat.size} bytes)")
+        ls('/')
+
+    def _dfu_extractfs(self) -> None:
+        assert self.dfu
+        dirname = self._getcmd()
+        if not dirname:
+            print(f"{sys.argv[0]}: dfu extractfs requires a directory", file=sys.stderr)
+            sys.exit(1)
+        fs = self._dfu_mount_littlefs()
+        def extract(fs_path: str, local_path: str) -> None:
+            os.makedirs(local_path, exist_ok=True)
+            for name in fs.listdir(fs_path):
+                fs_full = fs_path.rstrip('/') + '/' + name
+                local_full = os.path.join(local_path, name)
+                stat = fs.stat(fs_full)
+                if stat.type == 2:  # directory
+                    extract(fs_full, local_full)
+                else:
+                    with fs.open(fs_full, 'rb') as src:
+                        content = src.read()
+                    with open(local_full, 'wb') as dst:
+                        dst.write(content)
+                    print(f"Extracted {fs_full} -> {local_full}")
+        extract('/', dirname)
+
+    def _dfu_esptool(self) -> None:
+        assert self.dfu
+        args = list(self.cmdlist)
+        self.cmdlist = []
         self.dfu.dfuTool(args)
 
     def cmd_bleTargets(self) -> None:

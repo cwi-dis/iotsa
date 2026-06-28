@@ -1,71 +1,263 @@
 import os
-import esptool
+import struct
 import urllib.request
 from typing import Optional, List
 
+import esptool
+import esptool.cmds as esptool_cmds
+
 from .consts import IotsaError, VERBOSE
+
+PARTITION_TABLE_OFFSET = 0x8000
+PARTITION_TABLE_SIZE = 0xC00
+PARTITION_ENTRY_SIZE = 32
+PARTITION_MAGIC = 0x50AA
+PARTITION_MD5_MAGIC = 0xEBEB
+
+_APP_SUBTYPES: dict[int, str] = {0: 'factory', **{0x10 + i: f'ota_{i}' for i in range(16)}}
+_DATA_SUBTYPES: dict[int, str] = {0: 'otadata', 1: 'phy', 2: 'nvs', 3: 'coredump', 0x80: 'spiffs', 0x81: 'fat', 0x82: 'littlefs', 0x83: 'nvs_keys'}
+_TYPE_NAMES: dict[int, str] = {0: 'app', 1: 'data'}
+
+
+class PartitionEntry:
+    def __init__(self, name: str, type_name: str, subtype_name: str, offset: int, size: int, flags: int):
+        self.name = name
+        self.type = type_name
+        self.subtype = subtype_name
+        self.offset = offset
+        self.size = size
+        self.flags = flags
+
+    def __repr__(self) -> str:
+        return (f"PartitionEntry(name={self.name!r}, type={self.type!r}, "
+                f"subtype={self.subtype!r}, offset=0x{self.offset:x}, size=0x{self.size:x})")
 
 
 class DFU:
-    """Handle iotsa board connected to USB or serial port in DFU mode.
+    """Handle iotsa board connected via USB or serial port.
 
-    Resetting flash and uploading initial binary is supported.
-    Board should be rebooted while holding PRG (gpio0) button.
+    Wraps esptool v5 API for flash read/write/erase and partition-aware operations.
+    Connect device via USB. For a bricked device, hold PRG while pressing RST before
+    running any command.
     """
 
     def __init__(self, port: Optional[str] = None):
         self.port = port
-        self.verbose = VERBOSE
+        self._esp: Optional[esptool.ESPLoader] = None
+        self._partition_table: Optional[List[PartitionEntry]] = None
 
-    def _run(self, cmd: str, args: list[str] = [], nostub=False) -> None:
-        """Run a single esptool command"""
-        # command = ["--after", "no_reset"]
-        command = []
+    def _connect(self) -> esptool.ESPLoader:
+        """Connect to device (lazy, reuses existing connection)."""
+        if self._esp is not None:
+            return self._esp
         if self.port:
-            command += ["--port", self.port]
-        if nostub:
-            command += ["--no-stub"]
-        command += [cmd]
+            ser_list = [self.port]
+            port = self.port
+        else:
+            ser_list = esptool.get_port_list()
+            if not ser_list:
+                raise IotsaError(
+                    "No serial ports found. Connect device via USB or specify --serial."
+                )
+            if len(ser_list) > 1 and VERBOSE:
+                print(f"Multiple serial ports: {ser_list}, using {ser_list[0]}")
+            port = ser_list[0]
+        if VERBOSE:
+            print(f"+ Connecting to device on {port}")
+        try:
+            esp = esptool.get_default_connected_device(
+                ser_list,
+                port=port,
+                connect_attempts=3,
+                initial_baud=115200,
+            )
+        except esptool.FatalError as e:
+            raise IotsaError(
+                f"Could not connect to device on {port}: {e}\n"
+                "For a bricked device: hold PRG while pressing RST, then release PRG."
+            )
+        if esp is None:
+            raise IotsaError(f"Could not connect to device on {port}.")
+        esp = esptool.run_stub(esp)
+        self._esp = esp
+        return esp
+
+    def close(self) -> None:
+        """Close the serial connection."""
+        if self._esp is not None:
+            try:
+                self._esp._port.close()
+            except Exception:
+                pass
+            self._esp = None
+        self._partition_table = None
+
+    def _download(self, filename: str) -> str:
+        """Download URL to a temp file if needed; return local path."""
+        if not os.path.exists(filename):
+            if VERBOSE:
+                print(f"+ Downloading {filename}")
+            filename, _ = urllib.request.urlretrieve(filename)
+        return filename
+
+    # --- Chip info ---
+
+    def getChipInfo(self) -> dict:
+        """Return chip identification as a dict (name, description, features, revision, crystal, mac)."""
+        esp = self._connect()
+        mac_bytes = esp.read_mac("BASE_MAC")
+        mac_str = ':'.join(f'{b:02x}' for b in mac_bytes)
+        revision = esp.get_chip_revision()
+        return {
+            'name': esp.CHIP_NAME,
+            'description': esp.get_chip_description(),
+            'features': esp.get_chip_features(),
+            'revision': revision,
+            'crystal_mhz': esp.get_crystal_freq(),
+            'mac': mac_str,
+        }
+
+    # --- Flash size ---
+
+    def getFlashSize(self) -> int:
+        """Return flash size in bytes."""
+        esp = self._connect()
+        size_str = esptool.detect_flash_size(esp)
+        if size_str is None:
+            raise IotsaError("Could not detect flash size")
+        for suffix, mult in [('MB', 1024 * 1024), ('KB', 1024)]:
+            if size_str.endswith(suffix):
+                return int(size_str[:-len(suffix)]) * mult
+        raise IotsaError(f"Unrecognised flash size string: {size_str!r}")
+
+    # --- Partition table ---
+
+    def getPartitionTable(self) -> List[PartitionEntry]:
+        """Read and parse partition table from device. Cached after first read."""
+        if self._partition_table is not None:
+            return self._partition_table
+        esp = self._connect()
+        data = esptool_cmds.read_flash(esp, PARTITION_TABLE_OFFSET, PARTITION_TABLE_SIZE)
+        assert data is not None
+        self._partition_table = self._parsePartitionTable(data)
+        return self._partition_table
+
+    def _parsePartitionTable(self, data: bytes) -> List[PartitionEntry]:
+        entries = []
+        for i in range(0, len(data), PARTITION_ENTRY_SIZE):
+            chunk = data[i:i + PARTITION_ENTRY_SIZE]
+            if len(chunk) < PARTITION_ENTRY_SIZE:
+                break
+            magic = struct.unpack_from('<H', chunk, 0)[0]
+            if magic == 0xFFFF:
+                break
+            if magic == PARTITION_MD5_MAGIC:
+                continue
+            if magic != PARTITION_MAGIC:
+                break
+            ptype = chunk[2]
+            subtype = chunk[3]
+            offset = struct.unpack_from('<I', chunk, 4)[0]
+            size = struct.unpack_from('<I', chunk, 8)[0]
+            name = chunk[12:28].rstrip(b'\x00').decode('ascii', errors='replace')
+            flags = struct.unpack_from('<I', chunk, 28)[0]
+            type_name = _TYPE_NAMES.get(ptype, f'type{ptype}')
+            if ptype == 0:
+                subtype_name = _APP_SUBTYPES.get(subtype, f'subtype{subtype:#x}')
+            elif ptype == 1:
+                subtype_name = _DATA_SUBTYPES.get(subtype, f'subtype{subtype:#x}')
+            else:
+                subtype_name = f'subtype{subtype:#x}'
+            entries.append(PartitionEntry(name, type_name, subtype_name, offset, size, flags))
+        return entries
+
+    def findPartition(self, name: str) -> PartitionEntry:
+        """Find partition by name or subtype. Raises IotsaError if not found."""
+        table = self.getPartitionTable()
+        for p in table:
+            if p.name == name:
+                return p
+        for p in table:
+            if p.subtype == name:
+                return p
+        available = [p.name for p in table]
+        raise IotsaError(f"Partition {name!r} not found. Available: {available}")
+
+    # --- Low-level read/write/erase ---
+
+    def readFlash(self, offset: int, size: int, filename: Optional[str] = None) -> Optional[bytes]:
+        """Read flash region. Returns bytes if filename is None, else writes to file."""
+        esp = self._connect()
+        return esptool_cmds.read_flash(esp, offset, size, output=filename)
+
+    def writeFlash(self, offset: int, filename: str) -> None:
+        """Write file to flash at given byte offset."""
+        filename = self._download(filename)
+        esp = self._connect()
+        esptool_cmds.write_flash(esp, [(offset, filename)])
+
+    def eraseFlash(self) -> None:
+        """Erase entire flash."""
+        esp = self._connect()
+        esptool_cmds.erase_flash(esp)
+
+    def eraseRegion(self, offset: int, size: int) -> None:
+        """Erase a specific flash region."""
+        esp = self._connect()
+        esptool_cmds.erase_region(esp, offset, size)
+
+    # --- Whole-flash backup/restore ---
+
+    def backupFlash(self, filename: str) -> None:
+        """Read entire flash to file."""
+        size = self.getFlashSize()
+        if VERBOSE:
+            print(f"+ Reading {size // (1024 * 1024)}MB flash to {filename!r}")
+        self.readFlash(0, size, filename=filename)
+        print(f"Saved {size} bytes to {filename!r}")
+
+    def restoreFlash(self, filename: str) -> None:
+        """Write file to flash starting at offset 0 (paired with backupFlash)."""
+        self.writeFlash(0, filename)
+
+    # --- Partition-aware operations ---
+
+    def readPartition(self, name: str, filename: Optional[str] = None) -> Optional[bytes]:
+        """Read named partition. Returns bytes if filename is None, else writes to file."""
+        p = self.findPartition(name)
+        if VERBOSE:
+            print(f"+ Reading partition {p.name!r} (offset=0x{p.offset:x} size=0x{p.size:x})")
+        return self.readFlash(p.offset, p.size, filename=filename)
+
+    def writePartition(self, name: str, filename: str) -> None:
+        """Write file to named partition."""
+        p = self.findPartition(name)
+        if VERBOSE:
+            print(f"+ Writing to partition {p.name!r} at offset 0x{p.offset:x}")
+        self.writeFlash(p.offset, filename)
+
+    def erasePartition(self, name: str) -> None:
+        """Erase named partition."""
+        p = self.findPartition(name)
+        if VERBOSE:
+            print(f"+ Erasing partition {p.name!r} (offset=0x{p.offset:x} size=0x{p.size:x})")
+        self.eraseRegion(p.offset, p.size)
+
+    def flashApp(self, filename: str) -> None:
+        """Flash app binary to ota_0 partition."""
+        self.writePartition('ota_0', filename)
+
+    # --- Raw passthrough ---
+
+    def dfuTool(self, args: List[str]) -> None:
+        """Pass arguments directly to esptool (v5 hyphen-style command names)."""
+        command: List[str] = []
+        if self.port:
+            command += ['--port', self.port]
         command += args
-        if self.verbose:
+        if VERBOSE:
             print(f"+ esptool {' '.join(command)}")
         try:
             esptool.main(command)
         except esptool.FatalError as e:
             raise IotsaError(str(e))
-
-    def dfuWait(self) -> None:
-        """Test to see whether a board in programmable mode is connected.
-
-        Raises exception if not.
-        """
-        try:
-            self._run("chip_id", nostub=True)
-        except IotsaError:
-            print("** To use DFU mode on a iotsa device:")
-            print(
-                "   1. Connect iotsa device to serial using FTDI232 or similar interface"
-            )
-            print("   2. Ensure iotsa device is powered through normal power supply")
-            print("   3. Press-and-hold PRG button while pressing RST button")
-            raise
-
-    def dfuClear(self) -> None:
-        """Erase flash."""
-        self.dfuWait()
-        self._run("erase_flash")
-
-    def dfuRun(self) -> None:
-        """Run program stored in iotsa flash memory"""
-        self.dfuWait()
-        self._run("run", nostub=True)
-
-    def dfuLoad(self, filename: str) -> None:
-        """Load a new program into iotsa flash memory"""
-        self.dfuWait()
-        if not os.path.exists(filename):
-            filename, _ = urllib.request.urlretrieve(filename)
-        self._run("write_flash", args=["0", filename])
-
-    def dfuTool(self, args : List[str]):
-        self._run(args[0], args[1:])
