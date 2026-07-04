@@ -183,6 +183,9 @@ class IotsaWifi(PlatformWifi):
             return True
         ok = self.platformJoinWifiNetwork(ssid, password)
         if ok:
+            # networksetup returns 0 even when the SSID is not visible; verify we actually joined
+            ok = self._isNetworkSelected(ssid)
+        if ok:
             self.ssid = ssid
         return ok
 
