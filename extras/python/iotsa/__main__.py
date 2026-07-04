@@ -871,7 +871,7 @@ class Main(object):
             print("Saved %s" % modpath)
 
     def cmd_restore(self) -> None:
-        """Restore module configs from a backup directory (skips config.json)"""
+        """Restore module configs from a backup directory"""
         dirname = self._getcmd()
         if not dirname:
             print("%s: restore requires a directory name" % sys.argv[0], file=sys.stderr)
@@ -912,15 +912,16 @@ class Main(object):
             if not filename.endswith(".json"):
                 continue
             modname = filename[:-5]
-            if modname == "config":
-                print("Skipping config.json (read-only device identity)")
-                continue
             modpath = os.path.join(dirname, filename)
             with open(modpath) as f:
                 moddata = json.load(f)
             if moddata is None:
                 print("Skipping %s (no data)" % modname)
                 continue
+            if modname == "config":
+                # Strip runtime/read-only fields; restore only writable identity fields
+                _CONFIG_READONLY = {"program", "features", "bootCause", "uptime", "currentMode", "wifiDisabled", "bleDisabled"}
+                moddata = {k: v for k, v in moddata.items() if k not in _CONFIG_READONLY}
             print("Restoring %s..." % modname, end=" ", flush=True)
             ext = self.device.getApi(modname)
             ext.transaction()
@@ -932,7 +933,12 @@ class Main(object):
             except api.UserIntervention as e:
                 print("needs reboot")
                 print("  %s" % e)
-            except (api.IotsaError, requests.exceptions.HTTPError) as e:
+            except requests.exceptions.HTTPError as e:
+                if e.response is not None and e.response.status_code in (404, 405):
+                    print("skipped (read-only module)")
+                else:
+                    print("error: %s" % e)
+            except api.IotsaError as e:
                 print("error: %s" % e)
 
     def cmd_wifiInfo(self) -> None:
