@@ -369,6 +369,24 @@ class Main(object):
             return
         self.wifi = api.IotsaWifi()
         if self.args.ssid:
+            safe = self.wifi.platformSafeToSwitchWifi()
+            if safe is False:
+                print(
+                    "%s: switching WiFi to %s would drop your only route to the internet."
+                    % (sys.argv[0], self.args.ssid),
+                    file=sys.stderr,
+                )
+            elif safe is None:
+                print(
+                    "%s: don't know how to check whether switching WiFi to %s is safe on this platform."
+                    % (sys.argv[0], self.args.ssid),
+                    file=sys.stderr,
+                )
+            if safe is not True and not self.args.force:
+                print("Aborting. Use --force to switch anyway.", file=sys.stderr)
+                sys.exit(1)
+            elif safe is not True:
+                print("--force specified, switching WiFi anyway.", file=sys.stderr)
             ok = self.wifi.selectNetwork(self.args.ssid, self.args.ssidpw)
             if not ok:
                 print(

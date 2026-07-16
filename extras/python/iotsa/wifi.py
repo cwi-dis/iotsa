@@ -28,6 +28,16 @@ class AbstractPlatformWifi(ABC):
         """Join a wifi network"""
         pass
 
+    @abstractmethod
+    def platformSafeToSwitchWifi(self) -> Optional[bool]:
+        """Would switching WiFi drop the only route to the internet?
+
+        Returns True if there is another route (safe to switch), False if
+        WiFi is confirmed to be the only route (unsafe), or None if this
+        platform doesn't know how to check (treat as unsafe, require --force).
+        """
+        pass
+
 
 if sys.platform == "darwin":
     import subprocess
@@ -127,6 +137,35 @@ if sys.platform == "darwin":
             wifiName = wifiName.strip()
             return [wifiName]
 
+        def platformSafeToSwitchWifi(self) -> Optional[bool]:
+            # Look up which interface the OS would actually use to reach the
+            # internet (a plain routing-table lookup, no packet is sent). If
+            # it's not our WiFi interface, some other route exists and it's
+            # safe to switch WiFi away.
+            try:
+                p = subprocess.run(
+                    ["route", "get", "1.1.1.1"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True,
+                    timeout=5,
+                )
+            except (OSError, subprocess.TimeoutExpired):
+                return None
+            if p.returncode != 0:
+                return None
+            routeInterface = None
+            for line in p.stdout.splitlines():
+                line = line.strip()
+                if line.startswith("interface:"):
+                    routeInterface = line.split(":", 1)[1].strip()
+                    break
+            if routeInterface is None:
+                return None
+            if VERBOSE:
+                print("Route to internet uses interface", routeInterface, "WiFi interface is", self.wifiInterface)
+            return routeInterface != self.wifiInterface
+
 else:
 
     class PlatformWifi(AbstractPlatformWifi):
@@ -145,6 +184,10 @@ else:
 
         def platformCurrentWifiNetworks(self) -> List[str]:
             return []
+
+        def platformSafeToSwitchWifi(self) -> Optional[bool]:
+            # We don't know how to check this on this platform.
+            return None
 
 
 class IotsaWifi(PlatformWifi):
