@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix `iotsa networks` broken on macOS since airport tool removed; now uses CoreWLAN with wifi-cli fallback (#97)
 - Add `backup` and `restore` commands to save/restore all module configs as JSON files
 - Rework `dfu` as subcommands (`dfu info`, `dfu flash`, `dfu backup`, `dfu flashfs`, `dfu lsfs`, `dfu extractfs`, etc.); add partition-table awareness, LittleFS read support, and OTA slot management (`dfu otainfo`, `dfu otaset`, `dfu otaclear`)
+- Fix ESP8266 builds broken by unguarded ESP32-only battery/WiFi calls (#135)
+- Refuse `--ssid` WiFi switch when it would drop the only internet route, unless `--force` (#129)
+- Fix `--ssid` reporting success before the WiFi join actually completes, and before confirming it's genuinely the requested config AP (#126)
+- Add `--baud` option for DFU serial connections (some boards need a non-default rate)
 
 ## [2.8.1] - 2025-05-04
 
