@@ -9,6 +9,9 @@ from .mdns import PlatformMDNSCollector
 
 from .consts import UserIntervention, VERBOSE
 
+# Fixed IP address of the config AP hosted by an unconfigured/factory-mode iotsa device.
+IOTSA_CONFIG_AP_IP = "192.168.4.1"
+
 
 class AbstractPlatformWifi(ABC):
     """Platform-dependent code for listing and joining of WiFi networks."""
@@ -20,7 +23,12 @@ class AbstractPlatformWifi(ABC):
 
     @abstractmethod
     def platformCurrentWifiNetworks(self) -> List[str]:
-        """Return all currently connected wifi networks"""
+        """Return all currently connected (fully bound, not mid-join) wifi networks"""
+        pass
+
+    @abstractmethod
+    def platformCurrentGateway(self) -> Optional[str]:
+        """Return the WiFi interface's current default gateway IP, or None if unknown/not connected"""
         pass
 
     @abstractmethod
@@ -122,20 +130,50 @@ if sys.platform == "darwin":
                 print("Join network status:", status)
             return status == 0
 
+        def _getIpconfigStatus(self) -> Optional[Dict[str, str]]:
+            """Return {'state', 'ssid', 'router'} for the WiFi interface via `ipconfig getsummary`.
+
+            This is more reliable than `networksetup -getairportnetwork`, which has been
+            observed to report "not associated" while actually connected. `state` is
+            "BOUND" only once DHCP has actually completed, not merely associated at L2 —
+            that's the signal to poll for after a join.
+            """
+            try:
+                p = subprocess.run(
+                    ["ipconfig", "getsummary", self.wifiInterface],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True,
+                    timeout=5,
+                )
+            except (OSError, subprocess.TimeoutExpired):
+                return None
+            if p.returncode != 0:
+                return None
+            result: Dict[str, str] = {}
+            for line in p.stdout.splitlines():
+                line = line.strip()
+                for key, field in (("State :", "state"), ("SSID :", "ssid"), ("Router :", "router")):
+                    if line.startswith(key):
+                        result[field] = line[len(key):].strip()
+            return result or None
+
         def platformCurrentWifiNetworks(self) -> List[str]:
             if VERBOSE:
                 print("Find current networks (OSX)")
-            cmd = "networksetup -getairportnetwork %s" % self.wifiInterface
-            p = subprocess.Popen(
-                cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True
-            )
-            assert p.stdout
-            data = p.stdout.read()
+            status = self._getIpconfigStatus()
             if VERBOSE:
-                print("Find result was:", data)
-            wifiName = data.split(":")[-1]
-            wifiName = wifiName.strip()
-            return [wifiName]
+                print("ipconfig getsummary result was:", status)
+            if not status or status.get("state") != "BOUND":
+                return []
+            ssid = status.get("ssid")
+            return [ssid] if ssid else []
+
+        def platformCurrentGateway(self) -> Optional[str]:
+            status = self._getIpconfigStatus()
+            if not status or status.get("state") != "BOUND":
+                return None
+            return status.get("router")
 
         def platformSafeToSwitchWifi(self) -> Optional[bool]:
             # Look up which interface the OS would actually use to reach the
@@ -185,6 +223,9 @@ else:
         def platformCurrentWifiNetworks(self) -> List[str]:
             return []
 
+        def platformCurrentGateway(self) -> Optional[str]:
+            return None
+
         def platformSafeToSwitchWifi(self) -> Optional[bool]:
             # We don't know how to check this on this platform.
             return None
@@ -220,14 +261,28 @@ class IotsaWifi(PlatformWifi):
                 return True
         return False
 
-    def selectNetwork(self, ssid: str, password: str = "") -> bool:
+    def selectNetwork(self, ssid: str, password: str = "", timeoutSeconds: float = 15, pollInterval: float = 0.5) -> bool:
         """Select a WiFi network"""
-        if self._isNetworkSelected(ssid):
-            return True
-        ok = self.platformJoinWifiNetwork(ssid, password)
-        if ok:
-            # networksetup returns 0 even when the SSID is not visible; verify we actually joined
-            ok = self._isNetworkSelected(ssid)
+        ok = self._isNetworkSelected(ssid)
+        if not ok:
+            ok = self.platformJoinWifiNetwork(ssid, password)
+            if ok:
+                # The join call can return before the OS has actually finished
+                # joining (and networksetup returns 0 even when the SSID isn't
+                # visible at all), so poll until we're really connected or we
+                # time out.
+                deadline = time.monotonic() + timeoutSeconds
+                ok = self._isNetworkSelected(ssid)
+                while not ok and time.monotonic() < deadline:
+                    time.sleep(pollInterval)
+                    ok = self._isNetworkSelected(ssid)
+        if ok and ssid.startswith("config-"):
+            # Extra confirmation for iotsa config APs, which always hand out this
+            # fixed gateway: guards against having silently fallen back to a
+            # different (e.g. the normal home) network with the same connected state.
+            gateway = self.platformCurrentGateway()
+            if gateway is not None and gateway != IOTSA_CONFIG_AP_IP:
+                ok = False
         if ok:
             self.ssid = ssid
         return ok
@@ -253,8 +308,8 @@ class IotsaWifi(PlatformWifi):
     def findDevices(self) -> List[tuple[str, Dict[str, str]]]:
         """Return list of all iotsa devices visible on current network(s)"""
         if self._isConfigNetwork():
-            if self._checkDevice("192.168.4.1"):
-                return [("192.168.4.1", {})]
+            if self._checkDevice(IOTSA_CONFIG_AP_IP):
+                return [(IOTSA_CONFIG_AP_IP, {})]
         collect = PlatformMDNSCollector()
         devices = collect.run()
         rv : List[tuple[str, Dict[str, str]]] = []
