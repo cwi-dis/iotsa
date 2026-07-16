@@ -511,6 +511,7 @@ void IotsaBatteryMod::loop() {
   IFDEBUG IotsaSerial.print(" mode ");
   IFDEBUG IotsaSerial.println(sleepMode);
   _notifySleepWakeup(true);
+#ifdef ESP32
   if (cpuFrequencySleep != 0) {
     static bool haveSetSleepFreq = false;
     if (!haveSetSleepFreq) {
@@ -519,6 +520,7 @@ void IotsaBatteryMod::loop() {
       setCpuFrequencyMhz(cpuFrequencySleep);
     }
   }
+#endif
   if(sleepMode == IOTSA_SLEEP_DELAY) {
     // This isn't really sleeping, it's just a delay. Not sure it is actually useful.
     delay(sleepDuration);

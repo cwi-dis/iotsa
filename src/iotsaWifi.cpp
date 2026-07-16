@@ -91,10 +91,12 @@ bool IotsaWifiMod::_wifiStartStation() {
   IFDEBUG IotsaSerial.print("Connecting to ");
   IFDEBUG IotsaSerial.println(ssid);
   wl_status_t sts = WiFi.begin(ssid.c_str(), ssidPassword.c_str());
+#ifdef ESP32
   if (wifiPowerReduction) {
     WiFi.setTxPower(WIFI_POWER_8_5dBm);
     IFDEBUG IotsaSerial.println("WiFi power reduction enabled");
   }
+#endif
   if (sts == WL_CONNECT_FAILED) {
     IotsaSerial.println("WiFi.begin(...) failed");
     return false;
@@ -285,6 +287,7 @@ IotsaWifiMod::handler() {
   message += "<br><input type='submit'>";
   message += "</form>";
   if (iotsaConfig.inConfigurationOrFactoryMode()) {
+#ifdef ESP32
     uint8_t baseMac[6];
     char baseMacStr[32];
     esp_err_t ret = esp_wifi_get_mac(WIFI_IF_STA, baseMac);
@@ -298,6 +301,11 @@ IotsaWifiMod::handler() {
     } else {
       message += "<p>Cannot determine MAC address.</p>";
     }
+#else
+    message += "<p>WiFi MAC address: <code>";
+    message += WiFi.macAddress();
+    message += "</code></p>";
+#endif
   }
 
   message += "</body></html>";
