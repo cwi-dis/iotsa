@@ -195,6 +195,12 @@ class Main(object):
             help="Serial port to use for DFU commands (default: automatically select)",
         )
         parser.add_argument(
+            "--baud",
+            type=int,
+            default=115200,
+            help="Initial baud rate for DFU serial connection (default: 115200). Some older boards need a lower rate, e.g. 74880.",
+        )
+        parser.add_argument(
             "--pausefordebug",
             action="store_true", 
             help="Pause at begin and end of run (to allow attaching debugger or profiler)"
@@ -333,7 +339,7 @@ class Main(object):
         """Load DFU driver (to allow flashing over USB or Serial Link for dead iotsa device)"""
         if self.dfu:
             return
-        self.dfu = api.DFU(self.args.serial)
+        self.dfu = api.DFU(self.args.serial, self.args.baud)
 
     def loadBLE(self, loadTarget=True) -> None:
         """Load Bluetooth LE driver"""

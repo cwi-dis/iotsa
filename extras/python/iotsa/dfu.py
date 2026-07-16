@@ -71,8 +71,9 @@ class DFU:
     running any command.
     """
 
-    def __init__(self, port: Optional[str] = None):
+    def __init__(self, port: Optional[str] = None, baud: int = 115200):
         self.port = port
+        self.baud = baud
         self._esp: Optional[esptool.ESPLoader] = None
         self._partition_table: Optional[List[PartitionEntry]] = None
 
@@ -99,7 +100,7 @@ class DFU:
                 ser_list,
                 port=port,
                 connect_attempts=3,
-                initial_baud=115200,
+                initial_baud=self.baud,
             )
         except esptool.FatalError as e:
             raise IotsaError(
