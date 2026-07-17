@@ -128,6 +128,29 @@ Only `iotsaBattery` and `iotsaBLEServer` have dedicated `bleGetHandler`/`blePutH
 other REST-capable modules are indirectly BLE-accessible via `iotsaApiHps`, which provides
 Bluetooth HTTP Proxy Service and proxies REST calls over BLE without per-module BLE code.
 
+### 6. BLE client model (device as central)
+
+`iotsaBLEClient`/`iotsaBLEClientConnection` (`IotsaBLEClientMod`/`IotsaBLEClientConnection`)
+are a different axis from the rest of this document: every other module here describes an
+interface the device *exposes*; `IotsaBLEClientMod` is instead generic infrastructure for a
+device acting as a BLE central — scanning for and connecting to *other* BLE peripherals. It
+doesn't fit the interface matrix above as another row (its "Web UI"/"REST" surface, `/bleclient`
+and `/api/bleclient`, is about the scanner's own config — scan interval/window, list of
+known/unknown devices seen — not about controlling the device itself).
+
+Generic pieces (name/address-keyed device registry, scan orchestration, service/manufacturer
+filters) live entirely in `IotsaBLEClientMod`/`IotsaBLEClientConnection`; it's intended as a base
+class for application-specific modules that know what a *specific* remote peripheral's GATT
+layout looks like — see `BLEDimmer` in the sibling `lissabon` repo (`libLissabon/src/BLEDimmer.*`)
+for the worked example: it holds a reference to `IotsaBLEClientMod` (via `addDevice`/`getDevice`)
+and layers app-specific characteristic UUIDs on top.
+
+If an app uses both `IotsaBLEServerMod` and `IotsaBLEClientMod` together (a device that's both a
+BLE peripheral and a BLE central, e.g. a remote-control unit), `IotsaBLEClientMod::coordinateWithServer`
+(default `false`) can be set to have `startScanning()`/`stopScanning()` pause/resume the server's
+advertising for the duration of each scan, via the already-existing `IotsaBLEServerMod::pauseServer()`/
+`resumeServer()`. See `examples/BLEClient/` for a standalone test rig exercising both roles together.
+
 ## Checking sibling repos
 
 When reviewing iotsa application repos (iotsa433, lissabon, iotsaDoorOpener, etc.), apply the

@@ -16,6 +16,9 @@ Key modules:
 - Core: `IotsaApplication`, `IotsaWifiMod`, `IotsaConfigMod`
 - Auth: `IotsaUserMod`, `IotsaMultiUserMod`, `IotsaCapabilities`
 - Network protocols: `IotsaApiRestMod` (REST/HTTP), `IotsaApiCoapMod` (CoAP), `IotsaApiHpsMod` (BLE/HPS)
+- BLE: `IotsaBLEServerMod` (device as peripheral), `IotsaBLEClientMod` (device as central — generic
+  scan/connect infrastructure, intended as a base class for app-specific modules; see
+  `docs/module-interface-status.md` known issue 6)
 - Hardware: `IotsaLedMod`, `IotsaButtonMod`, `IotsaInputMod`, `IotsaBatteryMod`
 - Services: `IotsaOtaMod`, `IotsaNtpMod`, `IotsaRtcMod`, `IotsaLoggerMod`, `IotsaFilesMod`
 

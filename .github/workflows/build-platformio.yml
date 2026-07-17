@@ -43,6 +43,7 @@ jobs:
         - Button
         - Ringer
         - BLELed
+        - BLEClient
         - Temperature
         - DateTime
         variant: [""]
@@ -101,6 +102,17 @@ jobs:
           build_flags: -DIOTSA_WITH_BLE
           pio_extra_args: --project-option="board_build.partitions=min_spiffs.csv"
         - example: BLELed
+          variant: withble-
+          board: esp32-c3-devkitm-1
+          build_flags: -DIOTSA_WITH_BLE
+          pio_extra_args: --project-option="board_build.partitions=min_spiffs.csv"
+        # Extra build: BLEClient with BLE added (server+client test vehicle)
+        - example: BLEClient
+          variant: withble-
+          board: esp32thing
+          build_flags: -DIOTSA_WITH_BLE
+          pio_extra_args: --project-option="board_build.partitions=min_spiffs.csv"
+        - example: BLEClient
           variant: withble-
           board: esp32-c3-devkitm-1
           build_flags: -DIOTSA_WITH_BLE

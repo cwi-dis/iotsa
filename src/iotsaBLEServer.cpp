@@ -110,7 +110,7 @@ void IotsaBLEServerMod::createServer() {
   esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
   #endif
 
-  BLEDevice::init(iotsaConfig.hostName.c_str());
+  iotsaBLE_ensureInitialized();
   BLEDevice::setMTU(BLE_ATT_MTU_MAX);
   if (tx_power >= 0) {
     BLEDevice::setPower((esp_power_level_t)tx_power);
@@ -147,9 +147,11 @@ void IotsaBLEServerMod::_bleGotoMode() {
     IFBLEDEBUG IotsaSerial.println("BLE start advertising");
     // causes crash: esp_bt_controller_enable(esp_bt_mode_t::ESP_BT_MODE_BLE);
     pAdvertising->start();
+    iotsaBLE_notifyAdvertisingStateChanged(true);
   } else {
     IFBLEDEBUG IotsaSerial.println("BLE stop advertising");
     pAdvertising->stop();
+    iotsaBLE_notifyAdvertisingStateChanged(false);
     // re-enabling causes crash: esp_bt_controller_disable();
   }
 }
@@ -161,6 +163,7 @@ bool IotsaBLEServerMod::pauseServer() {
     if (pAdvertising == nullptr || !pAdvertising->isAdvertising()) return true;
     IFBLEDEBUG IotsaSerial.println("BLE pause advertising");
     pAdvertising->stop();
+    iotsaBLE_notifyAdvertisingStateChanged(false);
     return true;
   }
   return false;
@@ -175,11 +178,13 @@ void IotsaBLEServerMod::resumeServer(int duration) {
   if (duration == 0 || duration < minAdvertisingDuration + extraDurationForConnecting) {
     IFBLEDEBUG IotsaSerial.println("BLE resume advertising");
     pAdvertising->start();
+    iotsaBLE_notifyAdvertisingStateChanged(true);
     return;
   } else {
     duration -= extraDurationForConnecting;
     IFBLEDEBUG IotsaSerial.printf("BLE resume advertising for %d ms\n", duration);
     pAdvertising->start(duration);
+    iotsaBLE_notifyAdvertisingStateChanged(true);
   }
 }
 
