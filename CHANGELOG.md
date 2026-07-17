@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refuse `--ssid` WiFi switch when it would drop the only internet route, unless `--force` (#129)
 - Fix `--ssid` reporting success before the WiFi join actually completes, and before confirming it's genuinely the requested config AP (#126)
 - Add `--baud` option for DFU serial connections (some boards need a non-default rate)
+- Promote `IotsaBLEClientMod`/`IotsaBLEClientConnection` from lissabon to core, with opt-in scan/advertise coordination against `IotsaBLEServerMod` (#138)
 
 ## [2.8.1] - 2025-05-04
 
