@@ -114,8 +114,8 @@ bool IotsaBLEClientConnection::available() {
 bool IotsaBLEClientConnection::connect() {
   // Snapshot address (and addressType) under the lock, then release it
   // before doing anything BLE-related -- pClient->connect() below can block
-  // for seconds (connectionTimeoutSeconds) and must never run while
-  // addressMutex is held.
+  // for up to the owning mod's connectTimeoutMillis and must never run
+  // while addressMutex is held.
   bool valid = false;
   BLEAddress addr("", 0);
 #ifdef IOTSA_WITHOUT_NIMBLE
@@ -136,13 +136,18 @@ bool IotsaBLEClientConnection::connect() {
   if (!valid) return false;
   if (pClient == nullptr) {
     pClient = BLEDevice::createClient(addr);
-    // setConnectTimeout() takes milliseconds, not seconds -- confirmed
-    // 2026-07-19 by reading NimBLEClient.cpp's own doc comment ("The number
-    // of milliseconds before timeout, default is 30 seconds", default
-    // m_connectTimeout=30000). Without *1000 this configured a 6ms timeout
-    // instead of 6s, which is why every connect attempt failed with
-    // BLE_HS_ETIMEOUT after ~10ms regardless of any scanning/mutex issue.
-    pClient->setConnectTimeout(connectionTimeoutSeconds * 1000);
+    // setConnectTimeout() takes milliseconds -- confirmed 2026-07-19 by
+    // reading NimBLEClient.cpp's own doc comment ("The number of
+    // milliseconds before timeout, default is 30 seconds", default
+    // m_connectTimeout=30000). A previous version of this code passed a
+    // value intended as seconds straight through with no conversion,
+    // configuring a 6ms timeout instead of 6s -- every connect attempt
+    // failed with BLE_HS_ETIMEOUT after ~10ms regardless of any
+    // scanning/mutex issue. Now sourced (in ms) from the owning mod's
+    // configurable connectTimeoutMillis instead of a hardcoded constant;
+    // 6000 is only a fallback for the (should-never-happen) case of a
+    // connection created without going through addDevice().
+    pClient->setConnectTimeout(owner ? owner->getConnectTimeoutMillis() : 6000);
   }
   if (pClient->isConnected()) return true;
   uint32_t t0 = millis();

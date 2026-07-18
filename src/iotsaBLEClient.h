@@ -63,6 +63,8 @@ public:
   void noteConnectAttemptStarted();
   void noteConnectAttemptEnded();
   unsigned int maxConnectionKeepOpen();
+  // Read by IotsaBLEClientConnection::connect() via its owner back-pointer.
+  uint32_t getConnectTimeoutMillis() { return connectTimeoutMillis; }
   //
   // Interfaces to control which BLE devices are visible to this
   // class (and any subclass)
@@ -113,12 +115,20 @@ protected:
   // All durations/cooldowns below are deliberately configurable (REST +
   // persisted config, like scan_interval/scan_window): the right values
   // depend on the interplay with server-side advertise duration and
-  // sleep/wake cycle timing, which varies per deployment.
-  uint32_t scanDurationDiscovery = 11000;  // ms; scan length while actively looking for unknown/unaddressed devices
-  uint32_t scanDurationPresence = 11000;   // ms; upper bound for a presence-check scan (normally ends early)
-  uint32_t scanCooldownDiscovery = 4000;   // ms; minimum gap before starting another discovery scan
-  uint32_t scanCooldownPresence = 4000;    // ms; minimum gap before starting another presence-check scan
-  uint32_t connectSettleTime = 100;        // ms; grace period after scanning stops before a connect() is attempted
+  // sleep/wake cycle timing, which varies per deployment. Millis suffix
+  // matches the codebase-wide convention for millisecond-unit fields
+  // (keepOpenMillis, animationDurationMillis, postponeSleepMillis, etc.).
+  uint32_t scanDurationDiscoveryMillis = 11000;  // scan length while actively looking for unknown/unaddressed devices
+  uint32_t scanDurationPresenceMillis = 11000;   // upper bound for a presence-check scan (normally ends early)
+  uint32_t scanCooldownDiscoveryMillis = 4000;   // minimum gap before starting another discovery scan
+  uint32_t scanCooldownPresenceMillis = 4000;    // minimum gap before starting another presence-check scan
+  uint32_t connectSettleTimeMillis = 100;        // grace period after scanning stops before a connect() is attempted
+  // How long a single IotsaBLEClientConnection::connect() call waits for the
+  // link to establish before giving up (NimBLEClient::setConnectTimeout()).
+  // Read via getConnectTimeoutMillis() by IotsaBLEClientConnection through
+  // its owner back-pointer, since the timeout is only actually applied once,
+  // when a device's pClient is first created.
+  uint32_t connectTimeoutMillis = 6000;
   uint32_t scanStartedAtMillis = 0;
   // Written by loop()/stopScanning(), read from other tasks by canConnect()
   // (e.g. BLEDimmer::connectionTask()) -- volatile so those reads see fresh

@@ -68,7 +68,6 @@ protected:
   bool addressValid;
   uint32_t lastSeenAtMillis = 0;
   BLEClient* pClient;
-  const uint8_t connectionTimeoutSeconds = 6; // xxxjack should be configurable
 };
 
 #endif // IOTSA_WITH_BLE

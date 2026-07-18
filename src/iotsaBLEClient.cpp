@@ -19,22 +19,24 @@ void IotsaBLEClientMod::configLoad() {
   IotsaConfigFileLoad cf("/config/bleclient.cfg");
   cf.get("scan_interval", scan_interval, scan_interval);
   cf.get("scan_window", scan_window, scan_window);
-  cf.get("scan_duration_discovery", scanDurationDiscovery, scanDurationDiscovery);
-  cf.get("scan_duration_presence", scanDurationPresence, scanDurationPresence);
-  cf.get("scan_cooldown_discovery", scanCooldownDiscovery, scanCooldownDiscovery);
-  cf.get("scan_cooldown_presence", scanCooldownPresence, scanCooldownPresence);
-  cf.get("connect_settle_time", connectSettleTime, connectSettleTime);
+  cf.get("scan_duration_discovery", scanDurationDiscoveryMillis, scanDurationDiscoveryMillis);
+  cf.get("scan_duration_presence", scanDurationPresenceMillis, scanDurationPresenceMillis);
+  cf.get("scan_cooldown_discovery", scanCooldownDiscoveryMillis, scanCooldownDiscoveryMillis);
+  cf.get("scan_cooldown_presence", scanCooldownPresenceMillis, scanCooldownPresenceMillis);
+  cf.get("connect_settle_time", connectSettleTimeMillis, connectSettleTimeMillis);
+  cf.get("connect_timeout", connectTimeoutMillis, connectTimeoutMillis);
 }
 
 void IotsaBLEClientMod::configSave() {
   IotsaConfigFileSave cf("/config/bleclient.cfg");
   cf.put("scan_interval", scan_interval);
   cf.put("scan_window", scan_window);
-  cf.put("scan_duration_discovery", scanDurationDiscovery);
-  cf.put("scan_duration_presence", scanDurationPresence);
-  cf.put("scan_cooldown_discovery", scanCooldownDiscovery);
-  cf.put("scan_cooldown_presence", scanCooldownPresence);
-  cf.put("connect_settle_time", connectSettleTime);
+  cf.put("scan_duration_discovery", scanDurationDiscoveryMillis);
+  cf.put("scan_duration_presence", scanDurationPresenceMillis);
+  cf.put("scan_cooldown_discovery", scanCooldownDiscoveryMillis);
+  cf.put("scan_cooldown_presence", scanCooldownPresenceMillis);
+  cf.put("connect_settle_time", connectSettleTimeMillis);
+  cf.put("connect_timeout", connectTimeoutMillis);
 }
 
 void IotsaBLEClientMod::setup() {
@@ -99,11 +101,12 @@ bool IotsaBLEClientMod::formHandler_args(IotsaWebServer *server, const String& f
 bool IotsaBLEClientMod::getHandler(const char *path, JsonObject& reply) {
   reply["scan_interval"] = scan_interval;
   reply["scan_window"] = scan_window;
-  reply["scan_duration_discovery"] = scanDurationDiscovery;
-  reply["scan_duration_presence"] = scanDurationPresence;
-  reply["scan_cooldown_discovery"] = scanCooldownDiscovery;
-  reply["scan_cooldown_presence"] = scanCooldownPresence;
-  reply["connect_settle_time"] = connectSettleTime;
+  reply["scan_duration_discovery"] = scanDurationDiscoveryMillis;
+  reply["scan_duration_presence"] = scanDurationPresenceMillis;
+  reply["scan_cooldown_discovery"] = scanCooldownDiscoveryMillis;
+  reply["scan_cooldown_presence"] = scanCooldownPresenceMillis;
+  reply["connect_settle_time"] = connectSettleTimeMillis;
+  reply["connect_timeout"] = connectTimeoutMillis;
   if (unknownDevices.size()) {
     JsonArray unknownReply = reply["unassigned"].as<JsonArray>();
     for (auto it : unknownDevices) {
@@ -125,11 +128,12 @@ bool IotsaBLEClientMod::putHandler(const char *path, const JsonVariant& request,
     scan_window = reqObj["scan_window"];
     anyChanged = true;
   }
-  if (getFromRequest<int>(reqObj, "scan_duration_discovery", scanDurationDiscovery)) anyChanged = true;
-  if (getFromRequest<int>(reqObj, "scan_duration_presence", scanDurationPresence)) anyChanged = true;
-  if (getFromRequest<int>(reqObj, "scan_cooldown_discovery", scanCooldownDiscovery)) anyChanged = true;
-  if (getFromRequest<int>(reqObj, "scan_cooldown_presence", scanCooldownPresence)) anyChanged = true;
-  if (getFromRequest<int>(reqObj, "connect_settle_time", connectSettleTime)) anyChanged = true;
+  if (getFromRequest<int>(reqObj, "scan_duration_discovery", scanDurationDiscoveryMillis)) anyChanged = true;
+  if (getFromRequest<int>(reqObj, "scan_duration_presence", scanDurationPresenceMillis)) anyChanged = true;
+  if (getFromRequest<int>(reqObj, "scan_cooldown_discovery", scanCooldownDiscoveryMillis)) anyChanged = true;
+  if (getFromRequest<int>(reqObj, "scan_cooldown_presence", scanCooldownPresenceMillis)) anyChanged = true;
+  if (getFromRequest<int>(reqObj, "connect_settle_time", connectSettleTimeMillis)) anyChanged = true;
+  if (getFromRequest<int>(reqObj, "connect_timeout", connectTimeoutMillis)) anyChanged = true;
   if (reqObj["scanUnknown"]|0) {
     _startScanUnknown = true;
   }
@@ -252,7 +256,7 @@ void IotsaBLEClientMod::startScanning() {
   }
   // Now start the scan
   currentScanIsDiscovery = needsDiscovery();
-  uint32_t duration = currentScanIsDiscovery ? scanDurationDiscovery : scanDurationPresence;
+  uint32_t duration = currentScanIsDiscovery ? scanDurationDiscoveryMillis : scanDurationPresenceMillis;
   scanner = BLEDevice::getScan();
   scanningMod = this;
   scanStartedAtMillis = millis();
@@ -295,7 +299,7 @@ void IotsaBLEClientMod::stopScanning() {
   }
   // Next time through loop, check whether we should scan again -- discovery
   // and presence-check scans get their own configurable cooldown.
-  shouldUpdateScanAtMillis = millis() + (currentScanIsDiscovery ? scanCooldownDiscovery : scanCooldownPresence);
+  shouldUpdateScanAtMillis = millis() + (currentScanIsDiscovery ? scanCooldownDiscoveryMillis : scanCooldownPresenceMillis);
 }
 
 bool IotsaBLEClientMod::canConnect() {
@@ -305,7 +309,7 @@ bool IotsaBLEClientMod::canConnect() {
   // time after scanning stops -- an immediate connect right after stopScanning()
   // has also been observed to fail.
   if (scanner != NULL) return false;
-  if (millis() - scanStoppedAtMillis < connectSettleTime) return false;
+  if (millis() - scanStoppedAtMillis < connectSettleTimeMillis) return false;
   return true;
 }
 
