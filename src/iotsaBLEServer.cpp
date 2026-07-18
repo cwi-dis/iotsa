@@ -117,9 +117,15 @@ void IotsaBLEServerMod::createServer() {
   }
   s_server = BLEDevice::createServer();
   s_server->setCallbacks(new IotsaBLEServerCallbacks());
-  // NimBLE-Arduino 2.1.0 stopped advertising the device name by default
-  // (previously automatic); set it explicitly so clients can still find us by name.
-  BLEDevice::getAdvertising()->setName(iotsaConfig.hostName.c_str());
+  // NimBLE-Arduino 2.1.0 stopped advertising the device name by default, and
+  // scan response is no longer enabled by default either. Turn scan response
+  // back on and set the name explicitly (setName() puts it in the scan
+  // response payload, since scan response is enabled) so active scanners
+  // (which iotsaBLEClient always is) get it back via the standard
+  // advertisement + scan-response mechanism.
+  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  pAdvertising->enableScanResponse(true);
+  pAdvertising->setName(iotsaConfig.hostName.c_str());
 }
 
 void IotsaBLEServerMod::_startServer() {
