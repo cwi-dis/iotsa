@@ -255,12 +255,9 @@ void IotsaBLEClientMod::stopScanning() {
 }
 
 bool IotsaBLEClientMod::canConnect() {
-#if 0
-  // Connecting to a device while we are scanning has proved to result in issues.
+  // Connecting to a device while we are scanning has proved to result in issues
+  // (confirmed live 2026-07-18: connect() reliably fails while a scan is active).
   return scanner == NULL;
-#else
-  return true;
-#endif
 }
 
 IotsaBLEClientMod* IotsaBLEClientMod::scanningMod = NULL;
