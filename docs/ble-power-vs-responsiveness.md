@@ -68,11 +68,21 @@ exact names — the idea is the same for both):
 - **How long the gap is between scans** (`scanCooldown...`) — shorter cooldown = scans happen
   more often = better odds of overlapping the server's wake window soon, but again, more power.
 
+There's a third, related dial that only kicks in *after* the client has already found the device
+and is trying to actually connect to it: **how long to wait for the connection itself to
+establish** (`connectTimeoutMillis`). Too short and a connection that would have succeeded given
+another second gets abandoned prematurely — indistinguishable, from the outside, from the
+scan/sleep mismatch described below, but a completely different cause. Too long and the radio sits
+tied up "trying to connect" for longer than useful (and, since connects now take priority over
+scanning, that's also longer that scanning for *other* devices is held off) before giving up on a
+genuinely unreachable device. There's no power tradeoff here the way there is for the other two —
+it's purely about how patient to be with one connection attempt before trying again.
+
 ## Where it goes wrong: mismatched dials
 
 First, the good news: the fleet's real numbers are actually well-matched. Pair the ledstrip's
 real 1.5s-asleep / 300ms-awake cycle with `control`'s *default* client settings —
-`scanDurationDiscovery=11000` (scans for 11 seconds), `scanCooldownDiscovery=4000` (waits 4
+`scanDurationDiscoveryMillis=11000` (scans for 11 seconds), `scanCooldownDiscoveryMillis=4000` (waits 4
 seconds between scans) — and one 11-second scan burst spans about six full 1.8-second server
 cycles, i.e. about six separate 300ms wake windows to catch. The odds of missing all six in one
 burst are low. This matches what was actually observed on real hardware this session: once
@@ -98,6 +108,14 @@ unreliable or slow to establish even though nothing is actually broken. When som
 connects, sometimes doesn't, no obvious pattern," this mismatch is the first thing to check —
 before suspecting a bug.
 
+**A second, unrelated cause of that exact same symptom:** `connectTimeoutMillis` set too low.
+This isn't hypothetical -- it's what actually happened to `control` earlier today: a units bug
+configured a 6-millisecond connect timeout instead of 6 seconds, so every single connect attempt
+was abandoned essentially the instant it started, long before the link had any real chance to
+establish. From the outside this looked identical to a scan/sleep mismatch ("can't connect,
+no obvious pattern") even though scanning and sleep timing had nothing to do with it. If the
+scan/sleep numbers check out and connects are still flaky, check `connectTimeoutMillis` next.
+
 This is exactly the shape of thing that's easy to configure independently on each device and
 then forget you did, since the server owner and the client owner might not even be the same
 config session, or the same day. If you change a server's sleep/wake cycle, go check whether any
@@ -119,6 +137,6 @@ client that talks to it still has a sane chance of catching it — and vice vers
 - **Mains-powered or otherwise power-unconstrained devices**: there's little reason not to
   shorten sleep/lengthen wake (server) or shorten cooldown (client) — the power tradeoff barely
   applies, so lean toward "reachable" over "efficient."
-- **When in doubt, check the mismatch first.** A connect failure that "sometimes works" is much
-  more likely to be a sleep/scan mismatch than a bug — check the numbers on both ends before
-  assuming something's broken.
+- **When in doubt, check the numbers before suspecting a bug.** A connect failure that "sometimes
+  works" is much more likely to be a sleep/scan mismatch or a too-low `connectTimeoutMillis` than
+  an actual bug — check both before assuming something's broken.

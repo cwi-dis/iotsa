@@ -74,7 +74,7 @@ short advertisement burst. Raise `window` toward `interval` if devices are being
 if scanning is competing too much with a server role that's also trying to advertise on the same
 radio.
 
-**`scanDurationDiscovery`** (default 11000ms)
+**`scanDurationDiscoveryMillis`** (default 11000ms)
 — *Relevant to: all three shapes, but especially shape 3 (unknown peer).*
 How long a *discovery* scan runs -- used when we don't yet have an address for a device (either
 truly unknown, or a known device whose address we've never matched by name). Needs to be long
@@ -83,7 +83,7 @@ peer sleeps and only advertises briefly on wake (shape 1 with a battery-powered 
 shape 3 with an unknown-duty-cycle peripheral), this needs to be comparable to or longer than the
 peer's wake window, or discovery may never succeed inside one scan.
 
-**`scanDurationPresence`** (default 11000ms)
+**`scanDurationPresenceMillis`** (default 11000ms)
 — *Relevant to: shape 1 mainly (you can observe the server's real advertise cadence).*
 Upper bound for a *presence-check* scan -- confirming an already-addressed device is still
 around. In practice this scan usually ends early (see `allKnownDevicesSeenSince()`), so this
@@ -91,7 +91,7 @@ value mostly matters as a safety ceiling: if a presence check never completes ea
 long the radio is tied up before giving up. Keep it well above the server's advertise interval,
 or a live presence check is likely to time out even though the peer is fine.
 
-**`scanCooldownDiscovery`** (default 4000ms) / **`scanCooldownPresence`** (default 4000ms)
+**`scanCooldownDiscoveryMillis`** (default 4000ms) / **`scanCooldownPresenceMillis`** (default 4000ms)
 — *Relevant to: all three shapes.*
 Minimum gap after a scan stops before the next one is allowed to start. This is the client's main
 "how much airtime am I willing to spend scanning" knob. **Interplay:** a short discovery cooldown
@@ -102,12 +102,21 @@ relative to how long a connect attempt typically takes, a discovery scan for *ot
 keep getting deferred (see `connectingCount` above) or -- before that fix -- could collide with
 an in-flight connect and break it.
 
-**`connectSettleTime`** (default 100ms)
+**`connectSettleTimeMillis`** (default 100ms)
 — *Relevant to: all three shapes.*
 Grace period after a scan stops before a connect is attempted. Exists because an immediate
 connect right after `stopScanning()` has been observed to fail on real hardware -- the radio
 needs a moment to actually settle out of scanning mode. Raise if connects still fail immediately
 after a scan stop; there's little reason to lower it below the default.
+
+**`connectTimeoutMillis`** (default 6000ms; lives on `IotsaBLEClientMod`, read by
+`IotsaBLEClientConnection::connect()` through its owner back-pointer)
+— *Relevant to: all three shapes, critically shape 3.*
+How long a single `connect()` call waits for the link to establish before giving up. This is the
+setting that was silently 5000x too short (6ms instead of 6s) until 2026-07-19, when it was also
+made configurable and moved here from a hardcoded per-connection constant. **Interplay:** must
+stay shorter than `IOTSA_BLEDIMMER_CONNECT_TIMEOUT` (below) -- that's the outer "give up on this
+device entirely" timeout, and needs to comfortably exceed one inner connect attempt.
 
 ### Client side, not yet configurable
 
@@ -118,15 +127,8 @@ in progress) or because our own `connectingCount > 0` guard held it off proactiv
 wastes CPU/log spam re-attempting during a connect that's known to still be running; too long
 delays discovery of new/missing devices unnecessarily.
 
-**`connectionTimeoutSeconds`** (hardcoded 6s / 6000ms after today's units fix,
-`iotsaBLEClientConnection.h`)
-— *Relevant to: all three shapes, critically shape 3.*
-How long a single `connect()` call waits for the link to establish before giving up. This is the
-setting that was silently 5000x too short until today (passed as if it were milliseconds to an
-API that expects milliseconds, while the field itself held a "seconds" value). **Interplay:**
-must be shorter than `IOTSA_BLEDIMMER_CONNECT_TIMEOUT` (below) -- that's the outer "give up on
-this device entirely" timeout, and if the inner per-attempt timeout were longer than the outer
-one, the outer timeout could never even see a completed attempt.
+(`connectTimeoutMillis` used to be listed here too, as a hardcoded constant -- it's above now,
+in the configurable section, alongside the rest of its Millis-suffixed siblings.)
 
 ### Server side (`IotsaBLEServerMod`, REST `/api/bleserver`)
 
@@ -164,7 +166,7 @@ completeness since the interplay crosses the repo boundary)
 — *Relevant to: shape 1 (lissabon dimmers are always other iotsa devices today).*
 The outer "give up trying to sync to this dimmer" timeout -- spans potentially several discovery
 scans and connect attempts, not just one `connect()` call. **Interplay:** must stay comfortably
-above `connectionTimeoutSeconds` (currently 6s) plus realistic discovery time, or the outer
+above `connectTimeoutMillis` (currently 6000ms) plus realistic discovery time, or the outer
 timeout could fire before even one full attempt completes.
 
 **`keepOpenMillis`** (hardcoded 3000ms, `mainLedstripController.cpp`, already flagged
@@ -174,7 +176,7 @@ How long a dimmer connection is kept open after a command, in case another comma
 immediately (avoids a full reconnect for rapid adjustments, e.g. dragging a brightness slider).
 **Interplay:** directly trades off against the shared connection pool (see "Known limitation"
 below) -- every extra second a connection is held open is a second it's not available for another
-dimmer or an inbound server connection. Also interacts with `scanCooldownDiscovery`: while a
+dimmer or an inbound server connection. Also interacts with `scanCooldownDiscoveryMillis`: while a
 connection is held open, `updateScanning()` still won't start a new discovery scan for *other*
 unaddressed dimmers, so a long `keepOpenMillis` delays their discovery.
 
