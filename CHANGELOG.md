@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix `--ssid` reporting success before the WiFi join actually completes, and before confirming it's genuinely the requested config AP (#126)
 - Add `--baud` option for DFU serial connections (some boards need a non-default rate)
 - Promote `IotsaBLEClientMod`/`IotsaBLEClientConnection` from lissabon to core, with opt-in scan/advertise coordination against `IotsaBLEServerMod` (#138)
+- Fix `IotsaBLEClientMod` never detecting natural scan-timeout completion (dead `scanComplete` callback didn't match the real `NimBLEScanCallbacks::onScanEnd` signature), which could leave scanning permanently wedged (#141)
 
 ## [2.8.1] - 2025-05-04
 

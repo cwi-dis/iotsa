@@ -265,8 +265,8 @@ bool IotsaBLEClientMod::canConnect() {
 
 IotsaBLEClientMod* IotsaBLEClientMod::scanningMod = NULL;
 
-void IotsaBLEClientMod::scanComplete(BLEScanResults results) {
-    IFDEBUG IotsaSerial.println("IotsaBLEClientMod: BLE scan complete");
+void IotsaBLEClientMod::onScanEnd(const NimBLEScanResults& scanResults, int reason) {
+    IFDEBUG IotsaSerial.printf("IotsaBLEClientMod: BLE scan complete, reason=%d\n", reason);
     iotsaConfig.resumeSleep();
     if (scanningMod) scanningMod->stopScanning();
 }

@@ -69,6 +69,7 @@ protected:
   void configLoad();
   void configSave();
   void onResult(const BLEAdvertisedDevice *advertisedDevice);
+  void onScanEnd(const NimBLEScanResults& scanResults, int reason) override;
   void setupScanner();
   void updateScanning();
   void startScanning();
@@ -76,7 +77,6 @@ protected:
   virtual void scanningChanged() {}
   bool isScanning();
   void startScanUnknown();
-  static void scanComplete(BLEScanResults results);
   static IotsaBLEClientMod *scanningMod;
   int scan_interval = 155;
   int scan_window = 151;
