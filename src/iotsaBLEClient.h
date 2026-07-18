@@ -40,6 +40,10 @@ public:
   void delDevice(String id) { delDevice(std::string(id.c_str())); }
   void deviceNotConnectable(std::string id);
   void deviceNotConnectable(String id) { deviceNotConnectable(std::string(id.c_str())); }
+  // Seed a known device's persisted address, so it can be found/connected
+  // to directly without waiting for (or requiring) a matching advertisement.
+  void noteKnownAddress(std::string id, std::string address);
+  void noteKnownAddress(String id, String address) { noteKnownAddress(std::string(id.c_str()), std::string(address.c_str())); }
   bool canConnect();
   unsigned int maxConnectionKeepOpen();
   //

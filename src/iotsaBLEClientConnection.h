@@ -32,6 +32,9 @@ public:
   bool getAsNotification(BLEUUID& serviceUUID, BLEUUID& charUUID, BleNotificationCallback callback);
   const std::string& getName() { return name; }
   std::string getAddress();
+  // Seed a previously-persisted address, so available()/connect() work
+  // before any advertisement has been received (e.g. right after boot).
+  void setKnownAddress(const std::string& _address);
 protected:
   std::string name;
   BLERemoteCharacteristic *_getCharacteristic(BLEUUID& serviceUUID, BLEUUID& charUUID);

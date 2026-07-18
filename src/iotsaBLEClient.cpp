@@ -320,28 +320,32 @@ void IotsaBLEClientMod::onResult(const BLEAdvertisedDevice *advertisedDevice) {
   IotsaSerial.printf("BLEClientMod::onResult(%s)\n", advertisedDevice->toString().c_str());
 #endif
   // Is this an advertisement for a device we know, either by name or by address?
+  // (NimBLE-Arduino 2.1.0 stopped advertising the device name by default, so a
+  // known device may well show up with no name at all -- the address match below
+  // has to be reachable even then.)
   std::string deviceName = advertisedDevice->getName();
-  if (deviceName == "") return;
-  auto it = devices.find(deviceName);
-  if (it != devices.end()) {
-    auto dev = it->second;
-    if (dev == nullptr) {
-      IotsaSerial.printf("BLEClientMod: device byName \"%s\" is NULL\n", deviceName.c_str());
+  if (deviceName != "") {
+    auto it = devices.find(deviceName);
+    if (it != devices.end()) {
+      auto dev = it->second;
+      if (dev == nullptr) {
+        IotsaSerial.printf("BLEClientMod: device byName \"%s\" is NULL\n", deviceName.c_str());
+        return;
+      }
+      bool changed = dev->receivedAdvertisement(*advertisedDevice);
+      if (changed) {
+        devicesByAddress[advertisedDevice->getAddress().toString()] = dev;
+        IFDEBUG IotsaSerial.printf("BLEClientMod: advertisement update byname for %s\n", deviceName.c_str());
+        knownDeviceCallback(*advertisedDevice);
+      }
+      shouldUpdateScanAtMillis = millis(); // We may have found what we were looking for
       return;
     }
-    bool changed = dev->receivedAdvertisement(*advertisedDevice);
-    if (changed) {
-      devicesByAddress[advertisedDevice->getAddress().toString()] = dev;
-      IFDEBUG IotsaSerial.printf("BLEClientMod: advertisement update byname for %s\n", deviceName.c_str());
-      knownDeviceCallback(*advertisedDevice);
-    }
-    shouldUpdateScanAtMillis = millis(); // We may have found what we were looking for
-    return;
   }
   std::string addr = advertisedDevice->getAddress().toString();
   auto it2 = devicesByAddress.find(addr);
   if (it2 != devicesByAddress.end()) {
-    auto dev = it->second;
+    auto dev = it2->second;
     if (dev == nullptr) {
       IotsaSerial.printf("BLEClientMod: device byAddress \"%s\" is NULL\n", addr.c_str());
       return;
@@ -349,7 +353,7 @@ void IotsaBLEClientMod::onResult(const BLEAdvertisedDevice *advertisedDevice) {
     bool changed = dev->receivedAdvertisement(*advertisedDevice);
     if (changed) {
       devicesByAddress[advertisedDevice->getAddress().toString()] = dev;
-      IFDEBUG IotsaSerial.printf("BLEClientMod: advertisement update byaddress for %s\n", deviceName.c_str());
+      IFDEBUG IotsaSerial.printf("BLEClientMod: advertisement update byaddress for %s\n", addr.c_str());
       knownDeviceCallback(*advertisedDevice);
     }
     shouldUpdateScanAtMillis = millis(); // We may have found what we were looking for
@@ -357,8 +361,9 @@ void IotsaBLEClientMod::onResult(const BLEAdvertisedDevice *advertisedDevice) {
   }
   // Do we want callbacks for unknown devices?
   if (unknownDeviceCallback == NULL) return;
+  if (deviceName == "") return;
   // Have we seen this unknown device before?
-  if ( duplicateNameFilter && unknownDevices.find(advertisedDevice->getName()) != unknownDevices.end()) return;
+  if ( duplicateNameFilter && unknownDevices.find(deviceName) != unknownDevices.end()) return;
   // Do we filter on services?
   if (serviceFilter != NULL) {
     if (!advertisedDevice->isAdvertisingService(*serviceFilter)) return;
@@ -399,6 +404,15 @@ void IotsaBLEClientMod::deviceNotConnectable(std::string id) {
   if (dev == NULL) return;
   dev->clearDevice();
   shouldUpdateScanAtMillis = millis(); // We may want to start scanning again
+}
+
+void IotsaBLEClientMod::noteKnownAddress(std::string id, std::string address) {
+  if (address == "") return;
+  IotsaBLEClientConnection *dev = addDevice(id);
+  if (dev == NULL) return;
+  dev->setKnownAddress(address);
+  devicesByAddress[address] = dev;
+  shouldUpdateScanAtMillis = millis(); // We may be able to connect right away
 }
 
 void IotsaBLEClientMod::delDevice(std::string id) {

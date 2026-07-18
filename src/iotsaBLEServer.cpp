@@ -117,6 +117,9 @@ void IotsaBLEServerMod::createServer() {
   }
   s_server = BLEDevice::createServer();
   s_server->setCallbacks(new IotsaBLEServerCallbacks());
+  // NimBLE-Arduino 2.1.0 stopped advertising the device name by default
+  // (previously automatic); set it explicitly so clients can still find us by name.
+  BLEDevice::getAdvertising()->setName(iotsaConfig.hostName.c_str());
 }
 
 void IotsaBLEServerMod::_startServer() {

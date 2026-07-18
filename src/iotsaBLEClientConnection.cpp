@@ -24,6 +24,13 @@ IotsaBLEClientConnection::~IotsaBLEClientConnection() {
   }
 }
 
+void IotsaBLEClientConnection::setKnownAddress(const std::string& _address) {
+  if (_address == "") return;
+  if (addressValid && address.toString() == _address) return;
+  address = BLEAddress(_address, 0); // Public is default for address type for nimble
+  addressValid = true;
+}
+
 std::string IotsaBLEClientConnection::getAddress() {
   if (!addressValid
 #ifdef IOTSA_WITHOUT_NIMBLE
