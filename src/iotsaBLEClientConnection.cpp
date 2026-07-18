@@ -41,6 +41,7 @@ std::string IotsaBLEClientConnection::getAddress() {
 }
 
 bool IotsaBLEClientConnection::receivedAdvertisement(const BLEAdvertisedDevice& _device) {
+  lastSeenAtMillis = millis();
   // Check whether the address is the same, then we don't have to add anything.
   if (addressValid
 #ifdef IOTSA_WITHOUT_NIMBLE

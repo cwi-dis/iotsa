@@ -35,6 +35,10 @@ public:
   // Seed a previously-persisted address, so available()/connect() work
   // before any advertisement has been received (e.g. right after boot).
   void setKnownAddress(const std::string& _address);
+  // millis() timestamp of the last time we saw an advertisement (or connected
+  // to) this device, regardless of whether the address changed. Used to know
+  // whether a presence-check scan has reconfirmed it yet.
+  uint32_t getLastSeenAtMillis() { return lastSeenAtMillis; }
 protected:
   std::string name;
   BLERemoteCharacteristic *_getCharacteristic(BLEUUID& serviceUUID, BLEUUID& charUUID);
@@ -43,6 +47,7 @@ protected:
   esp_ble_addr_type_t addressType;
 #endif
   bool addressValid;
+  uint32_t lastSeenAtMillis = 0;
   BLEClient* pClient;
   const uint8_t connectionTimeoutSeconds = 6; // xxxjack should be configurable
 };

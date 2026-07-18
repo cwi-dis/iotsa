@@ -45,6 +45,13 @@ public:
   void noteKnownAddress(std::string id, std::string address);
   void noteKnownAddress(String id, String address) { noteKnownAddress(std::string(id.c_str()), std::string(address.c_str())); }
   bool canConnect();
+  // If a scan is currently running, stop it right away so a caller that wants
+  // to connect doesn't have to wait for it to finish on its own -- connecting
+  // and scanning are mutually exclusive on this stack (NimBLE rejects connect
+  // attempts outright while a scan is active). Safe to call from the main
+  // loop()-driven call chain only (BLEDimmer::loop() etc.), not from a BLE
+  // library callback.
+  void requestStopScanningForConnect();
   unsigned int maxConnectionKeepOpen();
   //
   // Interfaces to control which BLE devices are visible to this
@@ -81,13 +88,33 @@ protected:
   virtual void scanningChanged() {}
   bool isScanning();
   void startScanUnknown();
+  // True if we still need to actively look for devices: either explicitly
+  // hunting for unknown devices, or some known device has no address yet
+  // (never matched by name). False means every known device already has an
+  // address and we're only doing periodic presence checks.
+  bool needsDiscovery();
+  // True if every known, addressed device has been seen (advertisement or
+  // live connection) since sinceMillis -- i.e. a presence-check scan can
+  // stop early, its job is done.
+  bool allKnownDevicesSeenSince(uint32_t sinceMillis);
   static IotsaBLEClientMod *scanningMod;
   int scan_interval = 155;
   int scan_window = 151;
+  // All durations/cooldowns below are deliberately configurable (REST +
+  // persisted config, like scan_interval/scan_window): the right values
+  // depend on the interplay with server-side advertise duration and
+  // sleep/wake cycle timing, which varies per deployment.
+  uint32_t scanDurationDiscovery = 11000;  // ms; scan length while actively looking for unknown/unaddressed devices
+  uint32_t scanDurationPresence = 11000;   // ms; upper bound for a presence-check scan (normally ends early)
+  uint32_t scanCooldownDiscovery = 4000;   // ms; minimum gap before starting another discovery scan
+  uint32_t scanCooldownPresence = 4000;    // ms; minimum gap before starting another presence-check scan
+  uint32_t connectSettleTime = 100;        // ms; grace period after scanning stops before a connect() is attempted
+  uint32_t scanStartedAtMillis = 0;
+  uint32_t scanStoppedAtMillis = 0;
+  bool currentScanIsDiscovery = false;
   bool scanForUnknownClients = false;
   uint32_t scanUnknownUntilMillis = 0;
   uint32_t shouldUpdateScanAtMillis = 0;
-  const int noScanMillis = 4000;
   BLEScan *scanner = NULL;
   // Set from onScanEnd(), which NimBLE calls on its own host task. Only this
   // flag is touched from that context; the actual stopScanning() call (which
