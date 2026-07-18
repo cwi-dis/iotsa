@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix a crash (`LoadProhibited`) from `onScanEnd()` racing with `loop()` over shared scanner state across FreeRTOS tasks, introduced by #141's fix
 - Fix `IotsaBLEClientMod::canConnect()` unconditionally returning `true` since 2020, letting `connect()` be attempted while a scan is still active (reliably fails on real hardware) instead of waiting
 - Redesign BLE client scanning: split discovery (hunting unknown/unaddressed devices) from presence-check (confirming known devices are still alive) scans, stop presence-check scans early once everyone's reconfirmed instead of always running the full duration, and make all the relevant durations/cooldowns configurable
+- Fix a crash from concurrent `stopScanning()` calls racing across FreeRTOS tasks (a per-dimmer connection task calling it directly instead of only via `loop()`)
+- Give connect attempts priority over scanning: a new scan never starts while any connect is in progress, instead of occasionally breaking an in-flight connection at the link layer
+- Fix `IotsaBLEClientConnection::connect()`'s timeout being 5000x too short (6ms instead of 6s) from a missing seconds-to-milliseconds conversion; log the real failure reason and elapsed time on connect failure
+- Fix BLE server advertising silently staying off forever if a start attempt ever fails (e.g. connection pool exhaustion); now retries automatically
 
 ## [2.8.1] - 2025-05-04
 
