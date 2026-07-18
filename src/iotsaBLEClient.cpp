@@ -266,9 +266,11 @@ bool IotsaBLEClientMod::canConnect() {
 IotsaBLEClientMod* IotsaBLEClientMod::scanningMod = NULL;
 
 void IotsaBLEClientMod::onScanEnd(const NimBLEScanResults& scanResults, int reason) {
+    // Called on the NimBLE host task, not the main loop() task. Do not touch
+    // scanner/scanningMod or anything else non-trivial here -- just flag it
+    // and let loop() (single-threaded) do the actual work.
     IFDEBUG IotsaSerial.printf("IotsaBLEClientMod: BLE scan complete, reason=%d\n", reason);
-    iotsaConfig.resumeSleep();
-    if (scanningMod) scanningMod->stopScanning();
+    scanHasEnded = true;
 }
 
 void IotsaBLEClientMod::serverSetup() {
@@ -302,7 +304,12 @@ void IotsaBLEClientMod::setManufacturerFilter(uint16_t manufacturerID) {
 }
 
 void IotsaBLEClientMod::loop() {
-  if (scanner != nullptr && !scanner->isScanning()) {
+  if (scanHasEnded) {
+    scanHasEnded = false;
+    iotsaConfig.resumeSleep();
+    if (scanner != nullptr) stopScanning();
+  } else if (scanner != nullptr && !scanner->isScanning()) {
+    // Fallback in case onScanEnd() is ever missed.
     stopScanning();
   }
   if (scanUnknownUntilMillis != 0 && millis() > scanUnknownUntilMillis) {

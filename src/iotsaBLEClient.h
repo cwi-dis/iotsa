@@ -89,6 +89,11 @@ protected:
   uint32_t shouldUpdateScanAtMillis = 0;
   const int noScanMillis = 4000;
   BLEScan *scanner = NULL;
+  // Set from onScanEnd(), which NimBLE calls on its own host task. Only this
+  // flag is touched from that context; the actual stopScanning() call (which
+  // mutates scanner/scanningMod) must stay on the single main loop() task, or
+  // it races with loop()'s own access to the same state.
+  volatile bool scanHasEnded = false;
   BleDeviceFoundCallback unknownDeviceCallback = NULL;
   BleDeviceFoundCallback knownDeviceCallback = NULL;
   bool duplicateNameFilter = false;
