@@ -114,9 +114,7 @@ after a scan stop; there's little reason to lower it below the default.
 — *Relevant to: all three shapes, critically shape 3.*
 How long a single `connect()` call waits for the link to establish before giving up. This is the
 setting that was silently 5000x too short (6ms instead of 6s) until 2026-07-19, when it was also
-made configurable and moved here from a hardcoded per-connection constant. **Interplay:** must
-stay shorter than `IOTSA_BLEDIMMER_CONNECT_TIMEOUT` (below) -- that's the outer "give up on this
-device entirely" timeout, and needs to comfortably exceed one inner connect attempt.
+made configurable and moved here from a hardcoded per-connection constant.
 
 ### Client side, not yet configurable
 
@@ -162,12 +160,24 @@ from `adv_min` rather than exposed as their own settings -- a correctness fix, n
 ### lissabon side (`BLEDimmer`, `mainLedstripController.cpp` -- not in this repo, listed for
 completeness since the interplay crosses the repo boundary)
 
-**`IOTSA_BLEDIMMER_CONNECT_TIMEOUT`** (hardcoded 10000ms, `BLEDimmer.cpp`)
+**`discoveryTimeoutMillis`** (hardcoded 10000ms, member of `BLEDimmer`, `BLEDimmer.h`; was a
+`BLEDimmer.cpp` file-scope constant misleadingly named `IOTSA_BLEDIMMER_CONNECT_TIMEOUT` until
+2026-07-19)
 — *Relevant to: shape 1 (lissabon dimmers are always other iotsa devices today).*
-The outer "give up trying to sync to this dimmer" timeout -- spans potentially several discovery
-scans and connect attempts, not just one `connect()` call. **Interplay:** must stay comfortably
-above `connectTimeoutMillis` (currently 6000ms) plus realistic discovery time, or the outer
-timeout could fire before even one full attempt completes.
+Despite the old name, this has nothing to do with the `connect()` call itself -- it only gates
+`connectionTask()`'s discovery-wait branch (`!dimmer->available()`, i.e. the device's address
+isn't known yet): how long to keep a pending command alive while waiting for a discovery scan to
+find the device, before giving up on it entirely (the command is dropped, not retried). It does
+not stack with `connectTimeoutMillis` -- the two apply to non-overlapping phases (waiting for
+discovery vs. one connect attempt once already discovered) -- so the only real constraint is that
+it comfortably exceeds one realistic discovery-scan cycle. **Deliberately left hardcoded, not
+made configurable**, pending
+[cwi-dis/iotsa#144](https://github.com/cwi-dis/iotsa/issues/144): most of
+`BLEDimmer::connectionTask()`, including this timeout, is generic connection-lifecycle
+orchestration that doesn't belong in lissabon at all -- adding config plumbing for it here would
+just have to be redone once it moves. Also worth reconsidering separately from configurability:
+silently dropping the pending command on timeout, rather than retrying at a lower rate, is
+arguably the wrong behavior regardless of what the number is.
 
 **`keepOpenMillis`** (hardcoded 3000ms, `mainLedstripController.cpp`, already flagged
 `// xxxjack should be configurable`)
