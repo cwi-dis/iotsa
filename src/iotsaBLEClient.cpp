@@ -198,6 +198,15 @@ void IotsaBLEClientMod::updateScanning() {
     }
     return;
   }
+  // Connections take priority over scanning: never start a new scan while
+  // any connect attempt is in progress (starting one has been observed to
+  // disrupt the in-flight connection at the link layer, even when NimBLE's
+  // own scan-vs-connect exclusion correctly rejects the scan-start call).
+  // Retry once the connect is done.
+  if (connectingCount > 0) {
+    shouldUpdateScanAtMillis = millis() + SCAN_START_RETRY_MS;
+    return;
+  }
   // Nothing to scan for at all: no known devices, and not hunting for unknowns.
   if (devices.empty() && !scanForUnknownClients) return;
   IFDEBUG {
@@ -263,8 +272,8 @@ void IotsaBLEClientMod::startScanning() {
 }
 
 void IotsaBLEClientMod::stopScanning() {
-  if (false && !isScanning()) {
-    IotsaSerial.println("IotsaBLEClientMod.stopScanning: not scanning...");
+  if (scanner == nullptr) {
+    IFDEBUG IotsaSerial.println("IotsaBLEClientMod.stopScanning: not scanning...");
   } else {
     IFDEBUG IotsaSerial.println("IotsaBLEClientMod.stopScanning: BLE scan stop");
     scanner->stop();
@@ -301,7 +310,18 @@ bool IotsaBLEClientMod::canConnect() {
 }
 
 void IotsaBLEClientMod::requestStopScanningForConnect() {
-  if (isScanning()) stopScanning();
+  // May be called from any task (e.g. BLEDimmer::connectionTask()). Do not
+  // touch scanner/scanningMod here -- just flag it, loop() does the actual
+  // stopScanning() call, same pattern as onScanEnd()/scanHasEnded below.
+  scanStopRequested = true;
+}
+
+void IotsaBLEClientMod::noteConnectAttemptStarted() {
+  connectingCount++;
+}
+
+void IotsaBLEClientMod::noteConnectAttemptEnded() {
+  connectingCount--;
 }
 
 IotsaBLEClientMod* IotsaBLEClientMod::scanningMod = NULL;
@@ -345,12 +365,22 @@ void IotsaBLEClientMod::setManufacturerFilter(uint16_t manufacturerID) {
 }
 
 void IotsaBLEClientMod::loop() {
+  // scanStopRequested and scanHasEnded may have been set by other tasks
+  // (BLEDimmer::connectionTask() and the NimBLE host task, respectively).
+  // Consume both here and perform at most one stopScanning() call -- this is
+  // the only place scanner/scanningMod are ever written, so there is no
+  // cross-task race on them.
+  bool wantStop = scanStopRequested;
+  scanStopRequested = false;
   if (scanHasEnded) {
     scanHasEnded = false;
     iotsaConfig.resumeSleep();
-    if (scanner != nullptr) stopScanning();
+    wantStop = true;
   } else if (scanner != nullptr && !scanner->isScanning()) {
     // Fallback in case onScanEnd() is ever missed.
+    wantStop = true;
+  }
+  if (wantStop && scanner != nullptr) {
     stopScanning();
   }
   if (scanUnknownUntilMillis != 0 && millis() > scanUnknownUntilMillis) {
@@ -431,6 +461,7 @@ IotsaBLEClientConnection* IotsaBLEClientMod::addDevice(std::string id) {
   if (it == devices.end()) {
     // Device with this ID doesn't exist yet. Add it.
     IotsaBLEClientConnection* dev = new IotsaBLEClientConnection(id);
+    dev->owner = this;
     devices[id] = dev;
     return dev;
   }

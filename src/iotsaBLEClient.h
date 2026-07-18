@@ -9,6 +9,7 @@
 
 #include <set>
 #include <map>
+#include <atomic>
 
 typedef std::function<void(const BLEAdvertisedDevice&)> BleDeviceFoundCallback;
 typedef const char *UUIDString;
@@ -45,13 +46,22 @@ public:
   void noteKnownAddress(std::string id, std::string address);
   void noteKnownAddress(String id, String address) { noteKnownAddress(std::string(id.c_str()), std::string(address.c_str())); }
   bool canConnect();
-  // If a scan is currently running, stop it right away so a caller that wants
-  // to connect doesn't have to wait for it to finish on its own -- connecting
-  // and scanning are mutually exclusive on this stack (NimBLE rejects connect
-  // attempts outright while a scan is active). Safe to call from the main
-  // loop()-driven call chain only (BLEDimmer::loop() etc.), not from a BLE
-  // library callback.
+  // If a scan is currently running, request that it be stopped right away so
+  // a caller that wants to connect doesn't have to wait for it to finish on
+  // its own -- connecting and scanning are mutually exclusive on this stack
+  // (NimBLE rejects connect attempts outright while a scan is active). Safe
+  // to call from ANY task (e.g. a per-device BLEDimmer::connectionTask()) --
+  // this only sets a flag; the actual stopScanning() call is deferred to
+  // loop(), which is the only task allowed to touch scanner/scanningMod.
   void requestStopScanningForConnect();
+  // Called by IotsaBLEClientConnection::connect() (via its owner back-
+  // pointer) around the actual pClient->connect() call, from whichever task
+  // owns that connection (e.g. BLEDimmer::connectionTask()). Connections
+  // take priority over scanning: updateScanning() refuses to start a new
+  // scan while connectingCount > 0. std::atomic, so plain increment/decrement
+  // from any task is safe without extra locking.
+  void noteConnectAttemptStarted();
+  void noteConnectAttemptEnded();
   unsigned int maxConnectionKeepOpen();
   //
   // Interfaces to control which BLE devices are visible to this
@@ -110,17 +120,31 @@ protected:
   uint32_t scanCooldownPresence = 4000;    // ms; minimum gap before starting another presence-check scan
   uint32_t connectSettleTime = 100;        // ms; grace period after scanning stops before a connect() is attempted
   uint32_t scanStartedAtMillis = 0;
-  uint32_t scanStoppedAtMillis = 0;
+  // Written by loop()/stopScanning(), read from other tasks by canConnect()
+  // (e.g. BLEDimmer::connectionTask()) -- volatile so those reads see fresh
+  // values across tasks.
+  volatile uint32_t scanStoppedAtMillis = 0;
   bool currentScanIsDiscovery = false;
   bool scanForUnknownClients = false;
   uint32_t scanUnknownUntilMillis = 0;
   uint32_t shouldUpdateScanAtMillis = 0;
-  BLEScan *scanner = NULL;
+  // Only loop() (and the functions it calls: startScanning/stopScanning) may
+  // write this. canConnect(), called from other tasks, only reads it -- hence
+  // volatile, same reasoning as scanStoppedAtMillis above.
+  BLEScan * volatile scanner = NULL;
   // Set from onScanEnd(), which NimBLE calls on its own host task. Only this
   // flag is touched from that context; the actual stopScanning() call (which
   // mutates scanner/scanningMod) must stay on the single main loop() task, or
   // it races with loop()'s own access to the same state.
   volatile bool scanHasEnded = false;
+  // Set from requestStopScanningForConnect(), which may be called from any
+  // task (e.g. a per-device BLEDimmer::connectionTask()). Same deferral
+  // pattern as scanHasEnded -- only loop() acts on it.
+  volatile bool scanStopRequested = false;
+  // Number of IotsaBLEClientConnection::connect() calls currently blocked
+  // inside pClient->connect(), across all devices/tasks. updateScanning()
+  // refuses to start a scan while this is > 0 -- connections take priority.
+  std::atomic<int> connectingCount{0};
   BleDeviceFoundCallback unknownDeviceCallback = NULL;
   BleDeviceFoundCallback knownDeviceCallback = NULL;
   bool duplicateNameFilter = false;
