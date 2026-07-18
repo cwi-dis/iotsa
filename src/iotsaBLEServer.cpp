@@ -18,7 +18,8 @@ class IotsaBLEServerCallbacks : public NimBLEServerCallbacks {
 	void onDisconnect(BLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override {
     IFBLEDEBUG IotsaSerial.printf("BLE Disconnect reason %d, restart advertising\n", reason);
     iotsaConfig.resumeSleep();
-    pServer->startAdvertising();
+    bool ok = pServer->startAdvertising();
+    IotsaBLEServerMod::_noteAdvertisingStartResult(ok, 0);
   }
 };
 
@@ -97,6 +98,20 @@ IotsaBleApiService *IotsaBLEServerMod::s_services = NULL;
 int IotsaBLEServerMod::adv_min = -1;
 int IotsaBLEServerMod::adv_max = -1;
 int IotsaBLEServerMod::tx_power = -1;
+volatile uint32_t IotsaBLEServerMod::advertisingRetryAtMillis = 0;
+volatile uint32_t IotsaBLEServerMod::advertisingRetryDuration = 0;
+
+const uint32_t ADVERTISING_RETRY_MS = 2000; // How long to wait before retrying a failed advertising start
+
+void IotsaBLEServerMod::_noteAdvertisingStartResult(bool ok, uint32_t duration) {
+  if (ok) {
+    advertisingRetryAtMillis = 0;
+    return;
+  }
+  IotsaSerial.println("IotsaBLEServerMod: pAdvertising->start() failed (connection pool full?), will retry");
+  advertisingRetryDuration = duration;
+  advertisingRetryAtMillis = millis() + ADVERTISING_RETRY_MS;
+}
 
 void IotsaBLEServerMod::createServer() {
   if (s_server) return;
@@ -155,10 +170,12 @@ void IotsaBLEServerMod::_bleGotoMode() {
   if (isActive) {
     IFBLEDEBUG IotsaSerial.println("BLE start advertising");
     // causes crash: esp_bt_controller_enable(esp_bt_mode_t::ESP_BT_MODE_BLE);
-    pAdvertising->start();
-    iotsaBLE_notifyAdvertisingStateChanged(true);
+    bool ok = pAdvertising->start();
+    iotsaBLE_notifyAdvertisingStateChanged(ok);
+    _noteAdvertisingStartResult(ok, 0);
   } else {
     IFBLEDEBUG IotsaSerial.println("BLE stop advertising");
+    advertisingRetryAtMillis = 0; // explicit stop takes priority over any pending retry
     pAdvertising->stop();
     iotsaBLE_notifyAdvertisingStateChanged(false);
     // re-enabling causes crash: esp_bt_controller_disable();
@@ -167,6 +184,11 @@ void IotsaBLEServerMod::_bleGotoMode() {
 
 bool IotsaBLEServerMod::pauseServer() {
   // For now we keep pauseServer() and resumeServer(), because the use case is for light sleep.
+  // An explicit pause always takes priority over any pending advertising-start
+  // retry -- clear it unconditionally, even if we're already not advertising
+  // (a retry could otherwise still be pending and fire later, fighting this
+  // pause).
+  advertisingRetryAtMillis = 0;
   if (s_server) {
     BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
     if (pAdvertising == nullptr || !pAdvertising->isAdvertising()) return true;
@@ -186,14 +208,16 @@ void IotsaBLEServerMod::resumeServer(int duration) {
   const int extraDurationForConnecting = 30;
   if (duration == 0 || duration < minAdvertisingDuration + extraDurationForConnecting) {
     IFBLEDEBUG IotsaSerial.println("BLE resume advertising");
-    pAdvertising->start();
-    iotsaBLE_notifyAdvertisingStateChanged(true);
+    bool ok = pAdvertising->start();
+    iotsaBLE_notifyAdvertisingStateChanged(ok);
+    _noteAdvertisingStartResult(ok, 0);
     return;
   } else {
     duration -= extraDurationForConnecting;
     IFBLEDEBUG IotsaSerial.printf("BLE resume advertising for %d ms\n", duration);
-    pAdvertising->start(duration);
-    iotsaBLE_notifyAdvertisingStateChanged(true);
+    bool ok = pAdvertising->start(duration);
+    iotsaBLE_notifyAdvertisingStateChanged(ok);
+    _noteAdvertisingStartResult(ok, (uint32_t)duration);
   }
 }
 
@@ -275,12 +299,14 @@ void IotsaBLEServerMod::configSave() {
   if (BLEDevice::isInitialized()) {
     BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
     pAdvertising->stop();
+    advertisingRetryAtMillis = 0; // about to explicitly restart below
     if (adv_min >= 0) pAdvertising->setMinInterval(adv_min);
     if (adv_max >= 0) pAdvertising->setMaxInterval(adv_max);
     if (tx_power >= 0) {
       BLEDevice::setPower((esp_power_level_t)tx_power);
     }
-    pAdvertising->start();
+    bool ok = pAdvertising->start();
+    _noteAdvertisingStartResult(ok, 0);
   }
 }
 
@@ -292,6 +318,17 @@ void IotsaBLEServerMod::loop() {
     //
     iotsaConfig.wantBleModeSwitchAtMillis = 0;
     _bleGotoMode();
+  }
+  if (advertisingRetryAtMillis != 0 && millis() >= advertisingRetryAtMillis) {
+    advertisingRetryAtMillis = 0;
+    BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+    if (pAdvertising != nullptr) {
+      IFBLEDEBUG IotsaSerial.println("BLE retry start advertising");
+      uint32_t duration = advertisingRetryDuration;
+      bool ok = (duration == 0) ? pAdvertising->start() : pAdvertising->start(duration);
+      iotsaBLE_notifyAdvertisingStateChanged(ok);
+      _noteAdvertisingStartResult(ok, duration);
+    }
   }
 }
 

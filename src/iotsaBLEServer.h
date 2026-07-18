@@ -94,6 +94,17 @@ public:
 
   static bool pauseServer();
   static void resumeServer(int duration=0); // duration=0 means advertise indefinitely
+  // pAdvertising->start() (and NimBLEServer::startAdvertising(), used by
+  // IotsaBLEServerCallbacks::onDisconnect()) can fail -- e.g. BLE_HS_ENOMEM
+  // when the shared connection pool is exhausted by outbound client
+  // connections -- and every call site used to silently discard that,
+  // leaving the device permanently non-advertising with no log output and
+  // no retry. Every start() call site now reports its outcome here instead;
+  // on failure this arms a retry that loop() acts on. Safe to call from any
+  // task (e.g. the NimBLE host task, which is where onDisconnect() runs) --
+  // only writes plain volatile scalars, the actual retried start() call
+  // always happens from loop().
+  static void _noteAdvertisingStartResult(bool ok, uint32_t duration);
 protected:
   bool isEnabled;
   bool getHandler(const char *path, JsonObject& reply) override;
@@ -109,6 +120,12 @@ protected:
   static int adv_min;  // Minimum advertising interval (-1: default)
   static int adv_max;  // Maximum advertising interval (-1: default)
   static int tx_power; // Transmit power. -1: default. 0: -12dB. Then 3dB per increment until 7: +9dB.
+  // 0 means no retry pending. Set by _noteAdvertisingStartResult() on
+  // failure, cleared by it on success and by any intentional stop/pause
+  // (so a retry never fights an explicit pause). loop() is the only reader.
+  static volatile uint32_t advertisingRetryAtMillis;
+  // Duration to retry with (0 = indefinite) -- whatever the failed call used.
+  static volatile uint32_t advertisingRetryDuration;
 private:
   void _startServer();
   static void _bleGotoMode();
