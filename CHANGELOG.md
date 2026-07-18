@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Promote `IotsaBLEClientMod`/`IotsaBLEClientConnection` from lissabon to core, with opt-in scan/advertise coordination against `IotsaBLEServerMod` (#138)
 - Fix `IotsaBLEClientMod` never detecting natural scan-timeout completion (dead `scanComplete` callback didn't match the real `NimBLEScanCallbacks::onScanEnd` signature), which could leave scanning permanently wedged (#141)
 - Fix BLE devices becoming unmatchable after NimBLE-Arduino 2.1.0 stopped advertising device names by default: advertise the name explicitly again, and fix `onResult`'s by-address fallback matching (unreachable + wrong iterator) plus wire up address-based reconnection from persisted config (#142)
+- Fix a crash (`LoadProhibited`) from `onScanEnd()` racing with `loop()` over shared scanner state across FreeRTOS tasks, introduced by #141's fix
 
 ## [2.8.1] - 2025-05-04
 
