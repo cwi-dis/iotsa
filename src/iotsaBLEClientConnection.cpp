@@ -19,12 +19,30 @@ IotsaBLEClientConnection::IotsaBLEClientConnection(std::string& _name, std::stri
   addressValid(false),
   pClient(nullptr)
 {
+  connCallbacks.owner = this;
   if (_address != "") {
     // address and addressType have already been set. Not yet shared with
     // any other task, so no need to take addressMutex here.
     addressValid = true;
   }
 }
+
+void IotsaBLEClientConnection::ConnCallbacks::onConnect(BLEClient* pClient) {
+  IFDEBUG IotsaSerial.printf("IotsaBLEClientConnection(%s): onConnect\n", owner ? owner->getName().c_str() : "?");
+}
+
+#ifdef IOTSA_WITHOUT_NIMBLE
+void IotsaBLEClientConnection::ConnCallbacks::onDisconnect(BLEClient* pClient) {
+  IFDEBUG IotsaSerial.printf("IotsaBLEClientConnection(%s): onDisconnect\n", owner ? owner->getName().c_str() : "?");
+  if (owner) owner->disconnectSettled = true;
+}
+#else
+void IotsaBLEClientConnection::ConnCallbacks::onDisconnect(BLEClient* pClient, int reason) {
+  IFDEBUG IotsaSerial.printf("IotsaBLEClientConnection(%s): onDisconnect reason=%d (%s)\n",
+    owner ? owner->getName().c_str() : "?", reason, NimBLEUtils::returnCodeToString(reason));
+  if (owner) owner->disconnectSettled = true;
+}
+#endif
 
 IotsaBLEClientConnection::~IotsaBLEClientConnection() {
   if (pClient) {
@@ -148,6 +166,11 @@ bool IotsaBLEClientConnection::connect() {
     // 6000 is only a fallback for the (should-never-happen) case of a
     // connection created without going through addDevice().
     pClient->setConnectTimeout(owner ? owner->getConnectTimeoutMillis() : 6000);
+#ifdef IOTSA_WITHOUT_NIMBLE
+    pClient->setClientCallbacks(&connCallbacks);
+#else
+    pClient->setClientCallbacks(&connCallbacks, false); // false: we own connCallbacks, don't delete it
+#endif
   }
   if (pClient->isConnected()) return true;
   uint32_t t0 = millis();
@@ -176,12 +199,17 @@ bool IotsaBLEClientConnection::connect() {
 
 void IotsaBLEClientConnection::disconnect() {
   if (pClient && pClient->isConnected()) {
+    disconnectSettled = false;
     pClient->disconnect();
   }
 }
 
 bool IotsaBLEClientConnection::isConnected() {
   return pClient && pClient->isConnected();
+}
+
+bool IotsaBLEClientConnection::isDisconnecting() {
+  return !disconnectSettled;
 }
 
 BLERemoteCharacteristic *IotsaBLEClientConnection::_getCharacteristic(BLEUUID& serviceUUID, BLEUUID& charUUID) {

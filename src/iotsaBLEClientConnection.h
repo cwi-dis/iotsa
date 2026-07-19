@@ -21,7 +21,18 @@ public:
   bool available();
   bool connect();
   void disconnect();
+  // True only once the connection is actually usable (pClient reports
+  // CONNECTED). False for every other state, including DISCONNECTING --
+  // callers that need to distinguish "fully gone, safe to connect() again"
+  // from "still tearing down" should use isDisconnecting() as well.
   bool isConnected();
+  // True from the moment disconnect() is called until the disconnect is
+  // actually confirmed complete. NimBLEClient::connect() hard-rejects if
+  // called while the previous disconnect is still settling, and
+  // isConnected() alone can't tell "settling" from "gone" apart (both read
+  // as not-connected). Callers should hold off calling connect() while this
+  // is true.
+  bool isDisconnecting();
   bool set(BLEUUID& serviceUUID, BLEUUID& charUUID, const uint8_t *data, size_t size);
   bool set(BLEUUID& serviceUUID, BLEUUID& charUUID, uint8_t value);
   bool set(BLEUUID& serviceUUID, BLEUUID& charUUID, uint16_t value);
@@ -68,6 +79,25 @@ protected:
   bool addressValid;
   uint32_t lastSeenAtMillis = 0;
   BLEClient* pClient;
+  // Registered on pClient so we get told when a disconnect actually
+  // completes (not just when we ask for one) -- see isDisconnecting().
+  class ConnCallbacks : public BLEClientCallbacks {
+  public:
+    IotsaBLEClientConnection *owner = nullptr;
+    void onConnect(BLEClient* pClient) override;
+#ifdef IOTSA_WITHOUT_NIMBLE
+    void onDisconnect(BLEClient* pClient) override;
+#else
+    void onDisconnect(BLEClient* pClient, int reason) override;
+#endif
+  };
+  ConnCallbacks connCallbacks;
+  // False from the moment disconnect() issues pClient->disconnect() until
+  // ConnCallbacks::onDisconnect() confirms it actually completed. connect()
+  // waits (bounded) on this before proceeding. volatile: written from the
+  // NimBLE host callback context, read from this device's own
+  // BLEDimmer::connectionTask().
+  volatile bool disconnectSettled = true;
 };
 
 #endif // IOTSA_WITH_BLE
