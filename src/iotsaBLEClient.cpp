@@ -166,13 +166,10 @@ bool IotsaBLEClientMod::isScanning() {
 }
 
 unsigned int IotsaBLEClientMod::maxConnectionKeepOpen() {
-  int rv = 30000; // Random large value
-  if (shouldUpdateScanAtMillis != 0) {
-    int rv2 = shouldUpdateScanAtMillis - millis();
-    if (rv2 < 0) rv2 = 0;
-    rv = rv2;
-  }
-  return rv;
+  if (shouldUpdateScanAtMillis == 0) return noScheduledScanKeepOpenCapMillis;
+  int32_t millisUntilScanDeadline = (int32_t)(shouldUpdateScanAtMillis - millis());
+  if (millisUntilScanDeadline < 0) millisUntilScanDeadline = 0;
+  return (unsigned int)millisUntilScanDeadline;
 }
 
 bool IotsaBLEClientMod::needsDiscovery() {

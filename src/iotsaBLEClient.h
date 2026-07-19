@@ -139,6 +139,18 @@ protected:
   // instead (e.g. N full discovery cycles) but for now it's its own
   // configurable value, kept at its original default.
   uint32_t scanUnknownDurationMillis = 20000;
+  // maxConnectionKeepOpen()'s fallback when there's no scheduled scan
+  // deadline to respect -- how long a connection may be held open with
+  // nothing else pending. shouldUpdateScanAtMillis is 0 not just when idle,
+  // but also while a scan is actively running (nothing reschedules it until
+  // the scan stops), so this binds more often than "idle" alone would
+  // suggest. Not REST/persisted-configurable like the fields above: this is
+  // an application characteristic (how long a connection legitimately needs
+  // to stay open -- lissabon's quick-follow-up-command use case is very
+  // different from e.g. a continuous sensor-polling or audio-transfer
+  // application), meant to be overridden by a subclass's constructor, not
+  // tuned per-deployment by an end user.
+  uint32_t noScheduledScanKeepOpenCapMillis = 30000;
   uint32_t scanStartedAtMillis = 0;
   // Written by loop()/stopScanning(), read from other tasks by canConnect()
   // (e.g. BLEDimmer::connectionTask()) -- volatile so those reads see fresh
