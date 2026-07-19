@@ -141,6 +141,24 @@ the discovery/presence durations above, this isn't a deployment-tunable -- it's 
 retry cadence for "try again once whatever blocked us is done," not something that varies
 meaningfully by sleep/advertise configuration.
 
+### Client side, overridable by subclasses (not REST-configurable)
+
+**`noScheduledScanKeepOpenCapMillis`** (default 30000ms, protected member of `IotsaBLEClientMod`;
+fixed 2026-07-19, was an anonymous `30000 // Random large value` local in `maxConnectionKeepOpen()`)
+— *Relevant to: application design, not deployment.*
+Caps how long `maxConnectionKeepOpen()` allows a connection to be held open when there's no
+scheduled scan deadline to respect (`shouldUpdateScanAtMillis == 0` -- which happens not just when
+idle, but also while a scan is actively running, since nothing reschedules that deadline until the
+scan stops). This is a genuinely different kind of setting from everything else in this doc: it's
+not a per-deployment tuning knob (no REST/persisted config), because the right value depends on
+what the *application* is doing with the connection, not on server sleep cycles or client scan
+cadence. Lissabon's `BLEDimmer` only needs a few seconds (`stayConnectedMillis`, capped well under
+this fallback so it never actually binds today) for a quick follow-up command; a hypothetical
+future module doing continuous sensor polling or an audio/data transfer over the same connection
+would legitimately want this much larger. Meant to be set by a subclass's constructor, the same
+way `BLEDimmer` already takes `stayConnectedMillis` as one -- not something an end user tunes
+per-device.
+
 (`connectTimeoutMillis` used to be listed here too, as a hardcoded constant -- it's above now,
 in the configurable section, alongside the rest of its Millis-suffixed siblings.)
 
