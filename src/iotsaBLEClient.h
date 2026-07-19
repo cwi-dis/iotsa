@@ -129,6 +129,16 @@ protected:
   // its owner back-pointer, since the timeout is only actually applied once,
   // when a device's pClient is first created.
   uint32_t connectTimeoutMillis = 6000;
+  // How long the manual "scan for unknown devices" session (REST scanUnknown
+  // flag, or the web form's "Scan for Nms" button) stays active before
+  // findUnknownDevices(false) turns it back off. This is a session length,
+  // not a single scan's duration -- during the session, updateScanning()
+  // still runs its normal discovery-scan/cooldown cycle
+  // (scanDurationDiscoveryMillis/scanCooldownDiscoveryMillis) repeatedly.
+  // Currently independent of those two; may eventually be derived from them
+  // instead (e.g. N full discovery cycles) but for now it's its own
+  // configurable value, kept at its original default.
+  uint32_t scanUnknownDurationMillis = 20000;
   uint32_t scanStartedAtMillis = 0;
   // Written by loop()/stopScanning(), read from other tasks by canConnect()
   // (e.g. BLEDimmer::connectionTask()) -- volatile so those reads see fresh

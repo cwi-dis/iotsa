@@ -11,7 +11,6 @@
 //
 
 const int SCAN_START_RETRY_MS = 1000; // How long to wait before retrying start scan
-const int SCAN_UNKNOWN_DURATION_MS = 20000; // How long to scan for unknown clients
 
 bool IotsaBLEClientMod::coordinateWithServer = false;
 
@@ -25,6 +24,7 @@ void IotsaBLEClientMod::configLoad() {
   cf.get("scan_cooldown_presence", scanCooldownPresenceMillis, scanCooldownPresenceMillis);
   cf.get("connect_settle_time", connectSettleTimeMillis, connectSettleTimeMillis);
   cf.get("connect_timeout", connectTimeoutMillis, connectTimeoutMillis);
+  cf.get("scan_unknown_duration", scanUnknownDurationMillis, scanUnknownDurationMillis);
 }
 
 void IotsaBLEClientMod::configSave() {
@@ -37,6 +37,7 @@ void IotsaBLEClientMod::configSave() {
   cf.put("scan_cooldown_presence", scanCooldownPresenceMillis);
   cf.put("connect_settle_time", connectSettleTimeMillis);
   cf.put("connect_timeout", connectTimeoutMillis);
+  cf.put("scan_unknown_duration", scanUnknownDurationMillis);
 }
 
 void IotsaBLEClientMod::setup() {
@@ -74,7 +75,7 @@ IotsaBLEClientMod::handler() {
 
 void IotsaBLEClientMod::formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) {
   message += "<h2>Available Unknown/new " + text + " devices</h2>";
-  message += "<form method='post'><input type='submit' name='scanUnknown' value='Scan for 20 seconds'></form>";
+  message += "<form method='post'><input type='submit' name='scanUnknown' value='Scan for " + String(scanUnknownDurationMillis/1000) + " seconds'></form>";
   message += "<form method='post'><input type='submit' name='refresh' value='Refresh'></form>";
   if (unknownDevices.size() == 0) {
     message += "<p>No unassigned BLE dimmer devices seen recently.</p>";
@@ -107,6 +108,7 @@ bool IotsaBLEClientMod::getHandler(const char *path, JsonObject& reply) {
   reply["scan_cooldown_presence"] = scanCooldownPresenceMillis;
   reply["connect_settle_time"] = connectSettleTimeMillis;
   reply["connect_timeout"] = connectTimeoutMillis;
+  reply["scan_unknown_duration"] = scanUnknownDurationMillis;
   if (unknownDevices.size()) {
     JsonArray unknownReply = reply["unassigned"].as<JsonArray>();
     for (auto it : unknownDevices) {
@@ -134,6 +136,7 @@ bool IotsaBLEClientMod::putHandler(const char *path, const JsonVariant& request,
   if (getFromRequest<int>(reqObj, "scan_cooldown_presence", scanCooldownPresenceMillis)) anyChanged = true;
   if (getFromRequest<int>(reqObj, "connect_settle_time", connectSettleTimeMillis)) anyChanged = true;
   if (getFromRequest<int>(reqObj, "connect_timeout", connectTimeoutMillis)) anyChanged = true;
+  if (getFromRequest<int>(reqObj, "scan_unknown_duration", scanUnknownDurationMillis)) anyChanged = true;
   if (reqObj["scanUnknown"]|0) {
     _startScanUnknown = true;
   }
@@ -149,8 +152,8 @@ bool IotsaBLEClientMod::putHandler(const char *path, const JsonVariant& request,
 
 void IotsaBLEClientMod::startScanUnknown() {
   findUnknownDevices(true);
-  scanUnknownUntilMillis = millis() + SCAN_UNKNOWN_DURATION_MS;
-  iotsaConfig.postponeSleep(SCAN_UNKNOWN_DURATION_MS+1000);
+  scanUnknownUntilMillis = millis() + scanUnknownDurationMillis;
+  iotsaConfig.postponeSleep(scanUnknownDurationMillis+1000);
 }
 
 void IotsaBLEClientMod::findUnknownDevices(bool on) {
