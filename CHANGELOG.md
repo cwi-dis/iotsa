@@ -21,16 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refuse `--ssid` WiFi switch when it would drop the only internet route, unless `--force` (#129)
 - Fix `--ssid` reporting success before the WiFi join actually completes, and before confirming it's genuinely the requested config AP (#126)
 - Add `--baud` option for DFU serial connections (some boards need a non-default rate)
-- Promote `IotsaBLEClientMod`/`IotsaBLEClientConnection` from lissabon to core, with opt-in scan/advertise coordination against `IotsaBLEServerMod` (#138)
-- Fix `IotsaBLEClientMod` never detecting natural scan-timeout completion (dead `scanComplete` callback didn't match the real `NimBLEScanCallbacks::onScanEnd` signature), which could leave scanning permanently wedged (#141)
-- Fix BLE devices becoming unmatchable after NimBLE-Arduino 2.1.0 stopped advertising device names by default: advertise the name explicitly again, and fix `onResult`'s by-address fallback matching (unreachable + wrong iterator) plus wire up address-based reconnection from persisted config (#142)
-- Fix a crash (`LoadProhibited`) from `onScanEnd()` racing with `loop()` over shared scanner state across FreeRTOS tasks, introduced by #141's fix
-- Fix `IotsaBLEClientMod::canConnect()` unconditionally returning `true` since 2020, letting `connect()` be attempted while a scan is still active (reliably fails on real hardware) instead of waiting
-- Redesign BLE client scanning: split discovery (hunting unknown/unaddressed devices) from presence-check (confirming known devices are still alive) scans, stop presence-check scans early once everyone's reconfirmed instead of always running the full duration, and make all the relevant durations/cooldowns configurable
-- Fix a crash from concurrent `stopScanning()` calls racing across FreeRTOS tasks (a per-dimmer connection task calling it directly instead of only via `loop()`)
-- Give connect attempts priority over scanning: a new scan never starts while any connect is in progress, instead of occasionally breaking an in-flight connection at the link layer
-- Fix `IotsaBLEClientConnection::connect()`'s timeout being 5000x too short (6ms instead of 6s) from a missing seconds-to-milliseconds conversion; log the real failure reason and elapsed time on connect failure
-- Fix BLE server advertising silently staying off forever if a start attempt ever fails (e.g. connection pool exhaustion); now retries automatically
+- Ported over BLEClient, fixed discovery and connection issues (#145)
+- Rationalized BLE-related timing settings (#146)
 
 ## [2.8.1] - 2025-05-04
 
