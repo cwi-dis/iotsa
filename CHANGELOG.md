@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+- Fix `dfu info`/`jsoninfo` crashing on ESP8266; partition-based `dfu` commands now give a clear error instead of a confusing one on that chip family (#148)
 - Allow setting CPU speed to conserve battery (#98)
 - Added workaround for some esp32c3 boards (#99)
 - Show WiFi MAC address when in config or factory mode (#102)

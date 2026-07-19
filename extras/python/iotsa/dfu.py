@@ -138,7 +138,10 @@ class DFU:
         esp = self._connect()
         mac_bytes = esp.read_mac("BASE_MAC")
         mac_str = ':'.join(f'{b:02x}' for b in mac_bytes)
-        revision = esp.get_chip_revision()
+        # ESP8266/ESP8285 ROM has no chip-revision concept; esp.get_chip_revision()
+        # raises NotImplementedInROMError there (and esptool 5.3.1 raises it with a
+        # missing-args TypeError instead of a clean message -- avoid the call entirely).
+        revision = None if esp.CHIP_NAME == 'ESP8266' else esp.get_chip_revision()
         return {
             'name': esp.CHIP_NAME,
             'description': esp.get_chip_description(),
@@ -164,10 +167,26 @@ class DFU:
     # --- Partition table ---
 
     def getPartitionTable(self) -> List[PartitionEntry]:
-        """Read and parse partition table from device. Cached after first read."""
+        """Read and parse partition table from device. Cached after first read.
+
+        Raises IotsaError on ESP8266/ESP8285: that chip family's Arduino core has no
+        on-flash ESP-IDF-style partition table (no partition blob at 0x8000, no OTA
+        slots) -- its flash layout is fixed at link time by a board/flash-size-specific
+        .ld script instead, which isn't discoverable from the device. The whole
+        partition-aware layer below (otadata, named partitions) is ESP32-only.
+        """
         if self._partition_table is not None:
             return self._partition_table
         esp = self._connect()
+        if esp.CHIP_NAME == 'ESP8266':
+            raise IotsaError(
+                "ESP8266/ESP8285 have no on-flash ESP-IDF partition table (flash layout "
+                "is fixed at link time by the board's .ld script, not discoverable from "
+                "the device). Partition-based dfu commands (partition listing, otainfo, "
+                "otaset, otaclear, flash, flashfs, clearfs, flashpart, backuppart, lsfs, "
+                "extractfs) are ESP32-only. Use dfu backup/restore/clear, or dfu esptool, "
+                "for whole-flash operations on this chip."
+            )
         data = esptool_cmds.read_flash(esp, PARTITION_TABLE_OFFSET, PARTITION_TABLE_SIZE)
         assert data is not None
         self._partition_table = self._parsePartitionTable(data)

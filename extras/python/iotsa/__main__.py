@@ -637,13 +637,19 @@ class Main(object):
         assert self.dfu
         chip = self.dfu.getChipInfo()
         size = self.dfu.getFlashSize()
-        table = self.dfu.getPartitionTable()
         print(f"Chip:     {chip['description']}")
         print(f"Features: {', '.join(chip['features'])}")
+        if chip['revision'] is not None:
+            print(f"Revision: {chip['revision']}")
         print(f"Crystal:  {chip['crystal_mhz']} MHz")
         print(f"MAC:      {chip['mac']}")
         print(f"Flash:    {size // (1024 * 1024)}MB ({size} bytes)")
         print()
+        try:
+            table = self.dfu.getPartitionTable()
+        except api.IotsaError as e:
+            print(f"(no partition table: {e})")
+            return
         print(f"{'Name':<16} {'Type':<6} {'Subtype':<12} {'Offset':>10} {'Size':>10}")
         print("-" * 58)
         for p in table:
@@ -654,12 +660,21 @@ class Main(object):
         import json
         chip = self.dfu.getChipInfo()
         size = self.dfu.getFlashSize()
-        table = self.dfu.getPartitionTable()
-        print(json.dumps({
+        partitions: Optional[list] = None
+        partitions_error: Optional[str] = None
+        try:
+            table = self.dfu.getPartitionTable()
+            partitions = [vars(p) for p in table]
+        except api.IotsaError as e:
+            partitions_error = str(e)
+        result = {
             'chip': chip,
             'flash_size': size,
-            'partitions': [vars(p) for p in table],
-        }, indent=2))
+            'partitions': partitions,
+        }
+        if partitions_error is not None:
+            result['partitions_error'] = partitions_error
+        print(json.dumps(result, indent=2))
 
     def _dfu_backup(self) -> None:
         assert self.dfu
