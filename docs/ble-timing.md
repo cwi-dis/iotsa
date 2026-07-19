@@ -168,12 +168,17 @@ means staying invisible/unconnectable longer than necessary once the pool frees 
 **Deliberately left hardcoded**, same reasoning as `SCAN_START_RETRY_MS` above -- an internal
 retry cadence for "try again once whatever blocked us clears up," not a deployment-tunable.
 
-**`minAdvertisingDuration`** (hardcoded 70ms) / **`extraDurationForConnecting`** (hardcoded 30ms)
-(`resumeServer()`, `iotsaBLEServer.cpp`)
-— *Not a good fit for independent configurability.* These are derived from BLE physics at the
-*default* advertising interval (70ms ≈ one full cycle at the 20ms minimum interval, plus margin).
-If `adv_min` is changed from its default, these hardcoded values go stale. Should be computed
-from `adv_min` rather than exposed as their own settings -- a correctness fix, not a new knob.
+**`minAdvertisingDurationMillis`** / **`extraDurationForConnectingMillis`** (local variables,
+`resumeServer()`, `iotsaBLEServer.cpp`; fixed 2026-07-19, were hardcoded 70ms/30ms)
+— *Not a good fit for independent configurability* -- correctly so now, and not just in principle.
+`minAdvertisingDurationMillis` is computed from `adv_min` (`(adv_min >= 0 ? adv_min : 32) * 5 / 8
++ 50`) instead of being a fixed 70ms that only happened to be correct at the legal-minimum
+interval and would silently go stale for any server configured slower (e.g. `control`'s
+`adv_min=100`). The `+50` margin is calibrated to reproduce the old, already field-tested 70ms
+at the legal minimum -- not a from-first-principles BLE-timing derivation, since the original
+70ms comment's own arithmetic ("20ms cycle + 10ms margin = 70ms") didn't actually reconcile.
+`extraDurationForConnectingMillis` stays a fixed 30ms -- connection-establishment handshake time,
+independent of the advertising interval.
 
 ### lissabon side (`BLEDimmer`, `mainLedstripController.cpp` -- not in this repo, listed for
 completeness since the interplay crosses the repo boundary)
