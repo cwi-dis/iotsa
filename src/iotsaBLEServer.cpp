@@ -202,18 +202,30 @@ bool IotsaBLEServerMod::pauseServer() {
 
 void IotsaBLEServerMod::resumeServer(int duration) {
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-  // 70 ms is approx the time it takes to do a full advertising cycle at the minimum interval of 20ms,
-  // with 10ms margin added to allow a connection to be established.
-  const int minAdvertisingDuration = 70;
-  const int extraDurationForConnecting = 30;
-  if (duration == 0 || duration < minAdvertisingDuration + extraDurationForConnecting) {
+  // minAdvertisingDurationMillis needs at least one full advertising cycle to
+  // have a chance of being seen -- it must scale with adv_min (raw units,
+  // 0.625ms each; BLE_HCI_ADV_ITVL_MIN=32 units=20ms is the legal minimum,
+  // confirmed against NimBLE source), not stay fixed, or it silently goes
+  // stale for any server configured slower than the legal minimum (e.g.
+  // control's adv_min=100). The +50ms margin is calibrated, not derived from
+  // first principles: chosen so this reproduces the previous hardcoded,
+  // already field-tested value (70ms) at the legal-minimum interval, rather
+  // than guessing at a BLE-timing formula the original 70ms comment's own
+  // arithmetic didn't fully reconcile (it claimed "20ms cycle + 10ms margin
+  // = 70ms", which doesn't add up).
+  const int advIntervalMillis = (adv_min >= 0 ? adv_min : 32) * 5 / 8;
+  const int minAdvertisingDurationMillis = advIntervalMillis + 50;
+  // Independent of advertise interval -- this is BLE connection-establishment
+  // handshake time, not an advertising-cycle cost.
+  const int extraDurationForConnectingMillis = 30;
+  if (duration == 0 || duration < minAdvertisingDurationMillis + extraDurationForConnectingMillis) {
     IFBLEDEBUG IotsaSerial.println("BLE resume advertising");
     bool ok = pAdvertising->start();
     iotsaBLE_notifyAdvertisingStateChanged(ok);
     _noteAdvertisingStartResult(ok, 0);
     return;
   } else {
-    duration -= extraDurationForConnecting;
+    duration -= extraDurationForConnectingMillis;
     IFBLEDEBUG IotsaSerial.printf("BLE resume advertising for %d ms\n", duration);
     bool ok = pAdvertising->start(duration);
     iotsaBLE_notifyAdvertisingStateChanged(ok);
