@@ -130,7 +130,7 @@ client that talks to it still has a sane chance of catching it — and vice vers
   match (see the rule of thumb above) — otherwise you're trading power for unreliability, not for
   a predictable slower-but-working tradeoff.
 - **Devices someone is actively interacting with right now** (e.g. `control` while someone's at
-  the touchpad adjusting brightness): once a connection is established, `keepOpenMillis` keeps it
+  the touchpad adjusting brightness): once a connection is established, `stayConnectedMillis` keeps it
   open briefly so a rapid follow-up command doesn't pay the full discovery+connect cost again —
   this matters more for felt responsiveness than either sleep or scan tuning once you're already
   connected.

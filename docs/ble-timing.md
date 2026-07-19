@@ -160,9 +160,9 @@ from `adv_min` rather than exposed as their own settings -- a correctness fix, n
 ### lissabon side (`BLEDimmer`, `mainLedstripController.cpp` -- not in this repo, listed for
 completeness since the interplay crosses the repo boundary)
 
-**`discoveryTimeoutMillis`** (hardcoded 10000ms, member of `BLEDimmer`, `BLEDimmer.h`; was a
+**`unreachableGiveUpMillis`** (hardcoded 10000ms, member of `BLEDimmer`, `BLEDimmer.h`; was a
 `BLEDimmer.cpp` file-scope constant misleadingly named `IOTSA_BLEDIMMER_CONNECT_TIMEOUT` until
-2026-07-19)
+2026-07-19, briefly `discoveryTimeoutMillis` before settling on this name the same day)
 — *Relevant to: shape 1 (lissabon dimmers are always other iotsa devices today).*
 Despite the old name, this has nothing to do with the `connect()` call itself -- it only gates
 `connectionTask()`'s discovery-wait branch (`!dimmer->available()`, i.e. the device's address
@@ -179,8 +179,9 @@ just have to be redone once it moves. Also worth reconsidering separately from c
 silently dropping the pending command on timeout, rather than retrying at a lower rate, is
 arguably the wrong behavior regardless of what the number is.
 
-**`keepOpenMillis`** (hardcoded 3000ms, `mainLedstripController.cpp`, already flagged
-`// xxxjack should be configurable`)
+**`stayConnectedMillis`** (hardcoded 3000ms, member of `BLEDimmer`, seeded from a
+`mainLedstripController.cpp` local variable of the same name; was `keepOpenMillis` until
+2026-07-19)
 — *Relevant to: shape 1.*
 How long a dimmer connection is kept open after a command, in case another command follows
 immediately (avoids a full reconnect for rapid adjustments, e.g. dragging a brightness slider).
@@ -188,14 +189,16 @@ immediately (avoids a full reconnect for rapid adjustments, e.g. dragging a brig
 below) -- every extra second a connection is held open is a second it's not available for another
 dimmer or an inbound server connection. Also interacts with `scanCooldownDiscoveryMillis`: while a
 connection is held open, `updateScanning()` still won't start a new discovery scan for *other*
-unaddressed dimmers, so a long `keepOpenMillis` delays their discovery.
+unaddressed dimmers, so a long `stayConnectedMillis` delays their discovery. **Deliberately left
+hardcoded, not made configurable**, same reasoning and same #144 as `unreachableGiveUpMillis`
+above -- this is also generic connection-lifecycle orchestration, not dimmer-specific.
 
 ## Known limitation: shared connection pool
 
 `CONFIG_BT_NIMBLE_MAX_CONNECTIONS` defaults to 3, shared across outbound (client) and inbound
 (server) connections. `control` can in principle want up to 4 simultaneous dimmer connections
 plus any inbound server connection. Raising the cap is a blunt fix (more RAM, doesn't address why
-several connections would need to be open at once) -- the better lever is keeping `keepOpenMillis`
+several connections would need to be open at once) -- the better lever is keeping `stayConnectedMillis`
 and the number of simultaneously-addressed-but-unconfirmed dimmers low enough that this rarely
 matters, and letting the ENOMEM path (client side) or the advertising-retry path (server side,
 fixed today) degrade gracefully when it does.

@@ -117,7 +117,7 @@ protected:
   // depend on the interplay with server-side advertise duration and
   // sleep/wake cycle timing, which varies per deployment. Millis suffix
   // matches the codebase-wide convention for millisecond-unit fields
-  // (keepOpenMillis, animationDurationMillis, postponeSleepMillis, etc.).
+  // (stayConnectedMillis, animationDurationMillis, postponeSleepMillis, etc.).
   uint32_t scanDurationDiscoveryMillis = 11000;  // scan length while actively looking for unknown/unaddressed devices
   uint32_t scanDurationPresenceMillis = 11000;   // upper bound for a presence-check scan (normally ends early)
   uint32_t scanCooldownDiscoveryMillis = 4000;   // minimum gap before starting another discovery scan
