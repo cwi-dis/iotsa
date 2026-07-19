@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `--baud` option for DFU serial connections (some boards need a non-default rate)
 - Ported over BLEClient, fixed discovery and connection issues (#145)
 - Rationalized BLE-related timing settings (#146)
+- Completed the BLE timing-settings audit (#147)
 
 ## [2.8.1] - 2025-05-04
 
