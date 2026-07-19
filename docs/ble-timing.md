@@ -116,6 +116,19 @@ How long a single `connect()` call waits for the link to establish before giving
 setting that was silently 5000x too short (6ms instead of 6s) until 2026-07-19, when it was also
 made configurable and moved here from a hardcoded per-connection constant.
 
+**`scanUnknownDurationMillis`** (default 20000ms; was the hardcoded `SCAN_UNKNOWN_DURATION_MS`
+until 2026-07-19)
+— *Relevant to: all three shapes.*
+How long the manual "scan for unknown devices" session (REST `scanUnknown` flag, or the web
+form's "Scan for N seconds" button, which now interpolates the real value) stays active before
+automatically turning back off. Unlike the other durations here, this is a *session* length, not
+a single scan's duration -- during the session, `updateScanning()` still runs its normal
+discovery-scan/cooldown cycle (`scanDurationDiscoveryMillis`/`scanCooldownDiscoveryMillis`)
+repeatedly. Conceptually related to those two (it's currently ~1.3x one full discovery cycle,
+15000ms) but deliberately kept as its own independent value for now rather than computed from
+them -- may be derived from the discovery cycle length in the future, but made configurable as-is
+first since that's the more immediately useful change.
+
 ### Client side, not yet configurable
 
 **`SCAN_START_RETRY_MS`** (hardcoded 1000ms, `iotsaBLEClient.cpp`)
