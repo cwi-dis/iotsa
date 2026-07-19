@@ -152,6 +152,8 @@ advertising-restart-on-failure fix)
 Retry delay after a failed advertising start (e.g. `BLE_HS_ENOMEM` from the shared connection
 pool being full). Too short retries uselessly fast while the pool is still exhausted; too long
 means staying invisible/unconnectable longer than necessary once the pool frees up.
+**Deliberately left hardcoded**, same reasoning as `SCAN_START_RETRY_MS` above -- an internal
+retry cadence for "try again once whatever blocked us clears up," not a deployment-tunable.
 
 **`minAdvertisingDuration`** (hardcoded 70ms) / **`extraDurationForConnecting`** (hardcoded 30ms)
 (`resumeServer()`, `iotsaBLEServer.cpp`)
