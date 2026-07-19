@@ -123,7 +123,10 @@ made configurable and moved here from a hardcoded per-connection constant.
 Retry delay when a scan-start attempt fails -- either because NimBLE rejected it (a connect was
 in progress) or because our own `connectingCount > 0` guard held it off proactively. Too short
 wastes CPU/log spam re-attempting during a connect that's known to still be running; too long
-delays discovery of new/missing devices unnecessarily.
+delays discovery of new/missing devices unnecessarily. **Deliberately left hardcoded**: unlike
+the discovery/presence durations above, this isn't a deployment-tunable -- it's a short internal
+retry cadence for "try again once whatever blocked us is done," not something that varies
+meaningfully by sleep/advertise configuration.
 
 (`connectTimeoutMillis` used to be listed here too, as a hardcoded constant -- it's above now,
 in the configurable section, alongside the rest of its Millis-suffixed siblings.)
