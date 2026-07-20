@@ -11,6 +11,7 @@ from setuptools import setup, find_packages
 # To use a consistent encoding
 from os import path
 import os
+import subprocess
 import sys
 
 here = path.abspath(path.dirname(__file__))
@@ -19,6 +20,19 @@ Control program (and module) for iotsa devices. Allows finding of iotsa devices 
 WiFi network or in the physical vicinity, inspecting and changing configuration
 of those devices and uploading new firmware over the air.
 """
+
+# Regenerate iotsa/version.py from the current git state (same logic PlatformIO
+# builds use) so the version reported by `iotsa --version` reflects the commit
+# this was installed from, not whatever was last committed to version.py.
+try:
+    subprocess.run(
+        [sys.executable, os.path.join(here, "mkversionh.py")], check=True, cwd=here
+    )
+except Exception as e:
+    print(
+        f"setup.py: warning: could not regenerate iotsa/version.py ({e}), using existing value",
+        file=sys.stderr,
+    )
 
 # Get the version number from the iotsa module
 versionInfo = {}
