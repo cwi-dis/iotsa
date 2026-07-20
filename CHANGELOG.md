@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rationalized BLE-related timing settings (#146)
 - Completed the BLE timing-settings audit (#147)
 - Fix `nodemcuv2-example-bleled` build, which forced `IOTSA_WITH_BLE` on ESP8266 where BLE isn't available (#149)
+- Bump ArduinoJson dependency 7.2.1 → 7.4.3 (#149)
 
 ## [2.8.1] - 2025-05-04
 
