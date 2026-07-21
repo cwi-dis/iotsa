@@ -444,7 +444,7 @@ class Main(object):
         if self.args.bearer:
             kwargs["bearer"] = self.args.bearer
         if self.args.credentials:
-            kwargs["auth"] = self.args.credentials.split(":")
+            kwargs["auth"] = tuple(self.args.credentials.split(":"))
         self.device = api.IotsaDevice(
             target,
             protocol=proto,
