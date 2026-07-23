@@ -38,7 +38,7 @@
         },
         {
             "name" : "Ds1302",
-            "owner" : "treboada"
+            "owner" : "caligari"
         },
         {
             "platforms" : ["espressif32"],
