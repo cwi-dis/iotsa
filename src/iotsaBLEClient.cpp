@@ -399,7 +399,7 @@ void IotsaBLEClientMod::loop() {
 
 void IotsaBLEClientMod::onResult(const BLEAdvertisedDevice *advertisedDevice) {
 #ifdef DEBUG_PRINT_ALL_CLIENTS
-  IotsaSerial.printf("BLEClientMod::onResult(%s)\n", advertisedDevice->toString().c_str());
+  IotsaSerial.printf("BLEClientMod::onResult(%s, RSSI: %d)\n", advertisedDevice->toString().c_str(), advertisedDevice->getRSSI());
 #endif
   // Is this an advertisement for a device we know, either by name or by address?
   // (NimBLE-Arduino 2.1.0 stopped advertising the device name by default, so a
