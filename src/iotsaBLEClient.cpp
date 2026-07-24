@@ -461,6 +461,7 @@ void IotsaBLEClientMod::onResult(const BLEAdvertisedDevice *advertisedDevice) {
 }
 
 IotsaBLEClientConnection* IotsaBLEClientMod::addDevice(std::string id) {
+  shouldUpdateScanAtMillis = millis(); // We probably want to scan for the new device
   auto it = devices.find(id);
   if (it == devices.end()) {
     // Device with this ID doesn't exist yet. Add it.
@@ -469,7 +470,6 @@ IotsaBLEClientConnection* IotsaBLEClientMod::addDevice(std::string id) {
     devices[id] = dev;
     return dev;
   }
-  shouldUpdateScanAtMillis = millis(); // We probably want to scan for the new device
   return it->second;
 }
 
