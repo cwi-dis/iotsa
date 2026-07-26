@@ -1,0 +1,87 @@
+{
+  "source": "examples/BLELed",
+  "defaults": {
+    "partitions": "min_spiffs.csv",
+    "ci": {
+      "platformio": true,
+      "arduino": false
+    }
+  },
+  "variants": [
+    {
+      "board": "esp32thing",
+      "label": "withble",
+      "build_flags": [
+        "-DIOTSA_WITH_BLE"
+      ],
+      "ci": {
+        "platformio": true,
+        "arduino": true
+      }
+    },
+    {
+      "board": "esp32c3devkit",
+      "label": "withble",
+      "build_flags": [
+        "-DIOTSA_WITH_BLE"
+      ]
+    },
+    {
+      "board": "nodemcuv2",
+      "label": "nowifi",
+      "partitions": null,
+      "build_flags": [
+        "-DIOTSA_WITHOUT_WIFI",
+        "-DIOTSA_WITHOUT_HTTP",
+        "-DIOTSA_WITHOUT_WEB",
+        "-DIOTSA_WITHOUT_API",
+        "-DIOTSA_WITHOUT_REST",
+        "-DIOTSA_WITHOUT_COAP"
+      ]
+    },
+    {
+      "board": "esp32thing",
+      "label": "nowifi",
+      "partitions": null,
+      "build_flags": [
+        "-DIOTSA_WITHOUT_WIFI",
+        "-DIOTSA_WITHOUT_HTTP",
+        "-DIOTSA_WITHOUT_HTTPS",
+        "-DIOTSA_WITHOUT_WEB",
+        "-DIOTSA_WITHOUT_API",
+        "-DIOTSA_WITHOUT_REST",
+        "-DIOTSA_WITHOUT_COAP"
+      ]
+    },
+    {
+      "board": "esp32thing",
+      "label": "nonimble",
+      "build_flags": [
+        "-DIOTSA_WITH_BLE",
+        "-DIOTSA_WITHOUT_NIMBLE"
+      ],
+      "skip": {
+        "platformio": "non-NimBLE (ESP32 BLE Arduino) build path is broken, see cwi-dis/iotsa#150"
+      }
+    },
+    {
+      "board": "lolin32",
+      "label": "coap",
+      "build_flags": [
+        "-DIOTSA_WITHOUT_HTTPS",
+        "-DIOTSA_WITHOUT_REST",
+        "-DIOTSA_WITH_BLE",
+        "-DIOTSA_WITH_COAP"
+      ]
+    },
+    {
+      "board": "lolin32",
+      "label": "kitchensink",
+      "build_flags": [
+        "-DIOTSA_WITH_BLE",
+        "-DIOTSA_WITH_COAP",
+        "-DIOTSA_WITH_HTTPS"
+      ]
+    }
+  ]
+}

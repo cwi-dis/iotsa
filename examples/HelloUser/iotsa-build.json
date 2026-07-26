@@ -1,0 +1,31 @@
+{
+  "defaults": {
+    "build_flags": [
+      "-DIOTSA_WITH_HTTPS"
+    ]
+  },
+  "variants": [
+    {
+      "board": "nodemcuv2",
+      "ci": {
+        "platformio": true,
+        "arduino": true
+      }
+    },
+    {
+      "board": "esp32thing",
+      "ci": {
+        "platformio": true,
+        "arduino": true
+      },
+      "partitions": "min_spiffs.csv"
+    },
+    {
+      "board": "esp32c3devkit",
+      "ci": {
+        "platformio": true,
+        "arduino": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "source": "examples/Led",
+  "defaults": {
+    "ci": {
+      "platformio": true,
+      "arduino": false
+    }
+  },
+  "variants": [
+    {
+      "board": "nodemcuv2",
+      "label": "withhttps",
+      "build_flags": [
+        "-DIOTSA_WITH_HTTPS"
+      ]
+    },
+    {
+      "board": "esp32thing",
+      "label": "withhttps",
+      "build_flags": [
+        "-DIOTSA_WITH_HTTPS"
+      ]
+    },
+    {
+      "board": "nodemcuv2",
+      "label": "withcoap",
+      "build_flags": [
+        "-DIOTSA_WITH_COAP"
+      ]
+    },
+    {
+      "board": "esp32thing",
+      "label": "withcoap",
+      "build_flags": [
+        "-DIOTSA_WITH_COAP"
+      ]
+    },
+    {
+      "board": "nodemcuv2",
+      "label": "onlycoap",
+      "build_flags": [
+        "-DIOTSA_WITH_COAP",
+        "-DIOTSA_WITHOUT_WEB",
+        "-DIOTSA_WITHOUT_REST",
+        "-DIOTSA_WITHOUT_HTTP",
+        "-DIOTSA_WITHOUT_HTTPS",
+        "-DIOTSA_WITH_PLACEHOLDERS"
+      ]
+    },
+    {
+      "board": "esp32thing",
+      "label": "onlycoap",
+      "build_flags": [
+        "-DIOTSA_WITH_COAP",
+        "-DIOTSA_WITHOUT_WEB",
+        "-DIOTSA_WITHOUT_REST",
+        "-DIOTSA_WITHOUT_HTTP",
+        "-DIOTSA_WITHOUT_HTTPS",
+        "-DIOTSA_WITH_PLACEHOLDERS"
+      ]
+    }
+  ]
+}

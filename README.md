@@ -39,7 +39,7 @@ Ordered from most to least capable for general use:
 
 | Hardware | Flash / OTA | Status | Notes |
 |---|---|---|---|
-| ESP32 (original, Xtensa) | 4 MB. OTA works; use `min_spiffs.csv` when BLE is enabled. Lolin32 + BLE is large enough to require `no_ota.csv`. | **Supported** | Tested in CI (esp32thing). Lolin32, Pico32, ESP32dev also known to work — _a selection should be added to CI_. Full features: BLE, sleep/wakeup, touch, rotary encoder. |
+| ESP32 (original, Xtensa) | 4 MB. OTA works; use `min_spiffs.csv` when BLE is enabled. Lolin32 + BLE is large enough to require `no_ota.csv`. | **Supported** | Tested in CI (esp32thing, canonical; lolin32 also tracked in CI via `tests/Skeleton`). Pico32, ESP32dev also known to work but not continuously tested. Full features: BLE, sleep/wakeup, touch, rotary encoder. |
 | ESP32-C3 (RISC-V) | 4 MB (devkit, supermini): OTA works with `min_spiffs.csv`. LCD board variant has 2 MB and is very tightly constrained. | **Supported** | Tested in CI (esp32-c3-devkitm-1). Limitations: no analog voltage reading, no deep-sleep wakeup, no rotary encoder (no PCNT), no touch. WiFi power reduction defaults on as a hardware workaround. |
 | ESP8266 / ESP-12 | 4 MB. OTA works. | **Supported** | Tested in CI (nodemcuv2). Used by the iotsa board. No BLE. |
 | ESP32-S3 | 4 MB+. OTA likely works. | **Untested** | Profile similar to original ESP32 (BLE, touch, USB OTG). Likely works — _feedback welcome_. |
@@ -63,9 +63,9 @@ Build the _Hello_ example (_File -> Examples -> iotsa -> Hello_) and flash it on
 
 The _iotsa_ library is known to the PlatformIO library manager, so simply adding it to your _platformio.ini_ file should do the trick for adding the iotsa framework to your project..
 
-To build an example you can open the `iotsa` source directory in _VSCode_ or _Atom_ and look at the `[env:nodemcuv2-example-skeleton]` section. Replace the references to _skeleton_ with the name of the example you want to build.
+To build an example against your local (possibly uncommitted) changes to the iotsa library itself, open the `iotsa` source directory in _VSCode_ or _Atom_ and look for the `[env:nodemcuv2-example-Skeleton]` section (these `[env:...]` sections are generated from `examples/*/iotsa-build.json` and `tests/*/iotsa-build.json` into `generated_envs.ini` -- see `extras/python/gen_build_matrix.py`). Replace the references to _Skeleton_ with the name of the example you want to build.
 
-But: each example in the _examples_ folder also has its own _platform.ini_ file to build it. So you can also open `iotsa/examples/Hello` in _VSCode_ or _Atom_ and build it, or use the command line:
+But: each example in the _examples_ folder also has its own _platformio.ini_ file, generated the same way, for building it standalone (pulling iotsa from GitHub rather than your local checkout). So you can also open `iotsa/examples/Hello` in _VSCode_ or _Atom_ and build it, or use the command line:
 
 ```
 $ cd iotsa/examples/Hello
@@ -573,16 +573,23 @@ has no users, and allows all rights always.
 - [Skeleton](examples/Skeleton/Skeleton.ino) is a good starting point for your own applications.
 - [Hello](examples/Hello/Hello.ino) is the simplest "Hello, user" server.
 - [HelloCpp](examples/HelloCpp/HelloCpp.ino) is the same, but implemented using C++ class declarations.
+- [HelloApi](examples/HelloApi/HelloApi.ino) is the same again, but adds a REST interface (GET/PUT) for changing the name.
 - [Light](examples/Light/Light.ino) measures ambient light level with an LDR connected to the analog input.
 - [Temperature](examples/Temperature/Temperature.ino) measures temperature with a slightly more complicated sensor, a DHT21.
+- [DateTime](examples/DateTime/DateTime.ino) keeps the time via NTP and a realtime clock. Uses _iotsaNtp_ and _iotsaRtc_ modules.
+- [Input](examples/Input/Input.ino) reads a rotary encoder and other digital inputs. Uses _iotsaInput_ module.
 - [Led](examples/Led/Led.ino) controls the color of a NeoPixel LED, and can set up repeating patterns. Uses _iotsaLed_ module.
 - [BLELed](examples/BLELed/BLELed.ino) controls the color of a NeoPixel LED. Can be controlled over Bluetooth LE when built for an esp32 board.
+- [BLEClient](examples/BLEClient/BLEClient.ino) is a combined BLE server and client, used to test/demonstrate `IotsaBLEClientMod`-based device-to-device communication. Currently mainly a test rig; expect it to grow into a fuller example.
+- [Button](examples/Button/Button.ino) waits for a button to be pressed and then makes a call to a configurable URL. Pairs with _Ringer_ to implement a remote doorbell.
 - [Ringer](examples/Ringer/Ringer.ino) sounds a buzzer when a GET request is received. Pairs with _Button_ to implement a remote doorbell.
 - [HelloPasswd](examples/HelloPasswd/HelloPasswd.ino) The same "Hello" server, but now using a _IotsaAuthMod_ for access control (you need to provide username "admin" and password "admin" to change the greeting name). Builds with HTTPS support by default (when using platformIO).
 - [HelloUser](examples/HelloUser/HelloUser.ino) Another "Hello" server that needs authentication, but this time using _IotsaUserMod_ so the password can be changed. Builds with HTTPS support by default (when using platformIO).
 - [HelloRights](examples/HelloRights/HelloRights.ino) Another "Hello" server that uses _IotsaCapabilities_ for rights-based access control.
 - [HelloToken](examples/HelloToken/HelloToken.ino) Another "Hello" server that needs authentication, but this time using a token, where tokens can be created that give certain rights. Not very useful except as an example. Builds with HTTPS support by default (when using platformIO).
 - [Log](examples/Log/Log.ino) Example of using the _iotsaLogger_ module.
+
+Board/feature build coverage (not tutorial material) lives separately, under `tests/`, mirrored one-for-one against the `examples/` source they build -- see `extras/python/gen_build_matrix.py`.
 
 ## more projects using iotsa
 

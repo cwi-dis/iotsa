@@ -1,0 +1,36 @@
+{
+  "source": "examples/BLEClient",
+  "defaults": {
+    "partitions": "min_spiffs.csv",
+    "build_flags": [
+      "-DIOTSA_WITH_BLE"
+    ],
+    "ci": {
+      "platformio": true,
+      "arduino": false
+    }
+  },
+  "variants": [
+    {
+      "board": "esp32thing",
+      "label": "withble",
+      "ci": {
+        "platformio": true,
+        "arduino": true
+      }
+    },
+    {
+      "board": "esp32c3devkit",
+      "label": "withble"
+    },
+    {
+      "board": "lolin32",
+      "label": "coordinated",
+      "build_flags": [
+        "-DIOTSA_WITH_BLE",
+        "-DDEBUG_PRINT_ALL_CLIENTS",
+        "-DCOORDINATE_WITH_SERVER"
+      ]
+    }
+  ]
+}

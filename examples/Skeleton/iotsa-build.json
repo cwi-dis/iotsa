@@ -1,0 +1,26 @@
+{
+  "variants": [
+    {
+      "board": "nodemcuv2",
+      "ci": {
+        "platformio": true,
+        "arduino": true
+      }
+    },
+    {
+      "board": "esp32thing",
+      "partitions": "min_spiffs.csv",
+      "ci": {
+        "platformio": true,
+        "arduino": true
+      }
+    },
+    {
+      "board": "esp32c3devkit",
+      "ci": {
+        "platformio": true,
+        "arduino": false
+      }
+    }
+  ]
+}

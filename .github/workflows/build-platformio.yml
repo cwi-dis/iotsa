@@ -1,8 +1,12 @@
 # Created this action based on information found in:
 # - <https://docs.platformio.org/en/latest/integration/ci/github-actions.html>
 # - <https://docs.github.com/en/free-pro-team@latest/actions/quickstart>
+#
+# The build matrix itself is not hand-maintained here: it is generated from
+# examples/*/iotsa-build.json and tests/*/iotsa-build.json by
+# extras/python/gen_build_matrix.py. See #156.
 name: build-platformio
-on: 
+on:
   push:
     paths-ignore:
     - '.github/workflows/build-arduino.yml'
@@ -14,116 +18,47 @@ on:
         description: 'iotsa branch, ref or sha'
         required: true
         detault: develop
-  
+
 jobs:
   #
-  # Job#1 - Build all examples for all platforms, upload binaries as artifacts
+  # Job#1 - Compute the build matrix from examples/*/iotsa-build.json and
+  # tests/*/iotsa-build.json, and check the committed generated_envs.ini
+  # (used for local dev builds) is still in sync with the same source data.
+  #
+  generate-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.gen.outputs.matrix }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+
+    - name: Generate matrix
+      id: gen
+      run: |
+        MATRIX=$(python3 extras/python/gen_build_matrix.py --format=github-matrix --backend=platformio)
+        echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+
+    - name: Check generated_envs.ini is up to date
+      run: |
+        python3 extras/python/gen_build_matrix.py --format=platformio-ini -o /tmp/generated_envs.ini
+        diff generated_envs.ini /tmp/generated_envs.ini || {
+          echo "::error::generated_envs.ini is out of date. Regenerate it with:"
+          echo "::error::  python3 extras/python/gen_build_matrix.py --format=platformio-ini -o generated_envs.ini"
+          exit 1
+        }
+  #
+  # Job#2 - Build every example/test variant for every platform, upload binaries as artifacts
   #
   build:
+    needs: generate-matrix
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        board:
-        - nodemcuv2
-        - esp32thing
-        - esp32-c3-devkitm-1
-        example:
-        - Hello
-        - HelloApi
-        - HelloCpp
-        - HelloPasswd
-        - HelloRights
-        - HelloToken
-        - HelloUser
-        - Led
-        - Light
-        - Log
-        - Skeleton
-        - Button
-        - Ringer
-        - BLELed
-        - BLEClient
-        - Temperature
-        - DateTime
-        variant: [""]
-        build_flags: [""]
-        # Exclude the "normal" Temperature matrix entries: it needs extra libraries specified.
-        exclude:
-        - example: Temperature
-        # Extra matrix entries:
-        include:
-        - board: esp32thing
-          pio_extra_args: --project-option="board_build.partitions=min_spiffs.csv"
-        # Add esp32c3 build flags
-        - board: esp32-c3-devkitm-1
-          board_build_flags: -DARDUINO_USB_MODE=1 -DARDUINO_USB_CDC_ON_BOOT=1
-        #  pio_extra_args: --project-option="lib_ignore=madhephaestus/ESP32Encoder"
-        # Add Temperature with the right options for including the library
-        - example: Temperature
-          board: nodemcuv2
-          build_flags:
-          pio_extra_args: --project-option="lib_deps=adafruit/DHT sensor library"
-        - example: Temperature
-          board: esp32thing
-          build_flags:
-          pio_extra_args: --project-option="lib_deps=adafruit/DHT sensor library"
-        # Extra build: Led with HTTPS
-        - example: Led
-          variant: withhttps-
-          build_flags: -DIOTSA_WITH_HTTPS
-          board: nodemcuv2
-        - example: Led
-          variant: withhttps-
-          build_flags: -DIOTSA_WITH_HTTPS
-          board: esp32thing
-        # Extra build: Led with COAP
-        - example: Led
-          variant: withcoap-
-          build_flags: -DIOTSA_WITH_COAP
-          board: nodemcuv2
-        - example: Led
-          variant: withcoap-
-          build_flags: -DIOTSA_WITH_COAP
-          board: esp32thing
-        # Extra build: Led with only COAP support (no web, no rest, no http/s)
-        - example: Led
-          variant: onlycoap-
-          build_flags: -DIOTSA_WITH_COAP -DIOTSA_WITHOUT_WEB -DIOTSA_WITHOUT_REST -DIOTSA_WITHOUT_HTTP -DIOTSA_WITHOUT_HTTPS -DIOTSA_WITH_PLACEHOLDERS
-          board: nodemcuv2
-        - example: Led
-          variant: onlycoap-
-          build_flags: -DIOTSA_WITH_COAP -DIOTSA_WITHOUT_WEB -DIOTSA_WITHOUT_REST -DIOTSA_WITHOUT_HTTP -DIOTSA_WITHOUT_HTTPS -DIOTSA_WITH_PLACEHOLDERS
-          board: esp32thing
-        # Extra build: BLELed with BLE added
-        - example: BLELed
-          variant: withble-
-          board: esp32thing
-          build_flags: -DIOTSA_WITH_BLE
-          pio_extra_args: --project-option="board_build.partitions=min_spiffs.csv"
-        - example: BLELed
-          variant: withble-
-          board: esp32-c3-devkitm-1
-          build_flags: -DIOTSA_WITH_BLE
-          pio_extra_args: --project-option="board_build.partitions=min_spiffs.csv"
-        # Extra build: BLEClient with BLE added (server+client test vehicle)
-        - example: BLEClient
-          variant: withble-
-          board: esp32thing
-          build_flags: -DIOTSA_WITH_BLE
-          pio_extra_args: --project-option="board_build.partitions=min_spiffs.csv"
-        - example: BLEClient
-          variant: withble-
-          board: esp32-c3-devkitm-1
-          build_flags: -DIOTSA_WITH_BLE
-          pio_extra_args: --project-option="board_build.partitions=min_spiffs.csv"
-#        # Extra build: BLELed with only BLE (no web, http/s, rest, wifi)
-#        # Does not build currently: info/getHandler/putHandler have nothing to override.
-#        - example: BLELed
-#          variant: onlyble-
-#          board: esp32thing
-#          build_flags: -DIOTSA_WITH_BLE -DIOTSA_WITHOUT_COAP -DIOTSA_WITHOUT_WEB -DIOTSA_WITHOUT_API -DIOTSA_WITHOUT_REST -DIOTSA_WITHOUT_HTTP -DIOTSA_WITHOUT_HTTPS -DIOTSA_WITH_PLACEHOLDERS
-#          pio_extra_args: --project-option="board_build.partitions=min_spiffs.csv"
+      matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -157,25 +92,34 @@ jobs:
     - name: Run PlatformIO
       run: |
         rm -rf /tmp/pio-build
-        pio ci --lib="." --project-option="lib_ldf_mode=deep+" --project-option="lib_compat_mode=strict" ${{ matrix.pio_extra_args }} --board=${{ matrix.board }} --keep-build-dir --build-dir /tmp/pio-build
+        EXTRA_OPTS=()
+        if [ -n "$PARTITIONS" ]; then
+          EXTRA_OPTS+=(--project-option="board_build.partitions=$PARTITIONS")
+        fi
+        if [ -n "$EXTRA_LIB_DEPS" ]; then
+          EXTRA_OPTS+=(--project-option="lib_deps=$EXTRA_LIB_DEPS")
+        fi
+        pio ci --lib="." --project-option="lib_ldf_mode=deep+" --project-option="lib_compat_mode=strict" "${EXTRA_OPTS[@]}" --board="$PIO_BOARD" --keep-build-dir --build-dir /tmp/pio-build
       env:
-        PLATFORMIO_CI_SRC: examples/${{ matrix.example }}
-        PLATFORMIO_BUILD_FLAGS: ${{ matrix.build_flags }} ${{ matrix.board_build_flags }}
-        IOTSA_CONFIG_PROGRAM_NAME: ${{ matrix.example }}-${{ matrix.variant }}${{ matrix.board }}
+        PLATFORMIO_CI_SRC: ${{ matrix.source }}
+        PLATFORMIO_BUILD_FLAGS: ${{ matrix.build_flags }}
+        IOTSA_CONFIG_PROGRAM_NAME: ${{ matrix.name }}
+        PIO_BOARD: ${{ matrix.pio_board }}
+        PARTITIONS: ${{ matrix.partitions }}
+        EXTRA_LIB_DEPS: ${{ matrix.extra_lib_deps }}
 
 # For some reason the program name change isn't picked up by pio ci.
     - name: Copy build output
       run: |
-        cp /tmp/pio-build/.pio/build/${{ matrix.board }}/firmware.bin ${{ matrix.example }}-${{ matrix.variant }}${{ matrix.board }}.bin
-#       cp /tmp/pio-build/.pio/build/${{ matrix.board }}/${{ matrix.example }}-${{ matrix.variant }}${{ matrix.board }}.bin ${{ matrix.example }}-${{ matrix.variant }}${{ matrix.board }}.bin
+        cp /tmp/pio-build/.pio/build/${{ matrix.pio_board }}/firmware.bin ${{ matrix.name }}.bin
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.example }}-${{ matrix.variant }}${{ matrix.board }}.bin
-        path: ${{ matrix.example }}-${{ matrix.variant }}${{ matrix.board }}.bin
+        name: ${{ matrix.name }}.bin
+        path: ${{ matrix.name }}.bin
   #
-  # Job#2 - dispatch build event to dependent repositories
+  # Job#3 - dispatch build event to dependent repositories
   #
   dispatch:
     if: ${{ github.event_name == 'push' && ( github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/') ) }}
@@ -208,7 +152,7 @@ jobs:
       if: ${{ startsWith(github.ref, 'refs/tags/') }}
       run: |
         echo "iotsa_ref=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-        
+
     - name: Repository Dispatch
       uses: peter-evans/repository-dispatch@v1
       with:

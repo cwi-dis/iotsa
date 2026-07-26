@@ -1,8 +1,12 @@
 # Created this action based on information found in:
 # - <https://github.com/marketplace/actions/test-compile-for-arduino>
 # - <https://docs.github.com/en/free-pro-team@latest/actions/quickstart>
+#
+# The build matrix itself is not hand-maintained here: it is generated from
+# examples/*/iotsa-build.json and tests/*/iotsa-build.json by
+# extras/python/gen_build_matrix.py. See #156.
 name: build-arduino
-on: 
+on:
   push:
     paths-ignore:
     - '.github/workflows/build-platformio.yml'
@@ -15,38 +19,39 @@ on:
         required: true
 
 jobs:
-  build:
+  #
+  # Job#1 - Compute the build matrix from examples/*/iotsa-build.json and
+  # tests/*/iotsa-build.json.
+  #
+  generate-matrix:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        board:
-        - esp32:esp32:esp32thing
-        - esp8266:esp8266:nodemcuv2
-        example:
-        - examples/Hello
-        - examples/HelloApi
-        - examples/HelloCpp
-        - examples/HelloPasswd
-        - examples/HelloRights
-        - examples/HelloToken
-        - examples/HelloUser
-        - examples/Led
-        - examples/Light
-        - examples/Log
-        - examples/Skeleton
-        - examples/Button
-        - examples/Ringer
-        - examples/DateTime
-# Temporarily disabled:
-#        - examples/BLELed
-        - examples/Temperature
-        include:
-        - board: esp32:esp32:esp32thing
-          partition_scheme: --board-options PartitionScheme=min_spiffs
+    outputs:
+      matrix: ${{ steps.gen.outputs.matrix }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-      
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+
+    - name: Generate matrix
+      id: gen
+      run: |
+        MATRIX=$(python3 extras/python/gen_build_matrix.py --format=github-matrix --backend=arduino)
+        echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+  #
+  # Job#2 - Build every arduino-cli-enabled example/test variant
+  #
+  build:
+    needs: generate-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
     - name: Cache pip
       uses: actions/cache@v4
       with:
@@ -54,19 +59,19 @@ jobs:
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-
-   
+
     - name: Cache Arduino CLI
       uses: actions/cache@v4
       with:
         path: ~/.arduino15
         key: ${{ runner.os }}-arduino-${{ hashFiles('*_index.json') }}
-   
+
     - name: Cache Arduino libraries
       uses: actions/cache@v4
       with:
         path: ~/Arduino/libraries
         key: ${{ runner.os }}-arduinolibs-${{ hashFiles('**/library.properties') }}
-   
+
     - name: Setup Arduino CLI
       uses: arduino/setup-arduino-cli@v2
 
@@ -74,7 +79,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pyserial
-        
+
     - name: Install Arduino platforms and libraries
       run: |
         arduino-cli core list --all
@@ -83,16 +88,9 @@ jobs:
         arduino-cli config add board_manager.additional_urls "https://espressif.github.io/arduino-esp32/package_esp32_index.json"
         arduino-cli config add board_manager.additional_urls "https://arduino.esp8266.com/stable/package_esp8266com_index.json"
         arduino-cli core update-index
-        echo xxxjack after update index
-        arduino-cli core list --all
         arduino-cli core install "esp32:esp32"
         arduino-cli core install "esp8266:esp8266"
-        echo xxxjack after install esp32 and esp8266
-        arduino-cli core list --all
         arduino-cli core upgrade
-        echo xxxjack after upgrade
-        arduino-cli core list --all
-        arduino-cli lib list
         arduino-cli lib install "Adafruit NeoPixel"
         arduino-cli lib install "ArduinoJson"
         arduino-cli lib install "CoAP simple library"
@@ -100,18 +98,32 @@ jobs:
         arduino-cli lib install "Adafruit Unified Sensor"
         arduino-cli lib install "Ds1302"
         arduino-cli lib install "ESP32Encoder"
+        arduino-cli lib install "NimBLE-Arduino"
         arduino-cli lib install --git-url https://github.com/yutter/ArduinoJWT
         arduino-cli lib install --git-url https://github.com/jackjansen/esp32_idf5_https_server
         arduino-cli lib install --git-url https://github.com/jackjansen/esp32_idf5_https_server_compat
-        arduino-cli lib list
+
     - name: Install iotsa library
       run: |
         mkdir -p ~/Arduino/libraries
         ln -fs $PWD ~/Arduino/libraries/iotsa
 
-    - name: Build ${{ matrix.example }} ${{ matrix.board }}
+    - name: Build ${{ matrix.name }}
       run: |
-        arduino-cli compile --fqbn ${{ matrix.board }} ${{ matrix.partition_scheme }} ${{ matrix.example }}
+        BOARD_OPTS=()
+        if [ -n "$PARTITION_SCHEME" ]; then
+          BOARD_OPTS+=(--board-options "PartitionScheme=$PARTITION_SCHEME")
+        fi
+        BUILD_PROPS=()
+        if [ -n "$BUILD_FLAGS" ]; then
+          BUILD_PROPS+=(--build-property "compiler.cpp.extra_flags=$BUILD_FLAGS")
+        fi
+        arduino-cli compile --fqbn "$FQBN" "${BOARD_OPTS[@]}" "${BUILD_PROPS[@]}" "$SOURCE"
+      env:
+        FQBN: ${{ matrix.fqbn }}
+        SOURCE: ${{ matrix.source }}
+        BUILD_FLAGS: ${{ matrix.build_flags }}
+        PARTITION_SCHEME: ${{ matrix.partition_scheme }}
 
     - name: Uninstall iotsa and custom libraries
       run: |

@@ -1,0 +1,21 @@
+{
+  "defaults": {
+    "lib_deps": [
+      "adafruit/DHT sensor library",
+      "adafruit/Adafruit Unified Sensor"
+    ],
+    "ci": {
+      "platformio": true,
+      "arduino": true
+    }
+  },
+  "variants": [
+    {
+      "board": "nodemcuv2"
+    },
+    {
+      "board": "esp32thing",
+      "partitions": "min_spiffs.csv"
+    }
+  ]
+}
