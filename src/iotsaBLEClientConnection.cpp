@@ -3,28 +3,10 @@
 #ifdef IOTSA_WITH_BLE
 #include "iotsaBLEClient.h"
 
-// Never portMAX_DELAY: bounds how long any caller (including loop()) can
-// possibly wait on addressMutex, so a stuck holder degrades to a skipped
-// update, not a wedged task. The lock is only ever held for a plain field
-// copy, so contention this long should never actually happen.
-static const TickType_t addressMutexTimeout = pdMS_TO_TICKS(20);
-
 IotsaBLEClientConnection::IotsaBLEClientConnection(std::string& _name, std::string _address)
-: name(_name),
-  addressMutex(xSemaphoreCreateMutex()),
-  address(_address, 0), // Public is default for address type for nimble
-#ifdef IOTSA_WITHOUT_NIMBLE
-  addressType(BLE_ADDR_TYPE_PUBLIC),
-#endif
-  addressValid(false),
-  pClient(nullptr)
+: IotsaBLEDeviceInfo(_name, _address)
 {
   connCallbacks.owner = this;
-  if (_address != "") {
-    // address and addressType have already been set. Not yet shared with
-    // any other task, so no need to take addressMutex here.
-    addressValid = true;
-  }
 }
 
 void IotsaBLEClientConnection::ConnCallbacks::onConnect(BLEClient* pClient) {
@@ -40,7 +22,10 @@ void IotsaBLEClientConnection::ConnCallbacks::onDisconnect(BLEClient* pClient) {
 void IotsaBLEClientConnection::ConnCallbacks::onDisconnect(BLEClient* pClient, int reason) {
   IFDEBUG IotsaSerial.printf("IotsaBLEClientConnection(%s): onDisconnect reason=%d (%s)\n",
     owner ? owner->getName().c_str() : "?", reason, NimBLEUtils::returnCodeToString(reason));
-  if (owner) owner->disconnectSettled = true;
+  if (owner) {
+    owner->disconnectSettled = true;
+    owner->lastDisconnectReason = reason;
+  }
 }
 #endif
 
@@ -49,62 +34,14 @@ IotsaBLEClientConnection::~IotsaBLEClientConnection() {
     BLEDevice::deleteClient(pClient);
     pClient = nullptr;
   }
-  vSemaphoreDelete(addressMutex);
-}
-
-void IotsaBLEClientConnection::setKnownAddress(const std::string& _address) {
-  if (_address == "") return;
-  if (xSemaphoreTake(addressMutex, addressMutexTimeout) != pdTRUE) {
-    IotsaSerial.println("IotsaBLEClientConnection::setKnownAddress: address mutex timeout, skipped");
-    return;
-  }
-  if (!(addressValid && address.toString() == _address)) {
-    address = BLEAddress(_address, 0); // Public is default for address type for nimble
-    addressValid = true;
-  }
-  xSemaphoreGive(addressMutex);
-}
-
-std::string IotsaBLEClientConnection::getAddress() {
-  std::string rv = "";
-  if (xSemaphoreTake(addressMutex, addressMutexTimeout) != pdTRUE) {
-    IotsaSerial.println("IotsaBLEClientConnection::getAddress: address mutex timeout");
-    return rv;
-  }
-  bool valid = addressValid;
-#ifdef IOTSA_WITHOUT_NIMBLE
-  valid = valid && addressType == BLE_ADDR_TYPE_PUBLIC;
-#endif
-  if (valid) rv = address.toString();
-  xSemaphoreGive(addressMutex);
-  return rv;
 }
 
 bool IotsaBLEClientConnection::receivedAdvertisement(const BLEAdvertisedDevice& _device) {
-  lastSeenAtMillis = millis();
-  if (xSemaphoreTake(addressMutex, addressMutexTimeout) != pdTRUE) {
-    IotsaSerial.println("IotsaBLEClientConnection::receivedAdvertisement: address mutex timeout, skipped");
-    return false;
-  }
-  // Check whether the address is the same, then we don't have to add anything.
-  bool sameAddress = addressValid
-#ifdef IOTSA_WITHOUT_NIMBLE
-    && _device.getAddressType() == addressType
-#endif
-    && _device.getAddress().equals(address);
-  bool changed = false;
-  if (!sameAddress) {
-    address = _device.getAddress();
-#ifdef IOTSA_WITHOUT_NIMBLE
-    addressType = _device.getAddressType();
-#endif
-    addressValid = true;
-    changed = true;
-  }
-  xSemaphoreGive(addressMutex);
+  bool changed = IotsaBLEDeviceInfo::receivedAdvertisement(_device);
   // disconnect() only touches pClient, not address/addressValid -- fine to
-  // call after releasing the lock, and keeps disconnect() (which talks to
-  // the BLE stack) from ever running while addressMutex is held.
+  // call after the base class has released addressMutex, and keeps
+  // disconnect() (which talks to the BLE stack) from ever running while
+  // addressMutex is held.
   if (changed) disconnect();
   return changed;
 }
@@ -174,6 +111,11 @@ bool IotsaBLEClientConnection::connect() {
   }
   if (pClient->isConnected()) return true;
   uint32_t t0 = millis();
+  // A genuine new connect attempt starts here (the already-connected
+  // fast-path above already returned) -- record it, and tally the outcome
+  // below. Distinct from lastDisconnectReason, which only ever gets set on a
+  // connection that *did* succeed and later went away.
+  lastConnectAtMillis = t0;
   // Connections take priority over scanning: tell the owning mod a connect
   // attempt is in flight so updateScanning() holds off starting a new scan
   // until it's done (see IotsaBLEClientMod::noteConnectAttemptStarted()).
@@ -185,7 +127,10 @@ bool IotsaBLEClientConnection::connect() {
 #endif
   if (owner) owner->noteConnectAttemptEnded();
   uint32_t elapsedMs = millis() - t0;
-  if (!rv) {
+  if (rv) {
+    numSuccessfulConnections++;
+  } else {
+    numFailedConnectionAttempts++;
 #ifdef IOTSA_WITHOUT_NIMBLE
     IotsaSerial.printf("IotsaBLEClientConnection::connect(%s): failed after %ums\n", addr.toString().c_str(), elapsedMs);
 #else
@@ -210,6 +155,22 @@ bool IotsaBLEClientConnection::isConnected() {
 
 bool IotsaBLEClientConnection::isDisconnecting() {
   return !disconnectSettled;
+}
+
+void IotsaBLEClientConnection::getHandler(JsonObject& reply) {
+  IotsaBLEDeviceInfo::getHandler(reply);
+  if (lastConnectAtMillis != 0) {
+    reply["lastConnectMillisAgo"] = millis() - lastConnectAtMillis;
+  }
+  reply["numSuccessfulConnections"] = numSuccessfulConnections;
+  reply["numFailedConnectionAttempts"] = numFailedConnectionAttempts;
+  if (lastDisconnectReason != -1) {
+#ifndef IOTSA_WITHOUT_NIMBLE
+    reply["lastDisconnectReason"] = NimBLEUtils::returnCodeToString(lastDisconnectReason);
+#else
+    reply["lastDisconnectReason"] = lastDisconnectReason;
+#endif
+  }
 }
 
 BLERemoteCharacteristic *IotsaBLEClientConnection::_getCharacteristic(BLEUUID& serviceUUID, BLEUUID& charUUID) {

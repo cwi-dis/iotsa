@@ -3,6 +3,7 @@
 #include "iotsa.h"
 #include "iotsaApi.h"
 #include "iotsaBle.h"
+#include "iotsaBLEDeviceInfo.h"
 #include "iotsaBLEClientConnection.h"
 
 #ifdef IOTSA_WITH_BLE
@@ -86,8 +87,10 @@ protected:
   std::map<std::string, IotsaBLEClientConnection*> devices;
   // These are all known devices by address
   std::map<std::string, IotsaBLEClientConnection *>devicesByAddress;
-  // These are all names of unknown devices
-  std::set<std::string> unknownDevices;
+  // Devices seen advertising that aren't in `devices` above -- keyed by
+  // name. Lighter-weight than IotsaBLEClientConnection (no BLEClient*, no
+  // connect machinery) since most of these are only ever seen in passing.
+  std::map<std::string, IotsaBLEDeviceInfo*> unknownDevices;
 protected:
   void configLoad();
   void configSave();

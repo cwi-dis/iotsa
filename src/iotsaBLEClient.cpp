@@ -82,7 +82,7 @@ void IotsaBLEClientMod::formHandler_fields(String& message, const String& text, 
   } else {
     message += "<ul>";
     for (auto it: unknownDevices) {
-      message += "<li>" + formHandler_field_perdevice(it.c_str()) + "</li>";
+      message += "<li>" + formHandler_field_perdevice(it.first.c_str()) + " (RSSI " + String(it.second->getRSSI()) + ")</li>";
     }
     message += "</ul>";
   }
@@ -112,7 +112,8 @@ bool IotsaBLEClientMod::getHandler(const char *path, JsonObject& reply) {
   if (unknownDevices.size()) {
     JsonArray unknownReply = reply["unassigned"].as<JsonArray>();
     for (auto it : unknownDevices) {
-      unknownReply.add((char *)it.c_str());
+      JsonObject devReply = unknownReply.add<JsonObject>();
+      it.second->getHandler(devReply);
     }
   }
   reply["scanUnknown"] = (char *)NULL;
@@ -457,6 +458,15 @@ void IotsaBLEClientMod::onResult(const BLEAdvertisedDevice *advertisedDevice) {
     const uint16_t *mfg = (const uint16_t *)mfgData.c_str();
     if (*mfg != manufacturerFilter) return;
   }
+  IotsaBLEDeviceInfo *devInfo;
+  auto it3 = unknownDevices.find(deviceName);
+  if (it3 == unknownDevices.end()) {
+    devInfo = new IotsaBLEDeviceInfo(deviceName);
+    unknownDevices[deviceName] = devInfo;
+  } else {
+    devInfo = it3->second;
+  }
+  devInfo->receivedAdvertisement(*advertisedDevice);
   unknownDeviceCallback(*advertisedDevice);
 }
 

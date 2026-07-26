@@ -2,6 +2,7 @@
 #define _IOTSABLECLIENTCONNECTION_H_
 #include "iotsa.h"
 #include "iotsaBle.h"
+#include "iotsaBLEDeviceInfo.h"
 
 #ifdef IOTSA_WITH_BLE
 
@@ -11,12 +12,12 @@ typedef std::function<void(uint8_t *, size_t)> BleNotificationCallback;
 
 class IotsaBLEClientMod;
 
-class IotsaBLEClientConnection {
+class IotsaBLEClientConnection : public IotsaBLEDeviceInfo {
   friend class IotsaBLEClientMod;
 public:
   IotsaBLEClientConnection(std::string& _name, std::string _address="");
   ~IotsaBLEClientConnection();
-  bool receivedAdvertisement(const BLEAdvertisedDevice& _device);
+  bool receivedAdvertisement(const BLEAdvertisedDevice& _device) override;
   void clearDevice();
   bool available();
   bool connect();
@@ -45,40 +46,19 @@ public:
   bool get(BLEUUID& serviceUUID, BLEUUID& charUUID, std::string& value);
   bool getAsBuffer(BLEUUID& serviceUUID, BLEUUID& charUUID, uint8_t **datap, size_t *sizep);
   bool getAsNotification(BLEUUID& serviceUUID, BLEUUID& charUUID, BleNotificationCallback callback);
-  const std::string& getName() { return name; }
-  std::string getAddress();
-  // Seed a previously-persisted address, so available()/connect() work
-  // before any advertisement has been received (e.g. right after boot).
-  void setKnownAddress(const std::string& _address);
-  // millis() timestamp of the last time we saw an advertisement (or connected
-  // to) this device, regardless of whether the address changed. Used to know
-  // whether a presence-check scan has reconfirmed it yet.
-  uint32_t getLastSeenAtMillis() { return lastSeenAtMillis; }
+  // Adds connect-specific fields (on top of the base class's
+  // name/address/rssi/lastSeenMillisAgo) to reply: lastConnectMillisAgo,
+  // numSuccessfulConnections, numFailedConnectionAttempts,
+  // lastDisconnectReason.
+  void getHandler(JsonObject& reply) override;
 protected:
-  std::string name;
   // Set by IotsaBLEClientMod::addDevice() (a friend) at construction time.
   // Lets connect() tell the owning mod when a connect attempt starts/ends,
   // so scanning can be held off while any connection is being established --
   // connections take priority over scanning.
   IotsaBLEClientMod* owner = nullptr;
   BLERemoteCharacteristic *_getCharacteristic(BLEUUID& serviceUUID, BLEUUID& charUUID);
-  // address/addressValid (and addressType, classic-BLE only) are written
-  // from the NimBLE host task (receivedAdvertisement(), via onResult()) and
-  // read from both the main loop task and this device's own
-  // BLEDimmer::connectionTask() -- protected by addressMutex. Always take it
-  // with a short bounded timeout (never portMAX_DELAY) and never call
-  // anything blocking (BLE calls, Serial, etc.) while holding it: a real
-  // FreeRTOS mutex wait (unlike a portMUX critical section) never disables
-  // interrupts, so even a stuck holder can't block the hardware watchdog --
-  // worst case is a skipped update this cycle, not a wedged device.
-  SemaphoreHandle_t addressMutex;
-  BLEAddress address;
-#ifdef IOTSA_WITHOUT_NIMBLE
-  esp_ble_addr_type_t addressType;
-#endif
-  bool addressValid;
-  uint32_t lastSeenAtMillis = 0;
-  BLEClient* pClient;
+  BLEClient* pClient = nullptr;
   // Registered on pClient so we get told when a disconnect actually
   // completes (not just when we ask for one) -- see isDisconnecting().
   class ConnCallbacks : public BLEClientCallbacks {
@@ -98,6 +78,20 @@ protected:
   // NimBLE host callback context, read from this device's own
   // BLEDimmer::connectionTask().
   volatile bool disconnectSettled = true;
+  // millis() timestamp of the start of the most recent genuine connect
+  // attempt -- i.e. NOT the connect()-while-already-connected fast path, so
+  // this only moves on an actual new pClient->connect() call.
+  uint32_t lastConnectAtMillis = 0;
+  uint32_t numSuccessfulConnections = 0;
+  uint32_t numFailedConnectionAttempts = 0;
+  // NimBLE host-stack reason code from the most recent onDisconnect(), or -1
+  // if none seen yet. Distinguishes "connect succeeded, then something went
+  // wrong later" from a plain failed connect attempt (which never reaches
+  // onConnect()/onDisconnect() at all). Decoded via
+  // NimBLEUtils::returnCodeToString() for REST/debug output. Stays -1 on the
+  // classic-BLE build too: its onDisconnect(pClient) callback gets no reason
+  // code from the stack.
+  int lastDisconnectReason = -1;
 };
 
 #endif // IOTSA_WITH_BLE
