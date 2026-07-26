@@ -3,23 +3,15 @@
     {
       "board": "nodemcuv2",
       "ci": {
-        "platformio": true,
+        "platformio": false,
         "arduino": true
       }
     },
     {
       "board": "esp32thing",
       "ci": {
-        "platformio": true,
+        "platformio": false,
         "arduino": true
-      },
-      "partitions": "min_spiffs.csv"
-    },
-    {
-      "board": "esp32c3devkit",
-      "ci": {
-        "platformio": true,
-        "arduino": false
       }
     }
   ]

@@ -85,13 +85,21 @@ iotsa --help
 
 The tool discovers devices via mDNS, communicates over HTTP/HTTPS (REST), CoAP, or BLE/HPS, and supports OTA firmware upload, config inspection, and config editing.
 
-## Examples
+## Examples and tests
 
-`examples/` contains standalone Arduino sketches. They serve as both documentation and the de-facto test suite — CI builds all of them across multiple boards.
+`examples/` contains doc-grade sample sketches, one-to-one with the README's "sample
+programs" list. `tests/` holds board/feature build-coverage variants as data only
+(`iotsa-build.json`, pointing back at the `examples/` source they build) — not tutorial
+material. Both feed `extras/python/gen_build_matrix.py`, the single source of truth for
+the toplevel `platformio.ini` envs (`generated_envs.ini`), both CI workflows' build
+matrices, and each example's standalone `platformio.ini`. See #156.
 
 - `Skeleton` — recommended starting point for new applications
-- `Hello`, `HelloApi`, `HelloCpp`, `HelloPasswd`, `HelloRights`, `HelloToken`, `HelloUser` — auth patterns
-- `BLELed`, `Led`, `Light` — LED control
+- `Hello` — simplest possible single-file "Hello, user" server
+- `HelloIotsa` — the same, but structured the way we recommend for real applications
+  (app module in its own `.h`/`.cpp`), with a REST API added
+- `HelloPasswd`, `HelloRights`, `HelloToken`, `HelloUser` — auth patterns
+- `BLELed`, `BLEClient`, `Led`, `Light` — LED control / BLE
 - `Button`, `Input`, `Ringer` — input handling
 - `Log`, `Temperature`, `DateTime` — logging and sensors
 

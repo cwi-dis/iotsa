@@ -243,7 +243,9 @@ IotsaSimpleMod helloMod(application, "/hello", helloHandler, helloInfo);
 
 ### Another hello world application
 
-From a functionality point of view the [HelloCpp](examples/HelloCpp/HelloCpp.ino) program is identical to _Hello_, but it is structured differently, as a C++ class. This is a bit more difficult to read (when you are used to standard Arduino programming and not C++ programming) but has the advantage that the functionality can easily be reused in other servers. Actually, most standard modules (below) started their life this way. Also, if you want to create a device without a user interface (REST or COAP only) you should follow this pattern.
+From a functionality point of view the hello module in [HelloIotsa](examples/HelloIotsa) is identical to _Hello_, but it is structured differently, as a C++ class. This is a bit more difficult to read (when you are used to standard Arduino programming and not C++ programming) but has the advantage that the functionality can easily be reused in other servers. Actually, most standard modules (below) started their life this way. Also, if you want to create a device without a user interface (REST or COAP only) you should follow this pattern.
+
+This is also the pattern we recommend for structuring your own applications: the module class lives in its own `.h`/`.cpp` pair (`iotsaHelloMod.h`/`iotsaHelloMod.cpp` in the `HelloIotsa` example), following the same declaration/implementation split as iotsa's own core modules, while the main file only contains the application glue (which modules to instantiate, plus `setup()`/`loop()`).
 
 You declare the class for your functionality:
 
@@ -282,7 +284,7 @@ Iotsa will now take care of calling your classes `IotsaHelloMod ::setup()`, `Iot
 
 If you want your server to have a programming interface (either REST to access it over HTTP/TCP or COAP to access it over UDP) you use the base class `IotsaApiMod`. You provide methods for handling _GET_, _PUT_ and _POST_ requests (only for the ones you need) and register your API endpoint in your _serverSetup_. 
 
-The [HelloApi](examples/HelloApi/HelloApi.ino) example has the full details, but here are the _GET_ and _PUT_ methods:
+[HelloIotsa](examples/HelloIotsa) has the full details (its hello module extends `IotsaApiMod` directly, combining this with the class-based structure above), but here are the _GET_ and _PUT_ methods:
 
 ```
 bool IotsaHelloMod::getHandler(const char *path, JsonObject& reply) {
@@ -292,7 +294,7 @@ bool IotsaHelloMod::getHandler(const char *path, JsonObject& reply) {
 
 bool IotsaHelloMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   JsonVariant arg = request["greeting"];
-  if (arg.is<char*>()) {
+  if (arg.is<const char*>()) {
     greeting = arg.as<String>();
     return true;
   }
@@ -321,7 +323,7 @@ String IotsaMod::htmlEncode(String data);
 
 ### Next steps
 
-The [Hello](examples/Hello/Hello.ino) and [HelloCpp](examples/HelloCpp/HelloCpp.ino) examples shows how to do basic interaction with the user (through a browser form, and through information on the how page). [HelloApi](examples/HelloApi/HelloApi.ino) shows how to add an API to your service. Various types of access control are demonstrated in the [HelloUser](examples/HelloUser/HelloUser.ino), [HelloPasswd](examples/HelloPasswd/HelloPasswd.ino), [HelloRights](examples/HelloRights/HelloRights.ino) and [HelloToken](examples/HelloToken/HelloToken.ino) examples.
+The [Hello](examples/Hello/Hello.ino) example shows the minimal, single-file, Arduino-sketch-style way to do basic interaction with the user (through a browser form, and through information on the home page). [HelloIotsa](examples/HelloIotsa) shows the same thing structured the way we recommend for real applications, plus how to add a REST API to your service. [HelloUser](examples/HelloUser/HelloUser.ino), [HelloPasswd](examples/HelloPasswd/HelloPasswd.ino), [HelloRights](examples/HelloRights/HelloRights.ino) and [HelloToken](examples/HelloToken/HelloToken.ino) each take that same `HelloIotsa` baseline and add one specific access-control mechanism, gating both the web form and the REST API.
 
 To use this to create an interface to some bit of sensor hardware simply add the usual code to your `setup()` and `loop()` functions, and store the sensor value that you read in your `loop()` in a global variable. Pick up the value of this variable in your handler or info function and format it in HTML. [Light](examples/Light/Light.ino) and [Temperature](examples/Temperature/Temperature.ino) are example programs of this type.
 
@@ -570,10 +572,38 @@ has no users, and allows all rights always.
 
 
 ## sample programs
+
 - [Skeleton](examples/Skeleton/Skeleton.ino) is a good starting point for your own applications.
-- [Hello](examples/Hello/Hello.ino) is the simplest "Hello, user" server.
-- [HelloCpp](examples/HelloCpp/HelloCpp.ino) is the same, but implemented using C++ class declarations.
-- [HelloApi](examples/HelloApi/HelloApi.ino) is the same again, but adds a REST interface (GET/PUT) for changing the name.
+
+### The Hello family
+
+Unlike the rest of the examples below, which are independent and each demonstrate one
+iotsa capability in isolation, the `Hello*` examples form a deliberate progression, each
+building on the previous one:
+
+- [Hello](examples/Hello/Hello.ino) is the toe-in-the-water entry point for people coming
+  from Arduino: the simplest possible "Hello, user" server, a single file, no other
+  structure.
+- [HelloIotsa](examples/HelloIotsa) is the minimal *reasonable normal* iotsa app: the same
+  functionality as `Hello`, but implemented as a C++ class with a REST interface (GET/PUT)
+  for changing the name, and structured the way we recommend for real applications (app
+  module in its own `.h`/`.cpp`, separate from the application glue). Merges what used to
+  be two separate examples, _HelloCpp_ and _HelloApi_.
+- The next four each take the `HelloIotsa` baseline unchanged and add exactly **one**
+  access-control mechanism on top, gating both the web form and the REST API:
+  - [HelloPasswd](examples/HelloPasswd/HelloPasswd.ino) — a hardcoded `IotsaAuthMod`
+    (username "admin", password "admin"). Builds with HTTPS support by default (when
+    using platformIO).
+  - [HelloUser](examples/HelloUser/HelloUser.ino) — _IotsaUserMod_, so the password can be
+    changed. Builds with HTTPS support by default (when using platformIO).
+  - [HelloRights](examples/HelloRights/HelloRights.ino) — rights-based, multi-user access
+    control via _IotsaMultiUserMod_.
+  - [HelloToken](examples/HelloToken/HelloToken.ino) — a user login or a static API token
+    with specific rights (_IotsaUserMod_ + _IotsaStaticTokenMod_). Builds with HTTPS
+    support by default (when using platformIO).
+
+### Everything else
+
 - [Light](examples/Light/Light.ino) measures ambient light level with an LDR connected to the analog input.
 - [Temperature](examples/Temperature/Temperature.ino) measures temperature with a slightly more complicated sensor, a DHT21.
 - [DateTime](examples/DateTime/DateTime.ino) keeps the time via NTP and a realtime clock. Uses _iotsaNtp_ and _iotsaRtc_ modules.
@@ -583,10 +613,6 @@ has no users, and allows all rights always.
 - [BLEClient](examples/BLEClient/BLEClient.ino) is a combined BLE server and client, used to test/demonstrate `IotsaBLEClientMod`-based device-to-device communication. Currently mainly a test rig; expect it to grow into a fuller example.
 - [Button](examples/Button/Button.ino) waits for a button to be pressed and then makes a call to a configurable URL. Pairs with _Ringer_ to implement a remote doorbell.
 - [Ringer](examples/Ringer/Ringer.ino) sounds a buzzer when a GET request is received. Pairs with _Button_ to implement a remote doorbell.
-- [HelloPasswd](examples/HelloPasswd/HelloPasswd.ino) The same "Hello" server, but now using a _IotsaAuthMod_ for access control (you need to provide username "admin" and password "admin" to change the greeting name). Builds with HTTPS support by default (when using platformIO).
-- [HelloUser](examples/HelloUser/HelloUser.ino) Another "Hello" server that needs authentication, but this time using _IotsaUserMod_ so the password can be changed. Builds with HTTPS support by default (when using platformIO).
-- [HelloRights](examples/HelloRights/HelloRights.ino) Another "Hello" server that uses _IotsaCapabilities_ for rights-based access control.
-- [HelloToken](examples/HelloToken/HelloToken.ino) Another "Hello" server that needs authentication, but this time using a token, where tokens can be created that give certain rights. Not very useful except as an example. Builds with HTTPS support by default (when using platformIO).
 - [Log](examples/Log/Log.ino) Example of using the _iotsaLogger_ module.
 
 Board/feature build coverage (not tutorial material) lives separately, under `tests/`, mirrored one-for-one against the `examples/` source they build -- see `extras/python/gen_build_matrix.py`.

@@ -1,45 +1,4 @@
-//
-// Another version of Hello. This version uses the C++ interface (like HelloCpp)
-// and in addition provides a REST interface to change the name.
-//
-
-#include "iotsa.h"
-#include "iotsaApi.h"
-#include "iotsaWifi.h"
-
-// CHANGE: Add application includes and declarations here
-
-#define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
-
-IotsaApplication application("Iotsa Hello World Server with API");
-IotsaWifiMod wifiMod(application);
-
-#ifdef WITH_OTA
-#include "iotsaOta.h"
-IotsaOtaMod otaMod(application);
-#endif
-
-//
-// Hello "name" module. Greets visitors to the /hello page, and allows
-// them to change the name by which they are greeted.
-//
-
-// Declaration of the Hello module
-class IotsaHelloMod : public IotsaApiMod {
-public:
-  IotsaHelloMod(IotsaApplication &_app) : IotsaApiMod(_app) {}
-  void setup() override;
-  void serverSetup() override;
-  void loop() override;
-  String info() override;
-protected:
-  bool getHandler(const char *path, JsonObject& reply) override;
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
-private:
-  void handler();
-};
-
-String greeting;
+#include "iotsaHelloMod.h"
 
 // Implementation of the Hello module
 void IotsaHelloMod::setup() {
@@ -50,7 +9,7 @@ void
 IotsaHelloMod::handler() {
   // Handles the page that is specific to the Hello module, greets the user and
   // optionally stores a new name to greet the next time.
-  if( server->hasArg("greeting")) {
+  if (server->hasArg("greeting")) {
     greeting = server->arg("greeting");
   }
   String message = "<html><head><title>Hello Server</title></head><body><h1>Hello Server</h1>";
@@ -98,18 +57,3 @@ String IotsaHelloMod::info() {
 void IotsaHelloMod::loop() {
   // Nothing to do in the loop, for this module
 }
-
-// Instantiate the Hello module, and install it in the framework
-IotsaHelloMod helloMod(application);
-
-// Standard setup() method, hands off most work to the application framework
-void setup(void){
-  application.setup();
-  application.serverSetup();
-}
- 
-// Standard loop() routine, hands off most work to the application framework
-void loop(void){
-  application.loop();
-}
-
