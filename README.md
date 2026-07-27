@@ -618,6 +618,8 @@ building on the previous one:
 - [Button](examples/Button/Button.ino) waits for a button to be pressed and then makes a call to a configurable URL. Pairs with _Ringer_ to implement a remote doorbell.
 - [Ringer](examples/Ringer/Ringer.ino) sounds a buzzer when a GET request is received. Pairs with _Button_ to implement a remote doorbell.
 - [Log](examples/Log/Log.ino) Example of using the _iotsaLogger_ module.
+- [FileShare](examples/FileShare/FileShare.ino) upload a file over HTTP and fetch it back
+  again. Uses _iotsaFiles_, _iotsaFilesUpload_ and _iotsaFilesBackup_ together.
 
 Board/feature build coverage (not tutorial material) lives separately, under `tests/`, mirrored one-for-one against the `examples/` source they build -- see `extras/python/gen_build_matrix.py`.
 
