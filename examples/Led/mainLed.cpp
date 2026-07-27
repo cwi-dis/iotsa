@@ -9,8 +9,9 @@
 
 #include "iotsa.h"
 #include "iotsaWifi.h"
-#include "iotsaOta.h"
 #include "iotsaLedControlMod.h"
+
+#define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 
 #ifndef NEOPIXEL_PIN
 #define NEOPIXEL_PIN 15  // pulled-down during boot, can be used for NeoPixel afterwards
@@ -18,7 +19,12 @@
 
 IotsaApplication application("Iotsa LED Server");
 IotsaWifiMod wifiMod(application);
+
+#ifdef WITH_OTA
+#include "iotsaOta.h"
 IotsaOtaMod otaMod(application);
+#endif
+
 IotsaLedControlMod ledMod(application, NEOPIXEL_PIN);
 
 // Standard setup() method, hands off most work to the application framework

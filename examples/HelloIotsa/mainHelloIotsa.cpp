@@ -12,14 +12,20 @@
 
 #include "iotsa.h"
 #include "iotsaWifi.h"
-#include "iotsaOta.h"
 #include "iotsaHelloMod.h"
 
 // CHANGE: Add application includes and declarations here
 
+#define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
+
 IotsaApplication application("Iotsa Hello World Server");
 IotsaWifiMod wifiMod(application);
+
+#ifdef WITH_OTA
+#include "iotsaOta.h"
 IotsaOtaMod otaMod(application);
+#endif
+
 IotsaHelloMod helloMod(application);
 
 // Standard setup() method, hands off most work to the application framework

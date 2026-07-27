@@ -4,12 +4,18 @@
 //
 #include "iotsa.h"
 #include "iotsaWifi.h"
-#include "iotsaOta.h"
 #include "iotsaAlarmMod.h"
+
+#define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 
 IotsaApplication application("Ringer Server");
 IotsaWifiMod wifiMod(application);  // wifi is always needed
+
+#ifdef WITH_OTA
+#include "iotsaOta.h"
 IotsaOtaMod otaMod(application);    // we want OTA for updating the software (will not work with esp-201)
+#endif
+
 IotsaAlarmMod alarmMod(application);
 
 //
