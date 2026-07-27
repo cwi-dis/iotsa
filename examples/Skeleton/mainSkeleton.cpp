@@ -18,7 +18,7 @@
 #undef WITH_FILES  // Enable static files webserver
 #undef WITH_FILESUPLOAD  // Enable upload of static files for webserver
 #undef WITH_FILESBACKUP  // Enable backup of all files including config files and webserver files
-#define WITH_BATTERY // Enable power-saving support
+#undef WITH_BATTERY // Enable power-saving support
 
 IotsaApplication application("Iotsa Skeleton Server");
 IotsaWifiMod wifiMod(application);
