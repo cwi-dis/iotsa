@@ -609,7 +609,11 @@ building on the previous one:
 - [DateTime](examples/DateTime/DateTime.ino) keeps the time via NTP and a realtime clock. Uses _iotsaNtp_ and _iotsaRtc_ modules.
 - [Input](examples/Input/Input.ino) reads a rotary encoder and other digital inputs. Uses _iotsaInput_ module.
 - [Led](examples/Led/Led.ino) controls the color of a NeoPixel LED, and can set up repeating patterns. Uses _iotsaLed_ module.
-- [BLELed](examples/BLELed/BLELed.ino) controls the color of a NeoPixel LED. Can be controlled over Bluetooth LE when built for an esp32 board.
+- [BLELed](examples/BLELed/BLELed.ino) controls the color of a NeoPixel LED over Bluetooth LE
+  (esp32 boards only), and doubles as the reference example for battery-powered devices: it
+  also wires up _iotsaBattery_ (VBAT/VUSB voltage measurement, disable-sleep pin) and shows
+  how to let a BLE command switch the device into config mode, for low-power operation
+  without a permanent WiFi/web connection.
 - [BLEClient](examples/BLEClient/BLEClient.ino) is a combined BLE server and client, used to test/demonstrate `IotsaBLEClientMod`-based device-to-device communication. Currently mainly a test rig; expect it to grow into a fuller example.
 - [Button](examples/Button/Button.ino) waits for a button to be pressed and then makes a call to a configurable URL. Pairs with _Ringer_ to implement a remote doorbell.
 - [Ringer](examples/Ringer/Ringer.ino) sounds a buzzer when a GET request is received. Pairs with _Button_ to implement a remote doorbell.
