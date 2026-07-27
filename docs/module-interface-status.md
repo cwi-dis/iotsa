@@ -1,7 +1,35 @@
 # Module interface status
 
 Analysis of the external interfaces exposed by each iotsa module, and known inconsistencies.
-Last reviewed: 2026-06-06.
+Last reviewed: 2026-07-27.
+
+## Infrastructural vs use-case modules
+
+Every module in the interface matrix below falls into one of two categories:
+
+- **Infrastructural** — plumbing needed regardless of what the device actually *does*:
+  networking (`iotsaWifi`, `iotsaBLEServer`, `iotsaBLEClient`), auth (`iotsaUser`,
+  `iotsaMultiUser`, `iotsaCapabilities`), storage (`iotsaFiles`, `iotsaFilesUpload`,
+  `iotsaFilesBackup`), power (`iotsaBattery`), time (`iotsaNtp`, `iotsaRtc`), diagnostics
+  (`iotsaLogger`), firmware update (`iotsaOta`), core config (`iotsaConfigMod`), and generic
+  mechanism helpers (`iotsaSimple`, `iotsaRequest`, `iotsaNothing`, plus the `iotsaApi`/
+  `iotsaApiRest`/`iotsaApiCoap`/`iotsaApiHps` transport bases, none of which apps instantiate
+  directly).
+- **Use-case** — modules that drive a specific piece of hardware or implement the device's
+  actual purpose: `iotsaLed`, `iotsaButton`, `iotsaInput`. That's the complete list.
+
+The lopsidedness is the finding: of ~20 module headers in `src/`, only three are "use-case."
+Everything else ships as reusable infrastructure, and the framework only promotes a use-case
+into `src/` once it's common enough across projects to be worth sharing (LED control,
+button-press handling, generic digital/rotary input). Confirmed by a 2026-07-27 survey of
+`examples/`: `Light`, `Temperature`, `Ringer`, and `BLEClient` each implement their actual
+purpose (LDR reading, DHT21 reading, buzzer control, BLE central test rig) as bespoke
+app-specific module code — subclassing the generic `IotsaMod`/`IotsaApiMod` base directly —
+precisely because there is no standard "light sensor" or "buzzer" module to reuse. This is
+also why those examples (plus `Led` and `BLELed`, which subclass `IotsaLedMod` to add their
+own web/REST/BLE surface on top) needed the same own-`.h`/`.cpp` module split as the
+`HelloIotsa` baseline (#156) — their actual functionality was never going to come from a
+`src/` module in the first place.
 
 ## Interface matrix
 
