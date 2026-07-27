@@ -6,7 +6,6 @@
 #include "iotsa.h"
 #include "iotsaWifi.h"
 #include "iotsaLed.h"
-#include "iotsaCapabilities.h"
 #include "iotsaButton.h"
 #include <functional>
 
