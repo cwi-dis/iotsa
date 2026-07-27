@@ -1,0 +1,28 @@
+#ifndef _IOTSATEMPERATUREMOD_H_
+#define _IOTSATEMPERATUREMOD_H_
+
+#include "iotsa.h"
+#include <DHT.h>
+
+//
+// Temperature module. Gets temperature and humidity data from a DHT21 module.
+//
+class IotsaTemperatureMod : public IotsaMod {
+public:
+  IotsaTemperatureMod(IotsaApplication &_app, int pin, int type)
+  : IotsaMod(_app),
+    dht(pin, type)
+  {}
+  void setup() override;
+  void serverSetup() override;
+  void loop() override;
+  String info() override;
+private:
+  void handler();
+  void _update();
+  float temperature;
+  float humidity;
+  DHT dht;
+};
+
+#endif
