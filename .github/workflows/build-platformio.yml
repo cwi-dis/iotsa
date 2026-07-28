@@ -31,10 +31,10 @@ jobs:
       matrix: ${{ steps.gen.outputs.matrix }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v7
 
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v7
 
     - name: Generate matrix
       id: gen
@@ -61,10 +61,10 @@ jobs:
       matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v7
 
     - name: Cache pip
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -72,13 +72,13 @@ jobs:
           ${{ runner.os }}-pip-
 
     - name: Cache PlatformIO
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: ~/.platformio
         key: ${{ runner.os }}-${{ hashFiles('**/lockfiles','**/platformio.ini') }}
 
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v7
 
     - name: Install PlatformIO
       run: |
@@ -114,7 +114,7 @@ jobs:
         cp /tmp/pio-build/.pio/build/${{ matrix.pio_board }}/firmware.bin ${{ matrix.name }}.bin
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ matrix.name }}.bin
         path: ${{ matrix.name }}.bin
@@ -154,7 +154,7 @@ jobs:
         echo "iotsa_ref=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
     - name: Repository Dispatch
-      uses: peter-evans/repository-dispatch@v1
+      uses: peter-evans/repository-dispatch@v4
       with:
         token: ${{ secrets.REPO_ACCESS_TOKEN }}
         repository: ${{ matrix.repo }}

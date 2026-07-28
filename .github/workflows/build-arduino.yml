@@ -29,10 +29,10 @@ jobs:
       matrix: ${{ steps.gen.outputs.matrix }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v7
 
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v7
 
     - name: Generate matrix
       id: gen
@@ -50,10 +50,10 @@ jobs:
       matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v7
 
     - name: Cache pip
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -61,13 +61,13 @@ jobs:
           ${{ runner.os }}-pip-
 
     - name: Cache Arduino CLI
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: ~/.arduino15
         key: ${{ runner.os }}-arduino-${{ hashFiles('*_index.json') }}
 
     - name: Cache Arduino libraries
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: ~/Arduino/libraries
         key: ${{ runner.os }}-arduinolibs-${{ hashFiles('**/library.properties') }}
