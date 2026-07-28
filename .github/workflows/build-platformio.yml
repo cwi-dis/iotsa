@@ -128,7 +128,6 @@ jobs:
       matrix:
         repo:
         - cwi-dis/iotsa433
-        - cwi-dis/iotsaBLELed
         - cwi-dis/iotsaDMXLedstrip
         - cwi-dis/iotsaDMXSensor
         - cwi-dis/iotsaDisplayServer
