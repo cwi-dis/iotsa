@@ -117,4 +117,8 @@
 #if defined(IOTSA_WITH_BLE) && !defined(ESP32)
 #error IOTSA BLE support only available on ESP32
 #endif
+
+#if defined(IOTSA_WITH_HTTPS) && !defined(ESP32)
+#warning IOTSA_WITH_HTTPS on ESP8266 is unreliable, see cwi-dis/iotsa#159
+#endif
 #endif
