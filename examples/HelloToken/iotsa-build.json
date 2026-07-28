@@ -1,9 +1,4 @@
 {
-  "defaults": {
-    "build_flags": [
-      "-DIOTSA_WITH_HTTPS"
-    ]
-  },
   "variants": [
     {
       "board": "nodemcuv2",
@@ -14,6 +9,9 @@
     },
     {
       "board": "esp32thing",
+      "build_flags": [
+        "-DIOTSA_WITH_HTTPS"
+      ],
       "ci": {
         "platformio": true,
         "arduino": true
@@ -22,6 +20,9 @@
     },
     {
       "board": "esp32c3devkit",
+      "build_flags": [
+        "-DIOTSA_WITH_HTTPS"
+      ],
       "ci": {
         "platformio": true,
         "arduino": false
