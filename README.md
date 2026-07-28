@@ -41,7 +41,7 @@ Ordered from most to least capable for general use:
 |---|---|---|---|
 | ESP32 (original, Xtensa) | 4 MB. OTA works; use `min_spiffs.csv` when BLE is enabled. Lolin32 + BLE is large enough to require `no_ota.csv`. | **Supported** | Tested in CI (esp32thing, canonical; lolin32 also tracked in CI via `tests/Skeleton`). Pico32, ESP32dev also known to work but not continuously tested. Full features: BLE, sleep/wakeup, touch, rotary encoder. |
 | ESP32-C3 (RISC-V) | 4 MB (devkit, supermini): OTA works with `min_spiffs.csv`. LCD board variant has 2 MB and is very tightly constrained. | **Supported** | Tested in CI (esp32-c3-devkitm-1). Limitations: no analog voltage reading, no deep-sleep wakeup, no rotary encoder (no PCNT), no touch. WiFi power reduction defaults on as a hardware workaround. |
-| ESP8266 / ESP-12 | 4 MB. OTA works. | **Supported** | Tested in CI (nodemcuv2). Used by the iotsa board. No BLE. |
+| ESP8266 / ESP-12 | 4 MB. OTA works. | **Supported** | Tested in CI (nodemcuv2). Used by the iotsa board. No BLE. HTTPS not recommended, see below. |
 | ESP32-S3 | 4 MB+. OTA likely works. | **Untested** | Profile similar to original ESP32 (BLE, touch, USB OTG). Likely works — _feedback welcome_. |
 | ESP32-C6 | 4 MB. OTA likely works. | **Untested** | RISC-V like C3, adds WiFi 6 and Bluetooth 5.3. Likely similar to C3 — _feedback welcome_. |
 | ESP32-S2 | 4 MB. OTA likely works. | **Untested** | No Bluetooth; BLE-dependent features will not work. _Feedback welcome on what does work._ |
@@ -118,6 +118,8 @@ After building and flashing your software for the first time you should create a
 - `extras/make-igor-signed-cert.sh` creates a key and certificate signed by your [Igor](https://github.com/cwi-dis/igor) CA and uploads it to your device.
 
 Note that HTTPS support here refers to iotsa as a server only, HTTPS client support (for the _iotsaButton_ and _iotsaRequest_ modules) is completely independent.
+
+**HTTPS on ESP8266 is not recommended.** BearSSL on that chip's limited RAM/CPU has proven unreliable in practice: ordinary API requests can take up to a minute, and the device can crash under the memory/CPU pressure (see [#159](https://github.com/cwi-dis/iotsa/issues/159)). Building with `IOTSA_WITH_HTTPS` on ESP8266 now emits a compile-time `#warning`. Prefer HTTP-only on ESP8266; HTTPS remains solid on ESP32.
 
 ## Controlling iotsa devices
 

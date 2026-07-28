@@ -30,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump ArduinoJson dependency 7.2.1 → 7.4.3 (#149)
 - Rationalized examples/tests/CI build matrix into a single generated source of truth (#156)
 - Added FileShare example: upload a file over HTTP and fetch it back (#156)
+- HTTPS on ESP8266 found unreliable in practice (near-minute request latency, intermittent crashes); added a build-time `#warning`, dropped it from the Hello* examples' ESP8266 build (#159)
+- Fix generated per-example `platformio.ini` missing `lib_compat_mode=strict`, which could make standalone builds try to compile bundled example sketches from dependencies like Adafruit NeoPixel
 
 ## [2.8.1] - 2025-05-04
 
