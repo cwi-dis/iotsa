@@ -182,6 +182,7 @@ def emit_standalone_ini(entries, target_dir, out):
     out.write("[common]\n")
     out.write("framework = arduino\n")
     out.write("lib_ldf_mode = deep+\n")
+    out.write("lib_compat_mode = strict\n")
     out.write("lib_deps = https://github.com/cwi-dis/iotsa.git#develop\n")
     out.write("monitor_speed = 115200\n\n")
     for e in own:
