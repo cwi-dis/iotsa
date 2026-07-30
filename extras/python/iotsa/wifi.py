@@ -125,10 +125,23 @@ if sys.platform == "darwin":
             cmd = "networksetup -setairportnetwork %s %s" % (self.wifiInterface, ssid)
             if password:
                 cmd += " " + password
-            status = p = subprocess.call(cmd, shell=True)
+            subprocess.call(cmd, shell=True)
+            # networksetup exits 0 even when it fails to associate, so verify
+            # by checking actual association instead of trusting its exit status.
+            joined = ssid in self.platformCurrentWifiNetworks()
             if VERBOSE:
-                print("Join network status:", status)
-            return status == 0
+                print("Join network result:", joined)
+            if not joined:
+                raise UserIntervention(
+                    "Could not join WiFi network %r automatically.\n"
+                    "Modern macOS restricts programmatic WiFi association to system\n"
+                    "binaries (networksetup/CoreWLAN calls from Terminal or Python fail\n"
+                    "with a tmpErr/-3900 association error, even with Location Services\n"
+                    "permission granted).\n"
+                    "Please join %r manually via the Wi-Fi menu%s, then re-run this command."
+                    % (ssid, ssid, " (password required)" if password else "")
+                )
+            return True
 
         def _getIpconfigStatus(self) -> Optional[Dict[str, str]]:
             """Return {'state', 'ssid', 'router'} for the WiFi interface via `ipconfig getsummary`.
