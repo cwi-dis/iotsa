@@ -344,6 +344,7 @@ void IotsaBLEClientMod::serverSetup() {
   name = "bleclient";
 #ifdef IOTSA_WITH_WEB
   server->on("/bleclient", std::bind(&IotsaBLEClientMod::handler, this));
+  server->on("/bleclient", HTTP_POST, std::bind(&IotsaBLEClientMod::handler, this));
 #endif
 }
 
