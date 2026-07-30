@@ -110,7 +110,7 @@ bool IotsaBLEClientMod::getHandler(const char *path, JsonObject& reply) {
   reply["connect_timeout"] = connectTimeoutMillis;
   reply["scan_unknown_duration"] = scanUnknownDurationMillis;
   if (unknownDevices.size()) {
-    JsonArray unknownReply = reply["unassigned"].as<JsonArray>();
+    JsonArray unknownReply = reply["unassigned"].to<JsonArray>();
     for (auto it : unknownDevices) {
       JsonObject devReply = unknownReply.add<JsonObject>();
       it.second->getHandler(devReply);
@@ -443,8 +443,6 @@ void IotsaBLEClientMod::onResult(const BLEAdvertisedDevice *advertisedDevice) {
     shouldUpdateScanAtMillis = millis(); // We may have found what we were looking for
     return;
   }
-  // Do we want callbacks for unknown devices?
-  if (unknownDeviceCallback == NULL) return;
   if (deviceName == "") return;
   // Have we seen this unknown device before?
   if ( duplicateNameFilter && unknownDevices.find(deviceName) != unknownDevices.end()) return;
@@ -468,7 +466,7 @@ void IotsaBLEClientMod::onResult(const BLEAdvertisedDevice *advertisedDevice) {
     devInfo = it3->second;
   }
   devInfo->receivedAdvertisement(*advertisedDevice);
-  unknownDeviceCallback(*advertisedDevice);
+  if (unknownDeviceCallback) unknownDeviceCallback(*advertisedDevice);
 }
 
 IotsaBLEClientConnection* IotsaBLEClientMod::addDevice(std::string id) {
