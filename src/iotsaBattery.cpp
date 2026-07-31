@@ -441,9 +441,11 @@ void IotsaBatteryMod::loop() {
       IFDEBUG IotsaSerial.println("Enable WiFi from BLE");
    
     } else {
-      // doSoftReboot is probably 1. Reboot.
+      // doSoftReboot is probably 1. Reboot, but not immediately: give the BLE
+      // stack time to flush the write response back to the client first
+      // (see #130), matching the doSoftReboot==3 branch's 1000ms deferral above.
       IFDEBUG IotsaSerial.println("Reboot from BLE");
-      ESP.restart();
+      iotsaConfig.requestReboot(1000);
     }
     doSoftReboot = 0;
   }
