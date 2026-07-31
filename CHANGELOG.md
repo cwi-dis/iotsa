@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+- Unify version string format everywhere to `<version>+sha.<hash>`, dropping the inconsistent tag-distance shape (#169)
+- Fix `rebootWifi=1` dropping the BLE write response on reboot (#130)
+- Fix unknown/unassigned BLE devices never surfacing in the web UI or REST API (#165)
 - Removed the non-NimBLE (ESP32 BLE Arduino) BLE build path; NimBLE is now the only supported BLE stack (#150)
 - `pip install -e extras/python` now regenerates the version string from git, so `iotsa --version` reflects the installed commit instead of a stale hardcoded value
 - Fix `dfu info`/`jsoninfo` crashing on ESP8266; partition-based `dfu` commands now give a clear error instead of a confusing one on that chip family (#148)
