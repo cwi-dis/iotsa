@@ -70,7 +70,6 @@ def main():
     assert type(shortVersion) == str
     if 'IOTSA_FULL_VERSION' in os.environ:
         fullVersion = os.environ['IOTSA_FULL_VERSION']
-        shortVersion = fullVersion
     else:
         # Always use <version>+sha.<hash>, never the tag-distance
         # "-N-gHASH" shape: a PlatformIO lib_deps checkout is a shallow,
