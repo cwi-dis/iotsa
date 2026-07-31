@@ -60,13 +60,6 @@
 //#ifdef ESP32
 //#define IOTSA_WITH_BLE
 //#endif
-#ifdef IOTSA_WITH_BLE
-// If we want BLE support we use Nimble by preference
-#ifndef IOTSA_WITHOUT_NIMBLE
-#define IOTSA_WITH_NIMBLE
-#endif
-#endif
-
 // If BLE support is enabled and API support is enabled we enable HPS service by default
 #ifdef IOTSA_WITH_BLE
 #ifndef IOTSA_WITHOUT_HPS

@@ -6,9 +6,6 @@ IotsaBLEDeviceInfo::IotsaBLEDeviceInfo(std::string _name, std::string _address)
 : name(_name),
   addressMutex(xSemaphoreCreateMutex()),
   address(_address, 0), // Public is default for address type for nimble
-#ifdef IOTSA_WITHOUT_NIMBLE
-  addressType(BLE_ADDR_TYPE_PUBLIC),
-#endif
   addressValid(false)
 {
   if (_address != "") {
@@ -42,9 +39,6 @@ std::string IotsaBLEDeviceInfo::getAddress() {
     return rv;
   }
   bool valid = addressValid;
-#ifdef IOTSA_WITHOUT_NIMBLE
-  valid = valid && addressType == BLE_ADDR_TYPE_PUBLIC;
-#endif
   if (valid) rv = address.toString();
   xSemaphoreGive(addressMutex);
   return rv;
@@ -58,17 +52,10 @@ bool IotsaBLEDeviceInfo::receivedAdvertisement(const BLEAdvertisedDevice& _devic
     return false;
   }
   // Check whether the address is the same, then we don't have to add anything.
-  bool sameAddress = addressValid
-#ifdef IOTSA_WITHOUT_NIMBLE
-    && _device.getAddressType() == addressType
-#endif
-    && _device.getAddress().equals(address);
+  bool sameAddress = addressValid && _device.getAddress().equals(address);
   bool changed = false;
   if (!sameAddress) {
     address = _device.getAddress();
-#ifdef IOTSA_WITHOUT_NIMBLE
-    addressType = _device.getAddressType();
-#endif
     addressValid = true;
     changed = true;
   }

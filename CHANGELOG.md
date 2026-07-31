@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+- Removed the non-NimBLE (ESP32 BLE Arduino) BLE build path; NimBLE is now the only supported BLE stack (#150)
 - `pip install -e extras/python` now regenerates the version string from git, so `iotsa --version` reflects the installed commit instead of a stale hardcoded value
 - Fix `dfu info`/`jsoninfo` crashing on ESP8266; partition-based `dfu` commands now give a clear error instead of a confusing one on that chip family (#148)
 - Allow setting CPU speed to conserve battery (#98)

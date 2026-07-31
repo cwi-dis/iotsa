@@ -13,12 +13,6 @@ void IotsaBLEClientConnection::ConnCallbacks::onConnect(BLEClient* pClient) {
   IFDEBUG IotsaSerial.printf("IotsaBLEClientConnection(%s): onConnect\n", owner ? owner->getName().c_str() : "?");
 }
 
-#ifdef IOTSA_WITHOUT_NIMBLE
-void IotsaBLEClientConnection::ConnCallbacks::onDisconnect(BLEClient* pClient) {
-  IFDEBUG IotsaSerial.printf("IotsaBLEClientConnection(%s): onDisconnect\n", owner ? owner->getName().c_str() : "?");
-  if (owner) owner->disconnectSettled = true;
-}
-#else
 void IotsaBLEClientConnection::ConnCallbacks::onDisconnect(BLEClient* pClient, int reason) {
   IFDEBUG IotsaSerial.printf("IotsaBLEClientConnection(%s): onDisconnect reason=%d (%s)\n",
     owner ? owner->getName().c_str() : "?", reason, NimBLEUtils::returnCodeToString(reason));
@@ -27,7 +21,6 @@ void IotsaBLEClientConnection::ConnCallbacks::onDisconnect(BLEClient* pClient, i
     owner->lastDisconnectReason = reason;
   }
 }
-#endif
 
 IotsaBLEClientConnection::~IotsaBLEClientConnection() {
   if (pClient) {
@@ -73,9 +66,6 @@ bool IotsaBLEClientConnection::connect() {
   // while addressMutex is held.
   bool valid = false;
   BLEAddress addr("", 0);
-#ifdef IOTSA_WITHOUT_NIMBLE
-  esp_ble_addr_type_t addrType = BLE_ADDR_TYPE_PUBLIC;
-#endif
   if (xSemaphoreTake(addressMutex, addressMutexTimeout) != pdTRUE) {
     IotsaSerial.println("IotsaBLEClientConnection::connect: address mutex timeout, skipped");
     return false;
@@ -83,9 +73,6 @@ bool IotsaBLEClientConnection::connect() {
   valid = addressValid;
   if (valid) {
     addr = address;
-#ifdef IOTSA_WITHOUT_NIMBLE
-    addrType = addressType;
-#endif
   }
   xSemaphoreGive(addressMutex);
   if (!valid) return false;
@@ -103,11 +90,7 @@ bool IotsaBLEClientConnection::connect() {
     // 6000 is only a fallback for the (should-never-happen) case of a
     // connection created without going through addDevice().
     pClient->setConnectTimeout(owner ? owner->getConnectTimeoutMillis() : 6000);
-#ifdef IOTSA_WITHOUT_NIMBLE
-    pClient->setClientCallbacks(&connCallbacks);
-#else
     pClient->setClientCallbacks(&connCallbacks, false); // false: we own connCallbacks, don't delete it
-#endif
   }
   if (pClient->isConnected()) return true;
   uint32_t t0 = millis();
@@ -120,23 +103,15 @@ bool IotsaBLEClientConnection::connect() {
   // attempt is in flight so updateScanning() holds off starting a new scan
   // until it's done (see IotsaBLEClientMod::noteConnectAttemptStarted()).
   if (owner) owner->noteConnectAttemptStarted();
-#ifdef IOTSA_WITHOUT_NIMBLE
-  bool rv = pClient->connect(addr, addrType);
-#else
   bool rv = pClient->connect(addr, false); // Keep previously learned services
-#endif
   if (owner) owner->noteConnectAttemptEnded();
   uint32_t elapsedMs = millis() - t0;
   if (rv) {
     numSuccessfulConnections++;
   } else {
     numFailedConnectionAttempts++;
-#ifdef IOTSA_WITHOUT_NIMBLE
-    IotsaSerial.printf("IotsaBLEClientConnection::connect(%s): failed after %ums\n", addr.toString().c_str(), elapsedMs);
-#else
     IotsaSerial.printf("IotsaBLEClientConnection::connect(%s): failed after %ums, rc=%d (%s)\n",
       addr.toString().c_str(), elapsedMs, pClient->getLastError(), NimBLEUtils::returnCodeToString(pClient->getLastError()));
-#endif
     clearDevice();
   }
   return rv;
@@ -165,11 +140,7 @@ void IotsaBLEClientConnection::getHandler(JsonObject& reply) {
   reply["numSuccessfulConnections"] = numSuccessfulConnections;
   reply["numFailedConnectionAttempts"] = numFailedConnectionAttempts;
   if (lastDisconnectReason != -1) {
-#ifndef IOTSA_WITHOUT_NIMBLE
     reply["lastDisconnectReason"] = NimBLEUtils::returnCodeToString(lastDisconnectReason);
-#else
-    reply["lastDisconnectReason"] = lastDisconnectReason;
-#endif
   }
 }
 

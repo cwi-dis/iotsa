@@ -65,11 +65,7 @@ protected:
   public:
     IotsaBLEClientConnection *owner = nullptr;
     void onConnect(BLEClient* pClient) override;
-#ifdef IOTSA_WITHOUT_NIMBLE
-    void onDisconnect(BLEClient* pClient) override;
-#else
     void onDisconnect(BLEClient* pClient, int reason) override;
-#endif
   };
   ConnCallbacks connCallbacks;
   // False from the moment disconnect() issues pClient->disconnect() until
@@ -88,9 +84,7 @@ protected:
   // if none seen yet. Distinguishes "connect succeeded, then something went
   // wrong later" from a plain failed connect attempt (which never reaches
   // onConnect()/onDisconnect() at all). Decoded via
-  // NimBLEUtils::returnCodeToString() for REST/debug output. Stays -1 on the
-  // classic-BLE build too: its onDisconnect(pClient) callback gets no reason
-  // code from the stack.
+  // NimBLEUtils::returnCodeToString() for REST/debug output.
   int lastDisconnectReason = -1;
 };
 

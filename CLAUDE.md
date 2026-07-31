@@ -32,7 +32,8 @@ Defaults (off, opt-in): `IOTSA_WITH_HTTPS`, `IOTSA_WITH_COAP`, `IOTSA_WITH_BLE`
 
 Use `-DIOTSA_WITHOUT_X` to disable a default, `-DIOTSA_WITH_X` to enable an optional feature.
 
-BLE is ESP32-only and uses NimBLE by default (override with `-DIOTSA_WITHOUT_NIMBLE`).
+BLE is ESP32-only and uses NimBLE (h2zero/NimBLE-Arduino) exclusively; the old ESP32 BLE Arduino
+library path was removed, see cwi-dis/iotsa#150.
 
 ## Build system
 

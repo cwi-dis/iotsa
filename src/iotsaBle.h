@@ -3,17 +3,9 @@
 #include "iotsa.h"
 #include "iotsaApi.h"
 
-// Common include file for iotsa BLE clients and servers, mainly to ensure
-// we either include the Nimble headers or the classic Bluetooth stack headers
+// Common include file for iotsa BLE clients and servers
 #ifdef IOTSA_WITH_BLE
-#ifdef IOTSA_WITH_NIMBLE
 #include <NimBLEDevice.h>
-#else
-#include <BLEDevice.h>
-#include <BLEUtils.h>
-#include <BLEServer.h>
-#include <BLE2904.h>
-#endif
 typedef const char * UUIDstring;
 
 // Idempotent: ensures BLEDevice::init() has run exactly once, regardless of

@@ -54,17 +54,6 @@
       ]
     },
     {
-      "board": "esp32thing",
-      "label": "nonimble",
-      "build_flags": [
-        "-DIOTSA_WITH_BLE",
-        "-DIOTSA_WITHOUT_NIMBLE"
-      ],
-      "skip": {
-        "platformio": "non-NimBLE (ESP32 BLE Arduino) build path is broken, see cwi-dis/iotsa#150"
-      }
-    },
-    {
       "board": "lolin32",
       "label": "coap",
       "build_flags": [

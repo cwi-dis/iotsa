@@ -45,20 +45,17 @@ protected:
   // copy, so contention this long should never actually happen.
   static constexpr TickType_t addressMutexTimeout = pdMS_TO_TICKS(20);
   std::string name;
-  // address/addressValid (and addressType, classic-BLE only) are written
-  // from the NimBLE host task (receivedAdvertisement()) and read from other
-  // tasks (e.g. a per-device connection task in the IotsaBLEClientConnection
-  // subclass) -- protected by addressMutex. Always take it with a short
-  // bounded timeout (never portMAX_DELAY) and never call anything blocking
-  // (BLE calls, Serial, etc.) while holding it: a real FreeRTOS mutex wait
-  // (unlike a portMUX critical section) never disables interrupts, so even a
-  // stuck holder can't block the hardware watchdog -- worst case is a
-  // skipped update this cycle, not a wedged device.
+  // address/addressValid are written from the NimBLE host task
+  // (receivedAdvertisement()) and read from other tasks (e.g. a per-device
+  // connection task in the IotsaBLEClientConnection subclass) -- protected
+  // by addressMutex. Always take it with a short bounded timeout (never
+  // portMAX_DELAY) and never call anything blocking (BLE calls, Serial,
+  // etc.) while holding it: a real FreeRTOS mutex wait (unlike a portMUX
+  // critical section) never disables interrupts, so even a stuck holder
+  // can't block the hardware watchdog -- worst case is a skipped update this
+  // cycle, not a wedged device.
   SemaphoreHandle_t addressMutex;
   BLEAddress address;
-#ifdef IOTSA_WITHOUT_NIMBLE
-  esp_ble_addr_type_t addressType;
-#endif
   bool addressValid;
   int rssi = 0;
   uint32_t lastSeenAtMillis = 0;
