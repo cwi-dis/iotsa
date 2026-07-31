@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "iotsa"
+description = "Control iotsa devices"
+authors = [
+    {name = "Jack Jansen", email = "Jack.Jansen@cwi.nl"},
+]
+license = {text = "MIT"}
+requires-python = ">=3.12"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Topic :: Communications",
+    "Topic :: Home Automation",
+    "Topic :: System :: Hardware",
+    "Topic :: System :: Networking",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+]
+dependencies = [
+    "requests",
+    "esptool",
+    "zeroconf",
+    "debugpy",
+    "CoAPThon3 @ git+https://github.com/rgerganov/CoAPthon3",
+    "bleaktyped @ git+https://github.com/jackjansen/bleaktyped",
+    "pyobjc-framework-CoreWLAN; sys_platform == 'darwin'",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/cwi-dis/iotsa"
+
+[project.scripts]
+iotsa = "iotsa.__main__:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "iotsa.version.__version__"}
