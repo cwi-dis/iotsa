@@ -49,7 +49,20 @@ def fixEnv(thisEnv):
         programRepo = programRepo[:-4]
     programRepo = programRepo.replace('ssh://git@github.com/', 'https://github.com/')
     programRepo = programRepo.replace('git@github.com:', 'https://github.com/')
-    programVersion = commandOutput("git describe --always --match 'v*'", projectDir)
+    # Same <version>+sha.<hash> shape as IOTSA_FULL_VERSION (see mkversionh.py):
+    # tag-distance ("-N-gHASH") isn't used here either, both because it can't
+    # work for a shallow lib_deps-style clone and because plain "git describe"
+    # ignores lightweight tags (--tags is needed, and even then a repo with no
+    # reachable "v*" tag at all has nothing to anchor to).
+    programBaseVersion = commandOutput("git describe --tags --abbrev=0 --match 'v*'", projectDir)
+    programSha = commandOutput("git rev-parse --short HEAD", projectDir)
+    if programBaseVersion and programSha:
+        programVersion = programBaseVersion + "+sha." + programSha
+    elif programSha:
+        print(f"platformio_pre_script: WARNING: no 'v*' tag found in {projectDir}, programVersion will have no base version", file=sys.stderr)
+        programVersion = "unknown+sha." + programSha
+    else:
+        programVersion = "unknown"
     print(f"platformio_pre_script: programName: {programName}", file=sys.stderr)
     print(f"platformio_pre_script: programRepo: {programRepo}", file=sys.stderr)
     print(f"platformio_pre_script: programVersion: {programVersion}", file=sys.stderr)

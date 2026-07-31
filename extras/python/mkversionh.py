@@ -72,19 +72,26 @@ def main():
         fullVersion = os.environ['IOTSA_FULL_VERSION']
         shortVersion = fullVersion
     else:
+        # Always use <version>+sha.<hash>, never the tag-distance
+        # "-N-gHASH" shape: a PlatformIO lib_deps checkout is a shallow,
+        # tag-less clone (depth 1, no tags fetched), so git describe's
+        # tag-anchored form can never be produced there anyway. The commit
+        # hash itself, unlike the tag distance, is always available even
+        # in that shallow clone, so standardize on the one shape that
+        # works everywhere instead of having two different formats.
         cmd = subprocess.Popen(
-            "git describe --always --match 'v*'",
+            "git rev-parse --short HEAD",
             shell=True,
             cwd=baseDir,
             stdout=subprocess.PIPE,
             universal_newlines=True,
         )
         assert cmd.stdout
-        fullVersion = cmd.stdout.read().strip()
-        fullVersion = fullVersion.replace("-", "+", 1)
-        if fullVersion and not '+' in fullVersion:
-            # git describe returned just a SHA
-            fullVersion = eval(shortVersion) + "+sha." + fullVersion
+        sha = cmd.stdout.read().strip()
+        if sha:
+            fullVersion = eval(shortVersion) + "+sha." + sha
+        else:
+            fullVersion = ""
     if not fullVersion:
         fullVersion = shortVersion
     if not '"' in fullVersion:
