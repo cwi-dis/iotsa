@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+- Migrate Python packaging from `setup.py` to `pyproject.toml`; `requires-python` now `>=3.12` (#103)
 - Unify version string format everywhere to `<version>+sha.<hash>`, dropping the inconsistent tag-distance shape (#169)
 - Fix `rebootWifi=1` dropping the BLE write response on reboot (#130)
 - Fix unknown/unassigned BLE devices never surfacing in the web UI or REST API (#165)
