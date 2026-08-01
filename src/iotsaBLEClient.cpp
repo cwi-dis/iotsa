@@ -444,8 +444,6 @@ void IotsaBLEClientMod::onResult(const BLEAdvertisedDevice *advertisedDevice) {
     return;
   }
   if (deviceName == "") return;
-  // Have we seen this unknown device before?
-  if ( duplicateNameFilter && unknownDevices.find(deviceName) != unknownDevices.end()) return;
   // Do we filter on services?
   if (serviceFilter != NULL) {
     if (!advertisedDevice->isAdvertisingService(*serviceFilter)) return;
