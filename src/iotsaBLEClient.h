@@ -61,6 +61,14 @@ public:
   // from any task is safe without extra locking.
   void noteConnectAttemptStarted();
   void noteConnectAttemptEnded();
+  // Called by IotsaBLEClientConnection::connect() (via its owner back-
+  // pointer) when a connect attempt fails and sets needsRescan. Pokes the
+  // scan scheduler so loop() re-evaluates needsDiscovery() promptly, instead
+  // of waiting for some unrelated event (a different device's advertisement,
+  // a user-requested scan, ...) to happen to touch shouldUpdateScanAtMillis
+  // -- otherwise a failed connect's needsRescan flag can go unnoticed
+  // indefinitely, since nothing else schedules another look.
+  void requestScanUpdate();
   unsigned int maxConnectionKeepOpen();
   // Read by IotsaBLEClientConnection::connect() via its owner back-pointer.
   uint32_t getConnectTimeoutMillis() { return connectTimeoutMillis; }

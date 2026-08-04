@@ -307,6 +307,10 @@ void IotsaBLEClientMod::noteConnectAttemptEnded() {
   connectingCount--;
 }
 
+void IotsaBLEClientMod::requestScanUpdate() {
+  shouldUpdateScanAtMillis = millis();
+}
+
 IotsaBLEClientMod* IotsaBLEClientMod::scanningMod = NULL;
 
 void IotsaBLEClientMod::onScanEnd(const NimBLEScanResults& scanResults, int reason) {

@@ -121,6 +121,10 @@ bool IotsaBLEClientConnection::connect() {
     // -- just that we're not sure it's still reachable. needsRescan triggers
     // a rescan to reconfirm, without throwing away a known-good address.
     needsRescan = true;
+    // Wake the scan scheduler: without this, nothing re-evaluates
+    // needsDiscovery() until some unrelated event happens to touch
+    // shouldUpdateScanAtMillis, so needsRescan could go unnoticed indefinitely.
+    if (owner) owner->requestScanUpdate();
   }
   return rv;
 }
