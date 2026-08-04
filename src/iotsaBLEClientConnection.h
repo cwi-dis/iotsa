@@ -47,9 +47,10 @@ public:
   bool getAsBuffer(BLEUUID& serviceUUID, BLEUUID& charUUID, uint8_t **datap, size_t *sizep);
   bool getAsNotification(BLEUUID& serviceUUID, BLEUUID& charUUID, BleNotificationCallback callback);
   // Adds connect-specific fields (on top of the base class's
-  // name/address/rssi/lastSeenMillisAgo) to reply: lastConnectMillisAgo,
-  // numSuccessfulConnections, numFailedConnectionAttempts,
-  // lastDisconnectReason.
+  // name/address/rssi/lastSeenMillisAgo) to reply: lastConnectAttemptMillisAgo,
+  // numConnectCalls, numConnectSkipped, numConnectAttempts, numConnectFailed,
+  // numConnectSucceeded, numConnectionOpen, numConnectionFailed,
+  // numConnectionClosedLocally, lastDisconnectReason, lastDisconnectMillisAgo.
   void getHandler(JsonObject& reply) override;
 protected:
   // Set by IotsaBLEClientMod::addDevice() (a friend) at construction time.
@@ -76,10 +77,39 @@ protected:
   volatile bool disconnectSettled = true;
   // millis() timestamp of the start of the most recent genuine connect
   // attempt -- i.e. NOT the connect()-while-already-connected fast path, so
-  // this only moves on an actual new pClient->connect() call.
-  uint32_t lastConnectAtMillis = 0;
-  uint32_t numSuccessfulConnections = 0;
-  uint32_t numFailedConnectionAttempts = 0;
+  // this only moves on an actual new pClient->connect() call. Records the
+  // attempt itself, not whether it succeeded -- see numConnectFailed/
+  // numConnectSucceeded for the outcome.
+  uint32_t lastConnectAttemptAtMillis = 0;
+  // connect()'s own call-count bookkeeping, fully closed:
+  //   numConnectCalls = numConnectSkipped + numConnectAttempts
+  //   numConnectAttempts = numConnectFailed + numConnectSucceeded
+  // Counted from the point connect() knows it has a valid address (i.e. is
+  // actually going to skip or attempt) -- connect() called without an
+  // address at all, or a mutex-timeout bailout, are both exceptional paths
+  // no current caller exercises (BLEDimmer always checks available() first)
+  // and are deliberately left out of this tree rather than diluting it.
+  uint32_t numConnectCalls = 0;
+  // connect() found pClient already connected -- a lingering connection was
+  // reused, no new link had to be established.
+  uint32_t numConnectSkipped = 0;
+  uint32_t numConnectAttempts = 0;
+  uint32_t numConnectFailed = 0;
+  uint32_t numConnectSucceeded = 0;
+  // Separate tree, tracking the eventual fate of connections that DID
+  // succeed (numConnectSucceeded), independent of how many numConnectSkipped
+  // reuse-hits happened while any one of them was alive. Also fully closed:
+  //   numConnectSucceeded = numConnectionOpen (0 or 1, isConnected() at
+  //     report time, not separately stored) + numConnectionFailed +
+  //     numConnectionClosedLocally
+  // numConnectionFailed is incremented in onDisconnect() when the disconnect
+  // wasn't one we asked for (see ConnCallbacks::onDisconnect()) -- e.g.
+  // reason=520 Connection Timeout, a lightSleep peer's supervision timeout
+  // lapsing while still connected. numConnectionClosedLocally is the
+  // complement: disconnect() was called on our own initiative (e.g. the
+  // keepopen idle timer) and the disconnect completed as expected.
+  uint32_t numConnectionFailed = 0;
+  uint32_t numConnectionClosedLocally = 0;
   // True once a connect attempt has failed, until reachability is
   // reconfirmed (a matching advertisement, or a successful connect).
   // Deliberately separate from addressValid/available(): a failed connect
@@ -93,6 +123,10 @@ protected:
   // onConnect()/onDisconnect() at all). Decoded via
   // NimBLEUtils::returnCodeToString() for REST/debug output.
   int lastDisconnectReason = -1;
+  // millis() timestamp of the most recent onDisconnect(), 0 if none seen yet.
+  // Set alongside lastDisconnectReason, regardless of whether that disconnect
+  // counted as numConnectionFailed or numConnectionClosedLocally.
+  uint32_t lastDisconnectAtMillis = 0;
 };
 
 #endif // IOTSA_WITH_BLE

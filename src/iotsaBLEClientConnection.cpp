@@ -17,8 +17,17 @@ void IotsaBLEClientConnection::ConnCallbacks::onDisconnect(BLEClient* pClient, i
   IFDEBUG IotsaSerial.printf("IotsaBLEClientConnection(%s): onDisconnect reason=%d (%s)\n",
     owner ? owner->getName().c_str() : "?", reason, NimBLEUtils::returnCodeToString(reason));
   if (owner) {
+    // disconnectSettled is only ever set false by our own disconnect() call,
+    // right before asking NimBLE to tear the link down. If it's still true
+    // here, we never asked for this -- the connection went away on its own.
+    if (owner->disconnectSettled) {
+      owner->numConnectionFailed++;
+    } else {
+      owner->numConnectionClosedLocally++;
+    }
     owner->disconnectSettled = true;
     owner->lastDisconnectReason = reason;
+    owner->lastDisconnectAtMillis = millis();
   }
 }
 
@@ -79,6 +88,7 @@ bool IotsaBLEClientConnection::connect() {
   }
   xSemaphoreGive(addressMutex);
   if (!valid) return false;
+  numConnectCalls++;
   if (pClient == nullptr) {
     pClient = BLEDevice::createClient(addr);
     // setConnectTimeout() takes milliseconds -- confirmed 2026-07-19 by
@@ -95,13 +105,17 @@ bool IotsaBLEClientConnection::connect() {
     pClient->setConnectTimeout(owner ? owner->getConnectTimeoutMillis() : 6000);
     pClient->setClientCallbacks(&connCallbacks, false); // false: we own connCallbacks, don't delete it
   }
-  if (pClient->isConnected()) return true;
+  if (pClient->isConnected()) {
+    numConnectSkipped++;
+    return true;
+  }
+  numConnectAttempts++;
   uint32_t t0 = millis();
   // A genuine new connect attempt starts here (the already-connected
   // fast-path above already returned) -- record it, and tally the outcome
   // below. Distinct from lastDisconnectReason, which only ever gets set on a
   // connection that *did* succeed and later went away.
-  lastConnectAtMillis = t0;
+  lastConnectAttemptAtMillis = t0;
   // Connections take priority over scanning: tell the owning mod a connect
   // attempt is in flight so updateScanning() holds off starting a new scan
   // until it's done (see IotsaBLEClientMod::noteConnectAttemptStarted()).
@@ -110,10 +124,10 @@ bool IotsaBLEClientConnection::connect() {
   if (owner) owner->noteConnectAttemptEnded();
   uint32_t elapsedMs = millis() - t0;
   if (rv) {
-    numSuccessfulConnections++;
+    numConnectSucceeded++;
     needsRescan = false;
   } else {
-    numFailedConnectionAttempts++;
+    numConnectFailed++;
     IotsaSerial.printf("IotsaBLEClientConnection::connect(%s): failed after %ums, rc=%d (%s)\n",
       addr.toString().c_str(), elapsedMs, pClient->getLastError(), NimBLEUtils::returnCodeToString(pClient->getLastError()));
     // Don't clearDevice() here: a failed connect doesn't mean the address is
@@ -146,13 +160,20 @@ bool IotsaBLEClientConnection::isDisconnecting() {
 
 void IotsaBLEClientConnection::getHandler(JsonObject& reply) {
   IotsaBLEDeviceInfo::getHandler(reply);
-  if (lastConnectAtMillis != 0) {
-    reply["lastConnectMillisAgo"] = millis() - lastConnectAtMillis;
+  if (lastConnectAttemptAtMillis != 0) {
+    reply["lastConnectAttemptMillisAgo"] = millis() - lastConnectAttemptAtMillis;
   }
-  reply["numSuccessfulConnections"] = numSuccessfulConnections;
-  reply["numFailedConnectionAttempts"] = numFailedConnectionAttempts;
+  reply["numConnectCalls"] = numConnectCalls;
+  reply["numConnectSkipped"] = numConnectSkipped;
+  reply["numConnectAttempts"] = numConnectAttempts;
+  reply["numConnectFailed"] = numConnectFailed;
+  reply["numConnectSucceeded"] = numConnectSucceeded;
+  reply["numConnectionOpen"] = isConnected() ? 1 : 0;
+  reply["numConnectionFailed"] = numConnectionFailed;
+  reply["numConnectionClosedLocally"] = numConnectionClosedLocally;
   if (lastDisconnectReason != -1) {
     reply["lastDisconnectReason"] = NimBLEUtils::returnCodeToString(lastDisconnectReason);
+    reply["lastDisconnectMillisAgo"] = millis() - lastDisconnectAtMillis;
   }
 }
 

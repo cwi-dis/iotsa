@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix BLE client endlessly rescanning already-known, fully-addressed devices (#172)
 - Fix BLE client discarding a known device's address on a single failed connect attempt, forcing a costly rediscovery scan instead of a quick retry, and now actually triggers that rescan (#172)
+- Replace `IotsaBLEClientConnection`'s REST connect/disconnect counters (`numSuccessfulConnections`, `numFailedConnectionAttempts`) with a fully-accounted set (`numConnectCalls`, `numConnectSkipped`, `numConnectAttempts`, `numConnectFailed`, `numConnectSucceeded`, `numConnectionOpen`, `numConnectionFailed`, `numConnectionClosedLocally`) so a device's connect/disconnect history can be diagnosed from REST alone, without serial access
 - Fix unassigned BLE devices' last-seen/RSSI silently freezing after first sighting (#171)
 - Migrate Python packaging from `setup.py` to `pyproject.toml`; `requires-python` now `>=3.12` (#103)
 - Unify version string format everywhere to `<version>+sha.<hash>`, dropping the inconsistent tag-distance shape (#169)
