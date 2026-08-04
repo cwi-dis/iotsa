@@ -19,9 +19,7 @@ void IotsaBLEClientMod::configLoad() {
   cf.get("scan_interval", scan_interval, scan_interval);
   cf.get("scan_window", scan_window, scan_window);
   cf.get("scan_duration_discovery", scanDurationDiscoveryMillis, scanDurationDiscoveryMillis);
-  cf.get("scan_duration_presence", scanDurationPresenceMillis, scanDurationPresenceMillis);
   cf.get("scan_cooldown_discovery", scanCooldownDiscoveryMillis, scanCooldownDiscoveryMillis);
-  cf.get("scan_cooldown_presence", scanCooldownPresenceMillis, scanCooldownPresenceMillis);
   cf.get("connect_settle_time", connectSettleTimeMillis, connectSettleTimeMillis);
   cf.get("connect_timeout", connectTimeoutMillis, connectTimeoutMillis);
   cf.get("scan_unknown_duration", scanUnknownDurationMillis, scanUnknownDurationMillis);
@@ -32,9 +30,7 @@ void IotsaBLEClientMod::configSave() {
   cf.put("scan_interval", scan_interval);
   cf.put("scan_window", scan_window);
   cf.put("scan_duration_discovery", scanDurationDiscoveryMillis);
-  cf.put("scan_duration_presence", scanDurationPresenceMillis);
   cf.put("scan_cooldown_discovery", scanCooldownDiscoveryMillis);
-  cf.put("scan_cooldown_presence", scanCooldownPresenceMillis);
   cf.put("connect_settle_time", connectSettleTimeMillis);
   cf.put("connect_timeout", connectTimeoutMillis);
   cf.put("scan_unknown_duration", scanUnknownDurationMillis);
@@ -103,9 +99,7 @@ bool IotsaBLEClientMod::getHandler(const char *path, JsonObject& reply) {
   reply["scan_interval"] = scan_interval;
   reply["scan_window"] = scan_window;
   reply["scan_duration_discovery"] = scanDurationDiscoveryMillis;
-  reply["scan_duration_presence"] = scanDurationPresenceMillis;
   reply["scan_cooldown_discovery"] = scanCooldownDiscoveryMillis;
-  reply["scan_cooldown_presence"] = scanCooldownPresenceMillis;
   reply["connect_settle_time"] = connectSettleTimeMillis;
   reply["connect_timeout"] = connectTimeoutMillis;
   reply["scan_unknown_duration"] = scanUnknownDurationMillis;
@@ -132,9 +126,7 @@ bool IotsaBLEClientMod::putHandler(const char *path, const JsonVariant& request,
     anyChanged = true;
   }
   if (getFromRequest<int>(reqObj, "scan_duration_discovery", scanDurationDiscoveryMillis)) anyChanged = true;
-  if (getFromRequest<int>(reqObj, "scan_duration_presence", scanDurationPresenceMillis)) anyChanged = true;
   if (getFromRequest<int>(reqObj, "scan_cooldown_discovery", scanCooldownDiscoveryMillis)) anyChanged = true;
-  if (getFromRequest<int>(reqObj, "scan_cooldown_presence", scanCooldownPresenceMillis)) anyChanged = true;
   if (getFromRequest<int>(reqObj, "connect_settle_time", connectSettleTimeMillis)) anyChanged = true;
   if (getFromRequest<int>(reqObj, "connect_timeout", connectTimeoutMillis)) anyChanged = true;
   if (getFromRequest<int>(reqObj, "scan_unknown_duration", scanUnknownDurationMillis)) anyChanged = true;
@@ -174,33 +166,22 @@ unsigned int IotsaBLEClientMod::maxConnectionKeepOpen() {
 }
 
 bool IotsaBLEClientMod::needsDiscovery() {
-  // We need active discovery if we're hunting for unknown devices, or any
-  // known device has never been matched by name yet (no address at all).
+  // We need active discovery if we're hunting for unknown devices, any known
+  // device has never been matched by name yet (no address at all), or a
+  // known device just failed a connect attempt and needs reconfirming.
   if (scanForUnknownClients) return true;
   for (auto it: devices) {
     if (!it.second->available()) return true;
+    if (it.second->needsRescan) return true;
   }
   return false;
 }
 
-bool IotsaBLEClientMod::allKnownDevicesSeenSince(uint32_t sinceMillis) {
-  for (auto it: devices) {
-    IotsaBLEClientConnection* dev = it.second;
-    if (!dev->available()) continue; // no address yet, discovery's job, not presence-check's
-    if (dev->isConnected()) continue; // an active connection is proof enough of presence
-    if ((int32_t)(dev->getLastSeenAtMillis() - sinceMillis) < 0) return false;
-  }
-  return true;
-}
-
 void IotsaBLEClientMod::updateScanning() {
   if (isScanning()) {
-    // A presence-check scan (as opposed to a discovery scan) stops as soon as
-    // it's confirmed everyone's still there, rather than running its full
-    // duration -- the whole point is a quick, infrequent liveness check.
-    if (!currentScanIsDiscovery && allKnownDevicesSeenSince(scanStartedAtMillis)) {
-      stopScanning();
-    }
+    // Stop as soon as there's nothing left to look for -- no need to run out
+    // a full scan duration once every reason to scan has been satisfied.
+    if (!needsDiscovery()) stopScanning();
     return;
   }
   // Connections take priority over scanning: never start a new scan while
@@ -212,8 +193,7 @@ void IotsaBLEClientMod::updateScanning() {
     shouldUpdateScanAtMillis = millis() + SCAN_START_RETRY_MS;
     return;
   }
-  // Nothing to scan for at all: no known devices, and not hunting for unknowns.
-  if (devices.empty() && !scanForUnknownClients) return;
+  if (!needsDiscovery()) return;
   IFDEBUG {
     IotsaSerial.print("BLE scan for: ");
     if (scanForUnknownClients) {
@@ -256,8 +236,7 @@ void IotsaBLEClientMod::startScanning() {
     advertisingWasPausedByScan = IotsaBLEServerMod::pauseServer();
   }
   // Now start the scan
-  currentScanIsDiscovery = needsDiscovery();
-  uint32_t duration = currentScanIsDiscovery ? scanDurationDiscoveryMillis : scanDurationPresenceMillis;
+  uint32_t duration = scanDurationDiscoveryMillis;
   scanner = BLEDevice::getScan();
   scanningMod = this;
   scanStartedAtMillis = millis();
@@ -298,9 +277,8 @@ void IotsaBLEClientMod::stopScanning() {
   #endif
     scanningChanged();
   }
-  // Next time through loop, check whether we should scan again -- discovery
-  // and presence-check scans get their own configurable cooldown.
-  shouldUpdateScanAtMillis = millis() + (currentScanIsDiscovery ? scanCooldownDiscoveryMillis : scanCooldownPresenceMillis);
+  // Next time through loop, check whether we should scan again.
+  shouldUpdateScanAtMillis = millis() + scanCooldownDiscoveryMillis;
 }
 
 bool IotsaBLEClientMod::canConnect() {
@@ -486,14 +464,6 @@ IotsaBLEClientConnection* IotsaBLEClientMod::getDevice(std::string id) {
     return NULL;
   }
   return it->second;
-}
-
-void IotsaBLEClientMod::deviceNotConnectable(std::string id) {
-  IotsaBLEClientConnection *dev;
-  dev = addDevice(id);
-  if (dev == NULL) return;
-  dev->clearDevice();
-  shouldUpdateScanAtMillis = millis(); // We may want to start scanning again
 }
 
 void IotsaBLEClientMod::noteKnownAddress(std::string id, std::string address) {

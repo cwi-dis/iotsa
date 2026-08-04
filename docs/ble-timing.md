@@ -83,15 +83,7 @@ peer sleeps and only advertises briefly on wake (shape 1 with a battery-powered 
 shape 3 with an unknown-duty-cycle peripheral), this needs to be comparable to or longer than the
 peer's wake window, or discovery may never succeed inside one scan.
 
-**`scanDurationPresenceMillis`** (default 11000ms)
-— *Relevant to: shape 1 mainly (you can observe the server's real advertise cadence).*
-Upper bound for a *presence-check* scan -- confirming an already-addressed device is still
-around. In practice this scan usually ends early (see `allKnownDevicesSeenSince()`), so this
-value mostly matters as a safety ceiling: if a presence check never completes early, this is how
-long the radio is tied up before giving up. Keep it well above the server's advertise interval,
-or a live presence check is likely to time out even though the peer is fine.
-
-**`scanCooldownDiscoveryMillis`** (default 4000ms) / **`scanCooldownPresenceMillis`** (default 4000ms)
+**`scanCooldownDiscoveryMillis`** (default 4000ms)
 — *Relevant to: all three shapes.*
 Minimum gap after a scan stops before the next one is allowed to start. This is the client's main
 "how much airtime am I willing to spend scanning" knob. **Interplay:** a short discovery cooldown
@@ -128,6 +120,29 @@ repeatedly. Conceptually related to those two (it's currently ~1.3x one full dis
 15000ms) but deliberately kept as its own independent value for now rather than computed from
 them -- may be derived from the discovery cycle length in the future, but made configurable as-is
 first since that's the more immediately useful change.
+
+**`needsRescan`** (per-device bool, `IotsaBLEClientConnection`; added 2026-08-04, replacing a
+prior `clearDevice()` call on every failed connect attempt -- see cwi-dis/iotsa#172)
+— *Relevant to: shape 1 mainly (shapes 2/3 peers may rotate private addresses, where clearing the
+address on failure could still be the right call -- not addressed here).*
+Set when a connect attempt to this device fails, cleared once the device is reconfirmed reachable
+(a matching advertisement, or a successful connect). Deliberately separate from `available()`
+(whether we know the device's address at all, effectively permanent once learned): a failed
+connect against a lightSleep peer (e.g. `stripbank`/`striplinks`, 1500ms sleep/300ms wake) usually
+just means the attempt landed in the sleep window, not that the address is wrong, so it must not
+force an expensive rediscovery-by-name scan. `needsDiscovery()` treats any device with
+`needsRescan` set as a reason to scan, same as an unaddressed device -- triggered on the *first*
+failure, not after a run of several, since a triggered scan is cheap (connects still preempt scans
+the same way regardless of why the scan started).
+
+Historical note: this replaces the old "presence-check" scan concept
+(`scanDurationPresenceMillis`/`scanCooldownPresenceMillis`/`currentScanIsDiscovery`/
+`allKnownDevicesSeenSince()`, removed 2026-08-04), which periodically re-verified already-addressed
+devices on a timer regardless of whether anything had actually gone wrong. It turned out to have no
+functional consumer -- the freshened `lastSeenAtMillis` it produced was never read by anything
+except its own early-stop check -- so it just spent radio time for a cosmetic timestamp. Scanning
+now only ever starts for one of three reasons: a user-requested scan, an unaddressed known device,
+or a device with `needsRescan` set.
 
 ### Client side, not yet configurable
 

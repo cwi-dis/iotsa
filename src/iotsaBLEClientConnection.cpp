@@ -31,6 +31,9 @@ IotsaBLEClientConnection::~IotsaBLEClientConnection() {
 
 bool IotsaBLEClientConnection::receivedAdvertisement(const BLEAdvertisedDevice& _device) {
   bool changed = IotsaBLEDeviceInfo::receivedAdvertisement(_device);
+  // Seeing this device advertise at all reconfirms it's reachable, regardless
+  // of whether its address happened to change.
+  needsRescan = false;
   // disconnect() only touches pClient, not address/addressValid -- fine to
   // call after the base class has released addressMutex, and keeps
   // disconnect() (which talks to the BLE stack) from ever running while
@@ -108,11 +111,16 @@ bool IotsaBLEClientConnection::connect() {
   uint32_t elapsedMs = millis() - t0;
   if (rv) {
     numSuccessfulConnections++;
+    needsRescan = false;
   } else {
     numFailedConnectionAttempts++;
     IotsaSerial.printf("IotsaBLEClientConnection::connect(%s): failed after %ums, rc=%d (%s)\n",
       addr.toString().c_str(), elapsedMs, pClient->getLastError(), NimBLEUtils::returnCodeToString(pClient->getLastError()));
-    clearDevice();
+    // Don't clearDevice() here: a failed connect doesn't mean the address is
+    // wrong (e.g. a lightSleep device just happened to be asleep mid-attempt)
+    // -- just that we're not sure it's still reachable. needsRescan triggers
+    // a rescan to reconfirm, without throwing away a known-good address.
+    needsRescan = true;
   }
   return rv;
 }

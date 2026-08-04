@@ -80,6 +80,13 @@ protected:
   uint32_t lastConnectAtMillis = 0;
   uint32_t numSuccessfulConnections = 0;
   uint32_t numFailedConnectionAttempts = 0;
+  // True once a connect attempt has failed, until reachability is
+  // reconfirmed (a matching advertisement, or a successful connect).
+  // Deliberately separate from addressValid/available(): a failed connect
+  // doesn't mean the address is wrong (e.g. a lightSleep device just happened
+  // to be asleep), so it must not force a costly rediscovery-by-name scan.
+  // Consulted by IotsaBLEClientMod::needsDiscovery() to trigger a rescan.
+  bool needsRescan = false;
   // NimBLE host-stack reason code from the most recent onDisconnect(), or -1
   // if none seen yet. Distinguishes "connect succeeded, then something went
   // wrong later" from a plain failed connect attempt (which never reaches

@@ -40,8 +40,6 @@ public:
   IotsaBLEClientConnection* getDevice(String id) { return getDevice(std::string(id.c_str())); }
   void delDevice(std::string id);
   void delDevice(String id) { delDevice(std::string(id.c_str())); }
-  void deviceNotConnectable(std::string id);
-  void deviceNotConnectable(String id) { deviceNotConnectable(std::string(id.c_str())); }
   // Seed a known device's persisted address, so it can be found/connected
   // to directly without waiting for (or requiring) a matching advertisement.
   void noteKnownAddress(std::string id, std::string address);
@@ -104,14 +102,11 @@ protected:
   bool isScanning();
   void startScanUnknown();
   // True if we still need to actively look for devices: either explicitly
-  // hunting for unknown devices, or some known device has no address yet
-  // (never matched by name). False means every known device already has an
-  // address and we're only doing periodic presence checks.
+  // hunting for unknown devices, some known device has no address yet
+  // (never matched by name), or a known device just failed a connect
+  // attempt and needs reconfirming (see IotsaBLEClientConnection::needsRescan).
+  // False means there is currently no reason to scan at all.
   bool needsDiscovery();
-  // True if every known, addressed device has been seen (advertisement or
-  // live connection) since sinceMillis -- i.e. a presence-check scan can
-  // stop early, its job is done.
-  bool allKnownDevicesSeenSince(uint32_t sinceMillis);
   static IotsaBLEClientMod *scanningMod;
   int scan_interval = 155;
   int scan_window = 151;
@@ -122,9 +117,7 @@ protected:
   // matches the codebase-wide convention for millisecond-unit fields
   // (stayConnectedMillis, animationDurationMillis, postponeSleepMillis, etc.).
   uint32_t scanDurationDiscoveryMillis = 11000;  // scan length while actively looking for unknown/unaddressed devices
-  uint32_t scanDurationPresenceMillis = 11000;   // upper bound for a presence-check scan (normally ends early)
   uint32_t scanCooldownDiscoveryMillis = 4000;   // minimum gap before starting another discovery scan
-  uint32_t scanCooldownPresenceMillis = 4000;    // minimum gap before starting another presence-check scan
   uint32_t connectSettleTimeMillis = 100;        // grace period after scanning stops before a connect() is attempted
   // How long a single IotsaBLEClientConnection::connect() call waits for the
   // link to establish before giving up (NimBLEClient::setConnectTimeout()).
@@ -159,7 +152,6 @@ protected:
   // (e.g. BLEDimmer::connectionTask()) -- volatile so those reads see fresh
   // values across tasks.
   volatile uint32_t scanStoppedAtMillis = 0;
-  bool currentScanIsDiscovery = false;
   bool scanForUnknownClients = false;
   uint32_t scanUnknownUntilMillis = 0;
   uint32_t shouldUpdateScanAtMillis = 0;
