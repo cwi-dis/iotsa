@@ -56,6 +56,7 @@ void IotsaInputMod::setup() {
 }
 
 void IotsaInputMod::serverSetup() {
+  name = "input";
 }
 
 void IotsaInputMod::loop() {

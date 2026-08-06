@@ -120,6 +120,7 @@ public:
   virtual bool getHandler(const char *path, JsonObject& reply) override { return false; }
   virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
   virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
+  bool hasApi() const override { return true; }
 protected:
   template <typename JT, typename CT>  bool getFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
     if (reqObj[name].is<JT>()) {

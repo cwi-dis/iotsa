@@ -77,6 +77,7 @@ void IotsaLoggerMod::setup() {
 
 void IotsaLoggerMod::serverSetup() {
   server->on("/logger", std::bind(&IotsaLoggerMod::handler, this));
+  name = "logger";
 }
 
 void IotsaLoggerMod::configLoad() {

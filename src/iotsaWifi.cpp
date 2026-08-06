@@ -214,12 +214,12 @@ bool IotsaWifiMod::_wifiStartMDNS() {
   MDNS.addServiceTxt("iotsa", proto, "A", app.title.c_str());
   IotsaBaseMod *m = app.firstEarlyModule;
   while(m) {
-    MDNS.addServiceTxt("iotsa", proto, m->name.c_str(), "1");
+    if (m->name != "" && m->hasApi()) MDNS.addServiceTxt("iotsa", proto, m->name.c_str(), "1");
     m = m->nextModule;
   }
   m = app.firstModule;
   while(m) {
-    MDNS.addServiceTxt("iotsa", proto, m->name.c_str(), "1");
+    if (m->name != "" && m->hasApi()) MDNS.addServiceTxt("iotsa", proto, m->name.c_str(), "1");
     m = m->nextModule;
   }
  

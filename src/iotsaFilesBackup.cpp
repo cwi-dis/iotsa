@@ -124,6 +124,7 @@ IotsaFilesBackupMod::handler() {
 
 void IotsaFilesBackupMod::serverSetup() {
   server->on("/backup.tar", std::bind(&IotsaFilesBackupMod::handler, this));
+  name = "filesbackup";
 }
 
 String IotsaFilesBackupMod::info() {

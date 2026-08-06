@@ -57,6 +57,7 @@ void IotsaFilesUploadMod::uploadFormHandler() {
 void IotsaFilesUploadMod::serverSetup() {
   server->on("/upload", HTTP_POST, std::bind(&IotsaFilesUploadMod::uploadOkHandler, this), std::bind(&IotsaFilesUploadMod::uploadHandler, this));
   server->on("/upload", HTTP_GET, std::bind(&IotsaFilesUploadMod::uploadFormHandler, this));
+  name = "filesupload";
 }
 
 String IotsaFilesUploadMod::info() {

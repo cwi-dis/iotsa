@@ -123,6 +123,7 @@ IotsaFilesMod::notFoundHandler() {
 void IotsaFilesMod::serverSetup() {
   server->on("/data", std::bind(&IotsaFilesMod::listHandler, this));
   server->onNotFound(std::bind(&IotsaFilesMod::notFoundHandler, this));
+  name = "files";
 }
 
 String IotsaFilesMod::info() {

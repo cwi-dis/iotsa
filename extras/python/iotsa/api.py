@@ -332,6 +332,10 @@ class IotsaDevice:
         for m in status.pop("modules", ["???"]):
             print(m, end=" ")
         print()
+        print("  modules (no API):  ", end=" ")
+        for m in status.pop("modulesNoApi", ["???"]):
+            print(m, end=" ")
+        print()
         print("  features:          ", end=" ")
         for m in status.pop("features", ["???"]):
             print(m, end=" ")

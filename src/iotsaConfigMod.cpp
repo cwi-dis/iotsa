@@ -390,30 +390,34 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   reply["fsTotalBytes"] = iotsaFSTotalBytes();
   reply["fsUsedBytes"] = iotsaFSUsedBytes();
   JsonArray modules = reply["modules"].to<JsonArray>();
+  JsonArray modulesNoApi = reply["modulesNoApi"].to<JsonArray>();
   modules.add("version");
   for (IotsaBaseMod *m=app.firstEarlyModule; m; m=m->nextModule) {
-    if (m->name != "")
-      modules.add(m->name);
+    if (m->name == "") continue;
+    if (m->hasApi()) modules.add(m->name); else modulesNoApi.add(m->name);
   }
   for (IotsaBaseMod *m=app.firstModule; m; m=m->nextModule) {
-    if (m->name != "")
-      modules.add(m->name);
+    if (m->name == "") continue;
+    if (m->hasApi()) modules.add(m->name); else modulesNoApi.add(m->name);
   }
   JsonArray features = reply["features"].to<JsonArray>();
+#ifdef IOTSA_WITH_WIFI
+  features.add("wifi");
+#endif
 #ifdef IOTSA_WITH_HTTP
   features.add("http");
 #endif
 #ifdef IOTSA_WITH_HTTPS
   features.add("https");
 #endif
+#ifdef IOTSA_WITH_WEB
+  features.add("web");
+#endif
 #ifdef IOTSA_WITH_COAP
   features.add("coap");
 #endif
 #ifdef IOTSA_WITH_HPS
   features.add("hps");
-#endif
-#ifdef IOTSA_WITH_OTA
-  features.add("ota");
 #endif
 #ifdef IOTSA_WITH_BLE
   features.add("ble");

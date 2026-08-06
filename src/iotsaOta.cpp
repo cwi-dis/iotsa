@@ -51,6 +51,7 @@ void IotsaOtaMod::_start() {
 }
 
 void IotsaOtaMod::serverSetup() {
+  name = "ota";
 }
 
 void IotsaOtaMod::loop() {

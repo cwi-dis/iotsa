@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+- `/api/config`'s `modules` now only lists modules with a REST/CoAP/HPS API (matching what `iotsa allInfo`/`backup`/`restore` can actually query); modules without one (`ota`, `files`, `filesbackup`, `filesupload`, `input`, `led`, `logger` — previously missing from `modules` entirely) now show up in a new `modulesNoApi` list instead; mDNS TXT records only advertise the API-having set; add `wifi`/`web` to `features`, drop the `IOTSA_WITH_OTA` check there (the macro was never actually defined, so it never fired) (#173)
 - Expose filesystem usage (`fsTotalBytes`/`fsUsedBytes`) in `/api/config` and the `/config` web page (#110)
 - Fix `iotsa restore` trying to write back the read-only `fsTotalBytes`/`fsUsedBytes` fields added by #110
 - Fix BLE client endlessly rescanning already-known, fully-addressed devices (#172)

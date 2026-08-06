@@ -123,6 +123,8 @@ public:
   virtual bool needsAuthentication(const char *right=NULL);
   virtual bool needsAuthentication(const char *obj, IotsaApiOperation verb);
   virtual void sleepWakeupNotification(bool sleep) {}
+  // Whether this module exposes a REST/CoAP/HPS API (overridden by IotsaApiMod).
+  virtual bool hasApi() const { return false; }
 
 protected:
   IotsaApplication &app;

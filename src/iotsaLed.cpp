@@ -50,7 +50,7 @@ void IotsaLedMod::loop() {
 }
 
 void IotsaLedMod::serverSetup() {
-	// Do nothing
+	name = "led";
 }
 
 #ifdef IOTSA_WITH_WEB
