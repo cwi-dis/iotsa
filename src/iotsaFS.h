@@ -29,4 +29,26 @@
 #define IOTSA_FS_OPEN_2_ARGS
 #endif
 
+// Filesystem usage. On esp32 IOTSA_FS is a concrete FS subclass with totalBytes()/usedBytes(),
+// on esp8266 it's a generic fs::FS and usage must be queried through info(FSInfo&) instead.
+inline size_t iotsaFSTotalBytes() {
+#ifdef ESP32
+  return IOTSA_FS.totalBytes();
+#else
+  FSInfo info;
+  IOTSA_FS.info(info);
+  return info.totalBytes;
+#endif
+}
+
+inline size_t iotsaFSUsedBytes() {
+#ifdef ESP32
+  return IOTSA_FS.usedBytes();
+#else
+  FSInfo info;
+  IOTSA_FS.info(info);
+  return info.usedBytes;
+#endif
+}
+
 #endif

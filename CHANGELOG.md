@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+- Expose filesystem usage (`fsTotalBytes`/`fsUsedBytes`) in `/api/config` and the `/config` web page (#110)
 - Fix BLE client endlessly rescanning already-known, fully-addressed devices (#172)
 - Fix BLE client discarding a known device's address on a single failed connect attempt, forcing a costly rediscovery scan instead of a quick retry, and now actually triggers that rescan (#172)
 - Replace `IotsaBLEClientConnection`'s REST connect/disconnect counters (`numSuccessfulConnections`, `numFailedConnectionAttempts`) with a fully-accounted set (`numConnectCalls`, `numConnectSkipped`, `numConnectAttempts`, `numConnectFailed`, `numConnectSucceeded`, `numConnectionOpen`, `numConnectionFailed`, `numConnectionClosedLocally`) so a device's connect/disconnect history can be diagnosed from REST alone, without serial access

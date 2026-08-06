@@ -262,6 +262,11 @@ IotsaConfigMod::handler() {
     }
 #endif
     message += "</p>";
+    message += "<p>" IOTSA_FS_NAME " usage: ";
+    message += String(iotsaFSUsedBytes());
+    message += " / ";
+    message += String(iotsaFSTotalBytes());
+    message += " bytes</p>";
 #ifdef IOTSA_WITH_HTTPS
     if (iotsaConfig.usingDefaultCertificate()) {
       message += "<p>Using factory-installed (<b>not very secure</b>) https certificate</p>";
@@ -382,6 +387,8 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
 #endif
   reply["bootCause"] = iotsaConfig.getBootReason();
   reply["uptime"] = millis() / 1000;
+  reply["fsTotalBytes"] = iotsaFSTotalBytes();
+  reply["fsUsedBytes"] = iotsaFSUsedBytes();
   JsonArray modules = reply["modules"].to<JsonArray>();
   modules.add("version");
   for (IotsaBaseMod *m=app.firstEarlyModule; m; m=m->nextModule) {
