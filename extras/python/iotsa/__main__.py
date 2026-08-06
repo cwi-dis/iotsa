@@ -959,7 +959,7 @@ class Main(object):
                 continue
             if modname == "config":
                 # Strip runtime/read-only fields; restore only writable identity fields
-                _CONFIG_READONLY = {"program", "features", "bootCause", "uptime", "currentMode", "wifiDisabled", "bleDisabled"}
+                _CONFIG_READONLY = {"program", "features", "bootCause", "uptime", "currentMode", "wifiDisabled", "bleDisabled", "fsTotalBytes", "fsUsedBytes"}
                 moddata = {k: v for k, v in moddata.items() if k not in _CONFIG_READONLY}
             print("Restoring %s..." % modname, end=" ", flush=True)
             ext = self.device.getApi(modname)
