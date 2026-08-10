@@ -15,7 +15,9 @@
 
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 
+#ifndef WITHOUT_BATTERY
 #define WITH_BATTERY
+#endif
 #ifdef ESP32
 #ifndef WITHOUT_VOLTAGE
 #define PIN_VBAT 36 // Undefine to disable battery voltage measurements. Use 1:1 voltage divider.
