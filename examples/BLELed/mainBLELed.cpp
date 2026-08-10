@@ -47,6 +47,7 @@ IotsaLedControlMod ledMod(application, NEOPIXEL_PIN);
 
 // Standard setup() method, hands off most work to the application framework
 void setup(void){
+#ifdef WITH_BATTERY
 #ifdef PIN_VBAT
   batteryMod.setPinVBat(PIN_VBAT);
 #endif
@@ -58,6 +59,7 @@ void setup(void){
 #endif
   // As an example, we allow switching to configuration mode by sending a BLE command
   batteryMod.allowBLEConfigModeSwitch();
+#endif
   application.setup();
   application.serverSetup();
 }

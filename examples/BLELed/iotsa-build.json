@@ -14,7 +14,11 @@
       "board": "esp32thing"
     },
     {
-      "board": "esp32c3devkit"
+      "board": "esp32c3devkit",
+      "build_flags": [
+        "-DIOTSA_WITH_BLE",
+        "-DNEOPIXEL_PIN=8"
+      ]
     }
   ]
 }
