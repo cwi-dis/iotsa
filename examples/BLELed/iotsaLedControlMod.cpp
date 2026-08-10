@@ -58,15 +58,17 @@ String IotsaLedControlMod::info() {
 #ifdef IOTSA_WITH_API
 bool IotsaLedControlMod::getHandler(const char *path, JsonObject& reply) {
   reply["rgb"] = rgb;
-  // xxxclaude temporary debug field to push the HPS GET reply over HPSMaxBodySize (512),
-  // for testing #139's reply-truncation path. Remove after testing.
-  reply["xxxclaude_pad"] = "Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equal. Now we are engaged in a great civil war, testing whether that nation, or any nation so conceived and so dedicated, can long endure. We are met on a great battle-field of that war. We have come to dedicate a portion of that field, as a final resting place for those who here gave their lives that that nation might live. It is altogether fitting and proper that we should do this.";
+  // xxxclaude temporary debug field, see iotsaLedControlMod.h. Testing #139.
+  reply["xxxclaude_pad"] = xxxclaude_pad;
   return true;
 }
 
 bool IotsaLedControlMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   uint32_t _rgb = request["rgb"]|0xffffff;
   set(_rgb, 1000, 0, 0x7fff);
+  // xxxclaude temporary debug field, see iotsaLedControlMod.h. Testing #139.
+  JsonObject reqObj = request.as<JsonObject>();
+  getFromRequest<const char *>(reqObj, "xxxclaude_pad", xxxclaude_pad);
   return true;
 }
 #endif // IOTSA_WITH_API
