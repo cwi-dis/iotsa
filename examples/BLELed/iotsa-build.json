@@ -18,7 +18,7 @@
       "build_flags": [
         "-DIOTSA_WITH_BLE",
         "-DNEOPIXEL_PIN=8",
-        "-DWITHOUT_BATTERY"
+        "-DWITHOUT_VOLTAGE"
       ]
     }
   ]
