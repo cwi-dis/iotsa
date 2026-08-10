@@ -13,6 +13,8 @@
 #include "iotsaBLEServer.h"
 #include "iotsaLedControlMod.h"
 
+#define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
+
 #define WITH_BATTERY
 #ifdef ESP32
 #ifndef WITHOUT_VOLTAGE
@@ -33,6 +35,11 @@
 IotsaApplication application("Iotsa BLE LED Server");
 #ifdef IOTSA_WITH_WIFI
 IotsaWifiMod wifiMod(application);
+#endif
+
+#ifdef WITH_OTA
+#include "iotsaOta.h"
+IotsaOtaMod otaMod(application);
 #endif
 
 #ifdef WITH_BATTERY
