@@ -77,10 +77,12 @@ iotsa -t <host> otaWait ota .pio/build/<env>/firmware.bin
 
 ## Python control tool
 
-Located in `extras/python/`. The repo root has a `.venv` (Python 3.13) for local development.
+Located in `extras/python/`. There is no venv in this repo — the whole `iotsa-group` shares
+one venv at `~/src/iotsa-group/.venv`, with this package installed editable into it. See
+`iotsa-group/CLAUDE.md`'s "Python tool venv setup" section for how to create/use it.
 
 ```bash
-source .venv/bin/activate
+source ~/src/iotsa-group/.venv/bin/activate
 iotsa --help
 ```
 

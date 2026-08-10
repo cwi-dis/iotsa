@@ -135,6 +135,8 @@ source .venv/bin/activate
 pip install -e extras/python/
 ```
 
+(If instructions in this repo's parent directory cover venv setup, those take precedence over the steps above.)
+
 Then use `iotsa --help` for a list of all options and commands.
 
 Whenever you made significant changes to your source tree (and committed them) you may want to rerun `pip install -e extras/python` to refresh the version string.
