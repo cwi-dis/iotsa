@@ -103,7 +103,7 @@ protected:
       } else {
         curBody += chunk;
       }
-      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: request body chunk (%d bytes, total %d)\n", (int)chunk.size(), (int)curBody.size());
+      IotsaSerial.printf("IotsaHpsServiceMod: request body chunk (%d bytes, total %d)\n", (int)chunk.size(), (int)curBody.size());
       return true;
     }
     if (charUUID == IotsaApiServiceHps::headersUUID) {
