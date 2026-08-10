@@ -133,6 +133,7 @@ class IotsaDevice:
     :param noverify: do not verify HTTPS certificates (debug only)
     :param bearer: (optional) Authorization bearer token
     :param auth: (optional) Anthentication tuple
+    :param chunking: (HPS only) allow the chunked request/reply extension; disable when talking to pre-#139 iotsa firmware
     """
     ipAddress : str
     protocolHandler : Optional[IotsaAbstractProtocolHandler]
@@ -147,6 +148,7 @@ class IotsaDevice:
         noverify: bool = False,
         bearer: Optional[str] = None,
         auth: Optional[Tuple[str, str]] = None,
+        chunking: bool = True,
     ):
         self.ipAddress = ipAddress
         if protocol == None:
@@ -159,8 +161,13 @@ class IotsaDevice:
             HandlerClass = HandlerForProto[protocol]
         except KeyError:
             raise IotsaError(f"Unknown protocol: {protocol}")
+        # chunking only means something to the HPS handler; other handlers' constructors
+        # don't accept it, so only forward it there.
+        extraKwargs = {}
+        if protocol == "hps":
+            extraKwargs["chunking"] = chunking
         self.protocolHandler = HandlerClass(
-            url, noverify=noverify, bearer=bearer, auth=auth
+            url, noverify=noverify, bearer=bearer, auth=auth, **extraKwargs
         )
         self.config = IotsaEndpoint(self, "config", cache=True)
         self.auth = None

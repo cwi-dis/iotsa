@@ -29,6 +29,12 @@ class IotsaHpsServiceMod : public IotsaMod, public IotsaBLEApiProvider {
   // body we're willing to accumulate before giving up (413), so a buggy/malicious
   // client can't grow curBody without limit.
   const size_t HPSMaxAccumulatedBodySize = 8192;
+  // Chunking-opt-in flag (#139), ORed into the controlPoint command byte. Command codes
+  // are a small enum (<=4 today, per the real HPS spec), so the top bit is safely free.
+  // A client that doesn't set it (any pre-#139 iotsa build, or a genuine third-party HPS
+  // client) gets exactly the old single-write/single-read behavior below - the extension
+  // is invisible unless a client explicitly asks for it.
+  const uint8_t HPSControlChunkingFlag = 0x80;
   enum HPSControl {
     NONE=0,
     GET=0x01,
@@ -68,6 +74,16 @@ protected:
   std::string curHeaders;
   std::string curBody;
   bool curBodyOverflowed = false;
+  // Legacy (non-chunking) request body: only ever the single most recent bodyUUID write,
+  // never accumulated - matches plain GATT replace-on-write semantics, so a non-chunking
+  // client that (for whatever ordinary reason) writes bodyUUID more than once before
+  // controlPoint gets "last write wins" instead of curBody's silently spliced result.
+  std::string lastBodyChunk;
+  // Whether the in-progress/most recent reply was generated for a chunking-enabled
+  // request; controls whether bleGetHandler's bodyUUID case serves a cursor-advancing
+  // chunk or the whole (legacy, <=HPSMaxBodySize truncated) body on every read.
+  bool curReplyIsChunked = false;
+  size_t curBodyReadOffset = 0;
   HPSControl curControl;
   uint16_t curHttpStatus;
   HPSDataStatus curDataStatus;
@@ -78,9 +94,11 @@ protected:
 
   bool blePutHandler(UUIDstring charUUID) override {
     if (charUUID == IotsaApiServiceHps::controlPointUUID) {
-      HPSControl command = (HPSControl)bleApi.getAsInt(charUUID);
-      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: request command=0x%02x\n", (int)command);
-      curHttpStatus = _processRequest(command);
+      uint8_t raw = (uint8_t)bleApi.getAsInt(charUUID);
+      bool chunking = (raw & HPSControlChunkingFlag) != 0;
+      HPSControl command = (HPSControl)(raw & (uint8_t)~HPSControlChunkingFlag);
+      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: request command=0x%02x chunking=%d\n", (int)command, (int)chunking);
+      curHttpStatus = _processRequest(command, chunking);
       return true;
     }
     if (charUUID == IotsaApiServiceHps::urlUUID) {
@@ -89,6 +107,7 @@ protected:
       // previous request (see bodyUUID handling below for the chunked-write scheme).
       curBody = "";
       curBodyOverflowed = false;
+      lastBodyChunk = "";
       IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: request url=%s\n", curUrl.c_str());
       return true;
     }
@@ -97,7 +116,12 @@ protected:
       // attribute-value hard cap is 512 bytes) is sent as several writes to this same
       // characteristic. Append rather than replace; curUrl (above) clears curBody at
       // the start of each new request, and controlPointUUID (below) finalizes it.
+      // We accumulate unconditionally here because the chunking flag only arrives
+      // later, on the controlPoint write; lastBodyChunk keeps the plain single-write
+      // interpretation available too, for when it turns out not to be a chunking
+      // request (see _processRequest).
       std::string chunk = bleApi.getAsString(charUUID);
+      lastBodyChunk = chunk;
       // Once overflowed, stop appending entirely - don't just re-check size against
       // the (now frozen) curBody on each subsequent chunk, or a later chunk that
       // individually still fits can slip in past ones that didn't, splicing curBody
@@ -129,7 +153,21 @@ protected:
       return true;
     }
     if (charUUID == IotsaApiServiceHps::bodyUUID) {
-      std::string tmp = curBody;
+      std::string tmp;
+      if (curReplyIsChunked) {
+        // Chunked replies (#139): serve curBody in HPSMaxBodySize-sized slices,
+        // advancing a read cursor each call, until an empty read signals the end -
+        // the read-side mirror of the chunked-write scheme above. Only enabled when
+        // the triggering request asked for it (curReplyIsChunked), so a client that
+        // didn't ask for chunking always gets the old single-read, non-cursor
+        // behavior below, which stays safely idempotent under e.g. transport retries.
+        size_t remaining = curBody.size() > curBodyReadOffset ? curBody.size() - curBodyReadOffset : 0;
+        size_t chunkSize = remaining < (size_t)HPSMaxBodySize ? remaining : (size_t)HPSMaxBodySize;
+        tmp = curBody.substr(curBodyReadOffset, chunkSize);
+        curBodyReadOffset += chunkSize;
+      } else {
+        tmp = curBody;
+      }
       IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: response body=%s\n", tmp.c_str());
       bleApi.set(IotsaApiServiceHps::bodyUUID, tmp);
       return true;
@@ -164,9 +202,17 @@ protected:
     return false;
   }
 
-  int _processRequest(HPSControl command) {
-    IFDEBUG IotsaSerial.printf("HPS 0x%02x %s\n", (int)command, curUrl.c_str());
-    if (curBodyOverflowed) {
+  int _processRequest(HPSControl command, bool chunking) {
+    IFDEBUG IotsaSerial.printf("HPS 0x%02x %s chunking=%d\n", (int)command, curUrl.c_str(), (int)chunking);
+    // Every reply generated from here on (including the early-return error paths
+    // below) is read back under this request's chunking mode.
+    curReplyIsChunked = chunking;
+    curBodyReadOffset = 0;
+    // The request body itself: the full chunked accumulation if the client asked for
+    // chunking, otherwise just the single most recent bodyUUID write (see
+    // lastBodyChunk's declaration for why that's the correct legacy interpretation).
+    std::string requestBody = chunking ? curBody : lastBodyChunk;
+    if (chunking && curBodyOverflowed) {
       IotsaSerial.printf("IotsaHpsServiceMod: accumulated request body too large (>%d bytes)\n", (int)HPSMaxAccumulatedBodySize);
       curDataStatus = HPSDataStatus::EMPTY;
       curBody = "";
@@ -201,7 +247,7 @@ protected:
     }
     // xxxjson
     ArduinoJson::JsonDocument request_doc;
-    ArduinoJson::deserializeJson(request_doc, curBody.c_str());
+    ArduinoJson::deserializeJson(request_doc, requestBody.c_str());
     if (request_doc.overflowed()) {
       IotsaSerial.println("IotsaHpsServiceMod: request too large");
       curDataStatus = HPSDataStatus::EMPTY;
@@ -235,9 +281,14 @@ protected:
     }
     curBody = "";
     serializeJson(reply_doc, curBody);
-    if (curBody.size() > HPSMaxBodySize) {
+    // A chunking-enabled client can read the reply back over several chunked reads
+    // (see bleGetHandler's bodyUUID case), so it gets the larger accumulation cap;
+    // a non-chunking client only ever does a single read, so it's still bound to the
+    // old single-read (ATT hard cap) limit.
+    size_t maxReplySize = chunking ? HPSMaxAccumulatedBodySize : (size_t)HPSMaxBodySize;
+    if (curBody.size() > maxReplySize) {
       curDataStatus = (HPSDataStatus)(HPSDataStatus::BodyTruncated | HPSDataStatus::BodyReceived);
-      curBody = curBody.substr(0, HPSMaxBodySize);
+      curBody = curBody.substr(0, maxReplySize);
     } else
     if (curBody.size() == 0) {
       curDataStatus = HPSDataStatus::EMPTY;

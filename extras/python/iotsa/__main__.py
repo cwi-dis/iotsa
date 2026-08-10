@@ -220,6 +220,11 @@ class Main(object):
             action="store_true",
             help="Force operation even if sanity checks fail"
         )
+        parser.add_argument(
+            "--hps-no-chunking",
+            action="store_true",
+            help="Disable the HPS chunked request/reply extension, for talking to pre-#139 iotsa firmware (only relevant with --protocol hps)"
+        )
         parser.add_argument("command", nargs="*", help="Command to run")
         self.cmd_help = parser.print_help
         self.args = parser.parse_args()
@@ -445,6 +450,8 @@ class Main(object):
             kwargs["bearer"] = self.args.bearer
         if self.args.credentials:
             kwargs["auth"] = tuple(self.args.credentials.split(":"))
+        if proto == "hps" and self.args.hps_no_chunking:
+            kwargs["chunking"] = False
         self.device = api.IotsaDevice(
             target,
             protocol=proto,

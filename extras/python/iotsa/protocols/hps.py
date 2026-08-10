@@ -15,7 +15,7 @@ class IotsaHPSProtocolHandler(IotsaAbstractProtocolHandler):
     :param baseurl: first part of URL (endpoint arguments will be appended)
     """
 
-    def __init__(self, baseURL: str, bearer=None, noverify=None, auth=None):
+    def __init__(self, baseURL: str, bearer=None, noverify=None, auth=None, chunking=True):
         if VERBOSE:
             print(f"IotsaHPSProtocolHandler({baseURL})")
         self.client = None
@@ -23,6 +23,11 @@ class IotsaHPSProtocolHandler(IotsaAbstractProtocolHandler):
             raise IotsaError("bearer not supported for hps")
         if auth:
             raise IotsaError("auth not supported for hps")
+        # Chunked request/reply extension (#139): iotsa-only, signalled per-request via
+        # a flag bit on the controlPoint write so pre-#139 firmware (which doesn't know
+        # the bit) sees a plain GET/POST/PUT and falls back to its old single-write/
+        # single-read behavior. Disable when talking to such a device.
+        self.chunking = chunking
         parts = urllib.parse.urlparse(baseURL)
         self.basePath = parts.path
         if not self.basePath:
@@ -61,6 +66,11 @@ class IotsaHPSProtocolHandler(IotsaAbstractProtocolHandler):
     # spending many round trips chunking something the device will reject anyway (#139).
     HPS_MAX_ACCUMULATED_BODY_SIZE = 8192
 
+    # Flag bit ORed into the controlPoint command byte to opt into chunked request/reply
+    # handling, matches HPSControlChunkingFlag in src/iotsaApiHps.cpp. Command codes are
+    # a small enum (<=4 today), so the top bit is safely free for this (#139).
+    HPS_CONTROL_CHUNKING_FLAG = 0x80
+
     def request(self, method, endpoint, json=None, files=None, retryCount=5):
         assert self.client
         endpoint = self.basePath + endpoint
@@ -76,17 +86,26 @@ class IotsaHPSProtocolHandler(IotsaAbstractProtocolHandler):
         self.client.set("hpsHeaders", headers)
         if json != None:
             data = jsonmod.dumps(json).encode()
-            if len(data) > self.HPS_MAX_ACCUMULATED_BODY_SIZE:
-                raise HpsError(f"HPS body too large: {len(data)} bytes exceeds the {self.HPS_MAX_ACCUMULATED_BODY_SIZE}-byte HPS limit even chunked ({method} {endpoint})")
-            if len(data) > self.HPS_MAX_BODY_SIZE:
-                self.client.setStreamed("hpsBody", data)
+            if self.chunking:
+                if len(data) > self.HPS_MAX_ACCUMULATED_BODY_SIZE:
+                    raise HpsError(f"HPS body too large: {len(data)} bytes exceeds the {self.HPS_MAX_ACCUMULATED_BODY_SIZE}-byte HPS limit even chunked ({method} {endpoint})")
+                if len(data) > self.HPS_MAX_BODY_SIZE:
+                    self.client.setStreamed("hpsBody", data)
+                else:
+                    self.client.set("hpsBody", data)
             else:
+                # Chunking disabled: a single write is the ATT hard cap, same as
+                # pre-#139 behavior.
+                if len(data) > self.HPS_MAX_BODY_SIZE:
+                    raise HpsError(f"HPS body too large: {len(data)} bytes exceeds the {self.HPS_MAX_BODY_SIZE}-byte HPS limit (chunking disabled) ({method} {endpoint})")
                 self.client.set("hpsBody", data)
         commandCode = self.METHOD_TO_CODE[method]
+        if self.chunking:
+            commandCode |= self.HPS_CONTROL_CHUNKING_FLAG
         self.client.set("hpsControlPoint", commandCode)
 
         fullStatus = self.client.get("hpsStatus")
-        
+
         if VERBOSE:
             print(f"HPS status {repr(fullStatus)}")
         httpStatus, dataStatus = struct.unpack("<hb", fullStatus)
@@ -96,7 +115,10 @@ class IotsaHPSProtocolHandler(IotsaAbstractProtocolHandler):
             raise HpsError(f"hps://{self.bleServer}{endpoint}: HPS status code {httpStatus}")
         if dataStatus != 0 and dataStatus != 0x04:
             raise HpsError(f"hps://{self.bleServer}{endpoint}: HPS data status=0x{dataStatus:x}")
-        rvBytes = self.client.get("hpsBody")
+        if self.chunking:
+            rvBytes = self.client.getStreamed("hpsBody")
+        else:
+            rvBytes = self.client.get("hpsBody")
         if rvBytes == None or len(rvBytes) == 0:
             if VERBOSE:
                 print(f"HPS {method} returned empty response")
