@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+- HPS client now rejects oversized request bodies (>512 bytes) with a clear error before attempting the GATT write, instead of silently losing the write and crashing later (#139)
 - Fix `BLELed` example never wiring up `IotsaOtaMod`, so OTA silently didn't work even though the device would happily enter/report `IOTSA_MODE_OTA` (found while investigating #174)
 - `BLELed`'s `esp32c3devkit` env now builds with `-DWITHOUT_VOLTAGE` instead of dropping the battery module entirely, keeping sleep management while avoiding the invalid VBAT/VUSB ADC pins (#175)
 - Fix `BLELed` example's `esp32c3devkit` env using GPIO15 (invalid on this board) as the NeoPixel pin, wedging the interrupt watchdog into a boot loop; onboard NeoPixel is GPIO8, now overridable per-board via `-DNEOPIXEL_PIN` instead of hardcoded (found while investigating #139)

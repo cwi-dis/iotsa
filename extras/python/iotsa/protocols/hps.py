@@ -50,6 +50,11 @@ class IotsaHPSProtocolHandler(IotsaAbstractProtocolHandler):
         "POST" : 0x03,
         "PUT" : 0x04
     }
+
+    # ATT attribute value hard cap (BLE spec), matches HPSMaxBodySize in src/iotsaApiHps.cpp.
+    # Bodies over this size fail an unchunked GATT write outright (see #139). This is also
+    # the branch point for a future chunked-write implementation, if/when one is added.
+    HPS_MAX_BODY_SIZE = 512
     def request(self, method, endpoint, json=None, files=None, retryCount=5):
         assert self.client
         endpoint = self.basePath + endpoint
@@ -64,8 +69,10 @@ class IotsaHPSProtocolHandler(IotsaAbstractProtocolHandler):
         self.client.set("hpsURL", endpoint)
         self.client.set("hpsHeaders", headers)
         if json != None:
-            data = jsonmod.dumps(json)
-            self.client.set("hpsBody", data.encode())
+            data = jsonmod.dumps(json).encode()
+            if len(data) > self.HPS_MAX_BODY_SIZE:
+                raise HpsError(f"HPS body too large: {len(data)} bytes exceeds the {self.HPS_MAX_BODY_SIZE}-byte HPS limit ({method} {endpoint})")
+            self.client.set("hpsBody", data)
         commandCode = self.METHOD_TO_CODE[method]
         self.client.set("hpsControlPoint", commandCode)
 
