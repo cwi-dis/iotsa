@@ -58,17 +58,12 @@ String IotsaLedControlMod::info() {
 #ifdef IOTSA_WITH_API
 bool IotsaLedControlMod::getHandler(const char *path, JsonObject& reply) {
   reply["rgb"] = rgb;
-  // xxxclaude temporary debug field, see iotsaLedControlMod.h. Testing #139.
-  reply["xxxclaude_pad"] = xxxclaude_pad;
   return true;
 }
 
 bool IotsaLedControlMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   uint32_t _rgb = request["rgb"]|0xffffff;
   set(_rgb, 1000, 0, 0x7fff);
-  // xxxclaude temporary debug field, see iotsaLedControlMod.h. Testing #139.
-  JsonObject reqObj = request.as<JsonObject>();
-  getFromRequest<const char *>(reqObj, "xxxclaude_pad", xxxclaude_pad);
   return true;
 }
 #endif // IOTSA_WITH_API

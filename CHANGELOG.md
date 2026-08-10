@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
-- HPS now supports chunked request *and reply* bodies up to 8192 bytes (previously hard-capped at the 512-byte BLE ATT attribute limit, with oversized writes silently corrupted), opt-in per request via a controlPoint flag bit so pre-#139 firmware and third-party HPS peers are unaffected; disable with `--hps-no-chunking` when talking to such a device (#139)
+- HPS now supports chunked request *and reply* bodies of any size (previously hard-capped at the 512-byte BLE ATT attribute limit, with oversized writes silently corrupted), opt-in per request via a controlPoint flag bit so pre-#139 firmware and third-party HPS peers are unaffected; disable with `--hps-no-chunking` when talking to such a device (#139)
 - Fix `BLELed` example never wiring up `IotsaOtaMod`, so OTA silently didn't work even though the device would happily enter/report `IOTSA_MODE_OTA` (found while investigating #174)
 - `BLELed`'s `esp32c3devkit` env now builds with `-DWITHOUT_VOLTAGE` instead of dropping the battery module entirely, keeping sleep management while avoiding the invalid VBAT/VUSB ADC pins (#175)
 - Fix `BLELed` example's `esp32c3devkit` env using GPIO15 (invalid on this board) as the NeoPixel pin, wedging the interrupt watchdog into a boot loop; onboard NeoPixel is GPIO8, now overridable per-board via `-DNEOPIXEL_PIN` instead of hardcoded (found while investigating #139)

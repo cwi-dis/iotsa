@@ -61,11 +61,6 @@ class IotsaHPSProtocolHandler(IotsaAbstractProtocolHandler):
     # (see setStreamed(), and firmware-side reassembly in iotsaApiHps.cpp) instead.
     HPS_MAX_BODY_SIZE = 512
 
-    # Chunked-write accumulation cap, matches HPSMaxAccumulatedBodySize in
-    # src/iotsaApiHps.cpp. Bodies over this size fail fast, client-side, rather than
-    # spending many round trips chunking something the device will reject anyway (#139).
-    HPS_MAX_ACCUMULATED_BODY_SIZE = 8192
-
     # Flag bit ORed into the controlPoint command byte to opt into chunked request/reply
     # handling, matches HPSControlChunkingFlag in src/iotsaApiHps.cpp. Command codes are
     # a small enum (<=4 today), so the top bit is safely free for this (#139).
@@ -87,8 +82,6 @@ class IotsaHPSProtocolHandler(IotsaAbstractProtocolHandler):
         if json != None:
             data = jsonmod.dumps(json).encode()
             if self.chunking:
-                if len(data) > self.HPS_MAX_ACCUMULATED_BODY_SIZE:
-                    raise HpsError(f"HPS body too large: {len(data)} bytes exceeds the {self.HPS_MAX_ACCUMULATED_BODY_SIZE}-byte HPS limit even chunked ({method} {endpoint})")
                 if len(data) > self.HPS_MAX_BODY_SIZE:
                     self.client.setStreamed("hpsBody", data)
                 else:
