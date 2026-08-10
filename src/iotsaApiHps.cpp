@@ -23,6 +23,12 @@ class IotsaHpsServiceMod : public IotsaMod, public IotsaBLEApiProvider {
   friend class IotsaApiServiceHps;
 
   const int HPSMaxBodySize = 512;
+  // Chunked-write accumulation cap (#139): curBody grows across multiple bodyUUID
+  // writes (each individually still under the BLE ATT 512-byte hard cap), reassembled
+  // here and finalized when controlPointUUID is written. This bounds how big a request
+  // body we're willing to accumulate before giving up (413), so a buggy/malicious
+  // client can't grow curBody without limit.
+  const size_t HPSMaxAccumulatedBodySize = 8192;
   enum HPSControl {
     NONE=0,
     GET=0x01,
@@ -61,6 +67,7 @@ protected:
   std::string curUrl;
   std::string curHeaders;
   std::string curBody;
+  bool curBodyOverflowed = false;
   HPSControl curControl;
   uint16_t curHttpStatus;
   HPSDataStatus curDataStatus;
@@ -78,12 +85,25 @@ protected:
     }
     if (charUUID == IotsaApiServiceHps::urlUUID) {
       curUrl = bleApi.getAsString(charUUID);
+      // A url write starts a new request: reset the accumulated body from any
+      // previous request (see bodyUUID handling below for the chunked-write scheme).
+      curBody = "";
+      curBodyOverflowed = false;
       IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: request url=%s\n", curUrl.c_str());
       return true;
     }
     if (charUUID == IotsaApiServiceHps::bodyUUID) {
-      curBody = bleApi.getAsString(charUUID);
-      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: request body=%s\n", curBody.c_str());
+      // Chunked writes (#139): a request body larger than one GATT write (BLE's ATT
+      // attribute-value hard cap is 512 bytes) is sent as several writes to this same
+      // characteristic. Append rather than replace; curUrl (above) clears curBody at
+      // the start of each new request, and controlPointUUID (below) finalizes it.
+      std::string chunk = bleApi.getAsString(charUUID);
+      if (curBody.size() + chunk.size() > HPSMaxAccumulatedBodySize) {
+        curBodyOverflowed = true;
+      } else {
+        curBody += chunk;
+      }
+      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: request body chunk (%d bytes, total %d)\n", (int)chunk.size(), (int)curBody.size());
       return true;
     }
     if (charUUID == IotsaApiServiceHps::headersUUID) {
@@ -142,6 +162,13 @@ protected:
 
   int _processRequest(HPSControl command) {
     IFDEBUG IotsaSerial.printf("HPS 0x%02x %s\n", (int)command, curUrl.c_str());
+    if (curBodyOverflowed) {
+      IotsaSerial.printf("IotsaHpsServiceMod: accumulated request body too large (>%d bytes)\n", (int)HPSMaxAccumulatedBodySize);
+      curDataStatus = HPSDataStatus::EMPTY;
+      curBody = "";
+      curBodyOverflowed = false;
+      return 413;
+    }
     bool cmd_get = command == HPSControl::GET;
     bool cmd_put = command == HPSControl::PUT;
     bool cmd_post = command == HPSControl::POST;

@@ -52,9 +52,15 @@ class IotsaHPSProtocolHandler(IotsaAbstractProtocolHandler):
     }
 
     # ATT attribute value hard cap (BLE spec), matches HPSMaxBodySize in src/iotsaApiHps.cpp.
-    # Bodies over this size fail an unchunked GATT write outright (see #139). This is also
-    # the branch point for a future chunked-write implementation, if/when one is added.
+    # A single GATT write can't carry more than this; bigger bodies are sent chunked
+    # (see setStreamed(), and firmware-side reassembly in iotsaApiHps.cpp) instead.
     HPS_MAX_BODY_SIZE = 512
+
+    # Chunked-write accumulation cap, matches HPSMaxAccumulatedBodySize in
+    # src/iotsaApiHps.cpp. Bodies over this size fail fast, client-side, rather than
+    # spending many round trips chunking something the device will reject anyway (#139).
+    HPS_MAX_ACCUMULATED_BODY_SIZE = 8192
+
     def request(self, method, endpoint, json=None, files=None, retryCount=5):
         assert self.client
         endpoint = self.basePath + endpoint
@@ -70,9 +76,12 @@ class IotsaHPSProtocolHandler(IotsaAbstractProtocolHandler):
         self.client.set("hpsHeaders", headers)
         if json != None:
             data = jsonmod.dumps(json).encode()
+            if len(data) > self.HPS_MAX_ACCUMULATED_BODY_SIZE:
+                raise HpsError(f"HPS body too large: {len(data)} bytes exceeds the {self.HPS_MAX_ACCUMULATED_BODY_SIZE}-byte HPS limit even chunked ({method} {endpoint})")
             if len(data) > self.HPS_MAX_BODY_SIZE:
-                raise HpsError(f"HPS body too large: {len(data)} bytes exceeds the {self.HPS_MAX_BODY_SIZE}-byte HPS limit ({method} {endpoint})")
-            self.client.set("hpsBody", data)
+                self.client.setStreamed("hpsBody", data)
+            else:
+                self.client.set("hpsBody", data)
         commandCode = self.METHOD_TO_CODE[method]
         self.client.set("hpsControlPoint", commandCode)
 

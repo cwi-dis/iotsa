@@ -140,10 +140,12 @@ class BLE:
             await client.write_gatt_char_typed(uuid, value, response=True)
 
     def setStreamed(self, name: str, value: bytes) -> None:
-        try:
-            self.loop.run_until_complete(self._asyncSetStreamed(name, value))
-        except BleakError as e:
-            print(f"ble.setStreamed({name}, ...): exception: {e}")
+        # Unlike set()/get(), don't swallow BleakError here: this sends a value in
+        # several chunks, and a failure partway through leaves the device holding a
+        # partial value. Silently continuing (e.g. on to a controlPoint write) would
+        # make the device process an incomplete body as if it were complete, so let
+        # the exception propagate and abort the whole request instead.
+        self.loop.run_until_complete(self._asyncSetStreamed(name, value))
 
     async def _asyncSetStreamed(self, name: str, value: bytes) -> None:
         uuid = name_to_uuid(name)
