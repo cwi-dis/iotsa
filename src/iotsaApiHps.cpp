@@ -98,7 +98,11 @@ protected:
       // characteristic. Append rather than replace; curUrl (above) clears curBody at
       // the start of each new request, and controlPointUUID (below) finalizes it.
       std::string chunk = bleApi.getAsString(charUUID);
-      if (curBody.size() + chunk.size() > HPSMaxAccumulatedBodySize) {
+      // Once overflowed, stop appending entirely - don't just re-check size against
+      // the (now frozen) curBody on each subsequent chunk, or a later chunk that
+      // individually still fits can slip in past ones that didn't, splicing curBody
+      // together out of order.
+      if (curBodyOverflowed || curBody.size() + chunk.size() > HPSMaxAccumulatedBodySize) {
         curBodyOverflowed = true;
       } else {
         curBody += chunk;
