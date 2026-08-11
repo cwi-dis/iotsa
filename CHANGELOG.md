@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+- Fix `/api/users` GET never including the `users` field (`iotsaUser.cpp`'s reply-building used the read-only `.as<JsonArray>()` instead of `.to<JsonArray>()`) (#168)
 - HPS now supports chunked request *and reply* bodies of any size (previously hard-capped at the 512-byte BLE ATT attribute limit, with oversized writes silently corrupted), opt-in per request via a controlPoint flag bit so pre-#139 firmware and third-party HPS peers are unaffected; disable with `--hps-no-chunking` when talking to such a device (#139)
 - Fix `BLELed` example never wiring up `IotsaOtaMod`, so OTA silently didn't work even though the device would happily enter/report `IOTSA_MODE_OTA` (found while investigating #174)
 - `BLELed`'s `esp32c3devkit` env now builds with `-DWITHOUT_VOLTAGE` instead of dropping the battery module entirely, keeping sleep management while avoiding the invalid VBAT/VUSB ADC pins (#175)

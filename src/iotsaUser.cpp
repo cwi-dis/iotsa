@@ -95,7 +95,7 @@ String IotsaUserMod::info() {
 #ifdef IOTSA_WITH_API
 bool IotsaUserMod::getHandler(const char *path, JsonObject& reply) {
   if (strcmp(path, "/api/users") == 0) {
-    JsonArray users = reply["users"].as<JsonArray>();
+    JsonArray users = reply["users"].to<JsonArray>();
     JsonObject user = users.add<JsonObject>();
     user["username"] = username;
     bool hasPassword = password.length() > 0;
