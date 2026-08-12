@@ -134,6 +134,7 @@ jobs:
         - cwi-dis/iotsaDoorOpener
         - cwi-dis/iotsaDoorbellButton
         - cwi-dis/iotsaDoorbellRinger
+        - cwi-dis/iotsaEstimotes
         - cwi-dis/iotsaGPIO
         - cwi-dis/iotsaMotorServer
         - cwi-dis/iotsaNeoClock
