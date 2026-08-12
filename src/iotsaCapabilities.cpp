@@ -1,7 +1,7 @@
 #include "iotsa.h"
 #include "iotsaCapabilities.h"
 #include "iotsaConfigFile.h"
-#include <ArduinoJWT.h>
+#include <cmArduinoJWT.h>
 #include <ArduinoJson.h>
 
 #define IFDEBUGX if(1)

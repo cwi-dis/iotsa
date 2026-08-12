@@ -28,8 +28,8 @@
             "version" : "^7.2.1"
         },
         {
-            "name" : "ArduinoJWT",
-            "version" : "https://github.com/jackjansen/ArduinoJWT"
+            "name" : "cmArduinoJWT",
+            "version" : "https://github.com/jackjansen/cmArduinoJWT"
         },
         {
             "name" : "CoAP simple library",
