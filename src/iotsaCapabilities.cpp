@@ -28,6 +28,9 @@ static bool stringContainedIn(const char *wanted, JsonVariant& got) {
 #endif
 
 // Get a scope indicator from a JSON variant
+// Only used by loadCapabilitiesFromRequest() below, which is itself
+// entirely guarded by IOTSA_WITH_HTTP_OR_HTTPS.
+#ifdef IOTSA_WITH_HTTP_OR_HTTPS
 static IotsaCapabilityObjectScope getRightFrom(const JsonVariant& arg) {
   if (!arg.is<const char*>()) return IOTSA_SCOPE_NONE;
   const char *argStr = arg.as<const char*>();
@@ -37,6 +40,7 @@ static IotsaCapabilityObjectScope getRightFrom(const JsonVariant& arg) {
   if (strcmp(argStr, "child") == 0) return IOTSA_SCOPE_CHILD;
   return IOTSA_SCOPE_NONE;
 }
+#endif
 
 bool IotsaCapability::allows(const char *_obj, IotsaApiOperation verb) {
   IotsaCapabilityObjectScope scope = scopes[int(verb)];

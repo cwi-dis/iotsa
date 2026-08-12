@@ -137,11 +137,9 @@ void IotsaBLEServerMod::createServer() {
 }
 
 void IotsaBLEServerMod::_startServer() {
-  // Start services
-  IFBLEDEBUG IotsaSerial.println("BLE start services");
-  for (IotsaBleApiService *sp = s_services; sp; sp=sp->next) {
-    sp->bleService->start();
-  }
+  // Note: services no longer need starting explicitly here -- NimBLEService::start()
+  // is now a deprecated no-op; NimBLEAdvertising::start() (called via _bleGotoMode()
+  // below) starts the GATT server itself before advertising begins.
   if (iotsaConfig.bleDisabledOnBoot) {
     iotsaConfig.bleMode = iotsa_ble_mode::IOTSA_BLE_DISABLED;
   } else {

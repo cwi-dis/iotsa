@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+- Remove dead per-service `NimBLEService::start()` loop in `IotsaBLEServerMod` (now a deprecated no-op; the GATT server is already started implicitly by `NimBLEAdvertising::start()`) and guard `iotsaCapabilities.cpp`'s `getRightFrom()` behind `IOTSA_WITH_HTTP_OR_HTTPS`, its only caller's guard (found via a full env-matrix warning sweep, #149)
 - Switch `ArduinoJWT` dependency to the `cmArduinoJWT` fork (original is unmaintained) (#184)
 - Fix `/api/users` GET never including the `users` field (`iotsaUser.cpp`'s reply-building used the read-only `.as<JsonArray>()` instead of `.to<JsonArray>()`) (#168)
 - HPS now supports chunked request *and reply* bodies of any size (previously hard-capped at the 512-byte BLE ATT attribute limit, with oversized writes silently corrupted), opt-in per request via a controlPoint flag bit so pre-#139 firmware and third-party HPS peers are unaffected; disable with `--hps-no-chunking` when talking to such a device (#139)
