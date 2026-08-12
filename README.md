@@ -714,6 +714,13 @@ A driver for NeoPixel or similar LED strips to use for theatre lighting. The ind
 
 Reads sensor values from Estimote Bluetooth LE sensors and makes these available as DMX slider values (using DMX over Art-Net over WiFi). Can be used to input sensor values into a standard theatre lighting console or software such as QLC+.
 
+### [iotsaEstimotes](http://github.com/cwi-dis/iotsaEstimotes)
+
+![build-platformio](https://github.com/cwi-dis/iotsaEstimotes/workflows/build-platformio/badge.svg)
+![build-arduino](https://github.com/cwi-dis/iotsaEstimotes/workflows/build-arduino/badge.svg)
+
+A gateway that listens for Estimote Bluetooth LE sensors and exposes their readings as REST values on the net.
+
 ### [iotsa433](http://github.com/cwi-dis/iotsa433)
 
 ![build-platformio](https://github.com/cwi-dis/iotsa433/workflows/build-platformio/badge.svg)
