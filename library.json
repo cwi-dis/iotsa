@@ -29,7 +29,8 @@
         },
         {
             "name" : "cmArduinoJWT",
-            "version" : "https://github.com/jackjansen/cmArduinoJWT"
+            "owner" : "jackjansen",
+            "version" : "^1.0.2"
         },
         {
             "name" : "CoAP simple library",
@@ -55,7 +56,8 @@
         {
             "platforms" : ["espressif32"],
             "name" : "esp32_idf5_https_server_compat",
-            "version" : "https://github.com/jackjansen/esp32_idf5_https_server_compat"
+            "owner" : "jackjansen",
+            "version" : "^1.1.1"
         }
     ],
     "examples" : [

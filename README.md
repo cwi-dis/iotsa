@@ -53,9 +53,11 @@ Iotsa can be used with both the [Arduino IDE](https://www.arduino.cc/en/main/sof
 
 ### Arduino IDE
 
-Download the zipfile (via <https://github.com/cwi-dis/iotsa>) and install into Arduino IDE with _Sketch_ -> _Include Library_ -> _Add .ZIP Library..._ . (If you downloaded the zipfile through github you may have to rename the directory because it may be called something like _iotsa___master_).
+The normal way to install iotsa is through the Arduino Library Manager: _Sketch_ -> _Include Library_ -> _Manage Libraries..._, search for _iotsa_, and install it. This also takes care of iotsa's own dependencies.
 
-Build the _Hello_ example (_File -> Examples -> iotsa -> Hello_) and flash it onto an ESP-12 or similar board.
+If you need a version that hasn't been released yet, download the zipfile (via <https://github.com/cwi-dis/iotsa>) and install into Arduino IDE with _Sketch_ -> _Include Library_ -> _Add .ZIP Library..._ instead. (If you downloaded the zipfile through github you may have to rename the directory because it may be called something like _iotsa___master_).
+
+Build the _Hello_ example (_File -> Examples -> iotsa -> Hello_) and flash it onto an ESP32-based board (or an ESP8266/ESP-12 board, such as the iotsa board -- see [Choosing hardware](#choosing-hardware) above).
 
 **Note:** the structure of the iotsa examples may be slightly different than what you are used to for Arduino examples: the `Hello.ino` file is basically empty, and the code is contained in the `mainHello.cpp` file, which is in a separate tab in the Arduino IDE.
 

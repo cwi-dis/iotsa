@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+- Replace `--git-url` fork installs (`cmArduinoJWT`, `esp32_idf5_https_server_compat`) with normal Library Manager references, now that both forks are published there (#96)
 - Remove dead per-service `NimBLEService::start()` loop in `IotsaBLEServerMod` (now a deprecated no-op; the GATT server is already started implicitly by `NimBLEAdvertising::start()`) and guard `iotsaCapabilities.cpp`'s `getRightFrom()` behind `IOTSA_WITH_HTTP_OR_HTTPS`, its only caller's guard (found via a full env-matrix warning sweep, #149)
 - Switch `ArduinoJWT` dependency to the `cmArduinoJWT` fork (original is unmaintained) (#184)
 - Fix `/api/users` GET never including the `users` field (`iotsaUser.cpp`'s reply-building used the read-only `.as<JsonArray>()` instead of `.to<JsonArray>()`) (#168)
