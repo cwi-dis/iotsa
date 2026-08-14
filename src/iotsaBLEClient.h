@@ -12,7 +12,7 @@
 #include <map>
 #include <atomic>
 
-typedef std::function<void(const BLEAdvertisedDevice&)> BleDeviceFoundCallback;
+typedef std::function<void(const NimBLEAdvertisedDevice&)> BleDeviceFoundCallback;
 typedef const char *UUIDString;
 
 class IotsaBLEClientMod : public IotsaApiMod, public NimBLEScanCallbacks {
@@ -80,7 +80,7 @@ public:
   void setUnknownDeviceFoundCallback(BleDeviceFoundCallback _callback);
   void setKnownDeviceChangedCallback(BleDeviceFoundCallback _callback);
   void setDuplicateNameFilter(bool noDuplicates);
-  void setServiceFilter(const BLEUUID& serviceUUID);
+  void setServiceFilter(const NimBLEUUID& serviceUUID);
   void setManufacturerFilter(uint16_t manufacturerID);
   //
   // If true, scanning pauses IotsaBLEServerMod's advertising for the duration
@@ -94,13 +94,13 @@ protected:
   // These are all known devices by address
   std::map<std::string, IotsaBLEClientConnection *>devicesByAddress;
   // Devices seen advertising that aren't in `devices` above -- keyed by
-  // name. Lighter-weight than IotsaBLEClientConnection (no BLEClient*, no
+  // name. Lighter-weight than IotsaBLEClientConnection (no NimBLEClient*, no
   // connect machinery) since most of these are only ever seen in passing.
   std::map<std::string, IotsaBLEDeviceInfo*> unknownDevices;
 protected:
   void configLoad();
   void configSave();
-  void onResult(const BLEAdvertisedDevice *advertisedDevice);
+  void onResult(const NimBLEAdvertisedDevice *advertisedDevice);
   void onScanEnd(const NimBLEScanResults& scanResults, int reason) override;
   void setupScanner();
   void updateScanning();
@@ -166,7 +166,7 @@ protected:
   // Only loop() (and the functions it calls: startScanning/stopScanning) may
   // write this. canConnect(), called from other tasks, only reads it -- hence
   // volatile, same reasoning as scanStoppedAtMillis above.
-  BLEScan * volatile scanner = NULL;
+  NimBLEScan * volatile scanner = NULL;
   // Set from onScanEnd(), which NimBLE calls on its own host task. Only this
   // flag is touched from that context; the actual stopScanning() call (which
   // mutates scanner/scanningMod) must stay on the single main loop() task, or
@@ -183,7 +183,7 @@ protected:
   BleDeviceFoundCallback unknownDeviceCallback = NULL;
   BleDeviceFoundCallback knownDeviceCallback = NULL;
   bool duplicateNameFilter = false;
-  BLEUUID* serviceFilter = NULL;
+  NimBLEUUID* serviceFilter = NULL;
   uint16_t manufacturerFilter;
   bool hasManufacturerFilter = false;
   bool advertisingWasPausedByScan = false;

@@ -11,11 +11,11 @@
 #endif
 
 class IotsaBLEServerCallbacks : public NimBLEServerCallbacks {
-	void onConnect(BLEServer* pServer, NimBLEConnInfo& connInfo) override {
+	void onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) override {
     IFBLEDEBUG IotsaSerial.printf("BLE connect\n");
     iotsaConfig.pauseSleep();
   }
-	void onDisconnect(BLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override {
+	void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override {
     IFBLEDEBUG IotsaSerial.printf("BLE Disconnect reason %d, restart advertising\n", reason);
     iotsaConfig.resumeSleep();
     bool ok = pServer->startAdvertising();
@@ -30,17 +30,17 @@ public:
     api(_api)
   {}
 
-	void onRead(BLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override {
+	void onRead(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override {
     IFBLEDEBUG IotsaSerial.printf("BLE char onRead %s\n", pCharacteristic->getUUID().toString().c_str());
     iotsaConfig.postponeSleep(0);
     api->bleGetHandler(charUUID);
   }
-	void onWrite(BLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override {
+	void onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override {
     IFBLEDEBUG IotsaSerial.printf("BLE char onWrite %s\n", pCharacteristic->getUUID().toString().c_str());
     iotsaConfig.postponeSleep(0);
     api->blePutHandler(charUUID);
   }
-	void onStatus(BLECharacteristic* pCharacteristic, uint32_t code) {
+	void onStatus(NimBLECharacteristic* pCharacteristic, uint32_t code) {
     iotsaConfig.postponeSleep(0);
     IFBLEDEBUG IotsaSerial.printf("BLE char onStatus\n");
   }
@@ -94,7 +94,7 @@ String IotsaBLEServerMod::info() {
 }
 #endif // IOTSA_WITH_WEB
 
-BLEServer *IotsaBLEServerMod::s_server = 0;
+NimBLEServer *IotsaBLEServerMod::s_server = 0;
 IotsaBleApiService *IotsaBLEServerMod::s_services = NULL;
 int IotsaBLEServerMod::adv_min = -1;
 int IotsaBLEServerMod::adv_max = -1;
@@ -107,11 +107,11 @@ const uint32_t ADVERTISING_RETRY_MS = 2000; // How long to wait before retrying 
 
 void IotsaBLEServerMod::_applyTxPower() {
   if (tx_power_dbm != -1) {
-    if (!BLEDevice::setPower((int8_t)tx_power_dbm)) {
+    if (!NimBLEDevice::setPower((int8_t)tx_power_dbm)) {
       IotsaSerial.printf("IotsaBLEServerMod: setPower(%d) failed (out of range for this chip?)\n", tx_power_dbm);
     }
   }
-  tx_power_dbm_actual = BLEDevice::getPower();
+  tx_power_dbm_actual = NimBLEDevice::getPower();
 }
 
 void IotsaBLEServerMod::_noteAdvertisingStartResult(bool ok, uint32_t duration) {
@@ -130,9 +130,9 @@ void IotsaBLEServerMod::createServer() {
   IFBLEDEBUG IotsaSerial.print("BLE hostname: ");
   IFBLEDEBUG IotsaSerial.println(iotsaConfig.hostName.c_str());
   iotsaBLE_ensureInitialized();
-  BLEDevice::setMTU(BLE_ATT_MTU_MAX);
+  NimBLEDevice::setMTU(BLE_ATT_MTU_MAX);
   _applyTxPower();
-  s_server = BLEDevice::createServer();
+  s_server = NimBLEDevice::createServer();
   s_server->setCallbacks(new IotsaBLEServerCallbacks());
   // NimBLE-Arduino 2.1.0 stopped advertising the device name by default, and
   // scan response is no longer enabled by default either. Turn scan response
@@ -140,7 +140,7 @@ void IotsaBLEServerMod::createServer() {
   // response payload, since scan response is enabled) so active scanners
   // (which iotsaBLEClient always is) get it back via the standard
   // advertisement + scan-response mechanism.
-  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
   pAdvertising->enableScanResponse(true);
   pAdvertising->setName(iotsaConfig.hostName.c_str());
 }
@@ -159,7 +159,7 @@ void IotsaBLEServerMod::_startServer() {
 
 void IotsaBLEServerMod::_bleGotoMode() {
   // if (s_server == nullptr) return;
-  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
   if (pAdvertising == nullptr) return;
   bool wasActive = pAdvertising->isAdvertising();
   bool isActive = iotsaConfig.bleMode == iotsa_ble_mode::IOTSA_BLE_ENABLED;
@@ -190,7 +190,7 @@ bool IotsaBLEServerMod::pauseServer() {
   // pause).
   advertisingRetryAtMillis = 0;
   if (s_server) {
-    BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+    NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
     if (pAdvertising == nullptr || !pAdvertising->isAdvertising()) return true;
     IFBLEDEBUG IotsaSerial.println("BLE pause advertising");
     pAdvertising->stop();
@@ -201,7 +201,7 @@ bool IotsaBLEServerMod::pauseServer() {
 }
 
 void IotsaBLEServerMod::resumeServer(int duration) {
-  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
   // minAdvertisingDurationMillis needs at least one full advertising cycle to
   // have a chance of being seen -- it must scale with adv_min (raw units,
   // 0.625ms each; BLE_HCI_ADV_ITVL_MIN=32 units=20ms is the legal minimum,
@@ -239,7 +239,7 @@ void IotsaBLEServerMod::setup() {
   configLoad();
   if (!isEnabled) {
     IFBLEDEBUG IotsaSerial.println("BLE deinit, not isEnabled");
-    BLEDevice::deinit(false);
+    NimBLEDevice::deinit(false);
     esp_bt_mem_release(ESP_BT_MODE_BTDM);
     return;
   }
@@ -285,7 +285,7 @@ void IotsaBLEServerMod::serverSetup() {
 }
 
 void IotsaBLEServerMod::configLoad() {
-  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
   IotsaConfigFileLoad cf("/config/bleserver.cfg");
   cf.get("isEnabled", isEnabled, true);
   cf.get("adv_min", adv_min, adv_min);
@@ -295,7 +295,7 @@ void IotsaBLEServerMod::configLoad() {
   cf.get("tx_power_dbm", tx_power_dbm, tx_power_dbm);
   _applyTxPower();
 #ifdef IOTSA_BLE_DEBUG
-  pAdvertising->setAdvertisingCompleteCallback([](BLEAdvertising* adv) {
+  pAdvertising->setAdvertisingCompleteCallback([](NimBLEAdvertising* adv) {
     IFBLEDEBUG IotsaSerial.println("BLE advertising complete callback");
   });
 #endif
@@ -307,8 +307,8 @@ void IotsaBLEServerMod::configSave() {
   cf.put("adv_min", adv_min);
   cf.put("adv_max", adv_max);
   cf.put("tx_power_dbm", tx_power_dbm);
-  if (BLEDevice::isInitialized()) {
-    BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  if (NimBLEDevice::isInitialized()) {
+    NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
     pAdvertising->stop();
     advertisingRetryAtMillis = 0; // about to explicitly restart below
     if (adv_min >= 0) pAdvertising->setMinInterval(adv_min);
@@ -330,7 +330,7 @@ void IotsaBLEServerMod::loop() {
   }
   if (advertisingRetryAtMillis != 0 && millis() >= advertisingRetryAtMillis) {
     advertisingRetryAtMillis = 0;
-    BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+    NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
     if (pAdvertising != nullptr) {
       IFBLEDEBUG IotsaSerial.println("BLE retry start advertising");
       uint32_t duration = advertisingRetryDuration;
@@ -350,7 +350,7 @@ void IotsaBleApiService::setup(const char* serviceUUID, IotsaBLEApiProvider *_ap
   IFBLEDEBUG IotsaSerial.printf("IotsaBleApiService: create ble service %s to 0x%x\n", serviceUUID, (uint32_t)apiProvider);
   bleService = IotsaBLEServerMod::s_server->createService(serviceUUID);
 
-  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(serviceUUID);
   // xxxjack wrong: if (isAdvertising) IotsaBLEServerMod::resumeServer();
 }
@@ -359,15 +359,15 @@ void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask, uint8_
   IFBLEDEBUG IotsaSerial.printf("IotsaBleApiService: add ble characteristic %s mask %d\n", charUUID, mask);
   nCharacteristic++;
   characteristicUUIDs = (UUIDstring *)realloc((void *)characteristicUUIDs, nCharacteristic*sizeof(UUIDstring));
-  bleCharacteristics = (BLECharacteristic **)realloc((void *)bleCharacteristics, nCharacteristic*sizeof(BLECharacteristic *));
+  bleCharacteristics = (NimBLECharacteristic **)realloc((void *)bleCharacteristics, nCharacteristic*sizeof(NimBLECharacteristic *));
   if (characteristicUUIDs == NULL || bleCharacteristics == NULL) {
     IotsaSerial.println("IotsaBleApiService: addCharacteristic out of memory");
     return;
   }
-  BLECharacteristic *newChar = bleService->createCharacteristic(charUUID, mask);
+  NimBLECharacteristic *newChar = bleService->createCharacteristic(charUUID, mask);
   newChar->setCallbacks(new IotsaBLECharacteristicCallbacks(charUUID, apiProvider));
-  BLEDescriptor *d2901 = newChar->createDescriptor("2901");
-  BLE2904 *d2904 = newChar->create2904();
+  NimBLEDescriptor *d2901 = newChar->createDescriptor("2901");
+  NimBLE2904 *d2904 = newChar->create2904();
   d2901->setValue(std::string(d2901descr));
   d2904->setFormat(d2904format);
   d2904->setUnit(d2904unit);
@@ -380,7 +380,7 @@ void IotsaBleApiService::set(UUIDstring charUUID, const uint8_t *data, size_t si
   IFBLEDEBUG IotsaSerial.printf("IotsaBleApiService: set(%s) len=%d\n", charUUID, size);
   for(int i=0; i<nCharacteristic; i++) {
     if (characteristicUUIDs[i] == charUUID) {
-      BLECharacteristic* ch = bleCharacteristics[i];
+      NimBLECharacteristic* ch = bleCharacteristics[i];
       ch->setValue(NULL, 0);
       ch->setValue((uint8_t *)data, size);
       if (ch->getLength() != size) {

@@ -9,11 +9,11 @@ IotsaBLEClientConnection::IotsaBLEClientConnection(std::string& _name, std::stri
   connCallbacks.owner = this;
 }
 
-void IotsaBLEClientConnection::ConnCallbacks::onConnect(BLEClient* pClient) {
+void IotsaBLEClientConnection::ConnCallbacks::onConnect(NimBLEClient* pClient) {
   IFDEBUG IotsaSerial.printf("IotsaBLEClientConnection(%s): onConnect\n", owner ? owner->getName().c_str() : "?");
 }
 
-void IotsaBLEClientConnection::ConnCallbacks::onDisconnect(BLEClient* pClient, int reason) {
+void IotsaBLEClientConnection::ConnCallbacks::onDisconnect(NimBLEClient* pClient, int reason) {
   IFDEBUG IotsaSerial.printf("IotsaBLEClientConnection(%s): onDisconnect reason=%d (%s)\n",
     owner ? owner->getName().c_str() : "?", reason, NimBLEUtils::returnCodeToString(reason));
   if (owner) {
@@ -33,12 +33,12 @@ void IotsaBLEClientConnection::ConnCallbacks::onDisconnect(BLEClient* pClient, i
 
 IotsaBLEClientConnection::~IotsaBLEClientConnection() {
   if (pClient) {
-    BLEDevice::deleteClient(pClient);
+    NimBLEDevice::deleteClient(pClient);
     pClient = nullptr;
   }
 }
 
-bool IotsaBLEClientConnection::receivedAdvertisement(const BLEAdvertisedDevice& _device) {
+bool IotsaBLEClientConnection::receivedAdvertisement(const NimBLEAdvertisedDevice& _device) {
   bool changed = IotsaBLEDeviceInfo::receivedAdvertisement(_device);
   // Seeing this device advertise at all reconfirms it's reachable, regardless
   // of whether its address happened to change.
@@ -77,7 +77,7 @@ bool IotsaBLEClientConnection::connect() {
   // for up to the owning mod's connectTimeoutMillis and must never run
   // while addressMutex is held.
   bool valid = false;
-  BLEAddress addr("", 0);
+  NimBLEAddress addr("", 0);
   if (xSemaphoreTake(addressMutex, addressMutexTimeout) != pdTRUE) {
     IotsaSerial.println("IotsaBLEClientConnection::connect: address mutex timeout, skipped");
     return false;
@@ -90,7 +90,7 @@ bool IotsaBLEClientConnection::connect() {
   if (!valid) return false;
   numConnectCalls++;
   if (pClient == nullptr) {
-    pClient = BLEDevice::createClient(addr);
+    pClient = NimBLEDevice::createClient(addr);
     // setConnectTimeout() takes milliseconds -- confirmed 2026-07-19 by
     // reading NimBLEClient.cpp's own doc comment ("The number of
     // milliseconds before timeout, default is 30 seconds", default
@@ -177,43 +177,43 @@ void IotsaBLEClientConnection::getHandler(JsonObject& reply) {
   }
 }
 
-BLERemoteCharacteristic *IotsaBLEClientConnection::_getCharacteristic(BLEUUID& serviceUUID, BLEUUID& charUUID) {
-  BLERemoteService *service = pClient->getService(serviceUUID);
+NimBLERemoteCharacteristic *IotsaBLEClientConnection::_getCharacteristic(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID) {
+  NimBLERemoteService *service = pClient->getService(serviceUUID);
   if (service == NULL) return NULL;
-  BLERemoteCharacteristic *characteristic = service->getCharacteristic(charUUID);
+  NimBLERemoteCharacteristic *characteristic = service->getCharacteristic(charUUID);
   return characteristic;
 }
 
-bool IotsaBLEClientConnection::set(BLEUUID& serviceUUID, BLEUUID& charUUID, const uint8_t *data, size_t size) {
-  BLERemoteCharacteristic *characteristic = _getCharacteristic(serviceUUID, charUUID);
+bool IotsaBLEClientConnection::set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, const uint8_t *data, size_t size) {
+  NimBLERemoteCharacteristic *characteristic = _getCharacteristic(serviceUUID, charUUID);
   if (characteristic == NULL) return false;
   if (!characteristic->canWrite()) return false;
   characteristic->writeValue(data, size);
   return true;
 }
 
-bool IotsaBLEClientConnection::set(BLEUUID& serviceUUID, BLEUUID& charUUID, uint8_t value) {
+bool IotsaBLEClientConnection::set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint8_t value) {
   return set(serviceUUID, charUUID, (const uint8_t *)&value, 1);
 }
 
-bool IotsaBLEClientConnection::set(BLEUUID& serviceUUID, BLEUUID& charUUID, uint16_t value) {
+bool IotsaBLEClientConnection::set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint16_t value) {
   return set(serviceUUID, charUUID, (const uint8_t *)&value, 2);
 }
 
-bool IotsaBLEClientConnection::set(BLEUUID& serviceUUID, BLEUUID& charUUID, uint32_t value) {
+bool IotsaBLEClientConnection::set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint32_t value) {
   return set(serviceUUID, charUUID, (const uint8_t *)&value, 4);
 }
 
-bool IotsaBLEClientConnection::set(BLEUUID& serviceUUID, BLEUUID& charUUID, const std::string& value) {
+bool IotsaBLEClientConnection::set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, const std::string& value) {
   return set(serviceUUID, charUUID, (const uint8_t *)value.c_str(), value.length());
 }
 
-bool IotsaBLEClientConnection::set(BLEUUID& serviceUUID, BLEUUID& charUUID, const String& value) {
+bool IotsaBLEClientConnection::set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, const String& value) {
   return set(serviceUUID, charUUID, (const uint8_t *)value.c_str(), value.length());
 }
 
-bool IotsaBLEClientConnection::getAsBuffer(BLEUUID& serviceUUID, BLEUUID& charUUID, uint8_t **datap, size_t *sizep) {
-  BLERemoteCharacteristic *characteristic = _getCharacteristic(serviceUUID, charUUID);
+bool IotsaBLEClientConnection::getAsBuffer(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint8_t **datap, size_t *sizep) {
+  NimBLERemoteCharacteristic *characteristic = _getCharacteristic(serviceUUID, charUUID);
   if (characteristic == NULL) return false;
   if (!characteristic->canRead()) return false;
   std::string value = characteristic->readValue();
@@ -221,7 +221,7 @@ bool IotsaBLEClientConnection::getAsBuffer(BLEUUID& serviceUUID, BLEUUID& charUU
   *sizep = value.length();
   return true;
 }
-bool IotsaBLEClientConnection::get(BLEUUID& serviceUUID, BLEUUID& charUUID, uint8_t& value) {
+bool IotsaBLEClientConnection::get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint8_t& value) {
   size_t size;
   uint8_t *ptr;
   if (!getAsBuffer(serviceUUID, charUUID, &ptr, &size)) return false;
@@ -230,7 +230,7 @@ bool IotsaBLEClientConnection::get(BLEUUID& serviceUUID, BLEUUID& charUUID, uint
   return true;
 }
 
-bool IotsaBLEClientConnection::get(BLEUUID& serviceUUID, BLEUUID& charUUID, uint16_t& value) {
+bool IotsaBLEClientConnection::get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint16_t& value) {
   size_t size;
   uint8_t *ptr;
   if (!getAsBuffer(serviceUUID, charUUID, &ptr, &size)) return false;
@@ -239,7 +239,7 @@ bool IotsaBLEClientConnection::get(BLEUUID& serviceUUID, BLEUUID& charUUID, uint
   return true;
 }
 
-bool IotsaBLEClientConnection::get(BLEUUID& serviceUUID, BLEUUID& charUUID, uint32_t& value) {
+bool IotsaBLEClientConnection::get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint32_t& value) {
   size_t size;
   uint8_t *ptr;
   if (!getAsBuffer(serviceUUID, charUUID, &ptr, &size)) return false;
@@ -248,7 +248,7 @@ bool IotsaBLEClientConnection::get(BLEUUID& serviceUUID, BLEUUID& charUUID, uint
   return true;
 }
 
-bool IotsaBLEClientConnection::get(BLEUUID& serviceUUID, BLEUUID& charUUID, std::string& value) {
+bool IotsaBLEClientConnection::get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, std::string& value) {
   size_t size;
   uint8_t *ptr;
   if (!getAsBuffer(serviceUUID, charUUID, &ptr, &size)) return false;
@@ -258,16 +258,16 @@ bool IotsaBLEClientConnection::get(BLEUUID& serviceUUID, BLEUUID& charUUID, std:
 
 static BleNotificationCallback _staticCallback;
 
-static void _staticCallbackCaller(BLERemoteCharacteristic* pBLERemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
+static void _staticCallbackCaller(NimBLERemoteCharacteristic* pBLERemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
   if (_staticCallback) _staticCallback(pData, length);
 }
 
-bool IotsaBLEClientConnection::getAsNotification(BLEUUID& serviceUUID, BLEUUID& charUUID, BleNotificationCallback callback) {
+bool IotsaBLEClientConnection::getAsNotification(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, BleNotificationCallback callback) {
   if (_staticCallback != NULL) {
     IotsaSerial.println("IotsaBLEClientConnection: only a single notification supported");
     return false;
   }
-  BLERemoteCharacteristic *characteristic = _getCharacteristic(serviceUUID, charUUID);
+  NimBLERemoteCharacteristic *characteristic = _getCharacteristic(serviceUUID, charUUID);
   if (characteristic == NULL) return false;
   if (!characteristic->canNotify()) return false;
   _staticCallback = callback;

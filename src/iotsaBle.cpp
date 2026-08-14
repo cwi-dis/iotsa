@@ -6,7 +6,7 @@ static bool s_initialized = false;
 void iotsaBLE_ensureInitialized() {
   if (s_initialized) return;
   iotsaConfig.ensureConfigLoaded();
-  BLEDevice::init(iotsaConfig.hostName.c_str());
+  NimBLEDevice::init(iotsaConfig.hostName.c_str());
   s_initialized = true;
 }
 

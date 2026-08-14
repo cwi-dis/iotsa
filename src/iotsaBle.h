@@ -8,7 +8,7 @@
 #include <NimBLEDevice.h>
 typedef const char * UUIDstring;
 
-// Idempotent: ensures BLEDevice::init() has run exactly once, regardless of
+// Idempotent: ensures NimBLEDevice::init() has run exactly once, regardless of
 // whether the server module, the client module, or both call it.
 void iotsaBLE_ensureInitialized();
 

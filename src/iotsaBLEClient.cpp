@@ -45,7 +45,7 @@ void IotsaBLEClientMod::setup() {
 
 void IotsaBLEClientMod::setupScanner() {
   // The scanner is a singleton. We initialize it once.
-  scanner = BLEDevice::getScan();
+  scanner = NimBLEDevice::getScan();
   scanner->setScanCallbacks(this, false);
   scanner->setActiveScan(true);
   scanner->setInterval(scan_interval);
@@ -237,14 +237,14 @@ void IotsaBLEClientMod::startScanning() {
   }
   // Now start the scan
   uint32_t duration = scanDurationDiscoveryMillis;
-  scanner = BLEDevice::getScan();
+  scanner = NimBLEDevice::getScan();
   scanningMod = this;
   scanStartedAtMillis = millis();
   bool startOk = scanner->start(duration);
   iotsaBLE_notifyScanningStateChanged(startOk && scanner->isScanning());
   if (!startOk) {
     scanner = nullptr;
-    IFDEBUG IotsaSerial.println("BLEClient: cannot start scan, retry in 1s");
+    IFDEBUG IotsaSerial.println("NimBLEClient: cannot start scan, retry in 1s");
     shouldUpdateScanAtMillis = millis() + SCAN_START_RETRY_MS;
     return;
   }
@@ -342,9 +342,9 @@ void IotsaBLEClientMod::setDuplicateNameFilter(bool noDuplicateNames) {
   duplicateNameFilter = noDuplicateNames;
 }
 
-void IotsaBLEClientMod::setServiceFilter(const BLEUUID& serviceUUID) {
+void IotsaBLEClientMod::setServiceFilter(const NimBLEUUID& serviceUUID) {
   if (serviceFilter) delete serviceFilter;
-  serviceFilter = new BLEUUID(serviceUUID);
+  serviceFilter = new NimBLEUUID(serviceUUID);
 }
 
 void IotsaBLEClientMod::setManufacturerFilter(uint16_t manufacturerID) {
@@ -381,7 +381,7 @@ void IotsaBLEClientMod::loop() {
   }
 }
 
-void IotsaBLEClientMod::onResult(const BLEAdvertisedDevice *advertisedDevice) {
+void IotsaBLEClientMod::onResult(const NimBLEAdvertisedDevice *advertisedDevice) {
 #ifdef DEBUG_PRINT_ALL_CLIENTS
   IotsaSerial.printf("BLEClientMod::onResult(%s, RSSI: %d)\n", advertisedDevice->toString().c_str(), advertisedDevice->getRSSI());
 #endif

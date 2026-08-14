@@ -26,7 +26,7 @@ void IotsaBLEDeviceInfo::setKnownAddress(const std::string& _address) {
     return;
   }
   if (!(addressValid && address.toString() == _address)) {
-    address = BLEAddress(_address, 0); // Public is default for address type for nimble
+    address = NimBLEAddress(_address, 0); // Public is default for address type for nimble
     addressValid = true;
   }
   xSemaphoreGive(addressMutex);
@@ -44,7 +44,7 @@ std::string IotsaBLEDeviceInfo::getAddress() {
   return rv;
 }
 
-bool IotsaBLEDeviceInfo::receivedAdvertisement(const BLEAdvertisedDevice& _device) {
+bool IotsaBLEDeviceInfo::receivedAdvertisement(const NimBLEAdvertisedDevice& _device) {
   lastSeenAtMillis = millis();
   rssi = _device.getRSSI();
   if (xSemaphoreTake(addressMutex, addressMutexTimeout) != pdTRUE) {

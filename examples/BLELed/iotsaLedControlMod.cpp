@@ -83,6 +83,6 @@ void IotsaLedControlMod::setup() {
 #ifdef IOTSA_WITH_BLE
   bleApi.setup(serviceUUID, this);
   // Explain to clients what the rgb characteristic looks like
-  bleApi.addCharacteristic(rgbUUID, BLE_READ|BLE_WRITE, BLE2904::FORMAT_UINT32, 0x2700, "RGBx color");
+  bleApi.addCharacteristic(rgbUUID, BLE_READ|BLE_WRITE, NimBLE2904::FORMAT_UINT32, 0x2700, "RGBx color");
 #endif
 }

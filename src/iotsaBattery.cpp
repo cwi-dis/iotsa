@@ -192,9 +192,9 @@ void IotsaBatteryMod::setup() {
 #endif
 #ifdef IOTSA_WITH_BLE
   bleApi.setup(serviceUUID, this);
-  bleApi.addCharacteristic(levelVBatUUID, BLE_READ, BLE2904::FORMAT_UINT8, 0x27AD, "Battery Level");
-  bleApi.addCharacteristic(levelVUSBUUID, BLE_READ, BLE2904::FORMAT_UINT8, 0x27AD, "USB Voltage Level");
-  bleApi.addCharacteristic(doSoftRebootUUID, BLE_WRITE, BLE2904::FORMAT_UINT8, 0x2700, "Reboot with WiFi");
+  bleApi.addCharacteristic(levelVBatUUID, BLE_READ, NimBLE2904::FORMAT_UINT8, 0x27AD, "Battery Level");
+  bleApi.addCharacteristic(levelVUSBUUID, BLE_READ, NimBLE2904::FORMAT_UINT8, 0x27AD, "USB Voltage Level");
+  bleApi.addCharacteristic(doSoftRebootUUID, BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "Reboot with WiFi");
 #endif
   iotsaConfig.setExtensionCallback(std::bind(&IotsaBatteryMod::extendCurrentMode, this));
 }

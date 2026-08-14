@@ -14,7 +14,7 @@
 // (RSSI, when we last saw it). IotsaBLEClientConnection (connectable, known
 // devices) extends this with the heavier connect/disconnect machinery --
 // kept separate so devices we're only passively observing (e.g. results of
-// an "unknown devices" scan) don't pay for a BLEClient* and a mutex they'll
+// an "unknown devices" scan) don't pay for a NimBLEClient* and a mutex they'll
 // never use.
 class IotsaBLEDeviceInfo {
 public:
@@ -33,7 +33,7 @@ public:
   // Records a freshly-seen advertisement: updates rssi and lastSeenAtMillis
   // unconditionally, address only if it changed. Returns true iff the
   // address changed (including going from unknown to known).
-  virtual bool receivedAdvertisement(const BLEAdvertisedDevice& _device);
+  virtual bool receivedAdvertisement(const NimBLEAdvertisedDevice& _device);
   // Adds name/address/rssi/lastSeenMillisAgo to reply (the last two only if
   // we've ever actually seen an advertisement). Subclasses extend this
   // (calling it first) to add their own fields.
@@ -55,7 +55,7 @@ protected:
   // can't block the hardware watchdog -- worst case is a skipped update this
   // cycle, not a wedged device.
   SemaphoreHandle_t addressMutex;
-  BLEAddress address;
+  NimBLEAddress address;
   bool addressValid;
   int rssi = 0;
   uint32_t lastSeenAtMillis = 0;

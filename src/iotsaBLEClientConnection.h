@@ -17,7 +17,7 @@ class IotsaBLEClientConnection : public IotsaBLEDeviceInfo {
 public:
   IotsaBLEClientConnection(std::string& _name, std::string _address="");
   ~IotsaBLEClientConnection();
-  bool receivedAdvertisement(const BLEAdvertisedDevice& _device) override;
+  bool receivedAdvertisement(const NimBLEAdvertisedDevice& _device) override;
   void clearDevice();
   bool available();
   bool connect();
@@ -34,18 +34,18 @@ public:
   // as not-connected). Callers should hold off calling connect() while this
   // is true.
   bool isDisconnecting();
-  bool set(BLEUUID& serviceUUID, BLEUUID& charUUID, const uint8_t *data, size_t size);
-  bool set(BLEUUID& serviceUUID, BLEUUID& charUUID, uint8_t value);
-  bool set(BLEUUID& serviceUUID, BLEUUID& charUUID, uint16_t value);
-  bool set(BLEUUID& serviceUUID, BLEUUID& charUUID, uint32_t value);
-  bool set(BLEUUID& serviceUUID, BLEUUID& charUUID, const std::string& value);
-  bool set(BLEUUID& serviceUUID, BLEUUID& charUUID, const String& value);
-  bool get(BLEUUID& serviceUUID, BLEUUID& charUUID, uint8_t& value);
-  bool get(BLEUUID& serviceUUID, BLEUUID& charUUID, uint16_t& value);
-  bool get(BLEUUID& serviceUUID, BLEUUID& charUUID, uint32_t& value);
-  bool get(BLEUUID& serviceUUID, BLEUUID& charUUID, std::string& value);
-  bool getAsBuffer(BLEUUID& serviceUUID, BLEUUID& charUUID, uint8_t **datap, size_t *sizep);
-  bool getAsNotification(BLEUUID& serviceUUID, BLEUUID& charUUID, BleNotificationCallback callback);
+  bool set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, const uint8_t *data, size_t size);
+  bool set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint8_t value);
+  bool set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint16_t value);
+  bool set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint32_t value);
+  bool set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, const std::string& value);
+  bool set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, const String& value);
+  bool get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint8_t& value);
+  bool get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint16_t& value);
+  bool get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint32_t& value);
+  bool get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, std::string& value);
+  bool getAsBuffer(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint8_t **datap, size_t *sizep);
+  bool getAsNotification(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, BleNotificationCallback callback);
   // Adds connect-specific fields (on top of the base class's
   // name/address/rssi/lastSeenMillisAgo) to reply: lastConnectAttemptMillisAgo,
   // numConnectCalls, numConnectSkipped, numConnectAttempts, numConnectFailed,
@@ -58,15 +58,15 @@ protected:
   // so scanning can be held off while any connection is being established --
   // connections take priority over scanning.
   IotsaBLEClientMod* owner = nullptr;
-  BLERemoteCharacteristic *_getCharacteristic(BLEUUID& serviceUUID, BLEUUID& charUUID);
-  BLEClient* pClient = nullptr;
+  NimBLERemoteCharacteristic *_getCharacteristic(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID);
+  NimBLEClient* pClient = nullptr;
   // Registered on pClient so we get told when a disconnect actually
   // completes (not just when we ask for one) -- see isDisconnecting().
-  class ConnCallbacks : public BLEClientCallbacks {
+  class ConnCallbacks : public NimBLEClientCallbacks {
   public:
     IotsaBLEClientConnection *owner = nullptr;
-    void onConnect(BLEClient* pClient) override;
-    void onDisconnect(BLEClient* pClient, int reason) override;
+    void onConnect(NimBLEClient* pClient) override;
+    void onDisconnect(NimBLEClient* pClient, int reason) override;
   };
   ConnCallbacks connCallbacks;
   // False from the moment disconnect() issues pClient->disconnect() until

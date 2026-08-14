@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+- Use real `NimBLE*` class names throughout iotsa's own source instead of NimBLE-Arduino's `BLE*` Arduino-BLE compat aliases (#185)
 - Replace `--git-url` fork installs (`cmArduinoJWT`, `esp32_idf5_https_server_compat`) with normal Library Manager references, now that both forks are published there (#96)
 - Fix `IotsaBLEServerMod`'s tx power config using a stale NimBLE-Arduino enum-index scale while calling an API that has taken raw dBm since NimBLE-Arduino 2.1.0 (same call signature, so it compiled but silently meant something else); renamed `tx_power` to `tx_power_dbm`, split into a user-settable requested value (`tx_power_dbm`, `-1` sentinel persists indefinitely) and a read-only actual value (`tx_power_dbm_actual`, read back via `getPower()`); verified on real ESP32-C3 hardware against observed BLE RSSI (#164)
 - `BLELed`'s `esp32c3devkit`/`withble` *test* env variant (`tests/BLELed/iotsa-build.json`, used by CI board coverage) was missing the `-DNEOPIXEL_PIN=8 -DWITHOUT_VOLTAGE` fix already applied to the `example` variant, so it still wedged the interrupt watchdog into a boot loop on real hardware (found while hardware-testing #164)

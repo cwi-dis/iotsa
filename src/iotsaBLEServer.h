@@ -56,10 +56,10 @@ public:
   std::string getAsString(UUIDstring charUUID);
 protected:
   IotsaBLEApiProvider *apiProvider;
-  BLEService *bleService;
+  NimBLEService *bleService;
   int nCharacteristic;
   UUIDstring  *characteristicUUIDs;
-  BLECharacteristic **bleCharacteristics;
+  NimBLECharacteristic **bleCharacteristics;
   IotsaBleApiService *next;
 };
 
@@ -100,7 +100,7 @@ protected:
   void handler();
 
   static void createServer();
-  static BLEServer *s_server;
+  static NimBLEServer *s_server;
   static IotsaBleApiService *s_services;
 
   static int adv_min;  // Minimum advertising interval (-1: default)
