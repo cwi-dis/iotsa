@@ -18,7 +18,7 @@ Note that the build badges above are for the [develop branch](https://github.com
 
 ## Choosing hardware
 
-For new projects, the recommended hardware is any modern **ESP32-based board**. Pick a board that suits your project's form factor and power requirements and use the matching `[env:...]` in `platformio.ini`.
+For new projects, the recommended hardware is any modern **ESP32-based board**. Pick a board that suits your project's form factor and power requirements and use the matching `[env:...]` in `platformio.ini`. Esp32 variants (like esp32c3) are somewhat supported, see the table below.
 
 **Flash size and OTA:** Over-the-air programming requires enough flash to hold two copies of the firmware plus the LittleFS filesystem. On a 4 MB board this generally works, but including large features like BLE can push firmware size up. Common workarounds:
 - Use a `min_spiffs.csv` partition layout — reduces LittleFS space but keeps OTA.
@@ -61,6 +61,8 @@ Build the _Hello_ example (_File -> Examples -> iotsa -> Hello_) and flash it on
 
 **Note:** the structure of the iotsa examples may be slightly different than what you are used to for Arduino examples: the `Hello.ino` file is basically empty, and the code is contained in the `mainHello.cpp` file, which is in a separate tab in the Arduino IDE.
 
+Using the `arduino-cli` tool is supported too.
+
 ### PlatformIO
 
 The _iotsa_ library is known to the PlatformIO library manager, so simply adding it to your _platformio.ini_ file should do the trick for adding the iotsa framework to your project..
@@ -77,7 +79,7 @@ $ platformio run --target upload
 
 ### Both Arduino IDE and PlatformIO
 
-On reboot, the board will first initialize the SPIFFS flash filesystem (if needed) and then create a WiFi network with a name similar to _config-iotsa1234_. Connect a device to that network and visit <http://192.168.4.1>. Configure your device name (at <http://192.168.4.1/config>) and WiFi name and password (at <http://192.168.4.1/wificonfig>), and after reboot the iotsa board should connect to your network and be visible as <http://yourdevicename.local>.
+On reboot, the board will first initialize the LittleFS flash filesystem (if needed) and then create a WiFi network with a name similar to _config-iotsa1234_. Connect a device to that network and visit <http://192.168.4.1>. Configure your device name (at <http://192.168.4.1/config>) and WiFi name and password (at <http://192.168.4.1/wificonfig>), and after reboot the iotsa board should connect to your network and be visible as <http://yourdevicename.local>.
 
 When the device is running normally you can visit <http://yourdevicename.local/config> and request the device to go into configuration mode, or to do a factory reset. After requesting this you have a few minutes to power cycle the device to make it go into configuration mode again (see previous paragraph) or do a complete factory reset. When in configuration mode you have a few minutes to change the configuration (device name, WiFi name, password, maybe other parameters) before the device reverts to normal operation. The idea behind this sequence (_request configuration mode_, then _power cycle_, then _change parameters_) is that you need both network acccess and physical access before you can do a disruptive operation on the device.
 
