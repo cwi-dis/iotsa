@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+- Remove the `espressif32@6.9` pin; re-verified on real hardware that the espressif32 7.x coredump-partition boot loop this worked around no longer reproduces (#112)
 - `library.json`: pin `ESP32Encoder` to `^5.0.0` instead of a raw git URL leftover from before it was registered (#186)
 - Use real `NimBLE*` class names throughout iotsa's own source instead of NimBLE-Arduino's `BLE*` Arduino-BLE compat aliases (#185)
 - Replace `--git-url` fork installs (`cmArduinoJWT`, `esp32_idf5_https_server_compat`) with normal Library Manager references, now that both forks are published there (#96)
