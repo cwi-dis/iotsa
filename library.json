@@ -45,7 +45,7 @@
             "platforms" : ["espressif32"],
             "owner" : "madhephaestus",
             "name" : "ESP32Encoder",
-            "version" : "https://github.com/madhephaestus/ESP32Encoder"
+            "version" : "^5.0.0"
         },
         {
             "platforms" : ["espressif32"],
