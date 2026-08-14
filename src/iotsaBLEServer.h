@@ -105,7 +105,17 @@ protected:
 
   static int adv_min;  // Minimum advertising interval (-1: default)
   static int adv_max;  // Maximum advertising interval (-1: default)
-  static int tx_power; // Transmit power. -1: default. 0: -12dB. Then 3dB per increment until 7: +9dB.
+  // Requested transmit power in raw dBm, passed to NimBLEDevice::setPower().
+  // -1: don't request a level, use whatever NimBLE/hardware defaults to.
+  // User/REST/web-settable, persisted verbatim -- _applyTxPower() never
+  // modifies this, so the -1 sentinel survives indefinitely (unlike
+  // tx_power_dbm_actual below).
+  static int tx_power_dbm;
+  // Actual transmit power in raw dBm, as read back via NimBLEDevice::getPower()
+  // after every _applyTxPower() call (valid dBm ranges differ per ESP32
+  // variant, so this is what's really in effect, not just what was asked
+  // for). Read-only -- not settable via REST/web, not persisted to flash.
+  static int tx_power_dbm_actual;
   // 0 means no retry pending. Set by _noteAdvertisingStartResult() on
   // failure, cleared by it on success and by any intentional stop/pause
   // (so a retry never fights an explicit pause). loop() is the only reader.
@@ -115,6 +125,10 @@ protected:
 private:
   void _startServer();
   static void _bleGotoMode();
+  // Applies tx_power_dbm via NimBLEDevice::setPower() (unless it's -1), then
+  // sets tx_power_dbm_actual to the level read back via getPower() -- see
+  // the field comments above.
+  static void _applyTxPower();
 };
 #else // IOTSA_WITH_BLE
 class IotsaBLEApiProvider {};

@@ -23,7 +23,9 @@
       "board": "esp32c3devkit",
       "label": "withble",
       "build_flags": [
-        "-DIOTSA_WITH_BLE"
+        "-DIOTSA_WITH_BLE",
+        "-DNEOPIXEL_PIN=8",
+        "-DWITHOUT_VOLTAGE"
       ]
     },
     {
