@@ -787,6 +787,7 @@ The 3D-printable case for a iotsa board is also available at Thingyverse: <http:
 
 Notes to self, mainly, on creating a new release:
 
+- Cleanup `CHANGELOG.md`.
 - Update version number in `library.properties` and `library.json`.
 - Run
 

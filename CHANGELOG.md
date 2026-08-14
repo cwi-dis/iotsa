@@ -7,56 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
-- Remove the `espressif32@6.9` pin; re-verified on real hardware that the espressif32 7.x coredump-partition boot loop this worked around no longer reproduces (#112)
-- `library.json`: pin `ESP32Encoder` to `^5.0.0` instead of a raw git URL leftover from before it was registered (#186)
-- Use real `NimBLE*` class names throughout iotsa's own source instead of NimBLE-Arduino's `BLE*` Arduino-BLE compat aliases (#185)
-- Replace `--git-url` fork installs (`cmArduinoJWT`, `esp32_idf5_https_server_compat`) with normal Library Manager references, now that both forks are published there (#96)
-- Fix `IotsaBLEServerMod`'s tx power config using a stale NimBLE-Arduino enum-index scale while calling an API that has taken raw dBm since NimBLE-Arduino 2.1.0 (same call signature, so it compiled but silently meant something else); renamed `tx_power` to `tx_power_dbm`, split into a user-settable requested value (`tx_power_dbm`, `-1` sentinel persists indefinitely) and a read-only actual value (`tx_power_dbm_actual`, read back via `getPower()`); verified on real ESP32-C3 hardware against observed BLE RSSI (#164)
-- `BLELed`'s `esp32c3devkit`/`withble` *test* env variant (`tests/BLELed/iotsa-build.json`, used by CI board coverage) was missing the `-DNEOPIXEL_PIN=8 -DWITHOUT_VOLTAGE` fix already applied to the `example` variant, so it still wedged the interrupt watchdog into a boot loop on real hardware (found while hardware-testing #164)
-- Remove dead per-service `NimBLEService::start()` loop in `IotsaBLEServerMod` (now a deprecated no-op; the GATT server is already started implicitly by `NimBLEAdvertising::start()`) and guard `iotsaCapabilities.cpp`'s `getRightFrom()` behind `IOTSA_WITH_HTTP_OR_HTTPS`, its only caller's guard (found via a full env-matrix warning sweep, #149)
-- Switch `ArduinoJWT` dependency to the `cmArduinoJWT` fork (original is unmaintained) (#184)
-- Fix `/api/users` GET never including the `users` field (`iotsaUser.cpp`'s reply-building used the read-only `.as<JsonArray>()` instead of `.to<JsonArray>()`) (#168)
-- HPS now supports chunked request *and reply* bodies of any size (previously hard-capped at the 512-byte BLE ATT attribute limit, with oversized writes silently corrupted), opt-in per request via a controlPoint flag bit so pre-#139 firmware and third-party HPS peers are unaffected; disable with `--hps-no-chunking` when talking to such a device (#139)
-- Fix `BLELed` example never wiring up `IotsaOtaMod`, so OTA silently didn't work even though the device would happily enter/report `IOTSA_MODE_OTA` (found while investigating #174)
-- `BLELed`'s `esp32c3devkit` env now builds with `-DWITHOUT_VOLTAGE` instead of dropping the battery module entirely, keeping sleep management while avoiding the invalid VBAT/VUSB ADC pins (#175)
-- Fix `BLELed` example's `esp32c3devkit` env using GPIO15 (invalid on this board) as the NeoPixel pin, wedging the interrupt watchdog into a boot loop; onboard NeoPixel is GPIO8, now overridable per-board via `-DNEOPIXEL_PIN` instead of hardcoded (found while investigating #139)
-- `/api/config`'s `modules` now only lists modules with a REST/CoAP/HPS API (matching what `iotsa allInfo`/`backup`/`restore` can actually query); modules without one (`ota`, `files`, `filesbackup`, `filesupload`, `input`, `led`, `logger` — previously missing from `modules` entirely) now show up in a new `modulesNoApi` list instead; mDNS TXT records only advertise the API-having set; add `wifi`/`web` to `features`, drop the `IOTSA_WITH_OTA` check there (the macro was never actually defined, so it never fired) (#173)
-- Expose filesystem usage (`fsTotalBytes`/`fsUsedBytes`) in `/api/config` and the `/config` web page (#110)
-- Fix `iotsa restore` trying to write back the read-only `fsTotalBytes`/`fsUsedBytes` fields added by #110
-- Fix BLE client endlessly rescanning already-known, fully-addressed devices (#172)
-- Fix BLE client discarding a known device's address on a single failed connect attempt, forcing a costly rediscovery scan instead of a quick retry, and now actually triggers that rescan (#172)
-- Replace `IotsaBLEClientConnection`'s REST connect/disconnect counters (`numSuccessfulConnections`, `numFailedConnectionAttempts`) with a fully-accounted set (`numConnectCalls`, `numConnectSkipped`, `numConnectAttempts`, `numConnectFailed`, `numConnectSucceeded`, `numConnectionOpen`, `numConnectionFailed`, `numConnectionClosedLocally`) so a device's connect/disconnect history can be diagnosed from REST alone, without serial access
-- Fix unassigned BLE devices' last-seen/RSSI silently freezing after first sighting (#171)
-- Migrate Python packaging from `setup.py` to `pyproject.toml`; `requires-python` now `>=3.12` (#103)
-- Unify version string format everywhere to `<version>+sha.<hash>`, dropping the inconsistent tag-distance shape (#169)
-- Fix `rebootWifi=1` dropping the BLE write response on reboot (#130)
-- Fix unknown/unassigned BLE devices never surfacing in the web UI or REST API (#165)
-- Removed the non-NimBLE (ESP32 BLE Arduino) BLE build path; NimBLE is now the only supported BLE stack (#150)
-- `pip install -e extras/python` now regenerates the version string from git, so `iotsa --version` reflects the installed commit instead of a stale hardcoded value
-- Fix `dfu info`/`jsoninfo` crashing on ESP8266; partition-based `dfu` commands now give a clear error instead of a confusing one on that chip family (#148)
-- Allow setting CPU speed to conserve battery (#98)
-- Added workaround for some esp32c3 boards (#99)
-- Show WiFi MAC address when in config or factory mode (#102)
-- Fix `bleTargets` showing UUIDs instead of device names on macOS (#111)
-- Document `--protocol hps` in help text
-- Fix wificonfig reporting empty SSID when WiFi disabled on boot
-- Fix allInfo crashing on 404 from hps module; hps now returns empty REST response
-- Fix `iotsa networks` broken on macOS since airport tool removed; now uses CoreWLAN with wifi-cli fallback (#97)
-- Add `backup` and `restore` commands to save/restore all module configs as JSON files
-- Rework `dfu` as subcommands (`dfu info`, `dfu flash`, `dfu backup`, `dfu flashfs`, `dfu lsfs`, `dfu extractfs`, etc.); add partition-table awareness, LittleFS read support, and OTA slot management (`dfu otainfo`, `dfu otaset`, `dfu otaclear`)
-- Fix ESP8266 builds broken by unguarded ESP32-only battery/WiFi calls (#135)
-- Refuse `--ssid` WiFi switch when it would drop the only internet route, unless `--force` (#129)
-- Fix `--ssid` reporting success before the WiFi join actually completes, and before confirming it's genuinely the requested config AP (#126)
-- Add `--baud` option for DFU serial connections (some boards need a non-default rate)
-- Ported over BLEClient, fixed discovery and connection issues (#145)
-- Rationalized BLE-related timing settings (#146)
-- Completed the BLE timing-settings audit (#147)
-- Fix `nodemcuv2-example-bleled` build, which forced `IOTSA_WITH_BLE` on ESP8266 where BLE isn't available (#149)
-- Bump ArduinoJson dependency 7.2.1 → 7.4.3 (#149)
-- Rationalized examples/tests/CI build matrix into a single generated source of truth (#156)
+## added
+
 - Added FileShare example: upload a file over HTTP and fetch it back (#156)
-- HTTPS on ESP8266 found unreliable in practice (near-minute request latency, intermittent crashes); added a build-time `#warning`, dropped it from the Hello* examples' ESP8266 build (#159)
-- Fix generated per-example `platformio.ini` missing `lib_compat_mode=strict`, which could make standalone builds try to compile bundled example sketches from dependencies like Adafruit NeoPixel
+- Added BLEClient module (#145)
+- iotsa command line tool commands added: dfu, backup, restore)
+- Requests/replies larger than 512 bytes with HPS over BLE (#139)
+
+## changed
+
+- Fix ESP8266 builds broken by unguarded ESP32-only battery/WiFi calls (#135)
+- Many BLE-related fixes/changes/extensions (#146, #147, #165, #130, #171, #172, #164)
+- Dependencies updated and fixed (#149)
+- Rationalized building with iotsa-config.json (#156)
+- fixes to iotsa command line tool, Python package (#126, #129, #97, #111, #103)
+- fixes for esp32c3 (#99)
+- version strings unified (#169)
+- Various REST structures rationalized (#173, #164)
+
+## removed
+
+- ESP8266 HTTPS support (#159)
+- BLE support without NimBLE (#150)
 
 ## [2.8.1] - 2025-05-04
 
