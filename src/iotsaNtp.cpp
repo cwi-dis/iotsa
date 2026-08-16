@@ -183,7 +183,7 @@ bool IotsaNtpMod::putHandler(const char *path, const JsonVariant& request, JsonO
 #ifdef IOTSA_WITH_TIMEZONE
   String newTz;
   if (getFromRequest<const char *>(reqObj, "tzDescription", newTz)) {
-    String newTz = reqObj["tzDescription"].as<String>();
+    parseTimezone(newTz);
     anyChanged = true;
   }
 #else
