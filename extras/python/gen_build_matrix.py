@@ -30,6 +30,7 @@ BOARD_INFO = {
     "esp32c3devkit":    {"pio_board": "esp32-c3-devkitm-1",    "fqbn": None},
     "esp32c3lcd":       {"pio_board": "esp32-c3-devkitm-1",    "fqbn": None},
     "esp32c3supermini": {"pio_board": "esp32-c3-devkitm-1",    "fqbn": None},
+    "crowpanel128":     {"pio_board": "esp32-c3-devkitm-1",    "fqbn": None},
 }
 
 

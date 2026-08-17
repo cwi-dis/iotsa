@@ -21,6 +21,13 @@
         "platformio": true,
         "arduino": false
       }
+    },
+    {
+      "board": "esp32c3supermini",
+      "ci": {
+        "platformio": true,
+        "arduino": false
+      }
     }
   ]
 }

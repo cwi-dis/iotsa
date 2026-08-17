@@ -77,6 +77,87 @@ $ platformio run --target build
 $ platformio run --target upload
 ```
 
+### Supporting a new board
+
+There are three tiers of "a board works with iotsa", depending on how much investment
+it deserves.
+
+**1. One-off: does this one example build for this one board?** Fully throwaway --
+touches nothing outside the example's own directory. Every example already has its own
+generated `platformio.ini` (see above); if the one you need doesn't have one yet,
+generate a starting point first:
+
+```
+$ python3 extras/python/gen_build_matrix.py --format=standalone-ini \
+    --dir=examples/<Example> -o examples/<Example>/platformio.ini
+```
+
+Then hand-add a scratch `[env:...]` section to that file. It does **not** extend
+anything from the toplevel `platformio.ini` -- each example's own `platformio.ini` is
+self-contained -- so spell out `platform`, `board`, and any `build_flags` /
+`board_build.partitions` directly:
+
+```ini
+[env:quicktest]
+extends = common
+platform = espressif32
+board = esp32-c3-devkitm-1
+build_flags = -DESP32C3 -DWITH_ROUNDLCD_DISPLAY
+board_build.partitions = min_spiffs.csv
+```
+
+```
+$ cd examples/<Example>
+$ pio run -e quicktest
+```
+
+When done, discard the scratch section (`git checkout -- examples/<Example>/platformio.ini`,
+or simply don't `git add` it). If the actual fix under test lived in `src/`, that is a
+normal, separate change to commit -- only the throwaway env section needs undoing.
+
+**2. First-class citizen: fully covered by CI.** For a board other iotsa apps are
+expected to build against routinely, worth catching regressions on for every push:
+
+- Add a `[boardname]` section to the toplevel `platformio.ini`, extending the right
+  per-processor section (`esp32`, `esp32c3`, `esp32c3cdc`, `esp8266`, ...; add a new
+  per-processor section too if this is a genuinely new chip family).
+- Add the board to `BOARD_INFO` in `extras/python/gen_build_matrix.py` (its `pio_board`
+  id, and `fqbn` if it is arduino-cli-buildable). **Easy to forget, and forgetting it
+  fails quietly:** `emit_platformio_ini`/`emit_github_matrix` just print a
+  `warning: unknown board ... skipping` to stderr and drop the env, rather than
+  erroring. (Only `emit_standalone_ini`, used in tiers 1 and 3, hard-fails with a
+  `KeyError` on an unknown board -- if you hit that, this is the fix.)
+- Add a variant entry for the board to `iotsa-build.json` in every example (and test)
+  you want it covered for.
+- Regenerate the generated files and commit them alongside the source changes:
+
+```
+$ python3 extras/python/gen_build_matrix.py --format=platformio-ini -o generated_envs.ini
+$ python3 extras/python/gen_build_matrix.py --format=standalone-ini \
+    --dir=examples/<Example> -o examples/<Example>/platformio.ini   # for each touched example
+```
+
+- Build the new env(s) to confirm before committing, e.g. `pio run -e <boardname>-example-<Example>`.
+
+**3. Second-class citizen: defined, but not in CI.** For a board close enough to an
+existing CI-covered one that it does not need its own automated build, but where future
+iotsa *applications* will target it and should have a correct, already-verified board
+definition to start from. Do the first two steps from tier 2 (the `platformio.ini`
+section and the `BOARD_INFO` entry), but skip the `iotsa-build.json` step -- that is
+what keeps it out of `generated_envs.ini` and the CI matrix. Verify it once using tier
+1's throwaway single-example recipe, then commit just the board section and the
+`BOARD_INFO` entry.
+
+Worth knowing either way: this toplevel `platformio.ini` only governs building *iotsa's
+own* examples/tests as a project. Downstream application repos (`iotsaNeoClock`,
+the `lissabon` apps, etc.) never reference these `[boardname]` sections -- they pull in
+iotsa only as a `lib_deps` library, and each app repo defines its own board section(s)
+from scratch in its own `platformio.ini` (see e.g. `iotsaNeoClock`'s
+`[esp32c3]`/`[env:crowpanel128]`). So a tier-2 or tier-3 section here is not
+automatically "used" by an app; it exists as the canonical, working reference an app
+author copies pin/flag choices from, and as what keeps iotsa's own example/test builds
+honest for that board.
+
 ### Both Arduino IDE and PlatformIO
 
 On reboot, the board will first initialize the LittleFS flash filesystem (if needed) and then create a WiFi network with a name similar to _config-iotsa1234_. Connect a device to that network and visit <http://192.168.4.1>. Configure your device name (at <http://192.168.4.1/config>) and WiFi name and password (at <http://192.168.4.1/wificonfig>), and after reboot the iotsa board should connect to your network and be visible as <http://yourdevicename.local>.
