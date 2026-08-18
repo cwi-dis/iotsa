@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `gen_build_matrix.py`: an example's own `build_flags` silently overwrote its board's inherited ones instead of merging (#194)
 - `IotsaBatteryMod` hibernate sleep failed to build on ESP32-S3/-C3 (Arduino IDE only) -- those chips lack the RTC slow/fast memory power domains it unconditionally referenced (#194)
 - `esp32s3supermini` Arduino IDE builds could exceed the default 1.2MB partition scheme (e.g. the Button example); 14 examples were missing the same `min_spiffs.csv` override their `esp32thing` variant already needed (#194)
+- `IOTSA_WITH_BLE` combined with `IOTSA_WITHOUT_WEB` failed to build: `IotsaBLEClientMod`/`IotsaBLEServerMod`/`IotsaHpsServiceMod` declared web-only members without the `IOTSA_WITH_WEB` guard their base class uses, and the API-support consistency check didn't recognize HPS as a valid transport alongside REST/COAP (#194)
 
 - Fix NTP time never syncing on ESP32 (timezone was set but SNTP was never actually started)
 

@@ -26,10 +26,14 @@ public:
   virtual void serverSetup() override;
   virtual void handler();
   virtual void formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig);
+#ifdef IOTSA_WITH_WEB
   virtual bool formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig);
+#endif
 
   virtual void loop() override;
+#ifdef IOTSA_WITH_WEB
   virtual String info() override { return ""; }
+#endif
   //
   // Interfaces for use by subclasses (or other classes with a reference)
   // to control which BLE devices are known by this class
