@@ -7,7 +7,8 @@
 class IotsaRequest : public IotsaApiModObject {
 public:
   IotsaRequest() : url(""), sslInfo(""), credentials(""), token("") {}
-  bool send(const char *query=NULL);
+  // responseBody, if non-NULL, is filled in with the HTTP response body on a successful GET.
+  bool send(const char *query=NULL, String *responseBody=NULL);
   bool configLoad(IotsaConfigFileLoad& cf, const String& f_name) override;
   void configSave(IotsaConfigFileSave& cf, const String& f_name) override;
 #ifdef IOTSA_WITH_WEB

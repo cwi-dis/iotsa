@@ -118,7 +118,7 @@ bool IotsaRequest::formHandler_args(IotsaWebServer *server, const String& name, 
 }
 #endif // IOTSA_WITH_WEB
 
-bool IotsaRequest::send(const char *query) {
+bool IotsaRequest::send(const char *query, String *responseBody) {
   bool rv = true;
   WiFiClient client;
 #ifdef ESP32
@@ -169,11 +169,13 @@ bool IotsaRequest::send(const char *query) {
       http.addHeader("Authorization", "Basic " + cred64);
     }
     int code = http.GET();
-    http.end();
     if (code >= 200 && code <= 299) {
       IFDEBUG IotsaSerial.print(code);
       IFDEBUG IotsaSerial.print(" OK GET ");
       IFDEBUG IotsaSerial.println(_url);
+      if (responseBody != NULL) {
+        *responseBody = http.getString();
+      }
     } else {
       IFDEBUG IotsaSerial.print(code);
       IFDEBUG IotsaSerial.print(" FAIL GET ");
@@ -192,6 +194,7 @@ bool IotsaRequest::send(const char *query) {
 
       rv = false;
     }
+    http.end();
   }
 #ifndef ESP32
   if (secureClientPtr) delete secureClientPtr;
