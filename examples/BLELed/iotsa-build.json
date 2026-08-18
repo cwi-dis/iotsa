@@ -20,6 +20,13 @@
         "-DNEOPIXEL_PIN=8",
         "-DWITHOUT_VOLTAGE"
       ]
+    },
+    {
+      "board": "esp32s3supermini",
+      "ci": {
+        "platformio": true,
+        "arduino": true
+      }
     }
   ]
 }

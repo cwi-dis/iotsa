@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- ESP32-S3 SuperMini board support (`esp32s3supermini`), covered by CI (#194)
+
 ### Fixed
 
 - Fix NTP time never syncing on ESP32 (timezone was set but SNTP was never actually started)

@@ -119,7 +119,7 @@ normal, separate change to commit -- only the throwaway env section needs undoin
 expected to build against routinely, worth catching regressions on for every push:
 
 - Add a `[boardname]` section to the toplevel `platformio.ini`, extending the right
-  per-processor section (`esp32`, `esp32c3`, `esp32c3cdc`, `esp8266`, ...; add a new
+  per-processor section (`esp32`, `esp32c3`, `esp32c3jtag`, `esp8266`, ...; add a new
   per-processor section too if this is a genuinely new chip family).
 - Add the board to `BOARD_INFO` in `extras/python/gen_build_matrix.py` (its `pio_board`
   id, and `fqbn` if it is arduino-cli-buildable). **Easy to forget, and forgetting it
