@@ -23,7 +23,7 @@ public:
   bool putHandler(const JsonVariant& request) override;
 #endif
   String url;
-  String sslInfo;
+  String sslInfo; // PEM root CA cert for https:// urls (both ESP32 and ESP8266)
   String credentials;
   String token;
 };

@@ -7,11 +7,9 @@
 #include <ESP8266HTTPClient.h>
 #endif
 
-#ifdef ESP32
 #define SSL_INFO_NAME "rootCA"
-#else
-#define SSL_INFO_NAME "fingerprint"
 
+#ifndef ESP32
 // BearSSL::WiFiClientSecure defaults to a 16KB receive buffer, which alone
 // can exceed all the free heap available on ESP8266 for many real-world
 // requests (see cwi-dis/iotsa#198). Extract just the host from a URL so we
@@ -47,13 +45,9 @@ void IotsaRequest::configSave(IotsaConfigFileSave& cf, const String& f_name) {
 }
 
 #ifdef IOTSA_WITH_WEB
-void IotsaRequest::formHandler_emptyfields(String& message) { 
+void IotsaRequest::formHandler_emptyfields(String& message) {
   message += "Activation URL: <input name='url'><br>\n";
-#ifdef ESP32
   message += "Root CA cert <i>(https only)</i>: <input name='rootCA'><br>\n";
-#else
-  message += "Fingerprint <i>(https only)</i>: <input name='fingerprint'><br>\n";
-#endif
 
   message += "Bearer token <i>(optional)</i>: <input name='token'><br>\n";
   message += "Credentials <i>(optional, user:pass)</i>: <input name='credentials'><br>\n";
@@ -63,13 +57,8 @@ void IotsaRequest::formHandler_fields(String& message, const String& text, const
   message += "Activation URL: <input name='" + f_name +  ".url' value='";
   message += url;
   message += "'><br>\n";
-#ifdef ESP32
   message += "Root CA cert <i>(https only)</i>: <input name='" + f_name + ".rootCA' value='";
   message += sslInfo;
-#else
-  message += "Fingerprint <i>(https only)</i>: <input name='" + f_name +  ".fingerprint' value='";
-  message += sslInfo;
-#endif
   message += "'><br>\n";
 
   message += "Bearer token <i>(optional)</i>: <input name='" + f_name + ".token' value='";
@@ -142,6 +131,7 @@ bool IotsaRequest::send(const char *query, String *responseBody) {
   WiFiClientSecure secureClient;
 #else
   BearSSL::WiFiClientSecure *secureClientPtr = NULL;
+  BearSSL::X509List *trustAnchorPtr = NULL;
 #endif
   String _url = url;
   {
@@ -162,7 +152,8 @@ bool IotsaRequest::send(const char *query, String *responseBody) {
       rv = http.begin(secureClient, _url);
 #else
       secureClientPtr = new BearSSL::WiFiClientSecure();
-      secureClientPtr->setFingerprint(sslInfo.c_str());
+      trustAnchorPtr = new BearSSL::X509List(sslInfo.c_str());
+      secureClientPtr->setTrustAnchors(trustAnchorPtr);
       {
         const uint16_t fragLen = 512;
         String host = _hostFromUrl(_url);
@@ -181,6 +172,7 @@ bool IotsaRequest::send(const char *query, String *responseBody) {
     if (!rv) {
 #ifndef ESP32
       if (secureClientPtr) delete secureClientPtr;
+      if (trustAnchorPtr) delete trustAnchorPtr;
 #endif
       return false;
     }
@@ -224,6 +216,7 @@ bool IotsaRequest::send(const char *query, String *responseBody) {
   }
 #ifndef ESP32
   if (secureClientPtr) delete secureClientPtr;
+  if (trustAnchorPtr) delete trustAnchorPtr;
 #endif
   return rv;
 }
