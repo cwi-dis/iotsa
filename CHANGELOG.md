@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `gen_build_matrix.py`: an example's own `build_flags` silently overwrote its board's inherited ones instead of merging (#194)
+- `IotsaBatteryMod` hibernate sleep failed to build on ESP32-S3/-C3 (Arduino IDE only) -- those chips lack the RTC slow/fast memory power domains it unconditionally referenced (#194)
 
 - Fix NTP time never syncing on ESP32 (timezone was set but SNTP was never actually started)
 
