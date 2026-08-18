@@ -99,7 +99,7 @@ def emit_platformio_ini(entries, out):
         out.write(f"extends = {board}\n")
         out.write(f"build_src_filter = +<*> +<../{e['source']}>\n")
         if e["build_flags"]:
-            out.write(f"build_flags = {' '.join(e['build_flags'])}\n")
+            out.write(f"build_flags = ${{{board}.build_flags}} {' '.join(e['build_flags'])}\n")
         if e.get("partitions"):
             out.write(f"board_build.partitions = {e['partitions']}\n")
         if e["lib_deps"]:

@@ -23,6 +23,11 @@
     },
     {
       "board": "esp32s3supermini",
+      "build_flags": [
+        "-DIOTSA_WITH_BLE",
+        "-DNEOPIXEL_PIN=48",
+        "-DWITHOUT_VOLTAGE"
+      ],
       "ci": {
         "platformio": true,
         "arduino": true
