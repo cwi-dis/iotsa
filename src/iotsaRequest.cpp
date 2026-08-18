@@ -11,6 +11,23 @@
 #define SSL_INFO_NAME "rootCA"
 #else
 #define SSL_INFO_NAME "fingerprint"
+
+// BearSSL::WiFiClientSecure defaults to a 16KB receive buffer, which alone
+// can exceed all the free heap available on ESP8266 for many real-world
+// requests (see cwi-dis/iotsa#198). Extract just the host from a URL so we
+// can probe whether the server supports a much smaller max fragment length
+// (MFLN) before committing to shrinking the buffers -- if it doesn't, we
+// fall back to the library default rather than risk a broken connection.
+static String _hostFromUrl(const String &url) {
+  int start = url.indexOf("://");
+  start = (start < 0) ? 0 : start + 3;
+  int end = url.indexOf('/', start);
+  if (end < 0) end = url.length();
+  String hostPort = url.substring(start, end);
+  int colon = hostPort.indexOf(':');
+  if (colon >= 0) hostPort = hostPort.substring(0, colon);
+  return hostPort;
+}
 #endif
 
 
@@ -146,6 +163,15 @@ bool IotsaRequest::send(const char *query, String *responseBody) {
 #else
       secureClientPtr = new BearSSL::WiFiClientSecure();
       secureClientPtr->setFingerprint(sslInfo.c_str());
+      {
+        const uint16_t fragLen = 512;
+        String host = _hostFromUrl(_url);
+        if (BearSSL::WiFiClientSecure::probeMaxFragmentLength(host, 443, fragLen)) {
+          secureClientPtr->setBufferSizes(fragLen, fragLen);
+        }
+        // else: server doesn't support that fragment length, leave the
+        // library default (16KB receive / 512B transmit) in place.
+      }
 
       rv = http.begin(*secureClientPtr, _url);
 #endif

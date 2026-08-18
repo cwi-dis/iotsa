@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix NTP time never syncing on ESP32 (timezone was set but SNTP was never actually started)
 - `IotsaRequest::send()` can now return the HTTP response body via an optional out-param (#193)
+- `IotsaRequest::send()` HTTPS on ESP8266 now probes for a small MFLN buffer size before connecting, instead of always allocating BearSSL's 16KB default -- was OOM-crashing the device outright on real-world heap budgets (#198)
 
 ## [2.9.1] - 2026-08-14
 
