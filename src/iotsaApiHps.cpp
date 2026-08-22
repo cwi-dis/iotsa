@@ -60,7 +60,9 @@ public:
 
   void loop() override {}
   void serverSetup() override {}
+#ifdef IOTSA_WITH_WEB
   String info() override { return ""; }
+#endif
 protected:
   IotsaBleApiService bleApi;
 

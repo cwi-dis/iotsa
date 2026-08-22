@@ -56,6 +56,20 @@
       ]
     },
     {
+      "board": "esp32s3supermini",
+      "label": "bleonly",
+      "build_flags": [
+        "-DIOTSA_WITH_BLE",
+        "-DIOTSA_WITHOUT_WIFI",
+        "-DIOTSA_WITHOUT_HTTP",
+        "-DIOTSA_WITHOUT_WEB",
+        "-DIOTSA_WITHOUT_REST",
+        "-DIOTSA_WITHOUT_COAP",
+        "-DNEOPIXEL_PIN=48",
+        "-DWITHOUT_VOLTAGE"
+      ]
+    },
+    {
       "board": "lolin32",
       "label": "coap",
       "build_flags": [

@@ -583,8 +583,19 @@ void IotsaBatteryMod::loop() {
   esp_bt_controller_disable();
   // For hibernation we also turn off various peripherals.
   if (sleepMode == IOTSA_SLEEP_HIBERNATE) {
+    // ESP32-S3 and -C3 don't have separate RTC slow/fast memory power domains
+    // to turn off (confirmed via each chip's soc_caps.h: neither defines
+    // SOC_PM_SUPPORT_RTC_SLOW_MEM_PD/RTC_FAST_MEM_PD, so esp_sleep.h doesn't
+    // even declare the ESP_PD_DOMAIN_RTC_SLOW_MEM/RTC_FAST_MEM enum values on
+    // those chips) -- gate on the chip target directly rather than on the
+    // capability macros themselves, since the SDK version PlatformIO's
+    // espressif32 platform currently bundles predates that capability-macro
+    // convention entirely (doesn't define it for ANY chip) and would
+    // otherwise make a presence/absence check ambiguous.
+#if !defined(CONFIG_IDF_TARGET_ESP32S3) && !defined(CONFIG_IDF_TARGET_ESP32C3)
     esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_OFF);
     esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_OFF);
+#endif
     esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
   }
   // Time to go to sleep.

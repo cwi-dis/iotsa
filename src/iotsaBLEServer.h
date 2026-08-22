@@ -70,7 +70,9 @@ public:
   void setup() override;
   void serverSetup() override;
   void loop() override;
+#ifdef IOTSA_WITH_WEB
   String info() override;
+#endif
 #if 0
   static void setAdvertisingInterval(uint16_t _adv_min, uint16_t _adv_max) {
     adv_min = _adv_min;

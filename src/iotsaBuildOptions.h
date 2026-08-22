@@ -103,8 +103,8 @@
 #error IOTSA WEB support requires HTTP or HTTPS support
 #endif
 
-#if defined(IOTSA_WITH_API) && !(defined(IOTSA_WITH_REST) || defined(IOTSA_WITH_COAP))
-#error IOTSA API support requires REST or COAP
+#if defined(IOTSA_WITH_API) && !(defined(IOTSA_WITH_REST) || defined(IOTSA_WITH_COAP) || defined(IOTSA_WITH_HPS))
+#error IOTSA API support requires REST, COAP or HPS
 #endif
 
 #if defined(IOTSA_WITH_BLE) && !defined(ESP32)

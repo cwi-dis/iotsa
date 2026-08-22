@@ -17,6 +17,13 @@
       "board": "esp32c3devkit"
     },
     {
+      "board": "esp32s3supermini",
+      "ci": {
+        "platformio": true,
+        "arduino": true
+      }
+    },
+    {
       "board": "lolin32",
       "build_flags": [
         "-DIOTSA_WITH_BLE",
