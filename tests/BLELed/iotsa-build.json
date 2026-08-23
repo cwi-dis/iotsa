@@ -31,6 +31,7 @@
     {
       "board": "nodemcuv2",
       "label": "nowifi",
+      "_partitions_note": "null overrides the file default deliberately: -DIOTSA_WITHOUT_WIFI makes OTA unreachable in this build regardless of partition scheme, so there's nothing for min_spiffs.csv to protect here -- see iotsa#40.",
       "partitions": null,
       "build_flags": [
         "-DIOTSA_WITHOUT_WIFI",
@@ -44,6 +45,7 @@
     {
       "board": "esp32thing",
       "label": "nowifi",
+      "_partitions_note": "null overrides the file default deliberately: -DIOTSA_WITHOUT_WIFI makes OTA unreachable in this build regardless of partition scheme, so there's nothing for min_spiffs.csv to protect here -- see iotsa#40.",
       "partitions": null,
       "build_flags": [
         "-DIOTSA_WITHOUT_WIFI",

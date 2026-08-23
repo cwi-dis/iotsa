@@ -19,7 +19,8 @@
       "label": "withhttps",
       "build_flags": [
         "-DIOTSA_WITH_HTTPS"
-      ]
+      ],
+      "partitions": "min_spiffs.csv"
     },
     {
       "board": "nodemcuv2",
@@ -33,7 +34,8 @@
       "label": "withcoap",
       "build_flags": [
         "-DIOTSA_WITH_COAP"
-      ]
+      ],
+      "partitions": "min_spiffs.csv"
     },
     {
       "board": "nodemcuv2",
@@ -57,7 +59,8 @@
         "-DIOTSA_WITHOUT_HTTP",
         "-DIOTSA_WITHOUT_HTTPS",
         "-DIOTSA_WITH_PLACEHOLDERS"
-      ]
+      ],
+      "partitions": "min_spiffs.csv"
     }
   ]
 }
