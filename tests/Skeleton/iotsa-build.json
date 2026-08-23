@@ -2,17 +2,6 @@
   "source": "examples/Skeleton",
   "variants": [
     {
-      "board": "esp8285",
-      "label": "coap",
-      "build_flags": [
-        "-DIOTSA_WITH_COAP"
-      ],
-      "ci": {
-        "platformio": true,
-        "arduino": false
-      }
-    },
-    {
       "board": "lolin32",
       "label": "hwvariant-ble",
       "build_flags": [

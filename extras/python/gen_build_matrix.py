@@ -22,7 +22,6 @@ REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..")
 # to the actual PlatformIO board ID and, where supported, the arduino-cli FQBN.
 BOARD_INFO = {
     "nodemcuv2":        {"pio_board": "nodemcuv2",           "fqbn": "esp8266:esp8266:nodemcuv2"},
-    "esp8285":          {"pio_board": "esp8285",              "fqbn": None},
     "esp32thing":       {"pio_board": "esp32thing",           "fqbn": "esp32:esp32:esp32thing"},
     "esp32dev":         {"pio_board": "esp32dev",              "fqbn": None},
     "lolin32":          {"pio_board": "lolin32",               "fqbn": None},
@@ -218,7 +217,7 @@ def emit_standalone_ini(entries, target_dir, out):
         info = BOARD_INFO[board]
         out.write(f"[env:{board}]\n")
         out.write("extends = common\n")
-        out.write(f"platform = {'espressif8266' if board in ('nodemcuv2', 'esp8285') else 'espressif32'}\n")
+        out.write(f"platform = {'espressif8266' if board == 'nodemcuv2' else 'espressif32'}\n")
         out.write(f"board = {info['pio_board']}\n")
         if e["build_flags"]:
             out.write(f"build_flags = {' '.join(e['build_flags'])}\n")
