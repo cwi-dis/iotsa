@@ -1,0 +1,37 @@
+{
+  "defaults": {
+    "build_flags": [
+      "-DIOTSA_WITH_BLE",
+      "-DIOTSA_WITH_COAP",
+      "-DIOTSA_WITH_HTTPS"
+    ],
+    "partitions": "min_spiffs.csv",
+    "ci": {
+      "platformio": true,
+      "arduino": false
+    }
+  },
+  "variants": [
+    {
+      "board": "nodemcuv2",
+      "_note": "BLE is ESP32-only (NimBLE isn't available for esp8266) -- omit IOTSA_WITH_BLE here.",
+      "build_flags": [
+        "-DIOTSA_WITH_COAP",
+        "-DIOTSA_WITH_HTTPS"
+      ]
+    },
+    {
+      "board": "lolin32"
+    },
+    {
+      "board": "esp32c3devkit",
+      "build_flags": [
+        "-DIOTSA_WITH_BLE",
+        "-DIOTSA_WITH_COAP",
+        "-DIOTSA_WITH_HTTPS",
+        "-DNEOPIXEL_PIN=8",
+        "-DWITHOUT_VOLTAGE"
+      ]
+    }
+  ]
+}
