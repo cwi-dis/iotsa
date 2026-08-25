@@ -8,6 +8,11 @@
 name: build-arduino
 on:
   push:
+    branches:
+    - develop
+    - master
+    tags:
+    - '*'
     paths-ignore:
     - '.github/workflows/build-platformio.yml'
     - 'docs/**'
