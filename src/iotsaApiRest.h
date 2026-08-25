@@ -19,10 +19,10 @@ private:
   void _postHandlerWrapper(const char *path);
 };
 
-class IotsaRestApiMod : public IotsaMod {
+class IotsaRestApiMod : public IotsaBaseModule {
 public:
   IotsaRestApiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
-  : IotsaMod(_app, _auth, early),
+  : IotsaBaseModule(_app, _auth, early),
     api(this, _app, _auth)
   {}
   virtual bool getHandler(const char *path, JsonObject& reply) override { return false; }

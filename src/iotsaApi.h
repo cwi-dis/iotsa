@@ -95,10 +95,10 @@ private:
   int _dummy;
 };
 
-class IotsaApiMod : public IotsaMod {
+class IotsaModule : public IotsaBaseModule {
 public:
-  IotsaApiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
-  : IotsaMod(_app, _auth, early),
+  IotsaModule(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
+  : IotsaBaseModule(_app, _auth, early),
     api(this, _app, _auth)
   {}
   virtual bool getHandler(const char *path, JsonObject& reply) override { return false; }

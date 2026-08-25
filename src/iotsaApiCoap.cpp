@@ -133,7 +133,7 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
 #endif
 }
 
-class IotsaCoapServiceMod : public IotsaBaseMod {
+class IotsaCoapServiceMod : public IotsaBaseModule {
 public:
   IotsaCoapServiceMod(IotsaApplication &_app);
   void setup() override;
@@ -145,7 +145,7 @@ protected:
 };
 
 IotsaCoapServiceMod::IotsaCoapServiceMod(IotsaApplication &_app)
-  : IotsaBaseMod(_app),
+  : IotsaBaseModule(_app),
     udp(),
     coap(udp)
   {}

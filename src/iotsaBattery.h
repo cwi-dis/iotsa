@@ -13,9 +13,9 @@ enum IotsaSleepMode : uint8_t {
   _IOTSA_SLEEP_MAX
 };
 
-class IotsaBatteryMod : public IotsaApiMod {
+class IotsaBatteryMod : public IotsaModule {
 public:
-  IotsaBatteryMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL) : IotsaApiMod(_app, _auth, true) {}
+  IotsaBatteryMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL) : IotsaModule(_app, _auth, true) {}
 
   void setup() override;
   void serverSetup() override;

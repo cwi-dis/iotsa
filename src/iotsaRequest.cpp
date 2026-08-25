@@ -90,7 +90,7 @@ bool IotsaRequest::formHandler_args(IotsaWebServer *server, const String& name, 
   bool any = false;
   String wtdName = name + ".url";
   if (server->hasArg(wtdName)) {
-    IotsaMod::percentDecode(server->arg(wtdName), url);
+    IotsaBaseModule::percentDecode(server->arg(wtdName), url);
     IFDEBUG IotsaSerial.print(wtdName);
     IFDEBUG IotsaSerial.print("=");
     IFDEBUG IotsaSerial.println(url);
@@ -98,7 +98,7 @@ bool IotsaRequest::formHandler_args(IotsaWebServer *server, const String& name, 
   }
   wtdName = name + "." + SSL_INFO_NAME;
   if (server->hasArg(wtdName)) {
-    IotsaMod::percentDecode(server->arg(wtdName), sslInfo);
+    IotsaBaseModule::percentDecode(server->arg(wtdName), sslInfo);
     IFDEBUG IotsaSerial.print(wtdName);
     IFDEBUG IotsaSerial.print("=");
     IFDEBUG IotsaSerial.println(sslInfo);
@@ -106,7 +106,7 @@ bool IotsaRequest::formHandler_args(IotsaWebServer *server, const String& name, 
   }
   wtdName = name + ".credentials";
   if (server->hasArg(wtdName)) {
-    IotsaMod::percentDecode(server->arg(wtdName), credentials);
+    IotsaBaseModule::percentDecode(server->arg(wtdName), credentials);
     IFDEBUG IotsaSerial.print(wtdName);
     IFDEBUG IotsaSerial.print("=");
     IFDEBUG IotsaSerial.println(credentials);
@@ -114,7 +114,7 @@ bool IotsaRequest::formHandler_args(IotsaWebServer *server, const String& name, 
     }
   wtdName = name + ".token";
   if (server->hasArg(wtdName)) {
-    IotsaMod::percentDecode(server->arg(wtdName), token);
+    IotsaBaseModule::percentDecode(server->arg(wtdName), token);
     IFDEBUG IotsaSerial.print(wtdName);
     IFDEBUG IotsaSerial.print("=");
     IFDEBUG IotsaSerial.println(token);

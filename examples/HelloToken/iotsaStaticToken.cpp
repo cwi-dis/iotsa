@@ -32,9 +32,9 @@ void IotsaStaticTokenObject::formHandler_TH(String& message, bool includeConfig)
 
 void IotsaStaticTokenObject::formHandler_TD(String& message, bool includeConfig) {
   message += "<td>";
-  message += IotsaMod::htmlEncode(token);
+  message += IotsaBaseModule::htmlEncode(token);
   message += "</td><td>";
-  message += IotsaMod::htmlEncode(rights);
+  message += IotsaBaseModule::htmlEncode(rights);
   message += "</td>";
 }
 

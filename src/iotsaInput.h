@@ -158,10 +158,10 @@ protected:
   ActivationCallbackType stateCallback;
 };
 
-class IotsaInputMod : public IotsaMod {
+class IotsaInputMod : public IotsaBaseModule {
 public:
-  IotsaInputMod(IotsaApplication& app, Input **_inputs, int _nInput) : IotsaMod(app), inputs(_inputs), nInput(_nInput) {}
-  using IotsaMod::IotsaMod;
+  IotsaInputMod(IotsaApplication& app, Input **_inputs, int _nInput) : IotsaBaseModule(app), inputs(_inputs), nInput(_nInput) {}
+  using IotsaBaseModule::IotsaBaseModule;
   void setup() override;
   void serverSetup() override;
   void loop() override;

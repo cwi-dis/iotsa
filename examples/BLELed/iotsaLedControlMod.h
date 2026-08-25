@@ -8,7 +8,7 @@
 //
 // LED module.
 //
-class IotsaLedControlMod : public IotsaLedMod, public IotsaBLEApiProvider {
+class IotsaLedControlMod : public IotsaLedMod {
 public:
   using IotsaLedMod::IotsaLedMod;
   void setup() override;

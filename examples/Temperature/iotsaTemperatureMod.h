@@ -7,10 +7,10 @@
 //
 // Temperature module. Gets temperature and humidity data from a DHT21 module.
 //
-class IotsaTemperatureMod : public IotsaMod {
+class IotsaTemperatureMod : public IotsaBaseModule {
 public:
   IotsaTemperatureMod(IotsaApplication &_app, int pin, int type)
-  : IotsaMod(_app),
+  : IotsaBaseModule(_app),
     dht(pin, type)
   {}
   void setup() override;

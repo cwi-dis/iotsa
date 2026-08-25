@@ -3,9 +3,9 @@
 #include "iotsa.h"
 #include "iotsaApi.h"
 
-class IotsaNothingMod : public IotsaApiMod {
+class IotsaNothingMod : public IotsaModule {
 public:
-  using IotsaApiMod::IotsaApiMod;
+  using IotsaModule::IotsaModule;
   void setup() override;
   void serverSetup() override;
   void loop() override;

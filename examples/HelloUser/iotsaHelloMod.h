@@ -9,14 +9,14 @@
 // to change the name by which they are greeted, through the web UI and/or
 // the REST API -- both gated on authentication (see IotsaUserMod).
 //
-class IotsaHelloMod : public IotsaApiMod {
+class IotsaHelloMod : public IotsaModule {
 public:
-  using IotsaApiMod::IotsaApiMod;
+  using IotsaModule::IotsaModule;
   void setup() override;
   void serverSetup() override;
   void loop() override;
   String info() override;
-  using IotsaBaseMod::needsAuthentication;
+  using IotsaBaseModule::needsAuthentication;
 protected:
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;

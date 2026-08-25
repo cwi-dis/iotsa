@@ -10,14 +10,14 @@
 // the REST API -- both gated on rights-based access control (see
 // IotsaMultiUserMod).
 //
-class IotsaHelloMod : public IotsaApiMod {
+class IotsaHelloMod : public IotsaModule {
 public:
-  IotsaHelloMod(IotsaApplication &_app, IotsaAuthMod *_auth=NULL) : IotsaApiMod(_app, _auth, false) {}
+  IotsaHelloMod(IotsaApplication &_app, IotsaAuthMod *_auth=NULL) : IotsaModule(_app, _auth, false) {}
   void setup() override;
   void serverSetup() override;
   void loop() override;
   String info() override;
-  using IotsaBaseMod::needsAuthentication;
+  using IotsaBaseModule::needsAuthentication;
 protected:
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;

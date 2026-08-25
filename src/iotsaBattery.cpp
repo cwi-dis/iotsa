@@ -395,10 +395,10 @@ void IotsaBatteryMod::extendCurrentMode() {
 }
 
 void IotsaBatteryMod::_notifySleepWakeup(bool sleep) {
-  for(IotsaBaseMod* m=app.firstEarlyModule; m != nullptr; m=m->nextModule) {
+  for(IotsaBaseModule* m=app.firstEarlyModule; m != nullptr; m=m->nextModule) {
     m->sleepWakeupNotification(sleep);
   }
-  for(IotsaBaseMod* m=app.firstModule; m != nullptr; m=m->nextModule) {
+  for(IotsaBaseModule* m=app.firstModule; m != nullptr; m=m->nextModule) {
     m->sleepWakeupNotification(sleep);
   }
 

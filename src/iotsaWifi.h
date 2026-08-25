@@ -5,7 +5,7 @@
 #include "iotsaConfigMod.h"
 
 #ifdef IOTSA_WITH_WIFI
-class IotsaWifiMod : public IotsaApiMod {
+class IotsaWifiMod : public IotsaModule {
 public:
   IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL);
 	void setup() override;
@@ -37,9 +37,9 @@ private:
   unsigned long searchTimeoutMillis;
 };
 #elif IOTSA_WITH_PLACEHOLDERS
-class IotsaWifiMod : public IotsaMod {
+class IotsaWifiMod : public IotsaBaseModule {
 public:
-  using IotsaMod::IotsaMod;
+  using IotsaBaseModule::IotsaBaseModule;
   void setup() override {}
   void serverSetup() override {}
   void loop() override {}

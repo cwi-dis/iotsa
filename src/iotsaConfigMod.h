@@ -3,10 +3,10 @@
 #include "iotsa.h"
 #include "iotsaApi.h"
 
-class IotsaConfigMod : public IotsaApiMod {
+class IotsaConfigMod : public IotsaModule {
 public:
   IotsaConfigMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL)
-  : IotsaApiMod(_app, _auth, true)
+  : IotsaModule(_app, _auth, true)
 #ifdef IOTSA_WITH_HTTPS
   , newCertificate(NULL),
   newCertificateLength(0),

@@ -31,7 +31,7 @@
 extern Print *iotsaOverrideSerial;
 #define IotsaSerial (*iotsaOverrideSerial)
 
-class IotsaBaseMod;
+class IotsaBaseModule;
 class IotsaConfigMod;
 
 //
@@ -53,7 +53,7 @@ public:
 };
 
 class IotsaApplication : public IotsaWebServerMixin {
-  friend class IotsaBaseMod;
+  friend class IotsaBaseModule;
   friend class IotsaConfigMod;
   friend class IotsaWifiMod;
   friend class IotsaWebServerMixin;
@@ -64,15 +64,15 @@ public:
   IotsaApplication(const IotsaApplication& that) = delete;
   IotsaApplication& operator=(const IotsaApplication& that) = delete;
 
-  void addMod(IotsaBaseMod *mod);
-  void addModEarly(IotsaBaseMod *mod);
+  void addMod(IotsaBaseModule *mod);
+  void addModEarly(IotsaBaseModule *mod);
   void setup();
   void serverSetup();
   void loop();
   IotsaStatusInterface *status;
 protected:
-  IotsaBaseMod *firstModule;
-  IotsaBaseMod *firstEarlyModule;
+  IotsaBaseModule *firstModule;
+  IotsaBaseModule *firstEarlyModule;
   String title;
   bool haveOTA;
 };
@@ -124,19 +124,28 @@ public:
   virtual bool bleGetHandler(UUIDstring charUUID) { return false; }
 };
 
-class IotsaBaseMod : public IotsaApiProvider, public IotsaBLEProvider {
+// Base for every iotsa module -- deliberately lenient (setup()/loop() are the
+// only pure virtuals; serverSetup()/info() have harmless no-op defaults
+// rather than being forced) since some modules (e.g. IotsaCoapServiceMod, a
+// lifecycle-only companion mod with no page/endpoint of its own) genuinely
+// have nothing to contribute to either. A real module is expected to
+// override both anyway -- an empty info() or a no-op serverSetup() would be
+// an obviously incomplete module, not a subtle bug -- so this used to be two
+// classes (one lenient, one forcing overrides via `= 0`) purely to catch
+// that mistake at compile time; merged back into one, see cwi-dis/iotsa#206.
+class IotsaBaseModule : public IotsaApiProvider, public IotsaBLEProvider {
   friend class IotsaApplication;
   friend class IotsaConfigMod;
   friend class IotsaWifiMod;
   friend class IotsaWebServerMixin;
   friend class IotsaBatteryMod;
 public:
-  IotsaBaseMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
-  : app(_app), 
+  IotsaBaseModule(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
+  : app(_app),
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
-  	server(_app.server), 
+  	server(_app.server),
 #endif
-  	auth(_auth), 
+  	auth(_auth),
   	nextModule(NULL)
   {
     if (early) {
@@ -145,14 +154,16 @@ public:
       app.addMod(this);
     }
   }
-  IotsaBaseMod& operator=(const IotsaBaseMod& that) = delete;
-  
+  IotsaBaseModule& operator=(const IotsaBaseModule& that) = delete;
+
   virtual void setup() = 0;
   virtual void loop() = 0;
   virtual void configLoad() {}
   virtual void configSave() {}
 #ifdef IOTSA_WITH_WEB
   virtual String info();
+  static String htmlEncode(String data); // Helper - convert strings to HTML-safe representation
+  static void percentDecode(const String &src, String &dst); // Helper - convert string from url-encoded to normal
 #endif
   virtual void serverSetup();
   // Called once, after every module's setup() and serverSetup() have run. For most
@@ -163,7 +174,7 @@ public:
   virtual bool needsAuthentication(const char *right=NULL);
   virtual bool needsAuthentication(const char *obj, IotsaApiOperation verb);
   virtual void sleepWakeupNotification(bool sleep) {}
-  // Whether this module exposes a REST/CoAP/HPS API (overridden by IotsaApiMod).
+  // Whether this module exposes a REST/CoAP/HPS API (overridden by IotsaModule).
   virtual bool hasApi() const { return false; }
 
 protected:
@@ -172,31 +183,13 @@ protected:
   IotsaWebServer *server;
 #endif
   IotsaAuthenticationProvider *auth;
-  IotsaBaseMod *nextModule;
+  IotsaBaseModule *nextModule;
   String name;
 };
 
-class IotsaMod : public IotsaBaseMod {
+class IotsaAuthMod : public IotsaBaseModule, public IotsaAuthenticationProvider {
 public:
-  IotsaMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
-  : IotsaBaseMod(_app, _auth, early)
-  {
-  }
-  IotsaMod& operator=(const IotsaMod& that) = delete;
-  virtual void serverSetup() override = 0;
-
-#ifdef IOTSA_WITH_WEB
-  virtual String info() override = 0;
-  static String htmlEncode(String data); // Helper - convert strings to HTML-safe representation
-  static void percentDecode(const String &src, String &dst); // Helper - convert string from url-encoded to normal
-#endif
-
-protected:
-};
-
-class IotsaAuthMod : public IotsaMod, public IotsaAuthenticationProvider {
-public:
-  using IotsaMod::IotsaMod;	// Inherit constructor
+  using IotsaBaseModule::IotsaBaseModule;	// Inherit constructor
 };
 
 class IotsaConfigFileLoad;

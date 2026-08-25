@@ -9,9 +9,9 @@
 // to change the name by which they are greeted, either through the web UI
 // or through the REST API (GET/PUT /api/hello).
 //
-class IotsaHelloMod : public IotsaApiMod {
+class IotsaHelloMod : public IotsaModule {
 public:
-  using IotsaApiMod::IotsaApiMod;
+  using IotsaModule::IotsaModule;
   void setup() override;
   void serverSetup() override;
   void loop() override;

@@ -24,13 +24,13 @@ IotsaApplication::IotsaApplication(const char *_title)
 }
 
 void
-IotsaApplication::addMod(IotsaBaseMod *mod) {
+IotsaApplication::addMod(IotsaBaseModule *mod) {
   mod->nextModule = firstModule;
   firstModule = mod;
 }
 
 void
-IotsaApplication::addModEarly(IotsaBaseMod *mod) {
+IotsaApplication::addModEarly(IotsaBaseModule *mod) {
   mod->nextModule = firstEarlyModule;
   firstEarlyModule = mod;
 }
@@ -78,7 +78,7 @@ IotsaApplication::setup() {
   IotsaApiServiceHps::ensureServiceMod(*this);
 #endif
 
-  IotsaBaseMod *m;
+  IotsaBaseModule *m;
   for (m=firstEarlyModule; m; m=m->nextModule) {
   	m->setup();
   }
@@ -95,7 +95,7 @@ IotsaApplication::setup() {
 void
 IotsaApplication::serverSetup() {
   // xxxjack this is wrong: if (!iotsaConfig.wifiEnabled) return;
-  IotsaBaseMod *m;
+  IotsaBaseModule *m;
 
   for (m=firstEarlyModule; m; m=m->nextModule) {
   	m->serverSetup();
@@ -120,7 +120,7 @@ IotsaApplication::serverSetup() {
 void
 IotsaApplication::loop() {
   iotsaConfig.loop();
-  IotsaBaseMod *m;
+  IotsaBaseModule *m;
   for (m=firstEarlyModule; m; m=m->nextModule) {
   	m->loop();
   }
@@ -143,12 +143,12 @@ IotsaApplication::loop() {
 }
 
 #ifdef IOTSA_WITH_WEB
-String IotsaBaseMod::info() {
-  // Info method that does nothing, usually overridden for IotsaMod modules
+String IotsaBaseModule::info() {
+  // Info method that does nothing, usually overridden for IotsaBaseModule modules
   return "";
 }
 
-String IotsaMod::htmlEncode(String data) {
+String IotsaBaseModule::htmlEncode(String data) {
   const char *p = data.c_str();
   String rv = "";
   while(p && *p) {
@@ -169,7 +169,7 @@ String IotsaMod::htmlEncode(String data) {
 //
 // Decode percent-escaped string src.
 // 
-void IotsaMod::percentDecode(const String &src, String &dst) {
+void IotsaBaseModule::percentDecode(const String &src, String &dst) {
     const char *arg = src.c_str();
     dst = String();
     while (*arg) {
@@ -195,14 +195,14 @@ void IotsaMod::percentDecode(const String &src, String &dst) {
 }
 #endif // IOTSA_WITH_WEB
 
-bool IotsaBaseMod::needsAuthentication(const char *object, IotsaApiOperation verb) { 
+bool IotsaBaseModule::needsAuthentication(const char *object, IotsaApiOperation verb) { 
   return auth ? !auth->allows(object, verb) : false; 
 }
 
-bool IotsaBaseMod::needsAuthentication(const char *right) { 
+bool IotsaBaseModule::needsAuthentication(const char *right) { 
   return auth ? !auth->allows(right) : false; 
 }
 
-void IotsaBaseMod::serverSetup() {
-  // setup method that does nothing, usually overridden for IotsaMod modules
+void IotsaBaseModule::serverSetup() {
+  // setup method that does nothing, usually overridden for IotsaBaseModule modules
 }

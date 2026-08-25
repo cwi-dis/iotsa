@@ -391,11 +391,11 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   JsonArray modules = reply["modules"].to<JsonArray>();
   JsonArray modulesNoApi = reply["modulesNoApi"].to<JsonArray>();
   modules.add("version");
-  for (IotsaBaseMod *m=app.firstEarlyModule; m; m=m->nextModule) {
+  for (IotsaBaseModule *m=app.firstEarlyModule; m; m=m->nextModule) {
     if (m->name == "") continue;
     if (m->hasApi()) modules.add(m->name); else modulesNoApi.add(m->name);
   }
-  for (IotsaBaseMod *m=app.firstModule; m; m=m->nextModule) {
+  for (IotsaBaseModule *m=app.firstModule; m; m=m->nextModule) {
     if (m->name == "") continue;
     if (m->hasApi()) modules.add(m->name); else modulesNoApi.add(m->name);
   }

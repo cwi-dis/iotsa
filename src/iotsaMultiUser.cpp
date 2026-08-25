@@ -32,14 +32,14 @@ void IotsaUser::formHandler_TH(String& message, bool includeConfig) {
 
 void IotsaUser::formHandler_TD(String& message, bool includeConfig) {
   message += "<td>";
-  message += IotsaMod::htmlEncode(username);
+  message += IotsaBaseModule::htmlEncode(username);
   message += "</td><td>";
-  message += IotsaMod::htmlEncode(rights);
+  message += IotsaBaseModule::htmlEncode(rights);
   message += "</td><td><form method='get'>";
   message += "<form method='get'>";
   message += "<input type='hidden' name='command' value='add'>";
   message += "<input type='hidden' name='username' value='";
-  message += IotsaMod::htmlEncode(username);
+  message += IotsaBaseModule::htmlEncode(username);
   message += "'>";
   message += "<input name='password' type='password'><br>";
   message += "<input name='rights'><br>";

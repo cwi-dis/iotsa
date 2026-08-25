@@ -4,10 +4,10 @@
 #include "iotsaApi.h"
 #include <Ds1302.h>
 
-class IotsaRtcMod : public IotsaApiMod {
+class IotsaRtcMod : public IotsaModule {
 public:
   IotsaRtcMod(IotsaApplication &_app, uint8_t pin_ena, uint8_t pin_clk, uint8_t pin_dat, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
-  : IotsaApiMod(_app, _auth, early),
+  : IotsaModule(_app, _auth, early),
     ds1302(pin_ena, pin_clk, pin_dat)
   {
 

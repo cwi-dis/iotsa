@@ -3,7 +3,7 @@
 #include "iotsa.h"
 
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
-class IotsaLoggerMod : public IotsaMod {
+class IotsaLoggerMod : public IotsaBaseModule {
 public:
   IotsaLoggerMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL);
   void setup() override;

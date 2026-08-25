@@ -34,7 +34,7 @@ String helloInfo() {
   	rv += "and to set the name to be greeted by.";
   } else {
   	rv += "or to change the name \"";
-  	rv += IotsaMod::htmlEncode(greeting);
+  	rv += IotsaBaseModule::htmlEncode(greeting);
   	rv += "\" that is currently greeted.";
   }
   rv += "</p>";
@@ -49,9 +49,9 @@ helloHandler() {
     greeting = application.server->arg("greeting");
   }
   String message = "<html><head><title>Hello Server</title></head><body><h1>Hello Server</h1>";
-  message += "<p>Hello, " + IotsaMod::htmlEncode(greeting) + "!</p>";
+  message += "<p>Hello, " + IotsaBaseModule::htmlEncode(greeting) + "!</p>";
   message += "<form method='get'>Greeting: <input name='greeting' value='";
-  message += IotsaMod::htmlEncode(greeting);
+  message += IotsaBaseModule::htmlEncode(greeting);
   message += "'></form></body></html>";
   application.server->send(200, "text/html", message);
 }

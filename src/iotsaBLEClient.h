@@ -15,9 +15,9 @@
 typedef std::function<void(const NimBLEAdvertisedDevice&)> BleDeviceFoundCallback;
 typedef const char *UUIDString;
 
-class IotsaBLEClientMod : public IotsaApiMod, public NimBLEScanCallbacks {
+class IotsaBLEClientMod : public IotsaModule, public NimBLEScanCallbacks {
 public:
-  using IotsaApiMod::IotsaApiMod;
+  using IotsaModule::IotsaModule;
   virtual ~IotsaBLEClientMod() {}
   virtual bool getHandler(const char *path, JsonObject& reply) override;
   virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;

@@ -6,9 +6,9 @@
 
 const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
 
-class IotsaNtpMod : public IotsaApiMod {
+class IotsaNtpMod : public IotsaModule {
 public:
-  using IotsaApiMod::IotsaApiMod;
+  using IotsaModule::IotsaModule;
   void setup() override;
   void serverSetup() override;
   void loop() override;

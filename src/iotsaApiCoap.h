@@ -21,10 +21,10 @@ private:
 };
 
 
-class IotsaCoapApiMod : public IotsaMod {
+class IotsaCoapApiMod : public IotsaBaseModule {
 public:
   IotsaCoapApiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
-  : IotsaMod(_app, _auth, early),
+  : IotsaBaseModule(_app, _auth, early),
     api(this, _app)
   {}
   virtual bool getHandler(const char *path, JsonObject& reply) override { return false; }

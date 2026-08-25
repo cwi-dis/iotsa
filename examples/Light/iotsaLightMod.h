@@ -8,10 +8,10 @@
 //
 // Light module. Gets light data from an LDR connected to an analog input. Normalizes it.
 //
-class IotsaLightMod : public IotsaMod {
+class IotsaLightMod : public IotsaBaseModule {
 public:
   IotsaLightMod(IotsaApplication &_app)
-  : IotsaMod(_app),
+  : IotsaBaseModule(_app),
   light(0),
   minLight(0xffff),
   maxLight(0)

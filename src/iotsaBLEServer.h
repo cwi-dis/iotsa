@@ -51,10 +51,10 @@ protected:
   IotsaBleApiService *next;
 };
 
-class IotsaBLEServerMod : public IotsaApiMod {
+class IotsaBLEServerMod : public IotsaModule {
   friend class IotsaBleApiService;
 public:
-  using IotsaApiMod::IotsaApiMod;
+  using IotsaModule::IotsaModule;
   void setup() override;
   void serverSetup() override;
   void lateSetupDone() override;

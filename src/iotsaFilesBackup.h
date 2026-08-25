@@ -3,9 +3,9 @@
 #include "iotsa.h"
 
 #ifdef IOTSA_WITH_WEB
-class IotsaFilesBackupMod : public IotsaMod {
+class IotsaFilesBackupMod : public IotsaBaseModule {
 public:
-  using IotsaMod::IotsaMod;
+  using IotsaBaseModule::IotsaBaseModule;
   void setup() override;
   void serverSetup() override;
   void loop() override;
@@ -14,9 +14,9 @@ private:
   void handler();
 };
 #elif IOTSA_WITH_PLACEHOLDERS
-class IotsaFilesBackupMod : public IotsaMod {
+class IotsaFilesBackupMod : public IotsaBaseModule {
 public:
-  using IotsaMod::IotsaMod;
+  using IotsaBaseModule::IotsaBaseModule;
   void setup() override {}
   void serverSetup() override {}
   void loop() override {}

@@ -126,7 +126,7 @@ void
 IotsaWebServerMixin::webServerRootHandler() {
   iotsaConfig.postponeSleep(0);
   String message = "<html><head><title>" + app->title + "</title></head><body><h1>" + app->title + "</h1>";
-  IotsaBaseMod *m;
+  IotsaBaseModule *m;
   for (m=app->firstModule; m; m=m->nextModule) {
     message += m->info();
   }

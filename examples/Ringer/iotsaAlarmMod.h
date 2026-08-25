@@ -10,14 +10,14 @@
 // Buzzer module. Has a web interface and a REST interface (and/or COAP
 // interface, based on iotsa configuration options).
 //
-class IotsaAlarmMod : public IotsaApiMod {
+class IotsaAlarmMod : public IotsaModule {
 public:
-  using IotsaApiMod::IotsaApiMod;
+  using IotsaModule::IotsaModule;
   void setup() override;
   void serverSetup() override;
   void loop() override;
   String info() override;
-  using IotsaBaseMod::needsAuthentication;
+  using IotsaBaseModule::needsAuthentication;
 protected:
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;

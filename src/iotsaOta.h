@@ -2,9 +2,9 @@
 #define _IOTSAOTA_H_
 #include "iotsa.h"
 
-class IotsaOtaMod : public IotsaMod {
+class IotsaOtaMod : public IotsaBaseModule {
 public:
-  using IotsaMod::IotsaMod;
+  using IotsaBaseModule::IotsaBaseModule;
   void setup() override;
   void serverSetup() override;
   void loop() override;

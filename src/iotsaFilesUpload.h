@@ -3,9 +3,9 @@
 #include "iotsa.h"
 
 #ifdef IOTSA_WITH_WEB
-class IotsaFilesUploadMod : public IotsaMod {
+class IotsaFilesUploadMod : public IotsaBaseModule {
 public:
-  using IotsaMod::IotsaMod;
+  using IotsaBaseModule::IotsaBaseModule;
   void setup() override;
   void serverSetup() override;
   void loop() override;
@@ -16,9 +16,9 @@ private:
   void uploadFormHandler();
 };
 #elif IOTSA_WITH_PLACEHOLDERS
-class IotsaFilesUploadMod : public IotsaMod {
+class IotsaFilesUploadMod : public IotsaBaseModule {
 public:
-  using IotsaMod::IotsaMod;
+  using IotsaBaseModule::IotsaBaseModule;
   void setup() override {}
   void serverSetup() override {}
   void loop() override {}

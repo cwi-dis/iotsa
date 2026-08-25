@@ -19,7 +19,7 @@
 static int privateNetworkModeReason;
 
 IotsaWifiMod::IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth)
-: IotsaApiMod(_app, _auth, true),
+: IotsaModule(_app, _auth, true),
   configMod(_app, _auth),
   ssid(""),
   ssidPassword(""),
@@ -212,7 +212,7 @@ bool IotsaWifiMod::_wifiStartMDNS() {
   MDNS.addServiceTxt("iotsa", proto, "P", myproto);
   MDNS.addServiceTxt("iotsa", proto, "V", IOTSA_FULL_VERSION);
   MDNS.addServiceTxt("iotsa", proto, "A", app.title.c_str());
-  IotsaBaseMod *m = app.firstEarlyModule;
+  IotsaBaseModule *m = app.firstEarlyModule;
   while(m) {
     if (m->name != "" && m->hasApi()) MDNS.addServiceTxt("iotsa", proto, m->name.c_str(), "1");
     m = m->nextModule;
