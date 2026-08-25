@@ -16,7 +16,6 @@ public:
     get(_get),
     put(_put),
     post(_post),
-    next(NULL),
     coap(NULL)
   {}
   IotsaApiProvider *provider;
@@ -24,7 +23,6 @@ public:
   bool get;
   bool put;
   bool post;
-  CoapEndpoint *next;
   Coap* coap;
   CoapCallback getCallback(Coap *_coap);
   void callbackImpl(CoapPacket &pkt, IPAddress ip, int port);
@@ -142,14 +140,12 @@ public:
   void loop() override;
   void addEndpoint(CoapEndpoint *ep, const char *path);
 protected:
-  CoapEndpoint *firstEndpoint;
   WiFiUDP udp;
   Coap coap;
 };
 
 IotsaCoapServiceMod::IotsaCoapServiceMod(IotsaApplication &_app)
   : IotsaBaseMod(_app),
-    firstEndpoint(NULL),
     udp(),
     coap(udp)
   {}
@@ -167,15 +163,17 @@ void IotsaCoapServiceMod::loop() {
 
 void IotsaCoapServiceMod::addEndpoint(CoapEndpoint *ep, const char *path) {
     if (!iotsaConfig.wifiEnabled) return;
-    ep->next = firstEndpoint;
-    firstEndpoint = ep;
     coap.server(ep->getCallback(&coap), String(path));
 }
 
 IotsaApiServiceCoap::IotsaApiServiceCoap(IotsaApiProvider* _provider, IotsaApplication &_app)
   : provider(_provider)
-{ 
-  if (_coapMod == NULL) _coapMod = new IotsaCoapServiceMod(_app); 
+{
+  ensureServiceMod(_app);
+}
+
+void IotsaApiServiceCoap::ensureServiceMod(IotsaApplication &app) {
+  if (_coapMod == NULL) _coapMod = new IotsaCoapServiceMod(app);
 }
 
 void IotsaApiServiceCoap::setup(const char* path, bool get, bool put, bool post) {

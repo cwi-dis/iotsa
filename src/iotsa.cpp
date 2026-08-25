@@ -1,6 +1,9 @@
 #include <Esp.h>
 #include "iotsa.h"
 #include "iotsaFS.h"
+#if defined(IOTSA_WITH_COAP) || defined(IOTSA_WITH_HPS)
+#include "iotsaApi.h"
+#endif
 
 // There is an issue with the platformio library dependency finder, and it doesn't find the
 // esp8266httpclient library. This is a workaround.
@@ -64,7 +67,17 @@ IotsaApplication::setup() {
   // Normally iotsaConfigMod is initialized by the WiFi module,
   // but if the WiFi module isn't indluded we ensure that the configuration file is loaded anyway.
   iotsaConfig.ensureConfigLoaded();
-  
+
+  // Ensure the CoAP/HPS companion modules exist before any module's setup() runs,
+  // rather than being lazily created as a side effect of whichever module happens to
+  // construct an IotsaApiServiceCoap/Hps member first (see cwi-dis/iotsa#113 case 3).
+#ifdef IOTSA_WITH_COAP
+  IotsaApiServiceCoap::ensureServiceMod(*this);
+#endif
+#ifdef IOTSA_WITH_HPS
+  IotsaApiServiceHps::ensureServiceMod(*this);
+#endif
+
   IotsaBaseMod *m;
   for (m=firstEarlyModule; m; m=m->nextModule) {
   	m->setup();
@@ -94,6 +107,13 @@ IotsaApplication::serverSetup() {
 
   for (m=firstModule; m; m=m->nextModule) {
   	m->serverSetup();
+  }
+
+  for (m=firstEarlyModule; m; m=m->nextModule) {
+  	m->lateSetupDone();
+  }
+  for (m=firstModule; m; m=m->nextModule) {
+  	m->lateSetupDone();
   }
 }
 

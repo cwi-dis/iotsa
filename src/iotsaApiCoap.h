@@ -11,6 +11,7 @@ public:
   : IotsaApiServiceCoap(_provider, _app)
   {}
   void setup(const char* path, bool get=false, bool put=false, bool post=false) override;
+  static void ensureServiceMod(IotsaApplication &app);
 private:
   IotsaApiProvider* provider; 
 //  void _getHandlerWrapper(const char *path);

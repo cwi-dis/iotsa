@@ -274,7 +274,6 @@ bool IotsaBLEServerMod::putHandler(const char *path, const JsonVariant& request,
 #endif // IOTSA_WITH_API
 
 void IotsaBLEServerMod::serverSetup() {
-  _startServer();
 #ifdef IOTSA_WITH_WEB
   server->on("/bleserver", std::bind(&IotsaBLEServerMod::handler, this));
 #endif
@@ -282,6 +281,10 @@ void IotsaBLEServerMod::serverSetup() {
   api.setup("/api/bleserver", true, true);
   name = "bleserver";
 #endif
+}
+
+void IotsaBLEServerMod::lateSetupDone() {
+  _startServer();
 }
 
 void IotsaBLEServerMod::configLoad() {

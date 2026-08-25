@@ -12,6 +12,7 @@ public:
   typedef const char * UUIDstring;
   IotsaApiServiceHps(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth);
   void setup(const char* path, bool get=false, bool put=false, bool post=false) override;
+  static void ensureServiceMod(IotsaApplication &app);
 private:
   IotsaAuthenticationProvider* auth;
   IotsaApiProvider* provider;

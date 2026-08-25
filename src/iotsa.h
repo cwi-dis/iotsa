@@ -120,6 +120,11 @@ public:
   virtual String info();
 #endif
   virtual void serverSetup();
+  // Called once, after every module's setup() and serverSetup() have run. For most
+  // modules the default no-op is correct; it exists for the small set of modules that
+  // must not go "live" (e.g. start BLE advertising) until every other module has had a
+  // chance to register with them during setup()/serverSetup() -- see cwi-dis/iotsa#113.
+  virtual void lateSetupDone() {}
   virtual bool needsAuthentication(const char *right=NULL);
   virtual bool needsAuthentication(const char *obj, IotsaApiOperation verb);
   virtual void sleepWakeupNotification(bool sleep) {}

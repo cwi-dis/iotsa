@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- BLE advertising could start before every module had registered its characteristics; CoAP/HPS companion modules depended on construction order to exist at all (#113)
+
 ## [2.9.2] - 2026-08-22
 
 ### Added

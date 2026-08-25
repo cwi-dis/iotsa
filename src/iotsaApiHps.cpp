@@ -294,11 +294,15 @@ std::list<IotsaHpsServiceEntryPoint*> IotsaHpsServiceMod::postEntryPoints;
 IotsaApiServiceHps::IotsaApiServiceHps(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth)
 : auth(_auth)
 {
+  ensureServiceMod(_app);
+  provider = _provider;
+}
+
+void IotsaApiServiceHps::ensureServiceMod(IotsaApplication &app) {
   if (_hpsMod == NULL) {
     IotsaSerial.println("IotsaApiServiceHps: allocate IotsaHpsServiceMod");
-    _hpsMod = new IotsaHpsServiceMod(_app); 
+    _hpsMod = new IotsaHpsServiceMod(app);
   }
-  provider = _provider;
 }
   
 void IotsaApiServiceHps::setup(const char* path, bool get, bool put, bool post) {
