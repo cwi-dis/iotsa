@@ -35,20 +35,16 @@ public:
 #endif
   bool allows(const char *obj, IotsaApiOperation verb) override;
   bool allows(const char *right) override;
-#ifdef IOTSA_WITH_API
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
   bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
-#endif
 protected:
   void loadCapabilitiesFromRequest();
   void configLoad() override;
   void configSave() override;
   void handler();
   IotsaCapability *capabilities;
-#ifdef IOTSA_WITH_API
   IotsaApiService api;
-#endif
   IotsaAuthenticationProvider &chain;
   String trustedIssuer;
   String issuerKey;

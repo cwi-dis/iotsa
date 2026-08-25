@@ -75,9 +75,7 @@ bool IotsaCapability::allows(const char *_obj, IotsaApiOperation verb) {
 IotsaCapabilityMod::IotsaCapabilityMod(IotsaApplication &_app, IotsaAuthenticationProvider& _chain)
 :	IotsaAuthMod(_app),
   capabilities(NULL),
-#ifdef IOTSA_WITH_API
   api(this, _app, this),
-#endif
   chain(_chain),
   trustedIssuer(""),
   issuerKey("")
@@ -122,7 +120,6 @@ String IotsaCapabilityMod::info() {
 }
 #endif // IOTSA_WITH_WEB
 
-#ifdef IOTSA_WITH_API
 bool IotsaCapabilityMod::getHandler(const char *path, JsonObject& reply) {
   if (strcmp(path, "/api/capabilities") != 0) return false;
   reply["trustedIssuer"] = trustedIssuer;
@@ -150,7 +147,6 @@ bool IotsaCapabilityMod::putHandler(const char *path, const JsonVariant& request
 bool IotsaCapabilityMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   return false;
 }
-#endif // IOTSA_WITH_API
 
 void IotsaCapabilityMod::setup() {
   configLoad();
@@ -160,10 +156,8 @@ void IotsaCapabilityMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
   server->on("/capabilities", std::bind(&IotsaCapabilityMod::handler, this));
 #endif
-#ifdef IOTSA_WITH_API
   api.setup("/api/capabilities", true, true, false);
   name = "capabilities";
-#endif
 }
 
 void IotsaCapabilityMod::configLoad() {

@@ -14,20 +14,16 @@ public:
 #endif
   bool allows(const char *right=NULL) override;
   bool allows(const char *obj, IotsaApiOperation verb) override { return allows("api");}
-#ifdef IOTSA_WITH_API
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
   bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
-#endif
 protected:
   void configLoad() override;
   void configSave() override;
   void handler();
   String username;
   String password;
-#ifdef IOTSA_WITH_API
   IotsaApiService api;
-#endif
 };
 
 #endif

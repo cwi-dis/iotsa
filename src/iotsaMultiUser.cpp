@@ -83,14 +83,11 @@ bool IotsaUser::putHandler(const JsonVariant& request) {
   }
   return anyChanged;
 }
-#endif
+#endif // IOTSA_WITH_API
 
 IotsaMultiUserMod::IotsaMultiUserMod(IotsaApplication &_app)
-:	IotsaAuthMod(_app)
-#ifdef IOTSA_WITH_API
-  ,
+:	IotsaAuthMod(_app),
   api(this, _app, this)
-#endif
 {
 	configLoad();
 }
@@ -157,8 +154,8 @@ String IotsaMultiUserMod::info() {
 }
 #endif // IOTSA_WITH_WEB
 
-#ifdef IOTSA_WITH_API
 bool IotsaMultiUserMod::getHandler(const char *path, JsonObject& reply) {
+#ifdef IOTSA_WITH_API
   if (strcmp(path, "/api/users") == 0) {
     reply["multi"] = true;
     JsonArray usersList = reply["users"].to<JsonArray>();
@@ -174,10 +171,12 @@ bool IotsaMultiUserMod::getHandler(const char *path, JsonObject& reply) {
       return true;
     }
   }
+#endif // IOTSA_WITH_API
   return false;
 }
 
 bool IotsaMultiUserMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+#ifdef IOTSA_WITH_API
   if (strncmp(path, "/api/users/", 11) != 0) return false;
   if (!iotsaConfig.inConfigurationMode()) return false;
   // xxxjack should also check access rights? Maybe in stead of configurationMode?
@@ -193,8 +192,12 @@ bool IotsaMultiUserMod::putHandler(const char *path, const JsonVariant& request,
     configSave();
   }
   return anyChanged;
+#else
+  return false;
+#endif // IOTSA_WITH_API
 }
 bool IotsaMultiUserMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+#ifdef IOTSA_WITH_API
   if (strcmp(path, "/api/users") != 0) return false;
   if (!iotsaConfig.inConfigurationMode()) return false;
   bool anyChanged = false;
@@ -207,16 +210,16 @@ bool IotsaMultiUserMod::postHandler(const char *path, const JsonVariant& request
     configSave();
   }
   return anyChanged;
-}
+#else
+  return false;
 #endif // IOTSA_WITH_API
+}
 
 int IotsaMultiUserMod::_addUser(IotsaUser& newUser) {
   int oldLength = users.size();
   users.push_back(newUser);
   newUser.apiEndpoint = String("/api/users/")+String(oldLength);
-#ifdef IOTSA_WITH_API
   api.setup(newUser.apiEndpoint.c_str(), true, true, false);
-#endif
   configSave();
   return oldLength;
 }
@@ -229,7 +232,6 @@ void IotsaMultiUserMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
   server->on("/users", std::bind(&IotsaMultiUserMod::handler, this));
 #endif
-#ifdef IOTSA_WITH_API
   api.setup("/api/users", true, false, true);
   name = "users";
   int idx = 0;
@@ -237,7 +239,6 @@ void IotsaMultiUserMod::serverSetup() {
     u.apiEndpoint = String("/api/users/")+String(idx++);
     api.setup(u.apiEndpoint.c_str(), true, true, false);
   }
-#endif // IOTSA_WITH_API
 }
 
 void IotsaMultiUserMod::configLoad() {

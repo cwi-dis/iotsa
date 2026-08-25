@@ -5,11 +5,8 @@
 IotsaUserMod::IotsaUserMod(IotsaApplication &_app, const char *_username, const char *_password)
 :	IotsaAuthMod(_app),
   username(_username),
-	password(_password)
-#ifdef IOTSA_WITH_API
-  ,
+	password(_password),
 	api(this, _app, this)
-#endif
 {
 	configLoad();
 }
@@ -92,7 +89,6 @@ String IotsaUserMod::info() {
 }
 #endif // IOTSA_WITH_WEB
 
-#ifdef IOTSA_WITH_API
 bool IotsaUserMod::getHandler(const char *path, JsonObject& reply) {
   if (strcmp(path, "/api/users") == 0) {
     JsonArray users = reply["users"].to<JsonArray>();
@@ -130,7 +126,6 @@ bool IotsaUserMod::putHandler(const char *path, const JsonVariant& request, Json
   if (anyChanged) configSave();
   return anyChanged;
 }
-#endif // IOTSA_WITH_API
 
 void IotsaUserMod::setup() {
   configLoad();
@@ -140,11 +135,9 @@ void IotsaUserMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
   server->on("/users", std::bind(&IotsaUserMod::handler, this));
 #endif
-#ifdef IOTSA_WITH_API
   api.setup("/api/users", true, false, true);
   api.setup("/api/users/0", true, true, false);
   name = "users";
-#endif
 }
 
 void IotsaUserMod::configLoad() {
