@@ -127,7 +127,12 @@ jobs:
   # Job#3 - dispatch build event to dependent repositories
   #
   dispatch:
-    if: ${{ github.event_name == 'push' && ( github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/') ) }}
+    # Temporarily disabled: the v3 redesign (cwi-dis/iotsa#199) is landing breaking
+    # changes on develop (renamed/removed base classes, etc.) that downstream repos
+    # aren't updated for yet. Re-enable by restoring the condition below once
+    # they're ready for the rebuild storm:
+    #   github.event_name == 'push' && ( github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/') )
+    if: false
     needs: build
     strategy:
       matrix:
