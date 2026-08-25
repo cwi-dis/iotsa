@@ -4,16 +4,10 @@
 #include "iotsaApi.h"
 #include <Ds1302.h>
 
-#ifdef IOTSA_WITH_API
-#define IotsaRtcModBaseMod IotsaApiMod
-#else
-#define IotsaRtcModBaseMod IotsaMod
-#endif
-
-class IotsaRtcMod : public IotsaRtcModBaseMod {
+class IotsaRtcMod : public IotsaApiMod {
 public:
   IotsaRtcMod(IotsaApplication &_app, uint8_t pin_ena, uint8_t pin_clk, uint8_t pin_dat, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
-  : IotsaRtcModBaseMod(_app, _auth, early),
+  : IotsaApiMod(_app, _auth, early),
     ds1302(pin_ena, pin_clk, pin_dat)
   {
 
@@ -39,10 +33,8 @@ protected:
   Ds1302::DateTime currentTime;
   uint32_t currentTimeMillis = 0;
   void _updateCurrentTime();
-#ifdef IOTSA_WITH_API
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
-#endif
   void configLoad() override;
   void configSave() override;
   void handler();

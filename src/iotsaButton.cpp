@@ -148,7 +148,6 @@ void IotsaButtonMod::loop() {
   }
 }
 
-#ifdef IOTSA_WITH_API
 bool IotsaButtonMod::getHandler(const char *path, JsonObject& reply) {
   if (strcmp(path, "/api/buttons") == 0) {
     JsonArray rv = reply["buttons"].to<JsonArray>();
@@ -212,18 +211,15 @@ bool IotsaButtonMod::putHandler(const char *path, const JsonVariant& request, Js
   if (anyChanged) configSave();
   return anyChanged;
 }
-#endif // IOTSA_WITH_API
 
 void IotsaButtonMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
   server->on("/buttons", std::bind(&IotsaButtonMod::handler, this));
 #endif
-#ifdef IOTSA_WITH_API
   api.setup("/api/buttons", true, true);
   for(int i=0; i<nButton; i++) {
       String *p = new String("/api/buttons/" + String(i));
       api.setup(p->c_str(), true, true);
   }
   name = "buttons";
-#endif
 }

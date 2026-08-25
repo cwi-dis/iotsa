@@ -30,7 +30,6 @@ void IotsaNothingMod::setup() {
   configLoad();
 }
 
-#ifdef IOTSA_WITH_API
 bool IotsaNothingMod::getHandler(const char *path, JsonObject& reply) {
   reply["argument"] = argument;
   return true;
@@ -46,16 +45,13 @@ bool IotsaNothingMod::putHandler(const char *path, const JsonVariant& request, J
   checkUnhandled(reqObj);
   return anyChanged;
 }
-#endif // IOTSA_WITH_API
 
 void IotsaNothingMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
   server->on("/nothing", std::bind(&IotsaNothingMod::handler, this));
 #endif
-#ifdef IOTSA_WITH_API
   api.setup("/api/nothing", true, true);
   name = "nothing";
-#endif
 }
 
 void IotsaNothingMod::configLoad() {

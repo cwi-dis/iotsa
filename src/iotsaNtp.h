@@ -6,15 +6,9 @@
 
 const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
 
-#ifdef IOTSA_WITH_API
-#define IotsaNtpModBaseMod IotsaApiMod
-#else
-#define IotsaNtpModBaseMod IotsaMod
-#endif
-
-class IotsaNtpMod : public IotsaNtpModBaseMod {
+class IotsaNtpMod : public IotsaApiMod {
 public:
-  using IotsaNtpModBaseMod::IotsaNtpModBaseMod;
+  using IotsaApiMod::IotsaApiMod;
   void setup() override;
   void serverSetup() override;
   void loop() override;
@@ -33,10 +27,8 @@ public:
 
   String ntpServer;
 protected:
-#ifdef IOTSA_WITH_API
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
-#endif
 #ifdef IOTSA_WITH_TIMEZONE
   String tzDescription;
   void parseTimezone(const String& newDesc);

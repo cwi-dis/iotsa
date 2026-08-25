@@ -6,36 +6,24 @@
 
 #ifdef IOTSA_WITH_BLE
 
-#ifdef IOTSA_WITH_API
-#define IotsaBLEServerModBaseMod IotsaApiMod
-#else
-#define IotsaBLEServerModBaseMod IotsaMod
-#endif
-
 class IotsaBLEServerMod;
-class IotsaBLEApiProvider;
 
 class BLE2901  {
 public:
   BLE2901(const char *description) {}
 };
 
-class IotsaBLEApiProvider {
-public:
-  typedef const char * UUIDstring;
-
-  virtual ~IotsaBLEApiProvider() {}
-  virtual bool blePutHandler(UUIDstring charUUID) = 0;
-  virtual bool bleGetHandler(UUIDstring charUUID) = 0;
-  static const uint32_t BLE_READ = NIMBLE_PROPERTY::READ;
-  static const uint32_t BLE_WRITE = NIMBLE_PROPERTY::WRITE;
-  static const uint32_t BLE_NOTIFY = NIMBLE_PROPERTY::NOTIFY;
-};
-
 class IotsaBleApiService {
   friend class IotsaBLEServerMod;
 public:
-  typedef IotsaBLEApiProvider::UUIDstring UUIDstring;
+  typedef IotsaBLEProvider::UUIDstring UUIDstring;
+  // Characteristic property flags for addCharacteristic()'s mask parameter --
+  // live here (not on IotsaBLEProvider) because they need NIMBLE_PROPERTY,
+  // and IotsaBLEProvider is core/unconditional (see cwi-dis/iotsa#206) while
+  // this service class is already BLE-specific.
+  static const uint32_t BLE_READ = NIMBLE_PROPERTY::READ;
+  static const uint32_t BLE_WRITE = NIMBLE_PROPERTY::WRITE;
+  static const uint32_t BLE_NOTIFY = NIMBLE_PROPERTY::NOTIFY;
   IotsaBleApiService(IotsaBLEServerMod *_mod=NULL)
   : apiProvider(NULL),
     bleService(NULL),
@@ -43,7 +31,7 @@ public:
     characteristicUUIDs(NULL),
     bleCharacteristics(NULL)
   {}
-  void setup(const char* serviceUUID, IotsaBLEApiProvider *_apiProvider);
+  void setup(const char* serviceUUID, IotsaBLEProvider *_apiProvider);
   void addCharacteristic(UUIDstring charUUID, int mask, uint8_t d2904format, uint16_t d2904unit, const char *d2901 = NULL);
   void set(UUIDstring charUUID, const uint8_t *data, size_t size);
   void set(UUIDstring charUUID, uint8_t value);
@@ -55,7 +43,7 @@ public:
   int getAsInt(UUIDstring charUUID);
   std::string getAsString(UUIDstring charUUID);
 protected:
-  IotsaBLEApiProvider *apiProvider;
+  IotsaBLEProvider *apiProvider;
   NimBLEService *bleService;
   int nCharacteristic;
   UUIDstring  *characteristicUUIDs;
@@ -63,10 +51,10 @@ protected:
   IotsaBleApiService *next;
 };
 
-class IotsaBLEServerMod : public IotsaBLEServerModBaseMod {
+class IotsaBLEServerMod : public IotsaApiMod {
   friend class IotsaBleApiService;
 public:
-  using IotsaBLEServerModBaseMod::IotsaBLEServerModBaseMod;
+  using IotsaApiMod::IotsaApiMod;
   void setup() override;
   void serverSetup() override;
   void lateSetupDone() override;
@@ -133,7 +121,5 @@ private:
   // the field comments above.
   static void _applyTxPower();
 };
-#else // IOTSA_WITH_BLE
-class IotsaBLEApiProvider {};
-#endif
+#endif // IOTSA_WITH_BLE
 #endif

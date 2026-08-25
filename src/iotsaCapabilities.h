@@ -24,7 +24,7 @@ private:
   IotsaCapability *next;
 };
 
-class IotsaCapabilityMod : public IotsaAuthMod, public IotsaApiProvider {
+class IotsaCapabilityMod : public IotsaAuthMod {
 public:
   IotsaCapabilityMod(IotsaApplication &_app, IotsaAuthenticationProvider &_chain);
   void setup() override;

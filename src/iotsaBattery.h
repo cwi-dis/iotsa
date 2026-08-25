@@ -4,12 +4,6 @@
 #include "iotsaApi.h"
 #include "iotsaBLEServer.h"
 
-#ifdef IOTSA_WITH_API
-#define IotsaBatteryModBaseMod IotsaApiMod
-#else
-#define IotsaBatteryModBaseMod IotsaMod
-#endif
-
 enum IotsaSleepMode : uint8_t {
   IOTSA_SLEEP_NONE,
   IOTSA_SLEEP_DELAY,
@@ -19,9 +13,9 @@ enum IotsaSleepMode : uint8_t {
   _IOTSA_SLEEP_MAX
 };
 
-class IotsaBatteryMod : public IotsaBatteryModBaseMod, public IotsaBLEApiProvider {
+class IotsaBatteryMod : public IotsaApiMod {
 public:
-  IotsaBatteryMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL) : IotsaBatteryModBaseMod(_app, _auth, true) {}
+  IotsaBatteryMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL) : IotsaApiMod(_app, _auth, true) {}
 
   void setup() override;
   void serverSetup() override;
@@ -36,10 +30,8 @@ public:
 protected:
   void _notifySleepWakeup(bool sleep);
   void extendCurrentMode();
-#ifdef IOTSA_WITH_API
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
-#endif
   void configLoad() override;
   void configSave() override;
   void handler();

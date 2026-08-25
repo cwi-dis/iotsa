@@ -36,22 +36,6 @@ template<> inline bool IotsaApiModObject::getFromRequest<bool,bool>(const JsonOb
 }
 #endif
 
-class IotsaApiProvider  {
-public:
-  IotsaApiProvider() {}
-  virtual ~IotsaApiProvider() {}
-  virtual bool getHandler(const char *path, JsonObject& reply) = 0;
-  virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) = 0;
-  virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) = 0;
-  template <typename JT, typename CT>  bool getFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
-    if (reqObj[name].is<JT>()) {
-      var = reqObj[name].as<CT>();
-      return true;
-    }
-    return false;
-  }
-};
-
 class IotsaApiServiceProvider {
 public:
   IotsaApiServiceProvider() {}
@@ -111,7 +95,7 @@ private:
   int _dummy;
 };
 
-class IotsaApiMod : public IotsaMod, public IotsaApiProvider {
+class IotsaApiMod : public IotsaMod {
 public:
   IotsaApiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
   : IotsaMod(_app, _auth, early),

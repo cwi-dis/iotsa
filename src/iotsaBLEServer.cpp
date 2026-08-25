@@ -25,7 +25,7 @@ class IotsaBLEServerCallbacks : public NimBLEServerCallbacks {
 
 class IotsaBLECharacteristicCallbacks : public NimBLECharacteristicCallbacks {
 public:
-  IotsaBLECharacteristicCallbacks(UUIDstring _charUUID, IotsaBLEApiProvider *_api)
+  IotsaBLECharacteristicCallbacks(UUIDstring _charUUID, IotsaBLEProvider *_api)
   : charUUID(_charUUID),
     api(_api)
   {}
@@ -46,7 +46,7 @@ public:
   }
 private:
   UUIDstring charUUID;
-  IotsaBLEApiProvider *api;
+  IotsaBLEProvider *api;
 };
 
 #ifdef IOTSA_WITH_WEB
@@ -245,7 +245,6 @@ void IotsaBLEServerMod::setup() {
   }
 }
 
-#ifdef IOTSA_WITH_API
 bool IotsaBLEServerMod::getHandler(const char *path, JsonObject& reply) {
   reply["isEnabled"] = isEnabled;
   reply["adv_min"] = adv_min;
@@ -271,16 +270,13 @@ bool IotsaBLEServerMod::putHandler(const char *path, const JsonVariant& request,
   checkUnhandled(reqObj);
   return anyChanged;
 }
-#endif // IOTSA_WITH_API
 
 void IotsaBLEServerMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
   server->on("/bleserver", std::bind(&IotsaBLEServerMod::handler, this));
 #endif
-#ifdef IOTSA_WITH_API
   api.setup("/api/bleserver", true, true);
   name = "bleserver";
-#endif
 }
 
 void IotsaBLEServerMod::lateSetupDone() {
@@ -344,7 +340,7 @@ void IotsaBLEServerMod::loop() {
   }
 }
 
-void IotsaBleApiService::setup(const char* serviceUUID, IotsaBLEApiProvider *_apiProvider) {
+void IotsaBleApiService::setup(const char* serviceUUID, IotsaBLEProvider *_apiProvider) {
   bool isAdvertising = IotsaBLEServerMod::pauseServer();
   IotsaBLEServerMod::createServer();
   next = IotsaBLEServerMod::s_services;

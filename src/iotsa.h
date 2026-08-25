@@ -13,6 +13,7 @@
 
 #include "iotsaWebServer.h"
 #include "iotsaConfig.h"
+#include <ArduinoJson.h>
 
 //
 // Global defines, changes some behaviour in the whole library
@@ -89,7 +90,41 @@ public:
   virtual bool allows(const char *obj, IotsaApiOperation verb) = 0;
 };
 
-class IotsaBaseMod {
+//
+// REST/CoAP/HPS API provider interface. Every module implements this (with
+// harmless do-nothing defaults) whether or not it actually registers any
+// endpoint with a transport -- see cwi-dis/iotsa#206.
+//
+class IotsaApiProvider {
+public:
+  IotsaApiProvider() {}
+  virtual ~IotsaApiProvider() {}
+  virtual bool getHandler(const char *path, JsonObject& reply) { return false; }
+  virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
+  virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
+  template <typename JT, typename CT>  bool getFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
+    if (reqObj[name].is<JT>()) {
+      var = reqObj[name].as<CT>();
+      return true;
+    }
+    return false;
+  }
+};
+
+//
+// Native BLE GATT provider interface (UUID-keyed, no JSON payload). Same
+// always-present-with-defaults treatment as IotsaApiProvider -- see #206.
+//
+class IotsaBLEProvider {
+public:
+  typedef const char * UUIDstring;
+
+  virtual ~IotsaBLEProvider() {}
+  virtual bool blePutHandler(UUIDstring charUUID) { return false; }
+  virtual bool bleGetHandler(UUIDstring charUUID) { return false; }
+};
+
+class IotsaBaseMod : public IotsaApiProvider, public IotsaBLEProvider {
   friend class IotsaApplication;
   friend class IotsaConfigMod;
   friend class IotsaWifiMod;

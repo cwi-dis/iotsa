@@ -21,7 +21,7 @@ private:
 };
 
 
-class IotsaCoapApiMod : public IotsaMod, public IotsaApiProvider {
+class IotsaCoapApiMod : public IotsaMod {
 public:
   IotsaCoapApiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
   : IotsaMod(_app, _auth, early),

@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - BLE advertising could start before every module had registered its characteristics; CoAP/HPS companion modules depended on construction order to exist at all (#113)
+- `IOTSA_WITHOUT_API` combined with auth (`IotsaUserMod`/`IotsaMultiUserMod`/`IotsaCapabilityMod`) failed to build (#206)
+
+### Changed
+
+- Every module now always implements the REST/CoAP/HPS and BLE provider interfaces (harmless no-op defaults when unused), removing the `IotsaXxxModBaseMod` macro dance across 10 modules (#206)
 
 ## [2.9.2] - 2026-08-22
 

@@ -192,9 +192,9 @@ void IotsaBatteryMod::setup() {
 #endif
 #ifdef IOTSA_WITH_BLE
   bleApi.setup(serviceUUID, this);
-  bleApi.addCharacteristic(levelVBatUUID, BLE_READ, NimBLE2904::FORMAT_UINT8, 0x27AD, "Battery Level");
-  bleApi.addCharacteristic(levelVUSBUUID, BLE_READ, NimBLE2904::FORMAT_UINT8, 0x27AD, "USB Voltage Level");
-  bleApi.addCharacteristic(doSoftRebootUUID, BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "Reboot with WiFi");
+  bleApi.addCharacteristic(levelVBatUUID, bleApi.BLE_READ, NimBLE2904::FORMAT_UINT8, 0x27AD, "Battery Level");
+  bleApi.addCharacteristic(levelVUSBUUID, bleApi.BLE_READ, NimBLE2904::FORMAT_UINT8, 0x27AD, "USB Voltage Level");
+  bleApi.addCharacteristic(doSoftRebootUUID, bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "Reboot with WiFi");
 #endif
   iotsaConfig.setExtensionCallback(std::bind(&IotsaBatteryMod::extendCurrentMode, this));
 }
@@ -204,7 +204,6 @@ void IotsaBatteryMod::allowBLEConfigModeSwitch() {
   iotsaConfig.allowRCMDescription("use BLE to set 'reboot with WiFi' to 2");
 }
 
-#ifdef IOTSA_WITH_API
 bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
   reply["sleepMode"] = (int)sleepMode;
   reply["sleepDuration"] = sleepDuration;
@@ -297,7 +296,6 @@ bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, J
   if (anyChanged) configSave();
   return anyChanged;
 }
-#endif // IOTSA_WITH_API
 
 #ifdef IOTSA_WITH_BLE
 bool IotsaBatteryMod::blePutHandler(UUIDstring charUUID) {
@@ -329,10 +327,8 @@ void IotsaBatteryMod::serverSetup() {
   server->on("/battery", std::bind(&IotsaBatteryMod::handler, this));
   server->on("/battery", HTTP_POST, std::bind(&IotsaBatteryMod::handler, this));
 #endif
-#ifdef IOTSA_WITH_API
   api.setup("/api/battery", true, true);
   name = "battery";
-#endif
 }
 
 void IotsaBatteryMod::configLoad() {

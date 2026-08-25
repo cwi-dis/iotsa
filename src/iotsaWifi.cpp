@@ -19,7 +19,7 @@
 static int privateNetworkModeReason;
 
 IotsaWifiMod::IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth)
-: IotsaWifiModBaseMod(_app, _auth, true),
+: IotsaApiMod(_app, _auth, true),
   configMod(_app, _auth),
   ssid(""),
   ssidPassword(""),
@@ -341,7 +341,6 @@ String IotsaWifiMod::info() {
 }
 #endif // IOTSA_WITH_WEB
 
-#ifdef IOTSA_WITH_API
 bool IotsaWifiMod::getHandler(const char *path, JsonObject& reply) {
   reply["ssid"] = ssid;
   reply["has_ssidPassword"] = ssidPassword.length() > 0;
@@ -372,16 +371,13 @@ bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, Json
   checkUnhandled(reqObj);
   return anyChanged;
 }
-#endif // IOTSA_WITH_API
 
 void IotsaWifiMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
   server->on("/wificonfig", std::bind(&IotsaWifiMod::handler, this));
 #endif
-#ifdef IOTSA_WITH_API
   api.setup("/api/wificonfig", true, true);
   name = "wificonfig";
-#endif
 }
 
 void IotsaWifiMod::configLoad() {

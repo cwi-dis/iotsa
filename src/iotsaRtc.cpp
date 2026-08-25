@@ -113,7 +113,6 @@ void IotsaRtcMod::setup() {
   _updateSysTime();
 }
 
-#ifdef IOTSA_WITH_API
 bool IotsaRtcMod::getHandler(const char *path, JsonObject& reply) {
   reply["isoTime"] = isoTime();
   return true;
@@ -129,16 +128,13 @@ bool IotsaRtcMod::putHandler(const char *path, const JsonVariant& request, JsonO
   checkUnhandled(reqObj);
   return anyChanged;
 }
-#endif // IOTSA_WITH_API
 
 void IotsaRtcMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
   server->on("/rtcconfig", std::bind(&IotsaRtcMod::handler, this));
 #endif
-#ifdef IOTSA_WITH_API
   api.setup("/api/rtcconfig", true, true);
   name = "rtcconfig";
-#endif
 }
 
 void IotsaRtcMod::configLoad() {

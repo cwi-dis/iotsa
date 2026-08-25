@@ -340,7 +340,6 @@ String IotsaConfigMod::info() {
 }
 #endif // IOTSA_WITH_WEB
 
-#ifdef IOTSA_WITH_API
 bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   if (strcmp(path, "/api/version") == 0) {
     reply["iotsaVersion"] = IOTSA_VERSION;
@@ -575,7 +574,6 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   }
   return anyChanged||radioModeChanged;
 }
-#endif // IOTSA_WITH_API
 #if defined(IOTSA_WITH_WEB)
 static File _uploadFile;
 static bool _uploadOK;
@@ -628,11 +626,9 @@ void IotsaConfigMod::serverSetup() {
   server->on("/config", HTTP_POST, std::bind(&IotsaConfigMod::handler, this));
   server->on("/configupload", HTTP_POST, std::bind(&IotsaConfigMod::uploadOkHandler, this), std::bind(&IotsaConfigMod::uploadHandler, this));
 #endif
-#ifdef IOTSA_WITH_API
   api.setup("/api/config", true, true);
   api.setup("/api/version", true);
   name = "config";
-#endif
 }
 
 void IotsaConfigMod::configLoad() {

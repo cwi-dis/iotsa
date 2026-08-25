@@ -5,13 +5,7 @@
 #include "iotsaConfigMod.h"
 
 #ifdef IOTSA_WITH_WIFI
-#ifdef IOTSA_WITH_API
-#define IotsaWifiModBaseMod IotsaApiMod
-#else
-#define IotsaWifiModBaseMod IotsaMod
-#endif
-
-class IotsaWifiMod : public IotsaWifiModBaseMod {
+class IotsaWifiMod : public IotsaApiMod {
 public:
   IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL);
 	void setup() override;
@@ -21,10 +15,8 @@ public:
   String info() override;
 #endif
 protected:
-#ifdef IOTSA_WITH_API
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
-#endif
 private:
   void configLoad() override;
   void configSave() override;

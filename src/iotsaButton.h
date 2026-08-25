@@ -19,16 +19,10 @@ public:
 
 typedef std::function<void(void)> callback;
 
-#ifdef IOTSA_WITH_API
-#define IotsaButtonModBaseMod IotsaApiMod
-#else
-#define IotsaButtonModBaseMod IotsaMod
-#endif
-
-class IotsaButtonMod : IotsaButtonModBaseMod {
+class IotsaButtonMod : IotsaApiMod {
 public:
   IotsaButtonMod(IotsaApplication &_app, Button* _buttons, int _nButton, IotsaAuthMod *_auth=NULL, callback _successCallback=NULL, callback _failureCallback=NULL)
-  : IotsaButtonModBaseMod(_app, _auth),
+  : IotsaApiMod(_app, _auth),
     buttons(_buttons),
     nButton(_nButton),
     successCallback(_successCallback),
@@ -41,10 +35,8 @@ public:
   String info() override;
 #endif
 protected:
-#ifdef IOTSA_WITH_API
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
-#endif
   void configLoad() override;
   void configSave() override;
   void handler();

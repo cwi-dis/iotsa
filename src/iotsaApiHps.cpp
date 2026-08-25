@@ -19,7 +19,7 @@ class IotsaHpsServiceEntryPoint {
    IotsaAuthenticationProvider* auth;
 };
 
-class IotsaHpsServiceMod : public IotsaMod, public IotsaBLEApiProvider {
+class IotsaHpsServiceMod : public IotsaMod {
   friend class IotsaApiServiceHps;
 
   const int HPSMaxBodySize = 512;
@@ -50,12 +50,12 @@ public:
     IFBLEDEBUG IotsaSerial.println("IotsaHpsServiceMod::setup called");
     bleApi.setup(IotsaApiServiceHps::serviceUUID, this);
     // Explain to clients what the rgb characteristic looks like
-    bleApi.addCharacteristic(IotsaApiServiceHps::urlUUID, BLE_READ|BLE_WRITE, NimBLE2904::FORMAT_UTF8, 0x2700, "HPS URL");
-    bleApi.addCharacteristic(IotsaApiServiceHps::headersUUID, BLE_READ|BLE_WRITE, NimBLE2904::FORMAT_UTF8, 0x2700, "HPS Headers");
-    bleApi.addCharacteristic(IotsaApiServiceHps::statusUUID, BLE_READ|BLE_NOTIFY, NimBLE2904::FORMAT_OPAQUE, 0x2700, "HPS Status");
-    bleApi.addCharacteristic(IotsaApiServiceHps::bodyUUID, BLE_READ|BLE_WRITE, NimBLE2904::FORMAT_UTF8, 0x2700, "HPS Body");
-    bleApi.addCharacteristic(IotsaApiServiceHps::controlPointUUID, BLE_READ|BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "HPS ControlPoint");
-    bleApi.addCharacteristic(IotsaApiServiceHps::securityUUID, BLE_READ, NimBLE2904::FORMAT_BOOLEAN, 0x2700, "HPS Security");
+    bleApi.addCharacteristic(IotsaApiServiceHps::urlUUID, bleApi.BLE_READ|bleApi.BLE_WRITE, NimBLE2904::FORMAT_UTF8, 0x2700, "HPS URL");
+    bleApi.addCharacteristic(IotsaApiServiceHps::headersUUID, bleApi.BLE_READ|bleApi.BLE_WRITE, NimBLE2904::FORMAT_UTF8, 0x2700, "HPS Headers");
+    bleApi.addCharacteristic(IotsaApiServiceHps::statusUUID, bleApi.BLE_READ|bleApi.BLE_NOTIFY, NimBLE2904::FORMAT_OPAQUE, 0x2700, "HPS Status");
+    bleApi.addCharacteristic(IotsaApiServiceHps::bodyUUID, bleApi.BLE_READ|bleApi.BLE_WRITE, NimBLE2904::FORMAT_UTF8, 0x2700, "HPS Body");
+    bleApi.addCharacteristic(IotsaApiServiceHps::controlPointUUID, bleApi.BLE_READ|bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "HPS ControlPoint");
+    bleApi.addCharacteristic(IotsaApiServiceHps::securityUUID, bleApi.BLE_READ, NimBLE2904::FORMAT_BOOLEAN, 0x2700, "HPS Security");
   }
 
   void loop() override {}

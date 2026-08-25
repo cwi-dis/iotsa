@@ -161,7 +161,6 @@ void IotsaNtpMod::setup() {
   configLoad();
 }
 
-#ifdef IOTSA_WITH_API
 bool IotsaNtpMod::getHandler(const char *path, JsonObject& reply) {
   reply["ntpServer"] = ntpServer;
 #ifdef IOTSA_WITH_TIMEZONE
@@ -195,16 +194,13 @@ bool IotsaNtpMod::putHandler(const char *path, const JsonVariant& request, JsonO
   checkUnhandled(reqObj);
   return anyChanged;
 }
-#endif // IOTSA_WITH_API
 
 void IotsaNtpMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
   server->on("/ntpconfig", std::bind(&IotsaNtpMod::handler, this));
 #endif
-#ifdef IOTSA_WITH_API
   api.setup("/api/ntpconfig", true, true);
   name = "ntpconfig";
-#endif
 }
 
 void IotsaNtpMod::configLoad() {

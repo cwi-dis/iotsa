@@ -27,7 +27,7 @@ public:
 #endif
 };
 
-class IotsaMultiUserMod : public IotsaAuthMod, public IotsaApiProvider {
+class IotsaMultiUserMod : public IotsaAuthMod {
 public:
   IotsaMultiUserMod(IotsaApplication &_app);
   void setup() override;

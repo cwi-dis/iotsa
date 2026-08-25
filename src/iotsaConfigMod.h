@@ -3,16 +3,10 @@
 #include "iotsa.h"
 #include "iotsaApi.h"
 
-#ifdef IOTSA_WITH_API
-#define IotsaConfigModBaseMod IotsaApiMod
-#else
-#define IotsaConfigModBaseMod IotsaMod
-#endif
-
-class IotsaConfigMod : public IotsaConfigModBaseMod {
+class IotsaConfigMod : public IotsaApiMod {
 public:
   IotsaConfigMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL)
-  : IotsaConfigModBaseMod(_app, _auth, true) 
+  : IotsaApiMod(_app, _auth, true)
 #ifdef IOTSA_WITH_HTTPS
   , newCertificate(NULL),
   newCertificateLength(0),
@@ -28,10 +22,8 @@ public:
   String info() override;
 #endif
 protected:
-#ifdef IOTSA_WITH_API
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
-#endif
   void uploadHandler();
   void uploadOkHandler();
 private:

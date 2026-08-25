@@ -19,7 +19,7 @@ private:
   void _postHandlerWrapper(const char *path);
 };
 
-class IotsaRestApiMod : public IotsaMod, public IotsaApiProvider {
+class IotsaRestApiMod : public IotsaMod {
 public:
   IotsaRestApiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
   : IotsaMod(_app, _auth, early),
