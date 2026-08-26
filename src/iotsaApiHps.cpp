@@ -291,8 +291,9 @@ std::list<IotsaHpsServiceEntryPoint*> IotsaHpsServiceMod::getEntryPoints;
 std::list<IotsaHpsServiceEntryPoint*> IotsaHpsServiceMod::putEntryPoints;
 std::list<IotsaHpsServiceEntryPoint*> IotsaHpsServiceMod::postEntryPoints;
 
-IotsaApiServiceHps::IotsaApiServiceHps(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth)
-: auth(_auth)
+IotsaApiServiceHps::IotsaApiServiceHps(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth, IotsaApiServiceProvider* _next)
+: IotsaApiServiceProvider(_next),
+  auth(_auth)
 {
   ensureServiceMod(_app);
   provider = _provider;
@@ -321,6 +322,7 @@ void IotsaApiServiceHps::setup(const char* path, bool get, bool put, bool post) 
   if (post) {
     IotsaHpsServiceMod::postEntryPoints.push_back(entry);
   }
+  if (next) next->setup(path, get, put, post);
 }
 
 #endif // IOTSA_WITH_HPS

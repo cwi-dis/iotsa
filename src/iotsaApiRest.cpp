@@ -6,6 +6,7 @@ void IotsaApiServiceRest::setup(const char* path, bool get, bool put, bool post)
     if (get) server->on(path, HTTP_GET, std::bind(&IotsaApiServiceRest::_getHandlerWrapper, this, path));
     if (put) server->on(path, HTTP_PUT, std::bind(&IotsaApiServiceRest::_putHandlerWrapper, this, path));
     if (post) server->on(path, HTTP_POST, std::bind(&IotsaApiServiceRest::_postHandlerWrapper, this, path));
+    if (next) next->setup(path, get, put, post);
 }
 
 void IotsaApiServiceRest::_getHandlerWrapper(const char *path) {

@@ -166,8 +166,9 @@ void IotsaCoapServiceMod::addEndpoint(CoapEndpoint *ep, const char *path) {
     coap.server(ep->getCallback(&coap), String(path));
 }
 
-IotsaApiServiceCoap::IotsaApiServiceCoap(IotsaApiProvider* _provider, IotsaApplication &_app)
-  : provider(_provider)
+IotsaApiServiceCoap::IotsaApiServiceCoap(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaApiServiceProvider* _next)
+  : IotsaApiServiceProvider(_next),
+    provider(_provider)
 {
   ensureServiceMod(_app);
 }
@@ -177,10 +178,13 @@ void IotsaApiServiceCoap::ensureServiceMod(IotsaApplication &app) {
 }
 
 void IotsaApiServiceCoap::setup(const char* path, bool get, bool put, bool post) {
-    if (!iotsaConfig.wifiEnabled) return;
-    CoapEndpoint *ep = new CoapEndpoint(provider, path, get, put, post);
-    if (strncmp(path, "/api/", 5) == 0) path += 5;
-    _coapMod->addEndpoint(ep, path);
+    if (iotsaConfig.wifiEnabled) {
+        CoapEndpoint *ep = new CoapEndpoint(provider, path, get, put, post);
+        const char *coapPath = path;
+        if (strncmp(coapPath, "/api/", 5) == 0) coapPath += 5;
+        _coapMod->addEndpoint(ep, coapPath);
+    }
+    if (next) next->setup(path, get, put, post);
 }
 
 #endif

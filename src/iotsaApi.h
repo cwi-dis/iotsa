@@ -38,9 +38,11 @@ template<> inline bool IotsaApiModObject::getFromRequest<bool,bool>(const JsonOb
 
 class IotsaApiServiceProvider {
 public:
-  IotsaApiServiceProvider() {}
+  IotsaApiServiceProvider(IotsaApiServiceProvider* _next=nullptr) : next(_next) {}
   virtual ~IotsaApiServiceProvider() {}
   virtual void setup(const char* path, bool get=false, bool put=false, bool post=false) = 0;
+protected:
+  IotsaApiServiceProvider* next;
 };
 
 #ifdef IOTSA_WITH_REST
@@ -54,45 +56,27 @@ public:
 #endif
 
 //
-// Class that provides both REST and COAP service endpoint implementations.
+// Chains together whichever of the REST/CoAP/HPS transport services are
+// compiled in, each forwarding setup() to the next link. Collapses what used
+// to be three ifdef'd members/init-list entries/setup() calls down to one
+// ifdef'd chain-building constructor, see cwi-dis/iotsa#213.
 //
 class IotsaApiService : public IotsaApiServiceProvider {
 public:
-  IotsaApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth)
-  :
-  #ifdef IOTSA_WITH_REST
-    restService(_provider, _app, _auth),
+  IotsaApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth) {
+  #ifdef IOTSA_WITH_HPS
+    next = new IotsaApiServiceHps(_provider, _app, _auth, next);
   #endif
   #ifdef IOTSA_WITH_COAP
-    coapService(_provider, _app, _auth),
+    next = new IotsaApiServiceCoap(_provider, _app, _auth, next);
   #endif
-  #ifdef IOTSA_WITH_HPS
-    bleRestService(_provider, _app, _auth),
-  #endif
-    _dummy(0)
-  {}
-  void setup(const char* path, bool get=false, bool put=false, bool post=false) override {
   #ifdef IOTSA_WITH_REST
-    restService.setup(path, get, put, post);
-  #endif
-  #ifdef IOTSA_WITH_COAP
-    coapService.setup(path, get, put, post);
-  #endif
-  #ifdef IOTSA_WITH_HPS
-    bleRestService.setup(path, get, put, post);
+    next = new IotsaApiServiceRest(_provider, _app, _auth, next);
   #endif
   }
-private:
-#ifdef IOTSA_WITH_REST
-  IotsaApiServiceRest restService;
-#endif
-#ifdef IOTSA_WITH_COAP
-  IotsaApiServiceCoap coapService;
-#endif
-#ifdef IOTSA_WITH_HPS
-  IotsaApiServiceHps bleRestService;
-#endif
-  int _dummy;
+  void setup(const char* path, bool get=false, bool put=false, bool post=false) override {
+    if (next) next->setup(path, get, put, post);
+  }
 };
 
 class IotsaModule : public IotsaBaseModule {

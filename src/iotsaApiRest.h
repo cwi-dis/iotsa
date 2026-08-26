@@ -4,8 +4,9 @@
 
 class IotsaApiServiceRest : public IotsaApiServiceProvider {
 public:
-  IotsaApiServiceRest(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth)
-  : provider(_provider),
+  IotsaApiServiceRest(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth, IotsaApiServiceProvider* _next=nullptr)
+  : IotsaApiServiceProvider(_next),
+    provider(_provider),
     auth(_auth),
     server(_app.server)
   {}

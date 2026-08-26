@@ -10,7 +10,7 @@ class IotsaHpsServiceMod;
 class IotsaApiServiceHps : public IotsaApiServiceProvider {
 public:
   typedef const char * UUIDstring;
-  IotsaApiServiceHps(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth);
+  IotsaApiServiceHps(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth, IotsaApiServiceProvider* _next=nullptr);
   void setup(const char* path, bool get=false, bool put=false, bool post=false) override;
   static void ensureServiceMod(IotsaApplication &app);
 private:

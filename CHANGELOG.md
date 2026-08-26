@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Every module now always implements the REST/CoAP/HPS and BLE provider interfaces (harmless no-op defaults when unused), removing the `IotsaXxxModBaseMod` macro dance across 10 modules (#206)
 - Renamed `IotsaMod`→`IotsaBaseModule`, `IotsaApiMod`→`IotsaModule`, merging the old `IotsaBaseMod`/`IotsaMod` split into one lenient base class (#206). **Breaking**: any app code deriving directly from `IotsaMod`/`IotsaApiMod` needs updating.
+- `IotsaApiService` now chains its REST/CoAP/HPS transport services instead of composing them via nine duplicated `#ifdef` blocks (#213)
 
 ## [2.9.2] - 2026-08-22
 
