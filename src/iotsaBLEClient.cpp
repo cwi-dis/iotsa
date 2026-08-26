@@ -322,7 +322,7 @@ void IotsaBLEClientMod::onScanEnd(const NimBLEScanResults& scanResults, int reas
 }
 
 void IotsaBLEClientMod::serverSetup() {
-  api.setup("/api/bleclient", true, true, false);
+  api.setup("bleclient", true, true, false);
   name = "bleclient";
 #ifdef IOTSA_WITH_WEB
   server->on("/bleclient", std::bind(&IotsaBLEClientMod::handler, this));

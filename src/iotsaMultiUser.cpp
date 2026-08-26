@@ -218,8 +218,9 @@ bool IotsaMultiUserMod::postHandler(const char *path, const JsonVariant& request
 int IotsaMultiUserMod::_addUser(IotsaUser& newUser) {
   int oldLength = users.size();
   users.push_back(newUser);
-  newUser.apiEndpoint = String("/api/users/")+String(oldLength);
-  api.setup(newUser.apiEndpoint.c_str(), true, true, false);
+  String bareName = String("users/")+String(oldLength);
+  newUser.apiEndpoint = String("/api/") + bareName;
+  api.setup(bareName.c_str(), true, true, false);
   configSave();
   return oldLength;
 }
@@ -232,12 +233,13 @@ void IotsaMultiUserMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
   server->on("/users", std::bind(&IotsaMultiUserMod::handler, this));
 #endif
-  api.setup("/api/users", true, false, true);
+  api.setup("users", true, false, true);
   name = "users";
   int idx = 0;
   for(auto u: users) {
-    u.apiEndpoint = String("/api/users/")+String(idx++);
-    api.setup(u.apiEndpoint.c_str(), true, true, false);
+    String bareName = String("users/")+String(idx++);
+    u.apiEndpoint = String("/api/") + bareName;
+    api.setup(bareName.c_str(), true, true, false);
   }
 }
 

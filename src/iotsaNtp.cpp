@@ -199,7 +199,7 @@ void IotsaNtpMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
   server->on("/ntpconfig", std::bind(&IotsaNtpMod::handler, this));
 #endif
-  api.setup("/api/ntpconfig", true, true);
+  api.setup("ntpconfig", true, true);
   name = "ntpconfig";
 }
 

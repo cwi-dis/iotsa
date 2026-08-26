@@ -626,8 +626,8 @@ void IotsaConfigMod::serverSetup() {
   server->on("/config", HTTP_POST, std::bind(&IotsaConfigMod::handler, this));
   server->on("/configupload", HTTP_POST, std::bind(&IotsaConfigMod::uploadOkHandler, this), std::bind(&IotsaConfigMod::uploadHandler, this));
 #endif
-  api.setup("/api/config", true, true);
-  api.setup("/api/version", true);
+  api.setup("config", true, true);
+  api.setup("version", true);
   name = "config";
 }
 

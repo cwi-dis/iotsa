@@ -376,7 +376,7 @@ void IotsaWifiMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
   server->on("/wificonfig", std::bind(&IotsaWifiMod::handler, this));
 #endif
-  api.setup("/api/wificonfig", true, true);
+  api.setup("wificonfig", true, true);
   name = "wificonfig";
 }
 

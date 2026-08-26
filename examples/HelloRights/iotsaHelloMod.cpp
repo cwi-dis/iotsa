@@ -39,7 +39,7 @@ bool IotsaHelloMod::putHandler(const char *path, const JsonVariant& request, Jso
 void IotsaHelloMod::serverSetup() {
   // Setup the web server hooks for this module.
   server->on("/hello", std::bind(&IotsaHelloMod::handler, this));
-  api.setup("/api/hello", true, true);
+  api.setup("hello", true, true);
   name = "hello";
 }
 

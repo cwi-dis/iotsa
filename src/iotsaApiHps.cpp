@@ -14,7 +14,9 @@
 
 class IotsaHpsServiceEntryPoint {
   public:
-   const char *api_path;
+   // Owned copy: the caller now passes a bare name, so this class builds and keeps its
+   // own /api/-prefixed path rather than aliasing the caller's (possibly transient) pointer.
+   String api_path;
    IotsaApiProvider *provider;
    IotsaAuthenticationProvider* auth;
 };
@@ -214,7 +216,7 @@ protected:
       cmd_put ? putEntryPoints :
                 postEntryPoints);
     for(IotsaHpsServiceEntryPoint* ep : epList) {
-      if (strcmp(url_c, ep->api_path) == 0) {
+      if (ep->api_path == url_c) {
         provider = ep->provider;
       }
     }
@@ -310,7 +312,7 @@ void IotsaApiServiceHps::setup(const char* path, bool get, bool put, bool post) 
   IFBLEDEBUG IotsaSerial.printf("IotsaApiServiceHps: path=%s\n", path);
   // The IotsaHpsServiceEntryPoint are immutable so we can add it to multiple lists
   IotsaHpsServiceEntryPoint *entry = new IotsaHpsServiceEntryPoint();
-  entry->api_path = path;
+  entry->api_path = String("/api/") + path;
   entry->provider = provider;
   entry->auth = auth;
   if (get) {

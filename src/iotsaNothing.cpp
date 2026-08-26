@@ -50,7 +50,7 @@ void IotsaNothingMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
   server->on("/nothing", std::bind(&IotsaNothingMod::handler, this));
 #endif
-  api.setup("/api/nothing", true, true);
+  api.setup("nothing", true, true);
   name = "nothing";
 }
 

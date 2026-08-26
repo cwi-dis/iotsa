@@ -133,7 +133,7 @@ void IotsaRtcMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
   server->on("/rtcconfig", std::bind(&IotsaRtcMod::handler, this));
 #endif
-  api.setup("/api/rtcconfig", true, true);
+  api.setup("rtcconfig", true, true);
   name = "rtcconfig";
 }
 

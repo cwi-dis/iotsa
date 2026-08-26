@@ -224,10 +224,10 @@ void IotsaButtonMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
   server->on("/buttons", std::bind(&IotsaButtonMod::handler, this));
 #endif
-  api.setup("/api/buttons", true, true);
+  api.setup("buttons", true, true);
   for(int i=0; i<nButton; i++) {
-      String *p = new String("/api/buttons/" + String(i));
-      api.setup(p->c_str(), true, true);
+      String p = "buttons/" + String(i);
+      api.setup(p.c_str(), true, true);
   }
   name = "buttons";
 }

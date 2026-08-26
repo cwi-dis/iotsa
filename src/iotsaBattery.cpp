@@ -327,7 +327,7 @@ void IotsaBatteryMod::serverSetup() {
   server->on("/battery", std::bind(&IotsaBatteryMod::handler, this));
   server->on("/battery", HTTP_POST, std::bind(&IotsaBatteryMod::handler, this));
 #endif
-  api.setup("/api/battery", true, true);
+  api.setup("battery", true, true);
   name = "battery";
 }
 

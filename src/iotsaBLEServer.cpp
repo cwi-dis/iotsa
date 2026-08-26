@@ -275,7 +275,7 @@ void IotsaBLEServerMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
   server->on("/bleserver", std::bind(&IotsaBLEServerMod::handler, this));
 #endif
-  api.setup("/api/bleserver", true, true);
+  api.setup("bleserver", true, true);
   name = "bleserver";
 }
 

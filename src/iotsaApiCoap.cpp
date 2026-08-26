@@ -10,7 +10,7 @@ IotsaCoapServiceMod* IotsaApiServiceCoap::_coapMod = NULL;
 
 class CoapEndpoint {
 public:
-  CoapEndpoint(IotsaApiProvider *_provider, const char *_path, bool _get, bool _put, bool _post)
+  CoapEndpoint(IotsaApiProvider *_provider, const String &_path, bool _get, bool _put, bool _post)
   : provider(_provider),
     path(_path),
     get(_get),
@@ -19,7 +19,10 @@ public:
     coap(NULL)
   {}
   IotsaApiProvider *provider;
-  const char *path;
+  // Owned copy: the module's own /api/-prefixed path, handed to getHandler/putHandler/
+  // postHandler at request time, as opposed to the bare name used for our own CoAP
+  // resource registration (which coap.server() below already copies into its own String).
+  String path;
   bool get;
   bool put;
   bool post;
@@ -54,7 +57,7 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
         if (ok) {
             JsonDocument replyDocument;
             JsonObject reply = replyDocument.to<JsonObject>();
-            ok = provider->getHandler(path, reply);
+            ok = provider->getHandler(path.c_str(), reply);
             if (ok) {
                 serializeJson(replyDocument, replyData);
             }
@@ -78,7 +81,7 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
             JsonObject request = requestDocument.as<JsonObject>();
             JsonObject reply = replyDocument.to<JsonObject>();
 
-            ok = provider->putHandler(path, request, reply);
+            ok = provider->putHandler(path.c_str(), request, reply);
             if (ok) {
                 serializeJson(replyDocument, replyData);
             }
@@ -101,7 +104,7 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
             JsonDocument replyDocument;
             JsonObject request = requestDocument.as<JsonObject>();
             JsonObject reply = replyDocument.to<JsonObject>();
-            ok = provider->postHandler(path, request, reply);
+            ok = provider->postHandler(path.c_str(), request, reply);
             if (ok) {
                 serializeJson(replyDocument, replyData);
             }
@@ -179,10 +182,12 @@ void IotsaApiServiceCoap::ensureServiceMod(IotsaApplication &app) {
 
 void IotsaApiServiceCoap::setup(const char* path, bool get, bool put, bool post) {
     if (iotsaConfig.wifiEnabled) {
-        CoapEndpoint *ep = new CoapEndpoint(provider, path, get, put, post);
-        const char *coapPath = path;
-        if (strncmp(coapPath, "/api/", 5) == 0) coapPath += 5;
-        _coapMod->addEndpoint(ep, coapPath);
+        // CoAP has no use for an HTTP-ism in its own resource namespace, so it registers
+        // the bare name directly; it still reconstructs /api/+name for what it hands to
+        // the module's handlers, to keep that contract identical to REST/HPS.
+        String fullPath = String("/api/") + path;
+        CoapEndpoint *ep = new CoapEndpoint(provider, fullPath, get, put, post);
+        _coapMod->addEndpoint(ep, path);
     }
     if (next) next->setup(path, get, put, post);
 }

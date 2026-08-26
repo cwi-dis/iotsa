@@ -71,7 +71,7 @@ void IotsaLedControlMod::serverSetup() {
   server->on("/led", std::bind(&IotsaLedControlMod::handler, this));
 #endif // IOTSA_WITH_WEB
 #ifdef IOTSA_WITH_API
-  api.setup("/api/led", true, true);
+  api.setup("led", true, true);
 #endif
   name = "led";
 }

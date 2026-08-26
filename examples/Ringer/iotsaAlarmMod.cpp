@@ -70,7 +70,7 @@ void IotsaAlarmMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
   server->on("/alarm", std::bind(&IotsaAlarmMod::handler, this));
 #endif
-  api.setup("/api/alarm", true, true);
+  api.setup("alarm", true, true);
   name = "alarm";
 }
 

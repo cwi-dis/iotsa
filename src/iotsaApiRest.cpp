@@ -3,9 +3,15 @@
 #ifdef IOTSA_WITH_REST
 void IotsaApiServiceRest::setup(const char* path, bool get, bool put, bool post) {
     // xxxjack may be enabled later... if (!iotsaConfig.wifiEnabled) return;
-    if (get) server->on(path, HTTP_GET, std::bind(&IotsaApiServiceRest::_getHandlerWrapper, this, path));
-    if (put) server->on(path, HTTP_PUT, std::bind(&IotsaApiServiceRest::_putHandlerWrapper, this, path));
-    if (post) server->on(path, HTTP_POST, std::bind(&IotsaApiServiceRest::_postHandlerWrapper, this, path));
+    // Callers pass a bare name; REST is the one that cares about the /api/ prefix, both
+    // for its own HTTP registration and for what it hands to the module's handlers, so it
+    // builds (and keeps, since server->on() and the bound wrappers need it to outlive this
+    // call) its own permanent copy rather than relying on the caller's path to persist.
+    String *fullPath = new String(String("/api/") + path);
+    const char *p = fullPath->c_str();
+    if (get) server->on(p, HTTP_GET, std::bind(&IotsaApiServiceRest::_getHandlerWrapper, this, p));
+    if (put) server->on(p, HTTP_PUT, std::bind(&IotsaApiServiceRest::_putHandlerWrapper, this, p));
+    if (post) server->on(p, HTTP_POST, std::bind(&IotsaApiServiceRest::_postHandlerWrapper, this, p));
     if (next) next->setup(path, get, put, post);
 }
 

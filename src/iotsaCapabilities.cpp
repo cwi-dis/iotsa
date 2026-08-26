@@ -156,7 +156,7 @@ void IotsaCapabilityMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
   server->on("/capabilities", std::bind(&IotsaCapabilityMod::handler, this));
 #endif
-  api.setup("/api/capabilities", true, true, false);
+  api.setup("capabilities", true, true, false);
   name = "capabilities";
 }
 
