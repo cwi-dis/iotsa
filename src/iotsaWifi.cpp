@@ -230,7 +230,7 @@ bool IotsaWifiMod::_wifiStartMDNS() {
 
 #ifdef IOTSA_WITH_WEB
 void
-IotsaWifiMod::handler() {
+IotsaWifiMod::webHandler() {
   bool wrongMode = false;
   if (needsAuthentication("config")) return;
   bool anyChanged = false;
@@ -373,10 +373,10 @@ bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, Json
 }
 
 void IotsaWifiMod::serverSetup() {
-#ifdef IOTSA_WITH_WEB
-  server->on("/wificonfig", std::bind(&IotsaWifiMod::handler, this));
-#endif
   api.setup("wificonfig", true, true);
+#ifdef IOTSA_WITH_WEB
+  web.setup("wificonfig", true);
+#endif
   name = "wificonfig";
 }
 

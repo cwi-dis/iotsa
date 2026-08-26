@@ -29,7 +29,9 @@ protected:
 private:
   void configLoad() override;
   void configSave() override;
-  void handler();
+#ifdef IOTSA_WITH_WEB
+  void webHandler() override;
+#endif
 #ifdef IOTSA_WITH_HTTPS
   const uint8_t* newCertificate;
   size_t newCertificateLength;

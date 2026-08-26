@@ -54,6 +54,9 @@ protected:
 #ifdef IOTSA_WITH_HPS
 #include "iotsaApiHps.h"
 #endif
+#ifdef IOTSA_WITH_WEB
+#include "iotsaApiWeb.h"
+#endif
 
 //
 // Chains together whichever of the REST/CoAP/HPS transport services are
@@ -84,6 +87,9 @@ public:
   IotsaModule(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
   : IotsaBaseModule(_app, _auth, early),
     api(this, _app, _auth)
+#ifdef IOTSA_WITH_WEB
+    , web(this, _app)
+#endif
   {}
   virtual bool getHandler(const char *path, JsonObject& reply) override { return false; }
   virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
@@ -108,6 +114,9 @@ protected:
     return rv;
   }
   IotsaApiService api;
+#ifdef IOTSA_WITH_WEB
+  IotsaWebServiceProvider web;
+#endif
 };
 
 #endif // _IOTSAAPI_H_

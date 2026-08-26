@@ -7,13 +7,16 @@ IotsaUserMod::IotsaUserMod(IotsaApplication &_app, const char *_username, const 
   username(_username),
 	password(_password),
 	api(this, _app, this)
+#ifdef IOTSA_WITH_WEB
+  , web(this, _app)
+#endif
 {
 	configLoad();
 }
 
 #ifdef IOTSA_WITH_WEB
 void
-IotsaUserMod::handler() {
+IotsaUserMod::webHandler() {
   bool anyChanged = false;
   bool passwordChanged = false;
   bool oldPasswordCorrect = false;
@@ -132,11 +135,11 @@ void IotsaUserMod::setup() {
 }
 
 void IotsaUserMod::serverSetup() {
-#ifdef IOTSA_WITH_WEB
-  server->on("/users", std::bind(&IotsaUserMod::handler, this));
-#endif
   api.setup("users", true, false, true);
   api.setup("users/0", true, true, false);
+#ifdef IOTSA_WITH_WEB
+  web.setup("users", true);
+#endif
   name = "users";
 }
 

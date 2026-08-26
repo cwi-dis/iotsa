@@ -61,7 +61,7 @@ void IotsaConfigMod::setup() {
 
 #ifdef IOTSA_WITH_WEB
 void
-IotsaConfigMod::handler() {
+IotsaConfigMod::webHandler() {
   bool wrongMode = false;
   bool anyChanged = false;
   bool hostnameChanged = false;
@@ -622,12 +622,13 @@ IotsaConfigMod::uploadOkHandler() {
 
 void IotsaConfigMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
-  server->on("/config", std::bind(&IotsaConfigMod::handler, this));
-  server->on("/config", HTTP_POST, std::bind(&IotsaConfigMod::handler, this));
   server->on("/configupload", HTTP_POST, std::bind(&IotsaConfigMod::uploadOkHandler, this), std::bind(&IotsaConfigMod::uploadHandler, this));
 #endif
   api.setup("config", true, true);
   api.setup("version", true);
+#ifdef IOTSA_WITH_WEB
+  web.setup("config", true);
+#endif
   name = "config";
 }
 

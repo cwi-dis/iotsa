@@ -4,7 +4,7 @@
 
 #ifdef IOTSA_WITH_WEB
 void
-IotsaNothingMod::handler() {
+IotsaNothingMod::webHandler() {
   bool anyChanged = false;
   if( server->hasArg("argument")) {
     if (needsAuthentication()) return;
@@ -47,10 +47,10 @@ bool IotsaNothingMod::putHandler(const char *path, const JsonVariant& request, J
 }
 
 void IotsaNothingMod::serverSetup() {
-#ifdef IOTSA_WITH_WEB
-  server->on("/nothing", std::bind(&IotsaNothingMod::handler, this));
-#endif
   api.setup("nothing", true, true);
+#ifdef IOTSA_WITH_WEB
+  web.setup("nothing", true);
+#endif
   name = "nothing";
 }
 

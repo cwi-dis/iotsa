@@ -20,7 +20,9 @@ protected:
 private:
   void configLoad() override;
   void configSave() override;
-  void handler();
+#ifdef IOTSA_WITH_WEB
+  void webHandler() override;
+#endif
   void _wifiGotoMode();
   bool _wifiStartStation();
   void _wifiStopStation();

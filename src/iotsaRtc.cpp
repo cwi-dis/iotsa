@@ -80,7 +80,7 @@ void IotsaRtcMod::_updateCurrentTime() {
 
 #ifdef IOTSA_WITH_WEB
 void
-IotsaRtcMod::handler() {
+IotsaRtcMod::webHandler() {
   bool ok = true;
   if( server->hasArg("isoTime")) {
     if (needsAuthentication("rtc")) return;
@@ -130,10 +130,10 @@ bool IotsaRtcMod::putHandler(const char *path, const JsonVariant& request, JsonO
 }
 
 void IotsaRtcMod::serverSetup() {
-#ifdef IOTSA_WITH_WEB
-  server->on("/rtcconfig", std::bind(&IotsaRtcMod::handler, this));
-#endif
   api.setup("rtcconfig", true, true);
+#ifdef IOTSA_WITH_WEB
+  web.setup("rtcconfig", true);
+#endif
   name = "rtcconfig";
 }
 

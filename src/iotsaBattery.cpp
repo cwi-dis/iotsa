@@ -24,7 +24,7 @@ void IRAM_ATTR watchdogTimerTriggered() {
 
 #ifdef IOTSA_WITH_WEB
 void
-IotsaBatteryMod::handler() {
+IotsaBatteryMod::webHandler() {
   bool anyChanged = false;
   if( server->hasArg("sleepDuration")) {
     if (needsAuthentication()) return;
@@ -323,11 +323,10 @@ bool IotsaBatteryMod::bleGetHandler(UUIDstring charUUID) {
 #endif // IOTSA_WITH_BLE
 
 void IotsaBatteryMod::serverSetup() {
-#ifdef IOTSA_WITH_WEB
-  server->on("/battery", std::bind(&IotsaBatteryMod::handler, this));
-  server->on("/battery", HTTP_POST, std::bind(&IotsaBatteryMod::handler, this));
-#endif
   api.setup("battery", true, true);
+#ifdef IOTSA_WITH_WEB
+  web.setup("battery", true);
+#endif
   name = "battery";
 }
 

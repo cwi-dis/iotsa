@@ -42,9 +42,14 @@ protected:
   void loadCapabilitiesFromRequest();
   void configLoad() override;
   void configSave() override;
-  void handler();
+#ifdef IOTSA_WITH_WEB
+  void webHandler() override;
+#endif
   IotsaCapability *capabilities;
   IotsaApiService api;
+#ifdef IOTSA_WITH_WEB
+  IotsaWebServiceProvider web;
+#endif
   IotsaAuthenticationProvider &chain;
   String trustedIssuer;
   String issuerKey;

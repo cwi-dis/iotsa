@@ -56,7 +56,7 @@ void IotsaBLEClientMod::setupScanner() {
 
 #ifdef IOTSA_WITH_WEB
 void
-IotsaBLEClientMod::handler() {
+IotsaBLEClientMod::webHandler() {
   bool anyChanged = false;
   anyChanged |= formHandler_args(server, "", true);
   if (anyChanged) configSave();
@@ -323,11 +323,10 @@ void IotsaBLEClientMod::onScanEnd(const NimBLEScanResults& scanResults, int reas
 
 void IotsaBLEClientMod::serverSetup() {
   api.setup("bleclient", true, true, false);
-  name = "bleclient";
 #ifdef IOTSA_WITH_WEB
-  server->on("/bleclient", std::bind(&IotsaBLEClientMod::handler, this));
-  server->on("/bleclient", HTTP_POST, std::bind(&IotsaBLEClientMod::handler, this));
+  web.setup("bleclient", true);
 #endif
+  name = "bleclient";
 }
 
 void IotsaBLEClientMod::setUnknownDeviceFoundCallback(BleDeviceFoundCallback _callback) {

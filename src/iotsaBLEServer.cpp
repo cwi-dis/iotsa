@@ -51,7 +51,7 @@ private:
 
 #ifdef IOTSA_WITH_WEB
 void
-IotsaBLEServerMod::handler() {
+IotsaBLEServerMod::webHandler() {
   bool anyChanged = false;
   if (server->hasArg("isEnabled")) {
     bool newIsEnabled = (bool)strtol(server->arg("isEnabled").c_str(), 0, 10);
@@ -272,10 +272,10 @@ bool IotsaBLEServerMod::putHandler(const char *path, const JsonVariant& request,
 }
 
 void IotsaBLEServerMod::serverSetup() {
-#ifdef IOTSA_WITH_WEB
-  server->on("/bleserver", std::bind(&IotsaBLEServerMod::handler, this));
-#endif
   api.setup("bleserver", true, true);
+#ifdef IOTSA_WITH_WEB
+  web.setup("bleserver", true);
+#endif
   name = "bleserver";
 }
 

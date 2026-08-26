@@ -59,7 +59,7 @@ void IotsaButtonMod::setup() {
 }
 
 #ifdef IOTSA_WITH_WEB
-void IotsaButtonMod::handler() {
+void IotsaButtonMod::webHandler() {
   bool any = false;
   // xxxjack do this different with args like button2.on, etc
   for (uint8_t i=0; i<server->args(); i++){
@@ -221,10 +221,10 @@ bool IotsaButtonMod::putHandler(const char *path, const JsonVariant& request, Js
 }
 
 void IotsaButtonMod::serverSetup() {
-#ifdef IOTSA_WITH_WEB
-  server->on("/buttons", std::bind(&IotsaButtonMod::handler, this));
-#endif
   api.setup("buttons", true, true);
+#ifdef IOTSA_WITH_WEB
+  web.setup("buttons", true);
+#endif
   for(int i=0; i<nButton; i++) {
       String p = "buttons/" + String(i);
       api.setup(p.c_str(), true, true);

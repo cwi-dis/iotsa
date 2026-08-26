@@ -34,7 +34,9 @@ protected:
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
   void configLoad() override;
   void configSave() override;
-  void handler();
+#ifdef IOTSA_WITH_WEB
+  void webHandler() override;
+#endif
   String argument;
   enum IotsaSleepMode sleepMode;
   bool didWakeFromSleep = false;

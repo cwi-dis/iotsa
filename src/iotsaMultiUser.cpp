@@ -88,13 +88,16 @@ bool IotsaUser::putHandler(const JsonVariant& request) {
 IotsaMultiUserMod::IotsaMultiUserMod(IotsaApplication &_app)
 :	IotsaAuthMod(_app),
   api(this, _app, this)
+#ifdef IOTSA_WITH_WEB
+  , web(this, _app)
+#endif
 {
 	configLoad();
 }
 
 #ifdef IOTSA_WITH_WEB
 void
-IotsaMultiUserMod::handler() {
+IotsaMultiUserMod::webHandler() {
   String command = server->arg("command");
 
   if (command == "add") {
@@ -230,10 +233,10 @@ void IotsaMultiUserMod::setup() {
 }
 
 void IotsaMultiUserMod::serverSetup() {
-#ifdef IOTSA_WITH_WEB
-  server->on("/users", std::bind(&IotsaMultiUserMod::handler, this));
-#endif
   api.setup("users", true, false, true);
+#ifdef IOTSA_WITH_WEB
+  web.setup("users", true);
+#endif
   name = "users";
   int idx = 0;
   for(auto u: users) {

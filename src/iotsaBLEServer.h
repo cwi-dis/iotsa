@@ -88,7 +88,9 @@ protected:
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
   void configLoad() override;
   void configSave() override;
-  void handler();
+#ifdef IOTSA_WITH_WEB
+  void webHandler() override;
+#endif
 
   static void createServer();
   static NimBLEServer *s_server;

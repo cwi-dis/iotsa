@@ -79,7 +79,7 @@ String IotsaNtpMod::isoTime()
 
 #ifdef IOTSA_WITH_WEB
 void
-IotsaNtpMod::handler() {
+IotsaNtpMod::webHandler() {
   bool anyChanged = false;
   if( server->hasArg("ntpServer")) {
     if (needsAuthentication("ntp")) return;
@@ -196,10 +196,10 @@ bool IotsaNtpMod::putHandler(const char *path, const JsonVariant& request, JsonO
 }
 
 void IotsaNtpMod::serverSetup() {
-#ifdef IOTSA_WITH_WEB
-  server->on("/ntpconfig", std::bind(&IotsaNtpMod::handler, this));
-#endif
   api.setup("ntpconfig", true, true);
+#ifdef IOTSA_WITH_WEB
+  web.setup("ntpconfig", true);
+#endif
   name = "ntpconfig";
 }
 

@@ -38,7 +38,9 @@ protected:
 #endif
   void configLoad() override;
   void configSave() override;
-  void handler();
+#ifdef IOTSA_WITH_WEB
+  void webHandler() override;
+#endif
   WiFiUDP udp;
   unsigned long nextNtpRequest; // When to send an NTP request
   unsigned long lastMillis; // To detect millis() rollover

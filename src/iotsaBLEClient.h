@@ -24,9 +24,9 @@ public:
   virtual String formHandler_field_perdevice(const char *deviceName);
   virtual void setup() override;
   virtual void serverSetup() override;
-  virtual void handler();
   virtual void formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig);
 #ifdef IOTSA_WITH_WEB
+  virtual void webHandler() override;
   virtual bool formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig);
 #endif
 

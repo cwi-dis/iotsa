@@ -76,6 +76,9 @@ IotsaCapabilityMod::IotsaCapabilityMod(IotsaApplication &_app, IotsaAuthenticati
 :	IotsaAuthMod(_app),
   capabilities(NULL),
   api(this, _app, this),
+#ifdef IOTSA_WITH_WEB
+  web(this, _app),
+#endif
   chain(_chain),
   trustedIssuer(""),
   issuerKey("")
@@ -85,7 +88,7 @@ IotsaCapabilityMod::IotsaCapabilityMod(IotsaApplication &_app, IotsaAuthenticati
 
 #ifdef IOTSA_WITH_WEB
 void
-IotsaCapabilityMod::handler() {
+IotsaCapabilityMod::webHandler() {
   String _trustedIssuer = server->arg("trustedIssuer");
   String _issuerKey = server->arg("issuerKey");
   if (_trustedIssuer != "" || _issuerKey != "") {
@@ -153,10 +156,10 @@ void IotsaCapabilityMod::setup() {
 }
 
 void IotsaCapabilityMod::serverSetup() {
-#ifdef IOTSA_WITH_WEB
-  server->on("/capabilities", std::bind(&IotsaCapabilityMod::handler, this));
-#endif
   api.setup("capabilities", true, true, false);
+#ifdef IOTSA_WITH_WEB
+  web.setup("capabilities", true);
+#endif
   name = "capabilities";
 }
 

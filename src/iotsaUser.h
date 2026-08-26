@@ -20,10 +20,15 @@ public:
 protected:
   void configLoad() override;
   void configSave() override;
-  void handler();
+#ifdef IOTSA_WITH_WEB
+  void webHandler() override;
+#endif
   String username;
   String password;
   IotsaApiService api;
+#ifdef IOTSA_WITH_WEB
+  IotsaWebServiceProvider web;
+#endif
 };
 
 #endif

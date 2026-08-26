@@ -102,6 +102,11 @@ public:
   virtual bool getHandler(const char *path, JsonObject& reply) { return false; }
   virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
   virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
+  // Web page handler, invoked by IotsaWebServiceProvider for modules that opt in (see
+  // cwi-dis/iotsa#213) -- structurally different from the JSON get/put/post handlers
+  // above: no path argument (a module has at most one page), reads its own arguments
+  // straight off the server, and does its own auth check internally.
+  virtual void webHandler() {}
   template <typename JT, typename CT>  bool getFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
     if (reqObj[name].is<JT>()) {
       var = reqObj[name].as<CT>();
