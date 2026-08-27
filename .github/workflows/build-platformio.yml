@@ -17,6 +17,12 @@ on:
     - '.github/workflows/build-arduino.yml'
     - 'docs/**'
   pull_request:
+    types:
+    - opened
+    - synchronize
+    - reopened
+    - labeled
+    - unlabeled
   workflow_dispatch:
     inputs:
       iotsa_ref:
@@ -41,10 +47,31 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v7
 
+    # See #216: full builds every example/test, minimal is just the tests/ tree
+    # plus the handful of examples/ that cover something tests/ doesn't. Default
+    # is full (a push to develop is the one deliberate exception); a PR only
+    # drops to minimal if it carries the "ci-minimal" label.
+    - name: Determine build tier
+      id: tier
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+        REF: ${{ github.ref }}
+        HAS_MINIMAL_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'ci-minimal') }}
+      run: |
+        TIER=full
+        if [ "$EVENT_NAME" = "push" ] && [ "$REF" = "refs/heads/develop" ]; then
+          TIER=minimal
+        fi
+        if [ "$EVENT_NAME" = "pull_request" ] && [ "$HAS_MINIMAL_LABEL" = "true" ]; then
+          TIER=minimal
+        fi
+        echo "tier=$TIER" >> "$GITHUB_OUTPUT"
+        echo "Build tier: $TIER"
+
     - name: Generate matrix
       id: gen
       run: |
-        MATRIX=$(python3 extras/python/gen_build_matrix.py --format=github-matrix --backend=platformio)
+        MATRIX=$(python3 extras/python/gen_build_matrix.py --format=github-matrix --backend=platformio --tier=${{ steps.tier.outputs.tier }})
         echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
 
     - name: Check generated_envs.ini is up to date
@@ -130,8 +157,13 @@ jobs:
     # Temporarily disabled: the v3 redesign (cwi-dis/iotsa#199) is landing breaking
     # changes on develop (renamed/removed base classes, etc.) that downstream repos
     # aren't updated for yet. Re-enable by restoring the condition below once
-    # they're ready for the rebuild storm:
-    #   github.event_name == 'push' && ( github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/') )
+    # they're ready for the rebuild storm.
+    #
+    # Tag pushes only (releases, including alpha/beta) -- not develop pushes. Since
+    # #216, a develop push only runs the minimal build tier, so it's no longer a
+    # trustworthy trigger for "go rebuild against this iotsa commit"; downstream
+    # repos should track tagged releases instead of every develop commit.
+    #   github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     if: false
     needs: build
     strategy:

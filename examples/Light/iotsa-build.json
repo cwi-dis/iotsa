@@ -17,6 +17,7 @@
     },
     {
       "board": "esp32c3devkit",
+      "minimal": true,
       "ci": {
         "platformio": true,
         "arduino": false

@@ -66,6 +66,11 @@ def load_entries():
                 merged["kind"] = kind
                 merged["name"] = name
                 merged["source"] = source
+                # tests/ exists specifically to hold minimal-complete-coverage variants
+                # (see #216) -- every test entry counts by default. An example only
+                # counts if it says so explicitly (it covers a module/combination no
+                # test entry does either).
+                merged.setdefault("minimal", kind == "test")
                 merged.setdefault("ci", {"platformio": True, "arduino": False})
                 merged.setdefault("build_flags", [])
                 merged.setdefault("lib_deps", [])
@@ -115,11 +120,13 @@ def emit_platformio_ini(entries, out):
               f"({backend}): {reason}", file=sys.stderr)
 
 
-def emit_github_matrix(entries, backend, out):
+def emit_github_matrix(entries, backend, tier, out):
     matrix = []
     skips = []
     for e in entries:
         if not e["ci"].get(backend, False):
+            continue
+        if tier == "minimal" and not e["minimal"]:
             continue
         skip_reason = (e.get("skip") or {}).get(backend)
         if skip_reason:
@@ -237,6 +244,10 @@ def main():
                      choices=["platformio-ini", "github-matrix", "standalone-ini"])
     ap.add_argument("--backend", choices=["platformio", "arduino"],
                      help="required for --format=github-matrix")
+    ap.add_argument("--tier", choices=["full", "minimal"], default="full",
+                     help="--format=github-matrix only: 'minimal' builds just the "
+                          "tests/ tree plus examples explicitly marked minimal:true "
+                          "(see #216); default 'full' builds everything")
     ap.add_argument("--dir", help="examples/<Name> dir, required for --format=standalone-ini")
     ap.add_argument("-o", "--output", help="write to file instead of stdout")
     args = ap.parse_args()
@@ -270,7 +281,7 @@ def main():
         elif args.format == "github-matrix":
             if not args.backend:
                 ap.error("--format=github-matrix requires --backend")
-            emit_github_matrix(entries, args.backend, out)
+            emit_github_matrix(entries, args.backend, args.tier, out)
     finally:
         if args.output:
             out.close()

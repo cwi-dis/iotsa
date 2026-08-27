@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `IotsaApiService` now chains its REST/CoAP/HPS transport services instead of composing them via nine duplicated `#ifdef` blocks (#213)
 - `api.setup()` callers now pass a bare path segment instead of one already carrying the `/api/` prefix; each transport decides its own final path (#213). **Breaking**: any app module calling `api.setup("/api/...")` needs updating to drop the prefix.
 - Web pages now register as a link in the same `IotsaApiService` transport chain as REST/CoAP/HPS -- a single `api.setup()` call also registers the module's page, instead of each module manually calling `server->on()`; module page logic moves from `handler()` to `webHandler()` (#213)
+- CI now runs a minimal-coverage build (just `KitchenSink` + a handful of examples not otherwise covered) on `develop` pushes and PRs, reserving the full example/test matrix for `master`/tag pushes and PRs by default; opt into minimal on a PR with the `ci-minimal` label (#216)
 
 ## [2.9.2] - 2026-08-22
 

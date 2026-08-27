@@ -9,6 +9,7 @@
     },
     {
       "board": "esp32thing",
+      "minimal": true,
       "build_flags": [
         "-DIOTSA_WITH_HTTPS"
       ],

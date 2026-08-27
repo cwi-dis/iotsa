@@ -9,6 +9,7 @@
     },
     {
       "board": "esp32thing",
+      "minimal": true,
       "ci": {
         "platformio": true,
         "arduino": true

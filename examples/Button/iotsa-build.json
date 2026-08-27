@@ -2,6 +2,7 @@
   "variants": [
     {
       "board": "nodemcuv2",
+      "minimal": true,
       "ci": {
         "platformio": true,
         "arduino": true
