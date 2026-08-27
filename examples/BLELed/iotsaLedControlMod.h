@@ -21,7 +21,9 @@ protected:
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
 #endif
-  void handler();
+#ifdef IOTSA_WITH_WEB
+  void webHandler() override;
+#endif
 
 #ifdef IOTSA_WITH_BLE
   IotsaBleApiService bleApi;

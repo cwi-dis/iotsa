@@ -273,9 +273,6 @@ bool IotsaBLEServerMod::putHandler(const char *path, const JsonVariant& request,
 
 void IotsaBLEServerMod::serverSetup() {
   api.setup("bleserver", true, true);
-#ifdef IOTSA_WITH_WEB
-  web.setup("bleserver", true);
-#endif
   name = "bleserver";
 }
 

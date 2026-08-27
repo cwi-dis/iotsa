@@ -20,7 +20,9 @@ protected:
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
 #endif
 private:
-  void handler();
+#ifdef IOTSA_WITH_WEB
+  void webHandler() override;
+#endif
 };
 
 #endif

@@ -45,6 +45,11 @@ protected:
   IotsaApiServiceProvider* next;
 };
 
+// Forward declaration, so IotsaApiService can expose a webService pointer (see below)
+// even in builds without IOTSA_WITH_WEB, where the type is never fully defined and the
+// pointer stays nullptr.
+class IotsaApiServiceWeb;
+
 #ifdef IOTSA_WITH_REST
 #include "iotsaApiRest.h"
 #endif
@@ -59,14 +64,24 @@ protected:
 #endif
 
 //
-// Chains together whichever of the REST/CoAP/HPS transport services are
+// Chains together whichever of the REST/CoAP/HPS/Web transport services are
 // compiled in, each forwarding setup() to the next link. Collapses what used
 // to be three ifdef'd members/init-list entries/setup() calls down to one
 // ifdef'd chain-building constructor, see cwi-dis/iotsa#213.
 //
+// Web is a link like any other (a single api.setup() call registers the REST/CoAP/HPS
+// endpoint(s) *and* the module's web page, when get=true) -- see cwi-dis/iotsa#213. A
+// module that also needs something a bare setup() call can't express (a not-found/
+// wildcard route, a two-callback upload handler) checks `webService` for non-null and
+// then uses its own `server` member directly to register it, since IOTSA_WITH_WEB
+// implies the module's page(s) are served over HTTP(S) via that same server anyway.
+//
 class IotsaApiService : public IotsaApiServiceProvider {
 public:
   IotsaApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth) {
+  #ifdef IOTSA_WITH_WEB
+    next = webService = new IotsaApiServiceWeb(_provider, _app, _auth, next);
+  #endif
   #ifdef IOTSA_WITH_HPS
     next = new IotsaApiServiceHps(_provider, _app, _auth, next);
   #endif
@@ -80,6 +95,7 @@ public:
   void setup(const char* path, bool get=false, bool put=false, bool post=false) override {
     if (next) next->setup(path, get, put, post);
   }
+  IotsaApiServiceWeb* webService = nullptr;
 };
 
 class IotsaModule : public IotsaBaseModule {
@@ -87,9 +103,6 @@ public:
   IotsaModule(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
   : IotsaBaseModule(_app, _auth, early),
     api(this, _app, _auth)
-#ifdef IOTSA_WITH_WEB
-    , web(this, _app)
-#endif
   {}
   virtual bool getHandler(const char *path, JsonObject& reply) override { return false; }
   virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
@@ -114,9 +127,6 @@ protected:
     return rv;
   }
   IotsaApiService api;
-#ifdef IOTSA_WITH_WEB
-  IotsaWebServiceProvider web;
-#endif
 };
 
 #endif // _IOTSAAPI_H_

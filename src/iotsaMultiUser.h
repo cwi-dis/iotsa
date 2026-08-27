@@ -51,9 +51,6 @@ protected:
   int _addUser(IotsaUser& newUser);
   // _delUser(int) not implemented, because of /api/users/<num> which would change
   IotsaApiService api;
-#ifdef IOTSA_WITH_WEB
-  IotsaWebServiceProvider web;
-#endif
 };
 
 #endif

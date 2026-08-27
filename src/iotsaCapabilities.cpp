@@ -76,9 +76,6 @@ IotsaCapabilityMod::IotsaCapabilityMod(IotsaApplication &_app, IotsaAuthenticati
 :	IotsaAuthMod(_app),
   capabilities(NULL),
   api(this, _app, this),
-#ifdef IOTSA_WITH_WEB
-  web(this, _app),
-#endif
   chain(_chain),
   trustedIssuer(""),
   issuerKey("")
@@ -157,9 +154,6 @@ void IotsaCapabilityMod::setup() {
 
 void IotsaCapabilityMod::serverSetup() {
   api.setup("capabilities", true, true, false);
-#ifdef IOTSA_WITH_WEB
-  web.setup("capabilities", true);
-#endif
   name = "capabilities";
 }
 

@@ -131,9 +131,6 @@ bool IotsaRtcMod::putHandler(const char *path, const JsonVariant& request, JsonO
 
 void IotsaRtcMod::serverSetup() {
   api.setup("rtcconfig", true, true);
-#ifdef IOTSA_WITH_WEB
-  web.setup("rtcconfig", true);
-#endif
   name = "rtcconfig";
 }
 

@@ -6,7 +6,7 @@ void IotsaHelloMod::setup() {
 }
 
 void
-IotsaHelloMod::handler() {
+IotsaHelloMod::webHandler() {
   // Handles the page that is specific to the Hello module, greets the user and
   // optionally stores a new name to greet the next time.
   if (server->hasArg("greeting")) {
@@ -38,7 +38,6 @@ bool IotsaHelloMod::putHandler(const char *path, const JsonVariant& request, Jso
 
 void IotsaHelloMod::serverSetup() {
   // Setup the web server hooks for this module.
-  server->on("/hello", std::bind(&IotsaHelloMod::handler, this));
   api.setup("hello", true, true);
   name = "hello";
 }

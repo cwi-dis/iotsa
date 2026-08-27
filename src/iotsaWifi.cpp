@@ -374,9 +374,6 @@ bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, Json
 
 void IotsaWifiMod::serverSetup() {
   api.setup("wificonfig", true, true);
-#ifdef IOTSA_WITH_WEB
-  web.setup("wificonfig", true);
-#endif
   name = "wificonfig";
 }
 

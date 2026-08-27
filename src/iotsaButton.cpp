@@ -222,9 +222,6 @@ bool IotsaButtonMod::putHandler(const char *path, const JsonVariant& request, Js
 
 void IotsaButtonMod::serverSetup() {
   api.setup("buttons", true, true);
-#ifdef IOTSA_WITH_WEB
-  web.setup("buttons", true);
-#endif
   for(int i=0; i<nButton; i++) {
       String p = "buttons/" + String(i);
       api.setup(p.c_str(), true, true);

@@ -324,9 +324,6 @@ bool IotsaBatteryMod::bleGetHandler(UUIDstring charUUID) {
 
 void IotsaBatteryMod::serverSetup() {
   api.setup("battery", true, true);
-#ifdef IOTSA_WITH_WEB
-  web.setup("battery", true);
-#endif
   name = "battery";
 }
 

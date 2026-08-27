@@ -197,9 +197,6 @@ bool IotsaNtpMod::putHandler(const char *path, const JsonVariant& request, JsonO
 
 void IotsaNtpMod::serverSetup() {
   api.setup("ntpconfig", true, true);
-#ifdef IOTSA_WITH_WEB
-  web.setup("ntpconfig", true);
-#endif
   name = "ntpconfig";
 }
 

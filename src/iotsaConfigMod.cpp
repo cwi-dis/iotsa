@@ -622,13 +622,16 @@ IotsaConfigMod::uploadOkHandler() {
 
 void IotsaConfigMod::serverSetup() {
 #ifdef IOTSA_WITH_WEB
+  // Two-callback upload shape (a completion handler plus a streaming upload
+  // handler): not something a plain api.setup() call can express, see
+  // cwi-dis/iotsa#213. uploadHandler/uploadOkHandler are themselves only
+  // compiled under IOTSA_WITH_WEB (above), so this stays an #ifdef rather
+  // than an api.webService runtime check -- the two are equivalent here since
+  // IOTSA_WITH_WEB is one project-wide flag for the whole build.
   server->on("/configupload", HTTP_POST, std::bind(&IotsaConfigMod::uploadOkHandler, this), std::bind(&IotsaConfigMod::uploadHandler, this));
 #endif
   api.setup("config", true, true);
   api.setup("version", true);
-#ifdef IOTSA_WITH_WEB
-  web.setup("config", true);
-#endif
   name = "config";
 }
 

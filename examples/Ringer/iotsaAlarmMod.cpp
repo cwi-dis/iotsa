@@ -5,7 +5,7 @@ void IotsaAlarmMod::setup() {
 }
 
 #ifdef IOTSA_WITH_WEB
-void IotsaAlarmMod::handler() {
+void IotsaAlarmMod::webHandler() {
 
   String msg;
   for (uint8_t i=0; i<server->args(); i++){
@@ -67,9 +67,6 @@ bool IotsaAlarmMod::putHandler(const char *path, const JsonVariant& request, Jso
 
 void IotsaAlarmMod::serverSetup() {
   // Setup the web server hooks for this module.
-#ifdef IOTSA_WITH_WEB
-  server->on("/alarm", std::bind(&IotsaAlarmMod::handler, this));
-#endif
   api.setup("alarm", true, true);
   name = "alarm";
 }

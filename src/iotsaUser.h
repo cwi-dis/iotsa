@@ -26,9 +26,6 @@ protected:
   String username;
   String password;
   IotsaApiService api;
-#ifdef IOTSA_WITH_WEB
-  IotsaWebServiceProvider web;
-#endif
 };
 
 #endif

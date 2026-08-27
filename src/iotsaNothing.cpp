@@ -48,9 +48,6 @@ bool IotsaNothingMod::putHandler(const char *path, const JsonVariant& request, J
 
 void IotsaNothingMod::serverSetup() {
   api.setup("nothing", true, true);
-#ifdef IOTSA_WITH_WEB
-  web.setup("nothing", true);
-#endif
   name = "nothing";
 }
 

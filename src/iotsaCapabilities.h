@@ -47,9 +47,6 @@ protected:
 #endif
   IotsaCapability *capabilities;
   IotsaApiService api;
-#ifdef IOTSA_WITH_WEB
-  IotsaWebServiceProvider web;
-#endif
   IotsaAuthenticationProvider &chain;
   String trustedIssuer;
   String issuerKey;

@@ -22,7 +22,7 @@ protected:
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
 private:
-  void handler();
+  void webHandler() override;
   String greeting;
 };
 

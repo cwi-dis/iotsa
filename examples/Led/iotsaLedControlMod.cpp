@@ -2,7 +2,7 @@
 
 #ifdef IOTSA_WITH_WEB
 void
-IotsaLedControlMod::handler() {
+IotsaLedControlMod::webHandler() {
   // Handles the page that is specific to the Led module, greets the user and
   // optionally stores a new name to greet the next time.
   bool anyChanged = false;
@@ -67,9 +67,6 @@ bool IotsaLedControlMod::putHandler(const char *path, const JsonVariant& request
 
 void IotsaLedControlMod::serverSetup() {
   // Setup the web server hooks for this module.
-#ifdef IOTSA_WITH_WEB
-  server->on("/led", std::bind(&IotsaLedControlMod::handler, this));
-#endif // IOTSA_WITH_WEB
 #ifdef IOTSA_WITH_API
   api.setup("led", true, true);
 #endif

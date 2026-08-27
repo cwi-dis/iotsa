@@ -7,9 +7,6 @@ IotsaUserMod::IotsaUserMod(IotsaApplication &_app, const char *_username, const 
   username(_username),
 	password(_password),
 	api(this, _app, this)
-#ifdef IOTSA_WITH_WEB
-  , web(this, _app)
-#endif
 {
 	configLoad();
 }
@@ -137,9 +134,6 @@ void IotsaUserMod::setup() {
 void IotsaUserMod::serverSetup() {
   api.setup("users", true, false, true);
   api.setup("users/0", true, true, false);
-#ifdef IOTSA_WITH_WEB
-  web.setup("users", true);
-#endif
   name = "users";
 }
 
