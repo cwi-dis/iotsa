@@ -1,6 +1,7 @@
 #ifndef _IOTSAAPIWEB_H_
 #define _IOTSAAPIWEB_H_
 #include "iotsa.h"
+#include "iotsaHttpServer.h"
 
 #ifdef IOTSA_WITH_WEB
 //
@@ -19,7 +20,10 @@ public:
   IotsaApiServiceWeb(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth, IotsaApiServiceProvider* _next=nullptr)
   : IotsaApiServiceProvider(_next),
     provider(_provider),
-    server(_app.server)
+    // Shared with IotsaApiServiceRest, owned by neither -- see cwi-dis/iotsa#207/#211.
+    // Guaranteed non-null: IotsaApplication's own constructor ensures the shared mod
+    // exists before any module (this one included) is constructed.
+    server(IotsaHttpServiceMod::serviceMod(_app)->server)
   {}
   void setup(const char* path, bool get=false, bool put=false, bool post=false) override;
 private:

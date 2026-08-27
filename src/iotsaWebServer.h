@@ -43,24 +43,4 @@ typedef ESP8266WebServer IotsaHttpWebServer;
 #error "Cannot determine WebServer implementation to use"
 #endif
 
-class IotsaApplication;
-
-class IotsaWebServerMixin {
-friend class IotsaApplication;
-public:
-  IotsaWebServerMixin(IotsaApplication* _app);
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
-  IotsaWebServer *server;
-  bool serverInitialized = false;
-protected:
-  IotsaApplication* app;
-  void webServerSetup();
-  void webServerLoop();
-  void webServerNotFoundHandler();
-#endif
-#ifdef IOTSA_WITH_WEB
-  void webServerRootHandler();
-#endif
-};
-
 #endif

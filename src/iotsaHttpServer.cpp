@@ -1,4 +1,4 @@
-#include "iotsa.h"
+#include "iotsaHttpServer.h"
 
 #if defined(IOTSA_WITH_HTTPS) && defined(IOTSA_WITH_HTTP)
 // Tiny http server which forwards to https
@@ -32,18 +32,37 @@ static TinyForwardServer *singletonTFS;
 
 #endif // defined(IOTSA_WITH_HTTPS) && defined(IOTSA_WITH_HTTP)
 
-IotsaWebServerMixin::IotsaWebServerMixin(IotsaApplication* _app)
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
-:
-  server(new IotsaWebServer(IOTSA_WEBSERVER_PORT)),
-  app(_app)
-#endif
+IotsaHttpServiceMod *IotsaHttpServiceMod::_httpMod = nullptr;
+
+void IotsaHttpServiceMod::ensureServiceMod(IotsaApplication &app) {
+  if (_httpMod == nullptr) _httpMod = new IotsaHttpServiceMod(app);
+}
+
+IotsaHttpServiceMod *IotsaHttpServiceMod::serviceMod(IotsaApplication &app) {
+  return _httpMod;
+}
+
+IotsaHttpServiceMod::IotsaHttpServiceMod(IotsaApplication &_app)
+: IotsaBaseModule(_app, nullptr, true)
 {
+#ifdef IOTSA_WITH_HTTP_OR_HTTPS
+  // Note: at this point in construction, serviceMod(_app) still returns nullptr
+  // (we're the instance being constructed, _httpMod isn't assigned until our
+  // constructor returns) -- so the inherited IotsaBaseModule constructor left our
+  // own `server` field null. Assign the real object here instead of reading it
+  // from ourselves.
+  server = new IotsaWebServer(IOTSA_WEBSERVER_PORT);
+#endif
+}
+
+void
+IotsaHttpServiceMod::setup() {
+  name = "http";
 }
 
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
 void
-IotsaWebServerMixin::webServerSetup() {
+IotsaHttpServiceMod::serverSetup() {
   if (!iotsaConfig.wifiEnabled) return;
 
 #if defined(IOTSA_WITH_HTTPS) && defined(IOTSA_WITH_HTTP)
@@ -51,11 +70,9 @@ IotsaWebServerMixin::webServerSetup() {
     singletonTFS = new TinyForwardServer();
 #endif // defined(IOTSA_WITH_HTTPS) && defined(IOTSA_WITH_HTTP)
 
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
-  server->onNotFound(std::bind(&IotsaWebServerMixin::webServerNotFoundHandler, this));
-#endif
+  server->onNotFound(std::bind(&IotsaHttpServiceMod::webServerNotFoundHandler, this));
 #ifdef IOTSA_WITH_WEB
-  server->on("/", std::bind(&IotsaWebServerMixin::webServerRootHandler, this));
+  server->on("/", std::bind(&IotsaHttpServiceMod::webServerRootHandler, this));
 #endif
 
 #ifdef IOTSA_WITH_HTTPS
@@ -87,14 +104,14 @@ IotsaWebServerMixin::webServerSetup() {
 }
 
 void
-IotsaWebServerMixin::webServerLoop() {
+IotsaHttpServiceMod::loop() {
   if (!iotsaConfig.wifiEnabled) return;
   if (!serverInitialized) {
     // Wifi is enabled but the server has not been initialized yet.
     // Apparently wifi was disabled when we booted, so setup the server
     // now.
     IFDEBUG IotsaSerial.println("Setup web server after WiFi enabled");
-    webServerSetup();
+    serverSetup();
     return;
   }
   server->handleClient();
@@ -104,7 +121,7 @@ IotsaWebServerMixin::webServerLoop() {
 }
 
 void
-IotsaWebServerMixin::webServerNotFoundHandler() {
+IotsaHttpServiceMod::webServerNotFoundHandler() {
   iotsaConfig.postponeSleep(0);
   String message = "File Not Found\n\n";
   message += "URI: ";
@@ -119,18 +136,21 @@ IotsaWebServerMixin::webServerNotFoundHandler() {
   }
   server->send(404, "text/plain", message);
 }
+#else // IOTSA_WITH_HTTP_OR_HTTPS
+void IotsaHttpServiceMod::serverSetup() {}
+void IotsaHttpServiceMod::loop() {}
 #endif // IOTSA_WITH_HTTP_OR_HTTPS
 
 #ifdef IOTSA_WITH_WEB
 void
-IotsaWebServerMixin::webServerRootHandler() {
+IotsaHttpServiceMod::webServerRootHandler() {
   iotsaConfig.postponeSleep(0);
-  String message = "<html><head><title>" + app->title + "</title></head><body><h1>" + app->title + "</h1>";
+  String message = "<html><head><title>" + app.title + "</title></head><body><h1>" + app.title + "</h1>";
   IotsaBaseModule *m;
-  for (m=app->firstModule; m; m=m->nextModule) {
+  for (m=app.firstModule; m; m=m->nextModule) {
     message += m->info();
   }
-  for (m=app->firstEarlyModule; m; m=m->nextModule) {
+  for (m=app.firstEarlyModule; m; m=m->nextModule) {
     message += m->info();
   }
   message += "</body></html>";

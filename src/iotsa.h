@@ -33,6 +33,13 @@ extern Print *iotsaOverrideSerial;
 
 class IotsaBaseModule;
 class IotsaConfigMod;
+// The shared HTTP(S) transport module (owns the actual IotsaWebServer instance) --
+// a peer service mod like IotsaCoapServiceMod/IotsaHpsServiceMod, not privileged
+// IotsaApplication inheritance, see cwi-dis/iotsa#207. Full definition lives in
+// iotsaHttpServer.h; only needed here as a forward declaration so IotsaBaseModule's
+// constructor (defined out-of-line in iotsa.cpp, for exactly this reason) can reach
+// the shared `server` pointer through it.
+class IotsaHttpServiceMod;
 
 //
 // Operations allowed via the API
@@ -52,11 +59,11 @@ public:
   virtual void showStatus() = 0;
 };
 
-class IotsaApplication : public IotsaWebServerMixin {
+class IotsaApplication {
   friend class IotsaBaseModule;
   friend class IotsaConfigMod;
   friend class IotsaWifiMod;
-  friend class IotsaWebServerMixin;
+  friend class IotsaHttpServiceMod;
   friend class IotsaBatteryMod;
 public:
   IotsaApplication(const char *_title);
@@ -70,6 +77,15 @@ public:
   void serverSetup();
   void loop();
   IotsaStatusInterface *status;
+#ifdef IOTSA_WITH_HTTP_OR_HTTPS
+  // Convenience for app-level sketch code that registers its own raw handler (e.g.
+  // IotsaSimpleMod's app-supplied handler function, which isn't a module method and
+  // so has no `this->server`) -- forwards to the shared IotsaHttpServiceMod, set once
+  // in the constructor. Not used by iotsa's own modules internally, which reach the
+  // same object through IotsaBaseModule::server or IotsaHttpServiceMod::serviceMod()
+  // directly; see cwi-dis/iotsa#207/#211.
+  IotsaWebServer *server = nullptr;
+#endif
 protected:
   IotsaBaseModule *firstModule;
   IotsaBaseModule *firstEarlyModule;
@@ -142,23 +158,14 @@ class IotsaBaseModule : public IotsaApiProvider, public IotsaBLEProvider {
   friend class IotsaApplication;
   friend class IotsaConfigMod;
   friend class IotsaWifiMod;
-  friend class IotsaWebServerMixin;
+  friend class IotsaHttpServiceMod;
   friend class IotsaBatteryMod;
 public:
-  IotsaBaseModule(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
-  : app(_app),
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
-  	server(_app.server),
-#endif
-  	auth(_auth),
-  	nextModule(NULL)
-  {
-    if (early) {
-      app.addModEarly(this);
-    } else {
-      app.addMod(this);
-    }
-  }
+  // Defined out-of-line in iotsa.cpp: needs IotsaHttpServiceMod's full definition
+  // (iotsaHttpServer.h) to reach the shared `server` pointer, which would be a
+  // circular include if this stayed inline here -- IotsaHttpServiceMod itself
+  // derives from IotsaBaseModule.
+  IotsaBaseModule(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false);
   IotsaBaseModule& operator=(const IotsaBaseModule& that) = delete;
 
   virtual void setup() = 0;

@@ -1,5 +1,6 @@
 #include <Esp.h>
 #include "iotsa.h"
+#include "iotsaHttpServer.h"
 #include "iotsaFS.h"
 #if defined(IOTSA_WITH_COAP) || defined(IOTSA_WITH_HPS)
 #include "iotsaApi.h"
@@ -13,14 +14,37 @@
 // Will be overridden if the iotsaLogger module is included.
 Print *iotsaOverrideSerial = &Serial;
 
+IotsaBaseModule::IotsaBaseModule(IotsaApplication &_app, IotsaAuthenticationProvider *_auth, bool early)
+: app(_app),
+#ifdef IOTSA_WITH_HTTP_OR_HTTPS
+  server(IotsaHttpServiceMod::serviceMod(_app) ? IotsaHttpServiceMod::serviceMod(_app)->server : nullptr),
+#endif
+  auth(_auth),
+  nextModule(NULL)
+{
+  if (early) {
+    app.addModEarly(this);
+  } else {
+    app.addMod(this);
+  }
+}
+
 IotsaApplication::IotsaApplication(const char *_title)
-: IotsaWebServerMixin(this),
-  status(NULL),
-  firstModule(NULL), 
-  firstEarlyModule(NULL), 
+: status(NULL),
+  firstModule(NULL),
+  firstEarlyModule(NULL),
   title(_title),
   haveOTA(false)
 {
+  // The HTTP transport has to exist before any module (early or regular) is
+  // constructed, since IotsaBaseModule's own constructor (above) reads the shared
+  // `server` pointer unconditionally -- see iotsaHttpServer.h. This relies on the
+  // existing convention that IotsaApplication itself is declared before any module
+  // in the sketch.
+#ifdef IOTSA_WITH_HTTP_OR_HTTPS
+  IotsaHttpServiceMod::ensureServiceMod(*this);
+  server = IotsaHttpServiceMod::serviceMod(*this)->server;
+#endif
 }
 
 void
@@ -101,10 +125,6 @@ IotsaApplication::serverSetup() {
   	m->serverSetup();
   }
 
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
-  webServerSetup();
-#endif
-
   for (m=firstModule; m; m=m->nextModule) {
   	m->serverSetup();
   }
@@ -127,9 +147,6 @@ IotsaApplication::loop() {
   for (m=firstModule; m; m=m->nextModule) {
   	m->loop();
   }
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
-  webServerLoop();
-#endif
 #ifdef ESP32
   {
     // Print available free heap space first time we have gone through all loop() calls.
