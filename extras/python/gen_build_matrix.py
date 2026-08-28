@@ -32,7 +32,7 @@ TRAIT_BUILD_FLAGS = {
     "_esp32c3_extusb": ["-DESP32C3"],
     "_esp32c3_nativeusb": ["-DESP32C3", "-DARDUINO_USB_MODE=1", "-DARDUINO_USB_CDC_ON_BOOT=1",
                             "-DIOTSA_SERIAL_SPEED=460800", "-DIOTSA_DELAY_ON_BOOT=3"],
-    "_esp32s3_nativeusb": ["-DARDUINO_USB_MODE=1", "-DARDUINO_USB_CDC_ON_BOOT=1",
+    "_esp32s3_nativeusb": ["-DESP32S3", "-DARDUINO_USB_MODE=1", "-DARDUINO_USB_CDC_ON_BOOT=1",
                             "-DIOTSA_SERIAL_SPEED=460800", "-DIOTSA_DELAY_ON_BOOT=3"],
 }
 
