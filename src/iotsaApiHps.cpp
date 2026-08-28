@@ -49,7 +49,15 @@ public:
   void setup() override {
     IotsaApiServiceHps::_hpsMod = this;
     name = "hps";
-    IFBLEDEBUG IotsaSerial.println("IotsaHpsServiceMod::setup called");
+  }
+
+  void loop() override {}
+  // BLE characteristic registration used to happen in setup() rather than here, out
+  // of step with REST/CoAP/Web -- moved once the reason for that split (a WiFi gate
+  // that no longer exists, and BLE advertising ordering, now handled by
+  // lateSetupDone()) turned out to no longer apply, see cwi-dis/iotsa#210.
+  void lateSetup() override {
+    IFBLEDEBUG IotsaSerial.println("IotsaHpsServiceMod::lateSetup called");
     bleApi.setup(IotsaApiServiceHps::serviceUUID, this);
     // Explain to clients what the rgb characteristic looks like
     bleApi.addCharacteristic(IotsaApiServiceHps::urlUUID, bleApi.BLE_READ|bleApi.BLE_WRITE, NimBLE2904::FORMAT_UTF8, 0x2700, "HPS URL");
@@ -59,9 +67,6 @@ public:
     bleApi.addCharacteristic(IotsaApiServiceHps::controlPointUUID, bleApi.BLE_READ|bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "HPS ControlPoint");
     bleApi.addCharacteristic(IotsaApiServiceHps::securityUUID, bleApi.BLE_READ, NimBLE2904::FORMAT_BOOLEAN, 0x2700, "HPS Security");
   }
-
-  void loop() override {}
-  void lateSetup() override {}
 #ifdef IOTSA_WITH_WEB
   String info() override { return ""; }
 #endif

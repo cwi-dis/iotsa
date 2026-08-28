@@ -190,12 +190,6 @@ void IotsaBatteryMod::setup() {
     IFDEBUG IotsaSerial.printf("Watchdog: %d ms\n", watchdogDuration);
   }
 #endif
-#ifdef IOTSA_WITH_BLE
-  bleApi.setup(serviceUUID, this);
-  bleApi.addCharacteristic(levelVBatUUID, bleApi.BLE_READ, NimBLE2904::FORMAT_UINT8, 0x27AD, "Battery Level");
-  bleApi.addCharacteristic(levelVUSBUUID, bleApi.BLE_READ, NimBLE2904::FORMAT_UINT8, 0x27AD, "USB Voltage Level");
-  bleApi.addCharacteristic(doSoftRebootUUID, bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "Reboot with WiFi");
-#endif
   iotsaConfig.setExtensionCallback(std::bind(&IotsaBatteryMod::extendCurrentMode, this));
 }
 
@@ -323,6 +317,16 @@ bool IotsaBatteryMod::bleGetHandler(UUIDstring charUUID) {
 #endif // IOTSA_WITH_BLE
 
 void IotsaBatteryMod::lateSetup() {
+  // BLE characteristic registration used to happen in setup() rather than here,
+  // out of step with REST/CoAP/Web -- moved once the reason for that split (a WiFi
+  // gate that no longer exists, and BLE advertising ordering, now handled by
+  // lateSetupDone()) turned out to no longer apply, see cwi-dis/iotsa#210.
+#ifdef IOTSA_WITH_BLE
+  bleApi.setup(serviceUUID, this);
+  bleApi.addCharacteristic(levelVBatUUID, bleApi.BLE_READ, NimBLE2904::FORMAT_UINT8, 0x27AD, "Battery Level");
+  bleApi.addCharacteristic(levelVUSBUUID, bleApi.BLE_READ, NimBLE2904::FORMAT_UINT8, 0x27AD, "USB Voltage Level");
+  bleApi.addCharacteristic(doSoftRebootUUID, bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "Reboot with WiFi");
+#endif
   api.setup("battery", true, true);
   name = "battery";
 }
