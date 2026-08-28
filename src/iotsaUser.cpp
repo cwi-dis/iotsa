@@ -166,7 +166,7 @@ bool IotsaUserMod::allows(const char *right) {
   // We ignore "right", username/password grants all rights.
   if (password == "" || username == "")
     return true;
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
+#ifdef IOTSA_HAS_WEBSERVER
   // Reaches app.server directly rather than through api.webService: allows() is the
   // transport-agnostic IotsaAuthenticationProvider interface, called for every
   // module/transport, not just this one's own web page -- a known wart pending

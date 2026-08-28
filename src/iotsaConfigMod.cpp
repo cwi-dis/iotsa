@@ -412,10 +412,10 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
 #ifdef IOTSA_WITH_WEB
   features.add("web");
 #endif
-#ifdef IOTSA_WITH_COAP
+#ifdef IOTSA_HAS_COAPSERVER
   features.add("coap");
 #endif
-#ifdef IOTSA_WITH_HPS
+#ifdef IOTSA_HAS_HPSSERVER
   features.add("hps");
 #endif
 #ifdef IOTSA_WITH_BLE

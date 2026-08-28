@@ -44,7 +44,7 @@ void IotsaBLEClientTestMod::setup() {
 #ifdef IOTSA_WITH_WEB
 String IotsaBLEClientTestMod::info() {
   String rv = "<p>See <a href=\"/bleclient\">/bleclient</a> for the list of BLE devices seen.";
-#ifdef IOTSA_WITH_REST
+#ifdef IOTSA_HAS_RESTSERVER
   rv += " Or use REST api at <a href='/api/bleclient'>/api/bleclient</a>.";
 #endif
   rv += " coordinateWithServer=";

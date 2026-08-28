@@ -1,5 +1,5 @@
 #include "iotsaApi.h"
-#ifdef IOTSA_WITH_COAP
+#ifdef IOTSA_HAS_COAPSERVER
 #include <WiFiUdp.h>
 #include <coap-simple.h>
 

@@ -77,7 +77,7 @@ public:
   void lateSetup();
   void loop();
   IotsaStatusInterface *status;
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
+#ifdef IOTSA_HAS_WEBSERVER
   // Convenience for app-level sketch code (e.g. tests/KitchenSink, examples/Hello,
   // examples/Log) that registers its own raw handler outside of any module method,
   // and for any module that isn't itself an API-having module with a webHandler()

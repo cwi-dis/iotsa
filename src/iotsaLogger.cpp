@@ -7,7 +7,7 @@ Print *iotsaOriginalSerial = &Serial;
 #include "iotsaLogger.h"
 #include "iotsaConfigFile.h"
 
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
+#ifdef IOTSA_HAS_WEBSERVER
 #define BUFFER_MAGIC 0xaddedbed
 static struct LogBuffer {
   uint32_t magic;

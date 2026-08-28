@@ -271,7 +271,7 @@ void IotsaMultiUserMod::loop() {
 bool IotsaMultiUserMod::allows(const char *right) {
   // No users means everything is allowed.
   if (users.empty()) return true;
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
+#ifdef IOTSA_HAS_WEBSERVER
   // Reaches app.server directly rather than through api.webService: allows() is the
   // transport-agnostic IotsaAuthenticationProvider interface, called for every
   // module/transport, not just this one's own web page -- a known wart pending

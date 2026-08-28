@@ -6,7 +6,7 @@ void IotsaSimpleMod::setup() {
 }
 
 void IotsaSimpleMod::lateSetup() {
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
+#ifdef IOTSA_HAS_WEBSERVER
   app.server->on(url, hfun);
 #endif
 }

@@ -41,12 +41,12 @@ public:
   // The actual IotsaWebServer instance. IotsaBaseModule no longer has a `server`
   // field of its own (see cwi-dis/iotsa#211) -- this is the one, single owner; see
   // the comment above for how the rest of the code reaches it.
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
+#ifdef IOTSA_HAS_WEBSERVER
   IotsaWebServer *server = nullptr;
   bool serverInitialized = false;
 #endif
 private:
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
+#ifdef IOTSA_HAS_WEBSERVER
   void webServerNotFoundHandler();
 #endif
 #ifdef IOTSA_WITH_WEB

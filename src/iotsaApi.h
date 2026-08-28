@@ -58,13 +58,13 @@ protected:
 // pointer stays nullptr.
 class IotsaApiServiceWeb;
 
-#ifdef IOTSA_WITH_REST
+#ifdef IOTSA_HAS_RESTSERVER
 #include "iotsaApiRest.h"
 #endif
-#ifdef IOTSA_WITH_COAP
+#ifdef IOTSA_HAS_COAPSERVER
 #include "iotsaApiCoap.h"
 #endif
-#ifdef IOTSA_WITH_HPS
+#ifdef IOTSA_HAS_HPSSERVER
 #include "iotsaApiHps.h"
 #endif
 #ifdef IOTSA_WITH_WEB
@@ -93,13 +93,13 @@ public:
   #ifdef IOTSA_WITH_WEB
     next = webService = new IotsaApiServiceWeb(_provider, _app, _auth, next);
   #endif
-  #ifdef IOTSA_WITH_HPS
+  #ifdef IOTSA_HAS_HPSSERVER
     next = new IotsaApiServiceHps(_provider, _app, _auth, next);
   #endif
-  #ifdef IOTSA_WITH_COAP
+  #ifdef IOTSA_HAS_COAPSERVER
     next = new IotsaApiServiceCoap(_provider, _app, _auth, next);
   #endif
-  #ifdef IOTSA_WITH_REST
+  #ifdef IOTSA_HAS_RESTSERVER
     next = new IotsaApiServiceRest(_provider, _app, _auth, next);
   #endif
   }

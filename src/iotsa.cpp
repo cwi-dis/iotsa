@@ -2,7 +2,7 @@
 #include "iotsa.h"
 #include "iotsaHttpServer.h"
 #include "iotsaFS.h"
-#if defined(IOTSA_WITH_COAP) || defined(IOTSA_WITH_HPS)
+#if defined(IOTSA_HAS_COAPSERVER) || defined(IOTSA_HAS_HPSSERVER)
 #include "iotsaApi.h"
 #endif
 
@@ -27,7 +27,7 @@ IotsaApplication::IotsaApplication(const char *_title)
   // during their own construction, see cwi-dis/iotsa#207/#211. Ensuring it here
   // relies on the existing convention that IotsaApplication itself is declared
   // before any module in the sketch.
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
+#ifdef IOTSA_HAS_WEBSERVER
   IotsaHttpServiceMod::ensureServiceMod(*this);
   server = IotsaHttpServiceMod::serviceMod(*this)->server;
 #endif
@@ -81,10 +81,10 @@ IotsaApplication::setup() {
   // Ensure the CoAP/HPS companion modules exist before any module's setup() runs,
   // rather than being lazily created as a side effect of whichever module happens to
   // construct an IotsaApiServiceCoap/Hps member first (see cwi-dis/iotsa#113 case 3).
-#ifdef IOTSA_WITH_COAP
+#ifdef IOTSA_HAS_COAPSERVER
   IotsaApiServiceCoap::ensureServiceMod(*this);
 #endif
-#ifdef IOTSA_WITH_HPS
+#ifdef IOTSA_HAS_HPSSERVER
   IotsaApiServiceHps::ensureServiceMod(*this);
 #endif
 

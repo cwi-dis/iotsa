@@ -3,7 +3,7 @@
 #include "iotsa.h"
 #include <list>
 
-#ifdef IOTSA_WITH_HPS
+#ifdef IOTSA_HAS_HPSSERVER
 
 class IotsaHpsServiceMod;
 
@@ -26,5 +26,5 @@ public:
   static constexpr UUIDstring securityUUID = "2ABB";
   static IotsaHpsServiceMod *_hpsMod;
 };
-#endif // IOTSA_WITH_HPS
+#endif // IOTSA_HAS_HPSSERVER
 #endif

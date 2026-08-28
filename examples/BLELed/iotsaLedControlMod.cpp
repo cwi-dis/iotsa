@@ -44,7 +44,7 @@ IotsaLedControlMod::webHandler() {
 String IotsaLedControlMod::info() {
   // Return some information about this module, for the main page of the web server.
   String rv = "<p>See <a href=\"/led\">/led</a> for setting the LED color.";
-#ifdef IOTSA_WITH_REST
+#ifdef IOTSA_HAS_RESTSERVER
   rv += " Or use REST api at <a href='/api/led'>/api/led</a>.";
 #endif
 #ifdef IOTSA_WITH_BLE

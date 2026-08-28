@@ -1,6 +1,6 @@
 #include "iotsaHttpServer.h"
 
-#if defined(IOTSA_WITH_HTTPS) && defined(IOTSA_WITH_HTTP)
+#ifdef IOTSA_HAS_FORWARDING_WEBSERVER
 // Tiny http server which forwards to https
 class TinyForwardServer {
 public:
@@ -30,7 +30,7 @@ public:
 
 static TinyForwardServer *singletonTFS;
 
-#endif // defined(IOTSA_WITH_HTTPS) && defined(IOTSA_WITH_HTTP)
+#endif // defined(IOTSA_HAS_FORWARDING_WEBSERVER)
 
 IotsaHttpServiceMod *IotsaHttpServiceMod::_httpMod = nullptr;
 
@@ -45,7 +45,7 @@ IotsaHttpServiceMod *IotsaHttpServiceMod::serviceMod(IotsaApplication &app) {
 IotsaHttpServiceMod::IotsaHttpServiceMod(IotsaApplication &_app)
 : IotsaBaseModule(_app, nullptr, true)
 {
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
+#ifdef IOTSA_HAS_WEBSERVER
   server = new IotsaWebServer(IOTSA_WEBSERVER_PORT);
 #endif
 }
@@ -55,15 +55,15 @@ IotsaHttpServiceMod::setup() {
   name = "http";
 }
 
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
+#ifdef IOTSA_HAS_WEBSERVER
 void
 IotsaHttpServiceMod::lateSetup() {
   if (!iotsaConfig.wifiEnabled) return;
 
-#if defined(IOTSA_WITH_HTTPS) && defined(IOTSA_WITH_HTTP)
+#ifdef IOTSA_HAS_FORWARDING_WEBSERVER
   if (singletonTFS == NULL)
     singletonTFS = new TinyForwardServer();
-#endif // defined(IOTSA_WITH_HTTPS) && defined(IOTSA_WITH_HTTP)
+#endif // defined(IOTSA_HAS_FORWARDING_WEBSERVER)
 
   server->onNotFound(std::bind(&IotsaHttpServiceMod::webServerNotFoundHandler, this));
 #ifdef IOTSA_WITH_WEB
@@ -110,7 +110,7 @@ IotsaHttpServiceMod::loop() {
     return;
   }
   server->handleClient();
-#if defined(IOTSA_WITH_HTTPS) && defined(IOTSA_WITH_HTTP)
+#ifdef IOTSA_HAS_FORWARDING_WEBSERVER
   singletonTFS->server.handleClient();
 #endif
 }
@@ -131,10 +131,10 @@ IotsaHttpServiceMod::webServerNotFoundHandler() {
   }
   server->send(404, "text/plain", message);
 }
-#else // IOTSA_WITH_HTTP_OR_HTTPS
+#else // IOTSA_HAS_WEBSERVER
 void IotsaHttpServiceMod::lateSetup() {}
 void IotsaHttpServiceMod::loop() {}
-#endif // IOTSA_WITH_HTTP_OR_HTTPS
+#endif // IOTSA_HAS_WEBSERVER
 
 #ifdef IOTSA_WITH_WEB
 void

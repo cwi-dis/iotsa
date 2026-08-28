@@ -1,6 +1,6 @@
 #include "iotsaApi.h"
 
-#ifdef IOTSA_WITH_REST
+#ifdef IOTSA_HAS_RESTSERVER
 void IotsaApiServiceRest::setup(const char* path, bool get, bool put, bool post, bool webPage) {
     // xxxjack may be enabled later... if (!iotsaConfig.wifiEnabled) return;
     // Callers pass a bare name; REST is the one that cares about the /api/ prefix, both
@@ -103,4 +103,4 @@ void IotsaApiServiceRest::_postHandlerWrapper(const char *path) {
         IFDEBUG IotsaSerial.println("-> ERR");
     }
 }
-#endif // IOTSA_WITH_REST
+#endif // IOTSA_HAS_RESTSERVER

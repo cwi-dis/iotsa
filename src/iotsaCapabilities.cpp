@@ -29,8 +29,8 @@ static bool stringContainedIn(const char *wanted, JsonVariant& got) {
 
 // Get a scope indicator from a JSON variant
 // Only used by loadCapabilitiesFromRequest() below, which is itself
-// entirely guarded by IOTSA_WITH_HTTP_OR_HTTPS.
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
+// entirely guarded by IOTSA_HAS_WEBSERVER.
+#ifdef IOTSA_HAS_WEBSERVER
 static IotsaCapabilityObjectScope getRightFrom(const JsonVariant& arg) {
   if (!arg.is<const char*>()) return IOTSA_SCOPE_NONE;
   const char *argStr = arg.as<const char*>();
@@ -177,13 +177,13 @@ void IotsaCapabilityMod::loop() {
 }
 
 bool IotsaCapabilityMod::allows(const char *obj, IotsaApiOperation verb) {
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
+#ifdef IOTSA_HAS_WEBSERVER
   loadCapabilitiesFromRequest();
 #endif
-#ifdef IOTSA_WITH_COAP
+#ifdef IOTSA_HAS_COAPSERVER
   // Need to load capability from coap headers, somehow...
 #endif
-#ifdef IOTSA_WITH_HPS
+#ifdef IOTSA_HAS_HPSSERVER
   // Need to load capabilit from hps headers.
 #endif
   if (capabilities) {
@@ -203,7 +203,7 @@ bool IotsaCapabilityMod::allows(const char *right) {
   // If no rights fall back to username/password authentication
   return chain.allows(right);
 }
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
+#ifdef IOTSA_HAS_WEBSERVER
 void IotsaCapabilityMod::loadCapabilitiesFromRequest() {
 
   // Free old capabilities
@@ -284,4 +284,4 @@ void IotsaCapabilityMod::loadCapabilitiesFromRequest() {
   IFDEBUGX IotsaSerial.println(" loaded");
   capabilities = new IotsaCapability(obj, get, put, post);
 }
-#endif // IOTSA_WITH_HTTP_OR_HTTPS
+#endif // IOTSA_HAS_WEBSERVER

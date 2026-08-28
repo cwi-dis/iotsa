@@ -202,7 +202,7 @@ bool IotsaWifiMod::_wifiStartMDNS() {
   const char *proto = "tcp";
   const char *myproto = "http";
   const int port = 80;
-#elif defined(IOTSA_WITH_COAP)
+#elif defined(IOTSA_HAS_COAPSERVER)
   const char *proto = "udp";
   const char *myproto = "coap";
   const int port = 5683;

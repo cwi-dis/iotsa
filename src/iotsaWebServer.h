@@ -39,7 +39,7 @@ typedef ESP8266WebServer IotsaHttpWebServer;
 
 #endif
 
-#if !defined(IOTSA_WEBSERVER) && defined(IOTSA_WITH_HTTP_OR_HTTPS)
+#if !defined(IOTSA_WEBSERVER) && defined(IOTSA_HAS_WEBSERVER)
 #error "Cannot determine WebServer implementation to use"
 #endif
 

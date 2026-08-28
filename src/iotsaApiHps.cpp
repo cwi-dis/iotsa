@@ -2,7 +2,7 @@
 #include "iotsaApi.h"
 #include "iotsaConfigFile.h"
 
-#ifdef IOTSA_WITH_HPS
+#ifdef IOTSA_HAS_HPSSERVER
 #include "iotsaBLEServer.h"
 
 #ifdef IOTSA_BLE_DEBUG
@@ -333,4 +333,4 @@ void IotsaApiServiceHps::setup(const char* path, bool get, bool put, bool post, 
   if (next) next->setup(path, get, put, post, webPage);
 }
 
-#endif // IOTSA_WITH_HPS
+#endif // IOTSA_HAS_HPSSERVER
