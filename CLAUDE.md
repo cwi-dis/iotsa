@@ -106,7 +106,7 @@ matrices, and each entry's standalone `platformio.ini`. See #156.
 - `HelloIotsa` — the same, but structured the way we recommend for real applications
   (app module in its own `.h`/`.cpp`), with a REST API added
 - `HelloPasswd`, `HelloRights`, `HelloToken`, `HelloUser` — auth patterns
-- `BLELed`, `Led`, `Light` — LED control / BLE
+- `Led`, `Light` — LED control / BLE
 - `Button`, `Input`, `Ringer` — input handling
 - `Log`, `Temperature`, `DateTime` — logging and sensors
 - `sandbox/BLEClient` — active-development test rig for `IotsaBLEClientMod`-based

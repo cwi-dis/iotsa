@@ -9,33 +9,61 @@
   "variants": [
     {
       "board": "nodemcuv2",
-      "label": "withhttps",
+      "label": "all",
+      "_note": "BLE is ESP32-only (NimBLE isn't available for esp8266) -- omit IOTSA_WITH_BLE here.",
       "build_flags": [
+        "-DIOTSA_WITH_COAP",
         "-DIOTSA_WITH_HTTPS"
       ]
     },
     {
       "board": "esp32thing",
-      "label": "withhttps",
+      "label": "all",
       "build_flags": [
+        "-DIOTSA_WITH_BLE",
+        "-DIOTSA_WITH_COAP",
         "-DIOTSA_WITH_HTTPS"
       ],
-      "partitions": "min_spiffs.csv"
+      "partitions": "min_spiffs.csv",
+      "ci": {
+        "platformio": true,
+        "arduino": true
+      }
     },
     {
-      "board": "nodemcuv2",
-      "label": "withcoap",
+      "board": "esp32c3devkit",
+      "label": "all",
       "build_flags": [
-        "-DIOTSA_WITH_COAP"
-      ]
-    },
-    {
-      "board": "esp32thing",
-      "label": "withcoap",
-      "build_flags": [
-        "-DIOTSA_WITH_COAP"
+        "-DIOTSA_WITH_BLE",
+        "-DIOTSA_WITH_COAP",
+        "-DIOTSA_WITH_HTTPS",
+        "-DIOTSA_PIN_NEOPIXEL=8"
       ],
       "partitions": "min_spiffs.csv"
+    },
+    {
+      "board": "esp32s3supermini",
+      "label": "all",
+      "build_flags": [
+        "-DIOTSA_WITH_BLE",
+        "-DIOTSA_WITH_COAP",
+        "-DIOTSA_WITH_HTTPS",
+        "-DIOTSA_PIN_NEOPIXEL=48"
+      ],
+      "partitions": "min_spiffs.csv",
+      "ci": {
+        "platformio": true,
+        "arduino": true
+      }
+    },
+    {
+      "board": "lolin32",
+      "label": "all",
+      "build_flags": [
+        "-DIOTSA_WITH_BLE",
+        "-DIOTSA_WITH_COAP",
+        "-DIOTSA_WITH_HTTPS"
+      ]
     },
     {
       "board": "nodemcuv2",
@@ -45,8 +73,7 @@
         "-DIOTSA_WITHOUT_WEB",
         "-DIOTSA_WITHOUT_REST",
         "-DIOTSA_WITHOUT_HTTP",
-        "-DIOTSA_WITHOUT_HTTPS",
-        "-DIOTSA_WITH_PLACEHOLDERS"
+        "-DIOTSA_WITHOUT_HTTPS"
       ]
     },
     {
@@ -57,10 +84,71 @@
         "-DIOTSA_WITHOUT_WEB",
         "-DIOTSA_WITHOUT_REST",
         "-DIOTSA_WITHOUT_HTTP",
-        "-DIOTSA_WITHOUT_HTTPS",
-        "-DIOTSA_WITH_PLACEHOLDERS"
+        "-DIOTSA_WITHOUT_HTTPS"
       ],
       "partitions": "min_spiffs.csv"
+    },
+    {
+      "board": "nodemcuv2",
+      "label": "onlyhttps",
+      "build_flags": [
+        "-DIOTSA_WITHOUT_HTTP",
+        "-DIOTSA_WITH_HTTPS"
+      ]
+    },
+    {
+      "board": "esp32thing",
+      "label": "onlyhttps",
+      "build_flags": [
+        "-DIOTSA_WITHOUT_HTTP",
+        "-DIOTSA_WITH_HTTPS"
+      ],
+      "partitions": "min_spiffs.csv"
+    },
+    {
+      "board": "esp32s3supermini",
+      "label": "onlyble",
+      "build_flags": [
+        "-DIOTSA_WITH_BLE",
+        "-DIOTSA_WITHOUT_WIFI",
+        "-DIOTSA_WITHOUT_HTTP",
+        "-DIOTSA_WITHOUT_WEB",
+        "-DIOTSA_WITHOUT_REST",
+        "-DIOTSA_WITHOUT_COAP",
+        "-DIOTSA_PIN_NEOPIXEL=48"
+      ]
+    },
+    {
+      "board": "nodemcuv2",
+      "label": "nonetworking",
+      "_partitions_note": "null overrides the file default deliberately: -DIOTSA_WITHOUT_WIFI makes OTA unreachable in this build regardless of partition scheme, so there's nothing for min_spiffs.csv to protect here -- see iotsa#40.",
+      "partitions": null,
+      "build_flags": [
+        "-DIOTSA_WITHOUT_WIFI",
+        "-DIOTSA_WITHOUT_HTTP",
+        "-DIOTSA_WITHOUT_HTTPS",
+        "-DIOTSA_WITHOUT_WEB",
+        "-DIOTSA_WITHOUT_API",
+        "-DIOTSA_WITHOUT_REST",
+        "-DIOTSA_WITHOUT_COAP",
+        "-DIOTSA_STARTUP_BLINK_COUNT=10"
+      ]
+    },
+    {
+      "board": "esp32thing",
+      "label": "nonetworking",
+      "_partitions_note": "null overrides the file default deliberately: -DIOTSA_WITHOUT_WIFI makes OTA unreachable in this build regardless of partition scheme, so there's nothing for min_spiffs.csv to protect here -- see iotsa#40.",
+      "partitions": null,
+      "build_flags": [
+        "-DIOTSA_WITHOUT_WIFI",
+        "-DIOTSA_WITHOUT_HTTP",
+        "-DIOTSA_WITHOUT_HTTPS",
+        "-DIOTSA_WITHOUT_WEB",
+        "-DIOTSA_WITHOUT_API",
+        "-DIOTSA_WITHOUT_REST",
+        "-DIOTSA_WITHOUT_COAP",
+        "-DIOTSA_STARTUP_BLINK_COUNT=10"
+      ]
     }
   ]
 }

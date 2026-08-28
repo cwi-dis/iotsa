@@ -26,8 +26,9 @@ button-press handling, generic digital/rotary input). Confirmed by a 2026-07-27 
 purpose (LDR reading, DHT21 reading, buzzer control, BLE central test rig) as bespoke
 app-specific module code — subclassing the generic `IotsaMod`/`IotsaApiMod` base directly —
 precisely because there is no standard "light sensor" or "buzzer" module to reuse. This is
-also why those examples (plus `Led` and `BLELed`, which subclass `IotsaLedMod` to add their
-own web/REST/BLE surface on top) needed the same own-`.h`/`.cpp` module split as the
+also why those examples (plus `Led`, which subclasses `IotsaLedMod` to add its own
+web/REST/CoAP/BLE surface on top -- `BLELed` was a separate example with its own copy of
+this until it was folded into `Led`, #222) needed the same own-`.h`/`.cpp` module split as the
 `HelloIotsa` baseline (#156) — their actual functionality was never going to come from a
 `src/` module in the first place.
 

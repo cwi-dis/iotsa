@@ -33,16 +33,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `iotsaBuildOptions.h` restructured into 6 explicit stages (plain-value defaults, default-on `WITH`, default-off `WITH` listed, sanity checks on raw input, derived `HAS_` values, sanity checks on derived values) instead of one undifferentiated pile (#205)
 - The HTTP(S) web server is now a peer service module (`IotsaHttpServiceMod`) instead of infrastructure privileged via `IotsaApplication` inheritance, the same tier as the CoAP/HPS companion mods; `IotsaApiServiceWeb`/`IotsaApiServiceRest` now share one server instance through it instead of each holding their own copy (#207)
 - Renamed `serverSetup()`→`lateSetup()` across the framework, and removed `IotsaBaseModule`'s per-module `server` field -- API-having modules reach the shared server through their own `IotsaApiServiceWeb` link, everyone else through `IotsaApplication::server` (#211). **Breaking**: any app module overriding `serverSetup()` needs renaming to `lateSetup()`; a module reading `this->server` directly needs updating to one of the above.
-
-### Changed
-
 - `KitchenSink`'s rotary encoder/pushbutton pins are now `IOTSA_PIN_ENCODER_A`/`IOTSA_PIN_ENCODER_B`/`IOTSA_PIN_BUTTON` defines instead of hardwired constants; the button now fires an `IotsaRequest` self-loopback GET against `/api/nothing` on press, the only exercise of `IotsaRequest` anywhere in `examples/`/`tests/` (#222)
 - New `sandbox/` toplevel, for sketches under active development that build on every push but aren't held to `examples/`'s doc-grade/full-board-coverage bar; `BLEClient` is the first tenant, moved out of `examples/` (#222)
+- `Led` and `BLELed` folded into one example: BLELed had drifted into a simplified static-color-only implementation by accident (a stale 2019 copy never resynced with Led's own flash-pattern feature work), not by design -- merged `Led` now has full flash-pattern control (color/duration/repeat count) *and* BLELed's BLE characteristic (solid-color-only over BLE) *and* its battery/sleep reference wiring, in one example (#222)
+- `tests/Led`'s variant matrix rebuilt from 16 accumulated (and partly duplicate) rows down to 12 deliberate ones: one `all` (every optional transport this board supports) per board, `onlycoap`/`onlyhttps`/`nonetworking` on `nodemcuv2`+`esp32thing`, and `onlyble` on `esp32s3supermini` (#222)
+- `Led`/`BLELed`'s example gained an opt-in startup blink (`-DIOTSA_STARTUP_BLINK_COUNT=<n>`, enabled on the new `nonetworking` variant) as the only way to visually confirm a build with zero network connectivity actually booted (#222)
 
 ### Removed
 
 - `IotsaRestApiMod`/`IotsaCoapApiMod`, unused example/template classes (every handler a no-op `return false`) never instantiated anywhere in iotsa or any sibling repo -- the underlying `IotsaApiServiceRest`/`IotsaApiServiceCoap` they wrapped are still exercised by every real `IotsaModule`-derived module, so nothing loses coverage (#222)
 - `tests/Skeleton` (the `lolin32`+BLE coverage variant): its board/flag combination was already exercised harder by `KitchenSink`/`sandbox/BLEClient`, and its own history traced back to an unexplained carry-over from #156's matrix consolidation rather than a documented reason (#222)
+- `examples/BLELed`/`tests/BLELed`, folded into `Led` (see Changed above) (#222)
 
 ## [2.9.2] - 2026-08-22
 

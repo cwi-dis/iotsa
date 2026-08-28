@@ -1,5 +1,33 @@
 #include "iotsaLedControlMod.h"
 
+#ifdef IOTSA_WITH_BLE
+void IotsaLedControlMod::setup() {
+  bleApi.setup(serviceUUID, this);
+  // Explain to clients what the rgb characteristic looks like
+  bleApi.addCharacteristic(rgbUUID, bleApi.BLE_READ|bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT32, 0x2700, "RGBx color");
+}
+
+bool IotsaLedControlMod::blePutHandler(UUIDstring charUUID) {
+  if (charUUID == rgbUUID) {
+      uint32_t _rgb = bleApi.getAsInt(rgbUUID);
+      // BLE always sets a solid, non-repeating color -- see the header comment.
+      set(_rgb, 1000, 0, 0x7fff);
+      return true;
+  }
+  IotsaSerial.println("ledControlMod: ble: write unknown uuid");
+  return false;
+}
+
+bool IotsaLedControlMod::bleGetHandler(UUIDstring charUUID) {
+  if (charUUID == rgbUUID) {
+      bleApi.set(rgbUUID, rgb);
+      return true;
+  }
+  IotsaSerial.println("ledControlMod: ble: read unknown uuid");
+  return false;
+}
+#endif // IOTSA_WITH_BLE
+
 #ifdef IOTSA_WITH_WEB
 void
 IotsaLedControlMod::webHandler() {
@@ -30,7 +58,7 @@ IotsaLedControlMod::webHandler() {
 
   String message = "<html><head><title>Led Server</title></head><body><h1>Led Server</h1>";
   message += "<form method='get'>";
-  message += "Color (hex rrggbb): <input type='text' name='rgb'><br>";
+  message += "Color (hex rrggbb): <input type='text' name='rgb' value='" + String(rgb, HEX) + "'><br>";
   message += "On time (ms): <input type='text' name='onDuration'><br>";
   message += "Off time (ms): <input type='text' name='offDuration'><br>";
   message += "Repeat count: <input type='text' name='count'><br>";
@@ -40,7 +68,14 @@ IotsaLedControlMod::webHandler() {
 
 String IotsaLedControlMod::info() {
   // Return some information about this module, for the main page of the web server.
-  String rv = "<p>See <a href=\"/led\">/led</a> for flashing the led in a color pattern.</p>";
+  String rv = "<p>See <a href=\"/led\">/led</a> for flashing the led in a color pattern.";
+#ifdef IOTSA_HAS_RESTSERVER
+  rv += " Or use REST api at <a href='/api/led'>/api/led</a>.";
+#endif
+#ifdef IOTSA_WITH_BLE
+  rv += " Or use BLE service " + String(serviceUUID) + " on device " + iotsaConfig.hostName + " for setting a solid color.";
+#endif
+  rv += "</p>";
   return rv;
 }
 #endif // IOTSA_WITH_WEB
@@ -63,12 +98,12 @@ bool IotsaLedControlMod::putHandler(const char *path, const JsonVariant& request
   set(_rgb, _onDuration, _offDuration, _count);
   return true;
 }
-#endif
+#endif // IOTSA_WITH_API
 
 void IotsaLedControlMod::lateSetup() {
+  name = "led";
   // Setup the web server hooks for this module.
 #ifdef IOTSA_WITH_API
   api.setup("led", true, true);
 #endif
-  name = "led";
 }

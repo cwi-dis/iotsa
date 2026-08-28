@@ -684,12 +684,12 @@ building on the previous one:
 - [Temperature](examples/Temperature/Temperature.ino) measures temperature with a slightly more complicated sensor, a DHT21.
 - [DateTime](examples/DateTime/DateTime.ino) keeps the time via NTP and a realtime clock. Uses _iotsaNtp_ and _iotsaRtc_ modules.
 - [Input](examples/Input/Input.ino) reads a rotary encoder and other digital inputs. Uses _iotsaInput_ module.
-- [Led](examples/Led/Led.ino) controls the color of a NeoPixel LED, and can set up repeating patterns. Uses _iotsaLed_ module.
-- [BLELed](examples/BLELed/BLELed.ino) controls the color of a NeoPixel LED over Bluetooth LE
-  (esp32 boards only), and doubles as the reference example for battery-powered devices: it
-  also wires up _iotsaBattery_ (VBAT/VUSB voltage measurement, disable-sleep pin) and shows
-  how to let a BLE command switch the device into config mode, for low-power operation
-  without a permanent WiFi/web connection.
+- [Led](examples/Led/Led.ino) is the reference example for two things at once: controlling
+  the color of a NeoPixel LED, with repeating on/off patterns, over a web UI, REST, CoAP,
+  and/or (esp32 boards only) a BLE characteristic; and, separately, battery-powered devices
+  in general -- it also wires up _iotsaBattery_ (VBAT/VUSB voltage measurement, disable-sleep
+  pin) and shows how to let a BLE command switch the device into config mode, for low-power
+  operation without a permanent WiFi/web connection.
 - [Button](examples/Button/Button.ino) waits for a button to be pressed and then makes a call to a configurable URL. Pairs with _Ringer_ to implement a remote doorbell.
 - [Ringer](examples/Ringer/Ringer.ino) sounds a buzzer when a GET request is received. Pairs with _Button_ to implement a remote doorbell.
 - [Log](examples/Log/Log.ino) Example of using the _iotsaLogger_ module.
