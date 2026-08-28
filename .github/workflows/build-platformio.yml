@@ -169,17 +169,17 @@ jobs:
   # Job#3 - dispatch build event to dependent repositories
   #
   dispatch:
-    # Temporarily disabled: the v3 redesign (cwi-dis/iotsa#199) is landing breaking
-    # changes on develop (renamed/removed base classes, etc.) that downstream repos
-    # aren't updated for yet. Re-enable by restoring the condition below once
-    # they're ready for the rebuild storm.
+    # Re-enabled 2026-08-29: the v3 redesign (cwi-dis/iotsa#199)'s breaking changes
+    # have accumulated on develop long enough to start the coordinated downstream
+    # rollout for v3.0a1 -- see #199's "Downstream migration checklist". Every
+    # dependent repo is expected to fail this dispatch until it's updated; that's
+    # the point of tagging now, not a sign something's wrong here.
     #
     # Tag pushes only (releases, including alpha/beta) -- not develop pushes. Since
     # #216, a develop push only runs the minimal build tier, so it's no longer a
     # trustworthy trigger for "go rebuild against this iotsa commit"; downstream
     # repos should track tagged releases instead of every develop commit.
-    #   github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-    if: false
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     needs: build
     strategy:
       matrix:
@@ -187,6 +187,7 @@ jobs:
         - cwi-dis/iotsa433
         - cwi-dis/iotsaDMXLedstrip
         - cwi-dis/iotsaDMXSensor
+        - cwi-dis/iotsaDataLogger
         - cwi-dis/iotsaDisplayServer
         - cwi-dis/iotsaDoorOpener
         - cwi-dis/iotsaDoorbellButton
