@@ -75,7 +75,10 @@ IotsaHttpServiceMod::lateSetup() {
   IFDEBUG IotsaSerial.print(iotsaConfig.httpsKeyLength);
   IFDEBUG IotsaSerial.print(", cert len=");
   IFDEBUG IotsaSerial.println(iotsaConfig.httpsCertificateLength);
-#ifdef IOTSA_WITH_SETRSACERT
+#if !defined(ESP32) && defined(IOTSA_WITH_HTTPS)
+  // BearSSL's ESP8266WebServerSecure is the only implementation exposing setRSACert()
+  // -- everyone else (both ESP32 implementations, and plain non-HTTPS ESP8266) uses
+  // setServerKeyAndCert_P() instead.
   X509List *chain = new X509List(iotsaConfig.httpsCertificate, iotsaConfig.httpsCertificateLength);
   PrivateKey *sk = new PrivateKey(iotsaConfig.httpsKey, iotsaConfig.httpsKeyLength);
   if (!chain || !sk) {
@@ -94,8 +97,7 @@ IotsaHttpServiceMod::lateSetup() {
 #endif
   server->begin();
   serverInitialized = true;
-  IFDEBUG IotsaSerial.print(IOTSA_WEBSERVER);
-  IFDEBUG IotsaSerial.println(" server started");
+  IFDEBUG IotsaSerial.println("Web server started");
 }
 
 void
