@@ -67,7 +67,7 @@ Using the `arduino-cli` tool is supported too.
 
 The _iotsa_ library is known to the PlatformIO library manager, so simply adding it to your _platformio.ini_ file should do the trick for adding the iotsa framework to your project..
 
-To build an example against your local (possibly uncommitted) changes to the iotsa library itself, open the `iotsa` source directory in _VSCode_ or _Atom_ and look for the `[env:nodemcuv2-example-Skeleton]` section (these `[env:...]` sections are generated from `examples/*/iotsa-build.json` and `tests/*/iotsa-build.json` into `generated_envs.ini` -- see `extras/python/gen_build_matrix.py`). Replace the references to _Skeleton_ with the name of the example you want to build.
+To build an example against your local (possibly uncommitted) changes to the iotsa library itself, open the `iotsa` source directory in _VSCode_ or _Atom_ and look for the `[env:iotsa_v4-example-Skeleton]` section (these `[env:...]` sections are generated from `examples/*/iotsa-build.json` and `tests/*/iotsa-build.json` into `generated_envs.ini` -- see `extras/python/gen_build_matrix.py`). Replace the references to _Skeleton_ with the name of the example you want to build.
 
 But: each example in the _examples_ folder also has its own _platformio.ini_ file, generated the same way, for building it standalone (pulling iotsa from GitHub rather than your local checkout). So you can also open `iotsa/examples/Hello` in _VSCode_ or _Atom_ and build it, or use the command line:
 
@@ -119,8 +119,9 @@ normal, separate change to commit -- only the throwaway env section needs undoin
 expected to build against routinely, worth catching regressions on for every push:
 
 - Add a `[boardname]` section to the toplevel `platformio.ini`, extending the right
-  per-processor section (`esp32`, `esp32c3`, `esp32c3jtag`, `esp8266`, ...; add a new
-  per-processor section too if this is a genuinely new chip family).
+  leading-underscore trait section(s) (`_esp32_allvariants`, `_esp32c3_extusb`,
+  `_esp32c3_nativeusb`, `_esp8266`, ...; add a new trait too if this is a genuinely new
+  chip family or USB wiring -- see the layer-1/2/3 board model, #222).
 - Add the board to `BOARD_INFO` in `extras/python/gen_build_matrix.py` (its `pio_board`
   id, and `fqbn` if it is arduino-cli-buildable). **Easy to forget, and forgetting it
   fails quietly:** `emit_platformio_ini`/`emit_github_matrix` just print a

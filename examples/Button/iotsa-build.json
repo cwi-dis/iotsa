@@ -1,7 +1,7 @@
 {
   "variants": [
     {
-      "board": "nodemcuv2",
+      "board": "iotsa_v4",
       "minimal": true,
       "ci": {
         "platformio": true,

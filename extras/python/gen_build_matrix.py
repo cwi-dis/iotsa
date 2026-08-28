@@ -18,19 +18,32 @@ import sys
 
 REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
-# Maps our short board name (also the platformio.ini scaffolding section name)
-# to the actual PlatformIO board ID and, where supported, the arduino-cli FQBN.
+# Layer 2 board names (see platformio.ini and #222) -> the actual PlatformIO
+# board ID, the arduino-cli FQBN where supported, and which processor family
+# (drives emit_standalone_ini's "platform =" line -- the one thing here that
+# isn't just data plumbed through to pio/arduino-cli).
 BOARD_INFO = {
-    "nodemcuv2":        {"pio_board": "nodemcuv2",           "fqbn": "esp8266:esp8266:nodemcuv2"},
-    "esp32thing":       {"pio_board": "esp32thing",           "fqbn": "esp32:esp32:esp32thing"},
-    "esp32dev":         {"pio_board": "esp32dev",              "fqbn": None},
-    "lolin32":          {"pio_board": "lolin32",               "fqbn": None},
-    "pico32":           {"pio_board": "pico32",                "fqbn": None},
-    "esp32c3devkit":    {"pio_board": "esp32-c3-devkitm-1",    "fqbn": None},
-    "esp32c3lcd":       {"pio_board": "esp32-c3-devkitm-1",    "fqbn": None},
-    "esp32c3supermini": {"pio_board": "esp32-c3-devkitm-1",    "fqbn": None},
-    "crowpanel128":     {"pio_board": "esp32-c3-devkitm-1",    "fqbn": None},
-    "esp32s3supermini": {"pio_board": "esp32-s3-devkitc-1",    "fqbn": "esp32:esp32:esp32s3"},
+    "iotsa_v4":         {"pio_board": "nodemcuv2",           "fqbn": "esp8266:esp8266:nodemcuv2", "family": "esp8266"},
+    "esp32thing":       {"pio_board": "esp32thing",           "fqbn": "esp32:esp32:esp32thing",   "family": "esp32"},
+    "esp32dev":         {"pio_board": "esp32dev",              "fqbn": None,                      "family": "esp32"},
+    "lolin32":          {"pio_board": "lolin32",               "fqbn": None,                      "family": "esp32"},
+    "pico32":           {"pio_board": "pico32",                "fqbn": None,                      "family": "esp32"},
+    "esp32c3devkit":    {"pio_board": "esp32-c3-devkitm-1",    "fqbn": None,                      "family": "esp32"},
+    "esp32c3lcd":       {"pio_board": "esp32-c3-devkitm-1",    "fqbn": None,                      "family": "esp32"},
+    "esp32c3supermini": {"pio_board": "esp32-c3-devkitm-1",    "fqbn": None,                      "family": "esp32"},
+    "crowpanel128":     {"pio_board": "esp32-c3-devkitm-1",    "fqbn": None,                      "family": "esp32"},
+    "esp32s3supermini": {"pio_board": "esp32-s3-devkitc-1",    "fqbn": "esp32:esp32:esp32s3",      "family": "esp32"},
+}
+
+# Layer 1 role aliases (see platformio.ini and #222): pure synonyms for
+# "whichever layer-2 board is our current default for this chip family".
+# Resolved once, right after an iotsa-build.json variant is read, so every
+# emitter below only ever sees a real BOARD_INFO key.
+BOARD_ALIASES = {
+    "vanilla_esp8266": "iotsa_v4",
+    "vanilla_esp32":   "esp32thing",
+    "vanilla_esp32c3": "esp32c3devkit",
+    "vanilla_esp32s3": "esp32s3supermini",
 }
 
 
@@ -63,6 +76,8 @@ def load_entries():
             defaults = spec.get("defaults", {})
             for variant in spec["variants"]:
                 merged = merge_patch(defaults, variant)
+                if merged.get("board") in BOARD_ALIASES:
+                    merged["board"] = BOARD_ALIASES[merged["board"]]
                 merged["kind"] = kind
                 merged["name"] = name
                 merged["source"] = source
@@ -234,7 +249,7 @@ def emit_standalone_ini(entries, target_dir, out):
         info = BOARD_INFO[board]
         out.write(f"[env:{env}]\n")
         out.write("extends = common\n")
-        out.write(f"platform = {'espressif8266' if board == 'nodemcuv2' else 'espressif32'}\n")
+        out.write(f"platform = {'espressif8266' if info['family'] == 'esp8266' else 'espressif32'}\n")
         out.write(f"board = {info['pio_board']}\n")
         if e["build_flags"]:
             out.write(f"build_flags = {' '.join(e['build_flags'])}\n")

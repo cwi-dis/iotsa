@@ -36,8 +36,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `KitchenSink`'s rotary encoder/pushbutton pins are now `IOTSA_PIN_ENCODER_A`/`IOTSA_PIN_ENCODER_B`/`IOTSA_PIN_BUTTON` defines instead of hardwired constants; the button now fires an `IotsaRequest` self-loopback GET against `/api/nothing` on press, the only exercise of `IotsaRequest` anywhere in `examples/`/`tests/` (#222)
 - New `sandbox/` toplevel, for sketches under active development that build on every push but aren't held to `examples/`'s doc-grade/full-board-coverage bar; `BLEClient` is the first tenant, moved out of `examples/` (#222)
 - `Led` and `BLELed` folded into one example: BLELed had drifted into a simplified static-color-only implementation by accident (a stale 2019 copy never resynced with Led's own flash-pattern feature work), not by design -- merged `Led` now has full flash-pattern control (color/duration/repeat count) *and* BLELed's BLE characteristic (solid-color-only over BLE) *and* its battery/sleep reference wiring, in one example (#222)
-- `tests/Led`'s variant matrix rebuilt from 16 accumulated (and partly duplicate) rows down to 12 deliberate ones: one `all` (every optional transport this board supports) per board, `onlycoap`/`onlyhttps`/`nonetworking` on `nodemcuv2`+`esp32thing`, and `onlyble` on `esp32s3supermini` (#222)
+- `tests/Led`'s variant matrix rebuilt from 16 accumulated (and partly duplicate) rows down to 12 deliberate ones: one `all` (every optional transport this board supports) per board, `onlycoap`/`onlyhttps`/`nonetworking` on `iotsa_v4`+`esp32thing`, and `onlyble` on `esp32s3supermini` (#222)
 - `Led`/`BLELed`'s example gained an opt-in startup blink (`-DIOTSA_STARTUP_BLINK_COUNT=<n>`, enabled on the new `nonetworking` variant) as the only way to visually confirm a build with zero network connectivity actually booted (#222)
+- `platformio.ini` board definitions restructured into three explicit layers (`vanilla_*` role aliases → boards we actually use → leading-underscore processor/USB-wiring traits); `nodemcuv2` renamed `iotsa_v4`, redundant `esp32` pass-through trait dropped (#222)
 
 ### Removed
 

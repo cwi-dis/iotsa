@@ -13,7 +13,7 @@
   },
   "variants": [
     {
-      "board": "nodemcuv2",
+      "board": "iotsa_v4",
       "_note": "BLE is ESP32-only (NimBLE isn't available for esp8266) -- omit IOTSA_WITH_BLE here.",
       "build_flags": [
         "-DIOTSA_WITH_COAP",

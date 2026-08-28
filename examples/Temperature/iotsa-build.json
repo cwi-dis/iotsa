@@ -11,7 +11,7 @@
   },
   "variants": [
     {
-      "board": "nodemcuv2"
+      "board": "iotsa_v4"
     },
     {
       "board": "esp32thing",

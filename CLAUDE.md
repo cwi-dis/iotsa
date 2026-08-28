@@ -114,7 +114,7 @@ matrices, and each entry's standalone `platformio.ini`. See #156.
 
 ## CI
 
-`.github/workflows/build-platformio.yml` builds all examples on three boards (nodemcuv2, esp32thing, esp32-c3-devkitm-1) and uploads firmware binaries as artifacts.
+`.github/workflows/build-platformio.yml` builds all examples on three boards (iotsa_v4, esp32thing, esp32c3devkit) and uploads firmware binaries as artifacts.
 
 On push to `develop` or a version tag, it dispatches rebuild events to all downstream iotsa application repos.
 
