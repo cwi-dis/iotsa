@@ -4,24 +4,29 @@
 #include "iotsaApi.h"
 #include "iotsaRequest.h"
 
+// IOTSA_INPUT_CAN_xxx are facts about what this specific chip variant's hardware
+// supports, derived from the SDK's own SOC_xxx capability macros -- never set by a
+// build config, unlike IOTSA_WITH_xxx/IOTSA_HAS_xxx (see cwi-dis/iotsa#205). Scoped
+// to this module (not a top-level IOTSA_HAS_xxx) since nothing outside iotsaInput.*
+// tests them.
 #if ESP32
 #include <esp_idf_version.h>
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 0, 0) 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 0, 0)
 // Jack _thinks_ that soc_caps.h was introduced in version 4.
 //
 // With the various variants of the esp32 SoCs we need more fine-grained tests than just ESP32
 #include "soc/soc_caps.h"
 // Check whether this SoC supports external wakeup from deep sleep
 #if SOC_PM_SUPPORT_EXT_WAKEUP
-#define IOTSA_WITH_WAKEUP_SUPPORT 1
+#define IOTSA_INPUT_CAN_WAKEUP 1
 #endif
 // Check whether this SoC has touch sensors
 #if SOC_TOUCH_SENSOR_NUM > 0
-#define IOTSA_WITH_TOUCH_SUPPORT 1
+#define IOTSA_INPUT_CAN_TOUCH 1
 #endif
 // Check whether this variant supports the ESP32Encoder library (esp32c3 does not)
 #if SOC_PCNT_SUPPORTED
-#define IOTSA_WITH_ESP32ENCODER_LIB 1
+#define IOTSA_INPUT_CAN_ENCODER_LIB 1
 #endif
 #else
 // If we don't have soc_caps.h we need a different way to determine this.
@@ -70,7 +75,7 @@ protected:
   bool toggle;
 };
 
-#if IOTSA_WITH_TOUCH_SUPPORT
+#if IOTSA_INPUT_CAN_TOUCH
 class Touchpad : public Button {
 public:
   Touchpad(int _pin, bool _actOnPress, bool _actOnRelease, bool _wake=false);
@@ -88,7 +93,7 @@ public:
 #endif
   uint16_t threshold;
 };
-#endif // IOTSA_WITH_TOUCH_SUPPORT
+#endif // IOTSA_INPUT_CAN_TOUCH
 
 class ValueInput : public Input {
 public:
@@ -112,7 +117,7 @@ public:
   void setAcceleration(uint32_t _accelMillis);
   uint32_t duration;
 protected:
-#ifdef IOTSA_WITH_ESP32ENCODER_LIB
+#ifdef IOTSA_INPUT_CAN_ENCODER_LIB
   ESP32Encoder *_encoder;
   int64_t oldCount = 0;
 #else

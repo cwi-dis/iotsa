@@ -6,23 +6,12 @@
 //
 #include <FS.h>
 
-#ifdef IOTSA_WITH_LEGACY_SPIFFS
-
-// Use SPIFFS. On ESP32 it requires an extra include, on 8266 not.
-#ifdef ESP32
-#include <SPIFFS.h>
-#endif
-#define IOTSA_FS SPIFFS
-#define IOTSA_FS_NAME "SPIFFS"
-
-#else
-
-// Use normal (as of 2022) LittleFS on esp32 or esp8266.
+// Use normal (as of 2022) LittleFS on esp32 or esp8266. iotsa used to also support
+// legacy SPIFFS here (IOTSA_WITH_LEGACY_SPIFFS), but that flag was never actually
+// definable by anything -- dead code, removed, see cwi-dis/iotsa#205.
 #include <LittleFS.h>
 #define IOTSA_FS LittleFS
 #define IOTSA_FS_NAME "LittleFS"
-
-#endif
 
 #ifndef ESP32
 // Finally, on esp8266 open() does not have the third "create" argument.

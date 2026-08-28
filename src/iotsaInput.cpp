@@ -2,15 +2,15 @@
 #include "iotsaInput.h"
 #include "iotsaConfigFile.h"
 
-#ifdef IOTSA_WITH_ESP32ENCODER_LIB
+#ifdef IOTSA_INPUT_CAN_ENCODER_LIB
 #include <ESP32Encoder.h>
 #endif
 
 #define DEBOUNCE_DELAY 50 // 50 ms debouncing
 
-#ifdef IOTSA_WITH_TOUCH_SUPPORT
+#ifdef IOTSA_INPUT_CAN_TOUCH
 static void dummyTouchCallback() {}
-#endif // IOTSA_WITH_TOUCH_SUPPORT
+#endif // IOTSA_INPUT_CAN_TOUCH
 
 static bool anyWakeOnTouch;
 static uint64_t bitmaskButtonWakeHigh;
@@ -23,7 +23,7 @@ void IotsaInputMod::setup() {
   for(int i=0; i<nInput; i++) {
     inputs[i]->setup();
   }
-#if IOTSA_WITH_WAKEUP_SUPPORT
+#if IOTSA_INPUT_CAN_WAKEUP
   esp_err_t err;
   if (bitmaskButtonWakeHigh && buttonWakeLow >= 0 && anyWakeOnTouch) {
     IotsaSerial.println("IotsaInputMod: too many incompatible wakeup sources");
@@ -184,7 +184,7 @@ void Button::loop() {
   }
 }
 
-#if IOTSA_WITH_TOUCH_SUPPORT
+#if IOTSA_INPUT_CAN_TOUCH
 Touchpad::Touchpad(int _pin, bool _actOnPress, bool _actOnRelease, bool _wake)
 : Button(_pin, _actOnPress, _actOnRelease, _wake),
 #ifdef IOTSA_DEBUG_INPUT
@@ -219,7 +219,7 @@ bool Touchpad::_getState() {
   if (value == 0) return false;
   return value < threshold;
 }
-#endif // IOTSA_WITH_TOUCH_SUPPORT
+#endif // IOTSA_INPUT_CAN_TOUCH
 
 ValueInput::ValueInput()
 : Input(true, true, false),
@@ -288,13 +288,13 @@ bool ValueInput::_changeValue(int steps) {
 RotaryEncoder::RotaryEncoder(int _pinA, int _pinB)
 : ValueInput(),
   duration(0),
-#ifdef IOTSA_WITH_ESP32ENCODER_LIB
+#ifdef IOTSA_INPUT_CAN_ENCODER_LIB
   _encoder(new ESP32Encoder()),
 #endif
   lastChangeMillis(0),
   accelMillis(0)
 {
-#ifdef IOTSA_WITH_ESP32ENCODER_LIB
+#ifdef IOTSA_INPUT_CAN_ENCODER_LIB
   ESP32Encoder::useInternalWeakPullResistors=puType::up;
   // Sigh... It seems we (or ESP32Encoder?) had reversed the pins... Or the edges...
   _encoder->attachHalfQuad(_pinB, _pinA);
@@ -307,7 +307,7 @@ void RotaryEncoder::setAcceleration(uint32_t _accelMillis) {
 }
 
 void RotaryEncoder::setup() {
-#ifndef IOTSA_WITH_ESP32ENCODER_LIB
+#ifndef IOTSA_INPUT_CAN_ENCODER_LIB
   pinMode(pinA, INPUT_PULLUP);
   pinMode(pinB, INPUT_PULLUP);
   pinAstate = digitalRead(pinA) == LOW;
@@ -321,7 +321,7 @@ void RotaryEncoder::setup() {
 }
 
 void RotaryEncoder::loop() {
-#ifdef IOTSA_WITH_ESP32ENCODER_LIB
+#ifdef IOTSA_INPUT_CAN_ENCODER_LIB
   int64_t newCount = _encoder->getCount();
   if (newCount != oldCount) {
     iotsaConfig.postponeSleep(0);
