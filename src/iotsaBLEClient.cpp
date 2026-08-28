@@ -378,7 +378,7 @@ void IotsaBLEClientMod::loop() {
 }
 
 void IotsaBLEClientMod::onResult(const NimBLEAdvertisedDevice *advertisedDevice) {
-#ifdef DEBUG_PRINT_ALL_CLIENTS
+#ifdef IOTSA_DEBUG_BLE_PRINT_ALL_CLIENTS
   IotsaSerial.printf("BLEClientMod::onResult(%s, RSSI: %d)\n", advertisedDevice->toString().c_str(), advertisedDevice->getRSSI());
 #endif
   // Is this an advertisement for a device we know, either by name or by address?
