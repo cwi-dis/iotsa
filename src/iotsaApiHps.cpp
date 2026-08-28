@@ -308,7 +308,7 @@ void IotsaApiServiceHps::ensureServiceMod(IotsaApplication &app) {
   }
 }
   
-void IotsaApiServiceHps::setup(const char* path, bool get, bool put, bool post) {
+void IotsaApiServiceHps::setup(const char* path, bool get, bool put, bool post, bool webPage) {
   IFBLEDEBUG IotsaSerial.printf("IotsaApiServiceHps: path=%s\n", path);
   // The IotsaHpsServiceEntryPoint are immutable so we can add it to multiple lists
   IotsaHpsServiceEntryPoint *entry = new IotsaHpsServiceEntryPoint();
@@ -324,7 +324,8 @@ void IotsaApiServiceHps::setup(const char* path, bool get, bool put, bool post) 
   if (post) {
     IotsaHpsServiceMod::postEntryPoints.push_back(entry);
   }
-  if (next) next->setup(path, get, put, post);
+  // webPage is Web-only; HPS ignores it and just forwards it down the chain.
+  if (next) next->setup(path, get, put, post, webPage);
 }
 
 #endif // IOTSA_WITH_HPS

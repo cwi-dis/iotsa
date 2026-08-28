@@ -180,7 +180,7 @@ void IotsaApiServiceCoap::ensureServiceMod(IotsaApplication &app) {
   if (_coapMod == NULL) _coapMod = new IotsaCoapServiceMod(app);
 }
 
-void IotsaApiServiceCoap::setup(const char* path, bool get, bool put, bool post) {
+void IotsaApiServiceCoap::setup(const char* path, bool get, bool put, bool post, bool webPage) {
     if (iotsaConfig.wifiEnabled) {
         // CoAP has no use for an HTTP-ism in its own resource namespace, so it registers
         // the bare name directly; it still reconstructs /api/+name for what it hands to
@@ -189,7 +189,8 @@ void IotsaApiServiceCoap::setup(const char* path, bool get, bool put, bool post)
         CoapEndpoint *ep = new CoapEndpoint(provider, fullPath, get, put, post);
         _coapMod->addEndpoint(ep, path);
     }
-    if (next) next->setup(path, get, put, post);
+    // webPage is Web-only; CoAP ignores it and just forwards it down the chain.
+    if (next) next->setup(path, get, put, post, webPage);
 }
 
 #endif

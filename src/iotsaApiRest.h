@@ -14,7 +14,7 @@ public:
     // exists before any module (this one included) is constructed.
     server(IotsaHttpServiceMod::serviceMod(_app)->server)
   {}
-  void setup(const char* path, bool get=false, bool put=false, bool post=false) override;
+  void setup(const char* path, bool get=false, bool put=false, bool post=false, bool webPage=true) override;
 private:
   IotsaApiProvider* provider; 
   IotsaAuthenticationProvider* auth;

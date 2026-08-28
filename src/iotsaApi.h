@@ -40,7 +40,15 @@ class IotsaApiServiceProvider {
 public:
   IotsaApiServiceProvider(IotsaApiServiceProvider* _next=nullptr) : next(_next) {}
   virtual ~IotsaApiServiceProvider() {}
-  virtual void setup(const char* path, bool get=false, bool put=false, bool post=false) = 0;
+  // webPage: whether this call should also register a web page for `path` (only
+  // consulted by IotsaApiServiceWeb; every other transport ignores it and just
+  // forwards it down the chain). Defaults true so an ordinary api.setup() call keeps
+  // registering a page whenever get=true, as before -- callers that register several
+  // sub-paths of the same collection (buttons/N, users/N) pass webPage=false for the
+  // per-item calls, since the module's webHandler() doesn't distinguish by path
+  // anyway and a page per item would just be a byte-identical duplicate -- see
+  // cwi-dis/iotsa#217.
+  virtual void setup(const char* path, bool get=false, bool put=false, bool post=false, bool webPage=true) = 0;
 protected:
   IotsaApiServiceProvider* next;
 };
@@ -70,9 +78,10 @@ class IotsaApiServiceWeb;
 // ifdef'd chain-building constructor, see cwi-dis/iotsa#213.
 //
 // Web is a link like any other (a single api.setup() call registers the REST/CoAP/HPS
-// endpoint(s) *and* the module's web page, when get=true) -- see cwi-dis/iotsa#213. A
-// module's webHandler() body reaches the shared HTTP server through `webService`
-// (e.g. `api.webService->server`), instead of holding a `server` member of its own --
+// endpoint(s) *and* the module's web page, when get=true and webPage isn't turned off)
+// -- see cwi-dis/iotsa#213. A module's webHandler() body reaches the shared HTTP
+// server through `webService` (e.g. `api.webService->server`), instead of holding a
+// `server` member of its own --
 // see cwi-dis/iotsa#211. A module that also needs something a bare setup() call can't
 // express, and that isn't really part of its own page (a not-found/wildcard route, a
 // two-callback upload handler -- see IotsaConfigMod's cert upload, cwi-dis/iotsa#221),
@@ -94,8 +103,8 @@ public:
     next = new IotsaApiServiceRest(_provider, _app, _auth, next);
   #endif
   }
-  void setup(const char* path, bool get=false, bool put=false, bool post=false) override {
-    if (next) next->setup(path, get, put, post);
+  void setup(const char* path, bool get=false, bool put=false, bool post=false, bool webPage=true) override {
+    if (next) next->setup(path, get, put, post, webPage);
   }
   IotsaApiServiceWeb* webService = nullptr;
 };

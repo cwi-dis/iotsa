@@ -133,7 +133,9 @@ void IotsaUserMod::setup() {
 
 void IotsaUserMod::lateSetup() {
   api.setup("users", true, false, true);
-  api.setup("users/0", true, true, false);
+  // webPage=false: webHandler() doesn't distinguish by path, so a page here would
+  // just duplicate "users" -- see cwi-dis/iotsa#217.
+  api.setup("users/0", true, true, false, false);
   name = "users";
 }
 
