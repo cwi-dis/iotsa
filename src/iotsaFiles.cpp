@@ -2,7 +2,7 @@
 #include "iotsaFiles.h"
 #include "iotsaFS.h"
 
-#ifdef IOTSA_WITH_WEB
+#ifdef IOTSA_HAS_WEBSERVER
 void IotsaFilesMod::setup() {
 }
 
@@ -126,11 +126,13 @@ void IotsaFilesMod::lateSetup() {
   name = "files";
 }
 
+#ifdef IOTSA_WITH_WEB
 String IotsaFilesMod::info() {
   return "<p>See <a href=\"/data\">/data</a> for static files.</p>";
 }
+#endif // IOTSA_WITH_WEB
 
 void IotsaFilesMod::loop() {
-  
+
 }
-#endif // IOTSA_WITH_WEB
+#endif // IOTSA_HAS_WEBSERVER

@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `IOTSA_WITHOUT_API` combined with auth (`IotsaUserMod`/`IotsaMultiUserMod`/`IotsaCapabilityMod`) failed to build (#206)
 - `api.setup()` no longer registers a redundant, byte-identical web page per collection item (`IotsaButtonMod`/`IotsaMultiUserMod`/`IotsaUserMod`'s `name/N` sub-paths) (#217)
 - `IOTSA_HAS_COAPSERVER` now actually respects `IOTSA_WITHOUT_API` (the guard was dead code); `IOTSA_HAS_HPSSERVER` now also requires `IOTSA_WITH_API`, matching what its own comment always claimed (#205)
+- A REST-only, no-web-UI build (`IOTSA_WITH_API` on, `IOTSA_WITH_WEB` off) no longer silently loses `IotsaConfigMod`'s cert upload, `IotsaFilesUploadMod`, `IotsaFilesMod`, or `IotsaFilesBackupMod` -- the original motivating bug for #205, fixed alongside two more bugs it exposed once actually build-tested: `IotsaBaseModule::info()`/`htmlEncode()`/`percentDecode()` were needlessly `IOTSA_WITH_WEB`-gated (#206 already meant these to be unconditional), and `IotsaBLEClientMod::formHandler_fields()`/`formHandler_field_perdevice()` were declared unconditionally but only ever defined under `IOTSA_WITH_WEB`, a latent link error
 
 ### Changed
 

@@ -570,7 +570,11 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   }
   return anyChanged||radioModeChanged;
 }
-#if defined(IOTSA_WITH_WEB)
+#if defined(IOTSA_HAS_WEBSERVER)
+// Raw multipart upload, not a rendered page -- needs only an HTTP transport, not
+// IOTSA_WITH_WEB's web UI. See cwi-dis/iotsa#205 (this exact conflation was the
+// issue's original motivating bug) and cwi-dis/iotsa#221 (this duplicates
+// IotsaFilesUploadMod, fixed the same way there).
 static File _uploadFile;
 static bool _uploadOK;
 
@@ -614,10 +618,10 @@ IotsaConfigMod::uploadOkHandler() {
     app.server->send(403, "text/plain", "FAIL");
   }
 }
-#endif // defined(IOTSA_WITH_WEB) || defined(IOTSA_WITH_API)
+#endif // defined(IOTSA_HAS_WEBSERVER)
 
 void IotsaConfigMod::lateSetup() {
-#ifdef IOTSA_WITH_WEB
+#ifdef IOTSA_HAS_WEBSERVER
   // Two-callback upload shape (a completion handler plus a streaming upload
   // handler): not something a plain api.setup() call can express, see
   // cwi-dis/iotsa#213 -- registered directly via app.server instead, same as the

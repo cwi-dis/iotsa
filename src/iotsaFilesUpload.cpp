@@ -2,7 +2,7 @@
 #include "iotsaFS.h"
 #include "iotsaFilesUpload.h"
 
-#ifdef IOTSA_WITH_WEB
+#ifdef IOTSA_HAS_WEBSERVER
 void IotsaFilesUploadMod::setup() {
 }
 
@@ -49,22 +49,29 @@ IotsaFilesUploadMod::uploadOkHandler() {
   }
 }
 
+#ifdef IOTSA_WITH_WEB
 void IotsaFilesUploadMod::uploadFormHandler() {
   if (needsAuthentication("uploadfiles")) return;
   String message = "<form method='POST' action='/upload' enctype='multipart/form-data'>Select file to upload:<input type='file' name='blob'><br>Filename:<input name='filename'><br><input type='submit' value='Update'></form>";
   app.server->send(200, "text/html", message);
 }
+#endif // IOTSA_WITH_WEB
+
 void IotsaFilesUploadMod::lateSetup() {
   app.server->on("/upload", HTTP_POST, std::bind(&IotsaFilesUploadMod::uploadOkHandler, this), std::bind(&IotsaFilesUploadMod::uploadHandler, this));
+#ifdef IOTSA_WITH_WEB
   app.server->on("/upload", HTTP_GET, std::bind(&IotsaFilesUploadMod::uploadFormHandler, this));
+#endif
   name = "filesupload";
 }
 
+#ifdef IOTSA_WITH_WEB
 String IotsaFilesUploadMod::info() {
   return "<p>See <a href=\"/upload\">/upload</a> for uploading new files.</p>";
 }
+#endif // IOTSA_WITH_WEB
 
 void IotsaFilesUploadMod::loop() {
-  
+
 }
-#endif // IOTSA_WITH_WEB
+#endif // IOTSA_HAS_WEBSERVER

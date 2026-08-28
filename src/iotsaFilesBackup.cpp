@@ -2,7 +2,7 @@
 #include "iotsaFilesBackup.h"
 #include "iotsaFS.h"
 
-#ifdef IOTSA_WITH_WEB
+#ifdef IOTSA_HAS_WEBSERVER
 struct tarHeader {
 	char name[100];
 	char mode[8];
@@ -127,11 +127,13 @@ void IotsaFilesBackupMod::lateSetup() {
   name = "filesbackup";
 }
 
+#ifdef IOTSA_WITH_WEB
 String IotsaFilesBackupMod::info() {
   return "<p>Download <a href=\"/backup.tar\">/backup.tar</a> for a backup of all files.</p>";
 }
+#endif // IOTSA_WITH_WEB
 
 void IotsaFilesBackupMod::loop() {
-  
+
 }
-#endif // IOTSA_WITH_WEB
+#endif // IOTSA_HAS_WEBSERVER

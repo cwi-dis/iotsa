@@ -145,7 +145,6 @@ IotsaApplication::loop() {
 #endif // ESP32
 }
 
-#ifdef IOTSA_WITH_WEB
 String IotsaBaseModule::info() {
   // Info method that does nothing, usually overridden for IotsaBaseModule modules
   return "";
@@ -196,7 +195,6 @@ void IotsaBaseModule::percentDecode(const String &src, String &dst) {
       arg++;
     }
 }
-#endif // IOTSA_WITH_WEB
 
 bool IotsaBaseModule::needsAuthentication(const char *object, IotsaApiOperation verb) { 
   return auth ? !auth->allows(object, verb) : false; 

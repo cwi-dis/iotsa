@@ -187,11 +187,16 @@ public:
   virtual void loop() = 0;
   virtual void configLoad() {}
   virtual void configSave() {}
-#ifdef IOTSA_WITH_WEB
+  // Unconditional (like getHandler/putHandler/postHandler/bleGetHandler/
+  // blePutHandler) -- #206 decided info() should stay mandatory, "cheap,
+  // always-present, no reason to make it optional" -- this was the one part of
+  // that decision that hadn't actually been done yet, see cwi-dis/iotsa#205.
   virtual String info();
+  // Also unconditional: pure string-escaping utilities, no actual dependency on
+  // IOTSA_WITH_WEB -- used by web-server-extension modules (e.g. IotsaFilesMod's
+  // directory listing) that need only IOTSA_HAS_WEBSERVER, not a web UI.
   static String htmlEncode(String data); // Helper - convert strings to HTML-safe representation
   static void percentDecode(const String &src, String &dst); // Helper - convert string from url-encoded to normal
-#endif
   virtual void lateSetup();
   // Called once, after every module's setup() and lateSetup() have run. For most
   // modules the default no-op is correct; it exists for the small set of modules that

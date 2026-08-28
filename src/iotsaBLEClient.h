@@ -21,11 +21,17 @@ public:
   virtual ~IotsaBLEClientMod() {}
   virtual bool getHandler(const char *path, JsonObject& reply) override;
   virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
-  virtual String formHandler_field_perdevice(const char *deviceName);
   virtual void setup() override;
   virtual void lateSetup() override;
-  virtual void formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig);
 #ifdef IOTSA_WITH_WEB
+  // Declaration/definition mismatch fixed here: these two used to be declared
+  // unconditionally (giving every instance a vtable slot regardless of this guard)
+  // while only ever *defined* under IOTSA_WITH_WEB in the .cpp -- a latent link
+  // error nothing had ever actually built until cwi-dis/iotsa#205. Both render
+  // literal HTML for the BLE-device-list page and have no other caller, so the fix
+  // is to guard the declaration too, not to strip the .cpp's guard.
+  virtual String formHandler_field_perdevice(const char *deviceName);
+  virtual void formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig);
   virtual void webHandler() override;
   virtual bool formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig);
 #endif
