@@ -38,6 +38,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `IotsaRestApiMod`/`IotsaCoapApiMod`, unused example/template classes (every handler a no-op `return false`) never instantiated anywhere in iotsa or any sibling repo -- the underlying `IotsaApiServiceRest`/`IotsaApiServiceCoap` they wrapped are still exercised by every real `IotsaModule`-derived module, so nothing loses coverage (#222)
 
+### Changed
+
+- `KitchenSink`'s rotary encoder/pushbutton pins are now `IOTSA_PIN_ENCODER_A`/`IOTSA_PIN_ENCODER_B`/`IOTSA_PIN_BUTTON` defines instead of hardwired constants; the button now fires an `IotsaRequest` self-loopback GET against `/api/nothing` on press, the only exercise of `IotsaRequest` anywhere in `examples/`/`tests/` (#222)
+
 ## [2.9.2] - 2026-08-22
 
 ### Added
