@@ -8,7 +8,7 @@
   },
   "variants": [
     {
-      "board": "iotsa_v4",
+      "board": "vanilla_esp8266",
       "label": "all",
       "_note": "BLE is ESP32-only (NimBLE isn't available for esp8266) -- omit IOTSA_WITH_BLE here.",
       "build_flags": [
@@ -17,7 +17,7 @@
       ]
     },
     {
-      "board": "esp32thing",
+      "board": "vanilla_esp32",
       "label": "all",
       "build_flags": [
         "-DIOTSA_WITH_BLE",
@@ -31,7 +31,7 @@
       }
     },
     {
-      "board": "esp32c3devkit",
+      "board": "vanilla_esp32c3",
       "label": "all",
       "build_flags": [
         "-DIOTSA_WITH_BLE",
@@ -41,7 +41,7 @@
       "partitions": "min_spiffs.csv"
     },
     {
-      "board": "esp32s3supermini",
+      "board": "vanilla_esp32s3",
       "label": "all",
       "build_flags": [
         "-DIOTSA_WITH_BLE",
@@ -55,16 +55,7 @@
       }
     },
     {
-      "board": "lolin32",
-      "label": "all",
-      "build_flags": [
-        "-DIOTSA_WITH_BLE",
-        "-DIOTSA_WITH_COAP",
-        "-DIOTSA_WITH_HTTPS"
-      ]
-    },
-    {
-      "board": "iotsa_v4",
+      "board": "vanilla_esp8266",
       "label": "onlycoap",
       "build_flags": [
         "-DIOTSA_WITH_COAP",
@@ -75,7 +66,7 @@
       ]
     },
     {
-      "board": "esp32thing",
+      "board": "vanilla_esp32",
       "label": "onlycoap",
       "build_flags": [
         "-DIOTSA_WITH_COAP",
@@ -87,7 +78,7 @@
       "partitions": "min_spiffs.csv"
     },
     {
-      "board": "iotsa_v4",
+      "board": "vanilla_esp8266",
       "label": "onlyhttps",
       "build_flags": [
         "-DIOTSA_WITHOUT_HTTP",
@@ -95,7 +86,7 @@
       ]
     },
     {
-      "board": "esp32thing",
+      "board": "vanilla_esp32",
       "label": "onlyhttps",
       "build_flags": [
         "-DIOTSA_WITHOUT_HTTP",
@@ -104,7 +95,7 @@
       "partitions": "min_spiffs.csv"
     },
     {
-      "board": "esp32s3supermini",
+      "board": "vanilla_esp32s3",
       "label": "onlyble",
       "build_flags": [
         "-DIOTSA_WITH_BLE",
@@ -116,7 +107,7 @@
       ]
     },
     {
-      "board": "iotsa_v4",
+      "board": "vanilla_esp8266",
       "label": "nonetworking",
       "_partitions_note": "null overrides the file default deliberately: -DIOTSA_WITHOUT_WIFI makes OTA unreachable in this build regardless of partition scheme, so there's nothing for min_spiffs.csv to protect here -- see iotsa#40.",
       "partitions": null,
@@ -132,7 +123,7 @@
       ]
     },
     {
-      "board": "esp32thing",
+      "board": "vanilla_esp32",
       "label": "nonetworking",
       "_partitions_note": "null overrides the file default deliberately: -DIOTSA_WITHOUT_WIFI makes OTA unreachable in this build regardless of partition scheme, so there's nothing for min_spiffs.csv to protect here -- see iotsa#40.",
       "partitions": null,

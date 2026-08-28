@@ -39,7 +39,7 @@ Ordered from most to least capable for general use:
 
 | Hardware | Flash / OTA | Status | Notes |
 |---|---|---|---|
-| ESP32 (original, Xtensa) | 4 MB. OTA works; use `min_spiffs.csv` when BLE is enabled. Lolin32 + BLE is large enough to require `no_ota.csv`. | **Supported** | Tested in CI (esp32thing, canonical; lolin32 also tracked in CI via `KitchenSink`/`sandbox/BLEClient`). Pico32, ESP32dev also known to work but not continuously tested. Full features: BLE, sleep/wakeup, touch, rotary encoder. |
+| ESP32 (original, Xtensa) | 4 MB. OTA works; use `min_spiffs.csv` when BLE is enabled. Lolin32 + BLE is large enough to require `no_ota.csv`. | **Supported** | Tested in CI (esp32thing, canonical -- `vanilla_esp32`, #222). Lolin32 also tracked in CI via `sandbox/BLEClient`. Pico32, ESP32dev also known to work but not continuously tested. Full features: BLE, sleep/wakeup, touch, rotary encoder. |
 | ESP32-C3 (RISC-V) | 4 MB (devkit, supermini): OTA works with `min_spiffs.csv`. LCD board variant has 2 MB and is very tightly constrained. | **Supported** | Tested in CI (esp32-c3-devkitm-1). Limitations: no analog voltage reading, no deep-sleep wakeup, no rotary encoder (no PCNT), no touch. WiFi power reduction defaults on as a hardware workaround. |
 | ESP8266 / ESP-12 | 4 MB. OTA works. | **Supported** | Tested in CI (nodemcuv2). Used by the iotsa board. No BLE. HTTPS not recommended, see below. |
 | ESP32-S3 | 4 MB flash + 2 MB embedded PSRAM (SuperMini clone). OTA works with `min_spiffs.csv`. | **Supported** | Tested in CI (esp32s3supermini). BLE confirmed working, including BLE/HPS-only (no WiFi) operation. Native USB via USB-Serial/JTAG (`esp32s3jtag`); USB-OTG/TinyUSB not yet implemented. Cheap SuperMini clone boards can have WiFi-reliability issues (runs hot, drops WiFi intermittently) even with `wifiPowerReduction` enabled — not fully resolved, see #194. |
@@ -67,7 +67,7 @@ Using the `arduino-cli` tool is supported too.
 
 The _iotsa_ library is known to the PlatformIO library manager, so simply adding it to your _platformio.ini_ file should do the trick for adding the iotsa framework to your project..
 
-To build an example against your local (possibly uncommitted) changes to the iotsa library itself, open the `iotsa` source directory in _VSCode_ or _Atom_ and look for the `[env:iotsa_v4-example-Skeleton]` section (these `[env:...]` sections are generated from `examples/*/iotsa-build.json` and `tests/*/iotsa-build.json` into `generated_envs.ini` -- see `extras/python/gen_build_matrix.py`). Replace the references to _Skeleton_ with the name of the example you want to build.
+To build an example against your local (possibly uncommitted) changes to the iotsa library itself, open the `iotsa` source directory in _VSCode_ or _Atom_ and look for the `[env:Skeleton-example-iotsa_v4]` section (these `[env:...]` sections are generated from `examples/*/iotsa-build.json` and `tests/*/iotsa-build.json` into `generated_envs.ini` -- see `extras/python/gen_build_matrix.py`). Replace the references to _Skeleton_ with the name of the example you want to build.
 
 But: each example in the _examples_ folder also has its own _platformio.ini_ file, generated the same way, for building it standalone (pulling iotsa from GitHub rather than your local checkout). So you can also open `iotsa/examples/Hello` in _VSCode_ or _Atom_ and build it, or use the command line:
 
@@ -142,7 +142,7 @@ $ python3 extras/python/gen_build_matrix.py --format=standalone-ini \
     --dir=examples/<Example> -o examples/<Example>/platformio.ini   # for each touched example
 ```
 
-- Build the new env(s) to confirm before committing, e.g. `pio run -e <boardname>-example-<Example>`.
+- Build the new env(s) to confirm before committing, e.g. `pio run -e <Example>-example-<boardname>`.
 
 **3. Second-class citizen: defined, but not in CI.** For a board close enough to an
 existing CI-covered one that it does not need its own automated build, but where future

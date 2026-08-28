@@ -37,17 +37,17 @@ library path was removed, see cwi-dis/iotsa#150.
 
 ## Build system
 
-**Primary tool: PlatformIO.** Board+example combinations are defined as `[env:board-example-name]` sections in `platformio.ini`. The default env is `lolin32-example-skeleton-http-ble`.
+**Primary tool: PlatformIO.** Kind/board/example combinations are generated as `[env:name-kind-board]` sections (e.g. `KitchenSink-test-iotsa_v4`, `Led-example-esp32thing`) in `generated_envs.ini` -- see `extras/python/gen_build_matrix.py`. The default env is `Led-example-esp32thing`.
 
 ```bash
 # Build default env
 pio run
 
 # Build a specific env
-pio run -e lolin32-example-hello
+pio run -e HelloIotsa-example-esp32thing
 
 # Upload via USB
-pio run -e lolin32-example-hello -t upload
+pio run -e HelloIotsa-example-esp32thing -t upload
 
 # Monitor serial output
 pio device monitor
