@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-Single source of truth for "which examples/tests/sandbox entries build with which board/flags".
-
-Reads every examples/*/iotsa-build.json, tests/*/iotsa-build.json, and
-sandbox/*/iotsa-build.json and turns them into:
+Single source of truth for "which board is which" (BOARD_INFO/BOARD_ALIASES,
+see board-traits.ini/#222) and for "which examples/tests/sandbox entries build
+with which board/flags" (every examples/*/iotsa-build.json, tests/*/iotsa-build.json,
+and sandbox/*/iotsa-build.json). Turns these into:
+  - the layer-1/layer-2 board.ini sections (--format=board-defs-ini)
   - the toplevel platformio.ini env list (--format=platformio-ini)
   - a GitHub Actions matrix, per CI backend (--format=github-matrix --backend=...)
   - a standalone platformio.ini for a single entry (--format=standalone-ini --dir=...)
@@ -18,24 +19,56 @@ import sys
 
 REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
-# Layer 2 board names (see platformio.ini and #222) -> the actual PlatformIO
-# board ID, the arduino-cli FQBN where supported, and which processor family
-# (drives emit_standalone_ini's "platform =" line -- the one thing here that
-# isn't just data plumbed through to pio/arduino-cli).
-BOARD_INFO = {
-    "iotsa_v4":         {"pio_board": "nodemcuv2",           "fqbn": "esp8266:esp8266:nodemcuv2", "family": "esp8266"},
-    "esp32thing":       {"pio_board": "esp32thing",           "fqbn": "esp32:esp32:esp32thing",   "family": "esp32"},
-    "esp32dev":         {"pio_board": "esp32dev",              "fqbn": None,                      "family": "esp32"},
-    "lolin32":          {"pio_board": "lolin32",               "fqbn": None,                      "family": "esp32"},
-    "pico32":           {"pio_board": "pico32",                "fqbn": None,                      "family": "esp32"},
-    "esp32c3devkit":    {"pio_board": "esp32-c3-devkitm-1",    "fqbn": None,                      "family": "esp32"},
-    "esp32c3lcd":       {"pio_board": "esp32-c3-devkitm-1",    "fqbn": None,                      "family": "esp32"},
-    "esp32c3supermini": {"pio_board": "esp32-c3-devkitm-1",    "fqbn": None,                      "family": "esp32"},
-    "crowpanel128":     {"pio_board": "esp32-c3-devkitm-1",    "fqbn": None,                      "family": "esp32"},
-    "esp32s3supermini": {"pio_board": "esp32-s3-devkitc-1",    "fqbn": "esp32:esp32:esp32s3",      "family": "esp32"},
+# Layer 3 processor/USB-wiring traits (see board-traits.ini and #222) -> the
+# build_flags that trait contributes. board-traits.ini is hand-authored (rare
+# changes, real pio-specific lib_deps/lib_ignore syntax not worth generalizing
+# here) so this is the one place its *build_flags* are duplicated in Python --
+# needed because emit_github_matrix/emit_standalone_ini don't go through any
+# ini extends chain, so they can't pick a trait's flags up by inheritance the
+# way a local `pio run` build does. Keep in sync with board-traits.ini by hand.
+TRAIT_BUILD_FLAGS = {
+    "_esp8266": [],
+    "_esp32_allvariants": [],
+    "_esp32c3_extusb": ["-DESP32C3"],
+    "_esp32c3_nativeusb": ["-DESP32C3", "-DARDUINO_USB_MODE=1", "-DARDUINO_USB_CDC_ON_BOOT=1",
+                            "-DIOTSA_SERIAL_SPEED=460800", "-DIOTSA_DELAY_ON_BOOT=3"],
+    "_esp32s3_nativeusb": ["-DARDUINO_USB_MODE=1", "-DARDUINO_USB_CDC_ON_BOOT=1",
+                            "-DIOTSA_SERIAL_SPEED=460800", "-DIOTSA_DELAY_ON_BOOT=3"],
 }
 
-# Layer 1 role aliases (see platformio.ini and #222): pure synonyms for
+# Layer 2 board names (see board-defs.ini and #222) -> the actual PlatformIO
+# board ID, the arduino-cli FQBN where supported, which layer-3 trait it
+# extends, which processor family (drives emit_standalone_ini's "platform ="
+# line), and the hardware facts unique to this board (not already covered by
+# its trait): build_flags (e.g. a neopixel pin), partitions/mcu/flash_size.
+# build_flags here is *board-specific only* -- emit_board_defs_ini pulls its
+# trait's flags in via ini extends/interpolation, while emit_github_matrix and
+# emit_standalone_ini (no ini inheritance available to them) combine
+# TRAIT_BUILD_FLAGS[trait] + this board's own build_flags themselves.
+BOARD_INFO = {
+    "iotsa_v4":         {"pio_board": "nodemcuv2",        "fqbn": "esp8266:esp8266:nodemcuv2", "family": "esp8266", "trait": "_esp8266",
+                          "build_flags": []},
+    "esp32thing":       {"pio_board": "esp32thing",       "fqbn": "esp32:esp32:esp32thing",    "family": "esp32", "trait": "_esp32_allvariants",
+                          "build_flags": []},
+    "esp32dev":         {"pio_board": "esp32dev",         "fqbn": None,                        "family": "esp32", "trait": "_esp32_allvariants",
+                          "build_flags": []},
+    "lolin32":          {"pio_board": "lolin32",          "fqbn": None,                        "family": "esp32", "trait": "_esp32_allvariants",
+                          "build_flags": [], "partitions": "min_spiffs.csv"},
+    "pico32":           {"pio_board": "pico32",           "fqbn": None,                        "family": "esp32", "trait": "_esp32_allvariants",
+                          "build_flags": []},
+    "esp32c3devkit":    {"pio_board": "esp32-c3-devkitm-1", "fqbn": None,                      "family": "esp32", "trait": "_esp32c3_extusb",
+                          "build_flags": ["-DIOTSA_PIN_NEOPIXEL=8"]},
+    "esp32c3lcd":       {"pio_board": "esp32-c3-devkitm-1", "fqbn": None,                      "family": "esp32", "trait": "_esp32c3_nativeusb",
+                          "build_flags": [], "mcu": "esp32c3", "partitions": "bare_minimum_2MB.csv", "flash_size": "2MB"},
+    "esp32c3supermini": {"pio_board": "esp32-c3-devkitm-1", "fqbn": None,                      "family": "esp32", "trait": "_esp32c3_nativeusb",
+                          "build_flags": [], "mcu": "esp32c3", "partitions": "min_spiffs.csv", "flash_size": "4MB"},
+    "crowpanel128":     {"pio_board": "esp32-c3-devkitm-1", "fqbn": None,                      "family": "esp32", "trait": "_esp32c3_extusb",
+                          "build_flags": []},
+    "esp32s3supermini": {"pio_board": "esp32-s3-devkitc-1", "fqbn": "esp32:esp32:esp32s3",      "family": "esp32", "trait": "_esp32s3_nativeusb",
+                          "build_flags": ["-DIOTSA_PIN_NEOPIXEL=48"], "mcu": "esp32s3", "partitions": "min_spiffs.csv", "flash_size": "4MB"},
+}
+
+# Layer 1 role aliases (see board-defs.ini and #222): pure synonyms for
 # "whichever layer-2 board is our current default for this chip family".
 # Resolved once, right after an iotsa-build.json variant is read, so every
 # emitter below only ever sees a real BOARD_INFO key.
@@ -45,6 +78,16 @@ BOARD_ALIASES = {
     "vanilla_esp32c3": "esp32c3devkit",
     "vanilla_esp32s3": "esp32s3supermini",
 }
+
+
+def resolved_build_flags(board, extra_flags=()):
+    """Full build_flags for `board`: its trait's flags, then its own, then
+    `extra_flags` (typically a variant's own list). Used by emitters that
+    have no ini extends chain to inherit the trait's flags through
+    (emit_github_matrix, emit_standalone_ini) -- emit_platformio_ini instead
+    lets `${board.build_flags}` interpolation pick them up via inheritance."""
+    info = BOARD_INFO[board]
+    return list(TRAIT_BUILD_FLAGS.get(info["trait"], [])) + list(info["build_flags"]) + list(extra_flags)
 
 
 def merge_patch(default, override):
@@ -102,6 +145,36 @@ def env_name(e):
     return "-".join(parts)
 
 
+def emit_board_defs_ini(out):
+    """Layer 1 (vanilla_* aliases) and layer 2 (boards we use) sections,
+    extending the hand-authored layer-3 traits in board-traits.ini. See
+    platformio.ini's extra_configs and #222."""
+    out.write("; Generated by extras/python/gen_build_matrix.py from BOARD_INFO/BOARD_ALIASES --\n")
+    out.write("; do not hand-edit, regenerate instead:\n")
+    out.write(";   python3 extras/python/gen_build_matrix.py --format=board-defs-ini -o board-defs.ini\n")
+    out.write(";\n; Layer 2 -- boards we actually use. See board-traits.ini for layer 3.\n\n")
+    for board, info in BOARD_INFO.items():
+        out.write(f"[{board}]\n")
+        out.write(f"extends = {info['trait']}\n")
+        out.write(f"board = {info['pio_board']}\n")
+        if info.get("mcu"):
+            out.write(f"board_build.mcu = {info['mcu']}\n")
+        if info.get("partitions"):
+            out.write(f"board_build.partitions = {info['partitions']}\n")
+        if info.get("flash_size"):
+            out.write(f"board_upload.flash_size = {info['flash_size']}\n")
+        if info["build_flags"]:
+            # ${trait.build_flags}, not a bare list: a plain `build_flags = ...`
+            # here would *replace* the inherited trait value instead of adding
+            # to it -- PlatformIO's extends does not auto-concatenate.
+            out.write(f"build_flags = ${{{info['trait']}.build_flags}} {' '.join(info['build_flags'])}\n")
+        out.write("\n")
+    out.write("; Layer 1 -- vanilla_* role aliases, pure synonyms.\n\n")
+    for alias, target in BOARD_ALIASES.items():
+        out.write(f"[{alias}]\n")
+        out.write(f"extends = {target}\n\n")
+
+
 def emit_platformio_ini(entries, out):
     out.write("; Generated by extras/python/gen_build_matrix.py from examples/*/iotsa-build.json,\n")
     out.write("; tests/*/iotsa-build.json, and sandbox/*/iotsa-build.json -- do not hand-edit,\n")
@@ -156,20 +229,25 @@ def emit_github_matrix(entries, backend, tier, out):
             print(f"warning: unknown board {board!r}, skipping {env_name(e)}",
                   file=sys.stderr)
             continue
+        # pio ci (platformio backend) and arduino-cli both build outside any ini
+        # extends chain, so unlike a local `pio run` they can't pick up a
+        # board's/trait's facts by inheritance -- resolve them explicitly here.
+        # A variant's own "partitions" wins if set, else the board's default.
+        partitions = e.get("partitions") or info.get("partitions") or ""
         item = {
             "name": env_name(e),
             "kind": e["kind"],
             "example": e["name"],
             "source": e["source"],
             "board": board,
-            "build_flags": " ".join(e["build_flags"]),
+            "build_flags": " ".join(resolved_build_flags(board, e["build_flags"])),
             # newline-joined, not a JSON list: GitHub Actions matrix values are consumed
             # as plain strings in the job's env block, so lists are awkward there. A
             # newline-joined string plugs directly into a multi-line platformio
             # --project-option="lib_deps=..." value, the same list syntax platformio.ini
             # itself uses.
             "extra_lib_deps": "\n".join(e["lib_deps"]),
-            "partitions": e.get("partitions") or "",
+            "partitions": partitions,
         }
         if backend == "platformio":
             item["pio_board"] = info["pio_board"]
@@ -179,7 +257,6 @@ def emit_github_matrix(entries, backend, tier, out):
                       f"skipping {env_name(e)}", file=sys.stderr)
                 continue
             item["fqbn"] = info["fqbn"]
-            partitions = e.get("partitions")
             if partitions == "min_spiffs.csv":
                 item["partition_scheme"] = "min_spiffs"
         matrix.append(item)
@@ -251,10 +328,19 @@ def emit_standalone_ini(entries, target_dir, out):
         out.write("extends = common\n")
         out.write(f"platform = {'espressif8266' if info['family'] == 'esp8266' else 'espressif32'}\n")
         out.write(f"board = {info['pio_board']}\n")
-        if e["build_flags"]:
-            out.write(f"build_flags = {' '.join(e['build_flags'])}\n")
-        if e.get("partitions"):
-            out.write(f"board_build.partitions = {e['partitions']}\n")
+        # No ini extends chain to a board/trait section here (this file is
+        # self-contained), so resolve the board's/trait's facts explicitly --
+        # same reasoning as emit_github_matrix.
+        if info.get("mcu"):
+            out.write(f"board_build.mcu = {info['mcu']}\n")
+        flags = resolved_build_flags(board, e["build_flags"])
+        if flags:
+            out.write(f"build_flags = {' '.join(flags)}\n")
+        partitions = e.get("partitions") or info.get("partitions")
+        if partitions:
+            out.write(f"board_build.partitions = {partitions}\n")
+        if info.get("flash_size"):
+            out.write(f"board_upload.flash_size = {info['flash_size']}\n")
         if e["lib_deps"]:
             out.write("lib_deps = \n")
             out.write("    ${common.lib_deps}\n")
@@ -266,7 +352,7 @@ def emit_standalone_ini(entries, target_dir, out):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--format", required=True,
-                     choices=["platformio-ini", "github-matrix", "standalone-ini"])
+                     choices=["board-defs-ini", "platformio-ini", "github-matrix", "standalone-ini"])
     ap.add_argument("--backend", choices=["platformio", "arduino"],
                      help="required for --format=github-matrix")
     ap.add_argument("--tier", choices=["full", "minimal"], default="full",
@@ -301,7 +387,9 @@ def main():
 
     out = open(args.output, "w") if args.output else sys.stdout
     try:
-        if args.format == "platformio-ini":
+        if args.format == "board-defs-ini":
+            emit_board_defs_ini(out)
+        elif args.format == "platformio-ini":
             emit_platformio_ini(entries, out)
         elif args.format == "github-matrix":
             if not args.backend:

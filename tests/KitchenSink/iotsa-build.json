@@ -28,8 +28,7 @@
       "build_flags": [
         "-DIOTSA_WITH_BLE",
         "-DIOTSA_WITH_COAP",
-        "-DIOTSA_WITH_HTTPS",
-        "-DIOTSA_PIN_NEOPIXEL=8"
+        "-DIOTSA_WITH_HTTPS"
       ]
     }
   ]

@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `api.setup()` no longer registers a redundant, byte-identical web page per collection item (`IotsaButtonMod`/`IotsaMultiUserMod`/`IotsaUserMod`'s `name/N` sub-paths) (#217)
 - `IOTSA_HAS_COAPSERVER` now actually respects `IOTSA_WITHOUT_API` (the guard was dead code); `IOTSA_HAS_HPSSERVER` now also requires `IOTSA_WITH_API`, matching what its own comment always claimed (#205)
 - A REST-only, no-web-UI build (`IOTSA_WITH_API` on, `IOTSA_WITH_WEB` off) no longer silently loses `IotsaConfigMod`'s cert upload, `IotsaFilesUploadMod`, `IotsaFilesMod`, or `IotsaFilesBackupMod` -- the original motivating bug for #205, fixed alongside two more bugs it exposed once actually build-tested: `IotsaBaseModule::info()`/`htmlEncode()`/`percentDecode()` were needlessly `IOTSA_WITH_WEB`-gated (#206 already meant these to be unconditional), and `IotsaBLEClientMod::formHandler_fields()`/`formHandler_field_perdevice()` were declared unconditionally but only ever defined under `IOTSA_WITH_WEB`, a latent link error
+- CI and standalone `examples/*/platformio.ini` builds for esp32c3/esp32s3 boards were silently missing their board's own `build_flags` (`-DESP32C3`, native-USB-CDC serial flags) and, for `lolin32`/`esp32c3supermini`/`esp32s3supermini`, their partition scheme/flash size -- only a local `pio run` against the toplevel `platformio.ini` picked these up, via `extends` inheritance the other two build paths never went through (#222)
 
 ### Changed
 
@@ -39,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tests/Led`'s variant matrix rebuilt from 16 accumulated (and partly duplicate) rows down to 12 deliberate ones: one `all` (every optional transport this board supports) per board, `onlycoap`/`onlyhttps`/`nonetworking` on `iotsa_v4`+`esp32thing`, and `onlyble` on `esp32s3supermini` (#222)
 - `Led`/`BLELed`'s example gained an opt-in startup blink (`-DIOTSA_STARTUP_BLINK_COUNT=<n>`, enabled on the new `nonetworking` variant) as the only way to visually confirm a build with zero network connectivity actually booted (#222)
 - `platformio.ini` board definitions restructured into three explicit layers (`vanilla_*` role aliases → boards we actually use → leading-underscore processor/USB-wiring traits); `nodemcuv2` renamed `iotsa_v4`, redundant `esp32` pass-through trait dropped (#222)
+- Board definitions split out of `platformio.ini` into `board-traits.ini` (hand-authored layer 3) and generated `board-defs.ini` (layers 1-2, new `--format=board-defs-ini`); `BOARD_INFO` in `gen_build_matrix.py` now also carries each board's own `build_flags`/`partitions`/`mcu`/`flash_size`, the single source both the CI matrix and standalone per-example `platformio.ini` now pull from (see Fixed above) (#222)
 
 ### Removed
 

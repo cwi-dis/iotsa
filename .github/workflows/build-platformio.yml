@@ -76,12 +76,18 @@ jobs:
         MATRIX=$(python3 extras/python/gen_build_matrix.py --format=github-matrix --backend=platformio --tier=${{ steps.tier.outputs.tier }})
         echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
 
-    - name: Check generated_envs.ini is up to date
+    - name: Check generated_envs.ini and board-defs.ini are up to date
       run: |
         python3 extras/python/gen_build_matrix.py --format=platformio-ini -o /tmp/generated_envs.ini
         diff generated_envs.ini /tmp/generated_envs.ini || {
           echo "::error::generated_envs.ini is out of date. Regenerate it with:"
           echo "::error::  python3 extras/python/gen_build_matrix.py --format=platformio-ini -o generated_envs.ini"
+          exit 1
+        }
+        python3 extras/python/gen_build_matrix.py --format=board-defs-ini -o /tmp/board-defs.ini
+        diff board-defs.ini /tmp/board-defs.ini || {
+          echo "::error::board-defs.ini is out of date. Regenerate it with:"
+          echo "::error::  python3 extras/python/gen_build_matrix.py --format=board-defs-ini -o board-defs.ini"
           exit 1
         }
   #

@@ -118,14 +118,17 @@ normal, separate change to commit -- only the throwaway env section needs undoin
 **2. First-class citizen: fully covered by CI.** For a board other iotsa apps are
 expected to build against routinely, worth catching regressions on for every push:
 
-- Add a `[boardname]` section to the toplevel `platformio.ini`, extending the right
-  leading-underscore trait section(s) (`_esp32_allvariants`, `_esp32c3_extusb`,
-  `_esp32c3_nativeusb`, `_esp8266`, ...; add a new trait too if this is a genuinely new
-  chip family or USB wiring -- see the layer-1/2/3 board model, #222).
-- Add the board to `BOARD_INFO` in `extras/python/gen_build_matrix.py` (its `pio_board`
-  id, and `fqbn` if it is arduino-cli-buildable). **Easy to forget, and forgetting it
-  fails quietly:** `emit_platformio_ini`/`emit_github_matrix` just print a
-  `warning: unknown board ... skipping` to stderr and drop the env, rather than
+- If this is a genuinely new chip family or USB wiring, hand-add a trait section to
+  `board-traits.ini` (leading underscore, e.g. `_esp32_allvariants`/`_esp32c3_extusb`/
+  `_esp32c3_nativeusb`/`_esp8266`) and mirror its `build_flags` into
+  `TRAIT_BUILD_FLAGS` in `extras/python/gen_build_matrix.py` -- see the layer-1/2/3
+  board model, #222. Most new boards reuse an existing trait and skip this step.
+- Add the board to `BOARD_INFO` in `extras/python/gen_build_matrix.py`: its `pio_board`
+  id, `fqbn` if arduino-cli-buildable, which `trait` it extends, `family`
+  (`esp8266`/`esp32`), and any hardware facts unique to this board (`build_flags` for
+  e.g. a neopixel pin, `partitions`/`mcu`/`flash_size`). **Easy to forget, and
+  forgetting it fails quietly:** `emit_platformio_ini`/`emit_github_matrix` just print
+  a `warning: unknown board ... skipping` to stderr and drop the env, rather than
   erroring. (Only `emit_standalone_ini`, used in tiers 1 and 3, hard-fails with a
   `KeyError` on an unknown board -- if you hit that, this is the fix.)
 - Add a variant entry for the board to `iotsa-build.json` in every example (and test)
@@ -133,6 +136,7 @@ expected to build against routinely, worth catching regressions on for every pus
 - Regenerate the generated files and commit them alongside the source changes:
 
 ```
+$ python3 extras/python/gen_build_matrix.py --format=board-defs-ini -o board-defs.ini
 $ python3 extras/python/gen_build_matrix.py --format=platformio-ini -o generated_envs.ini
 $ python3 extras/python/gen_build_matrix.py --format=standalone-ini \
     --dir=examples/<Example> -o examples/<Example>/platformio.ini   # for each touched example
@@ -143,21 +147,23 @@ $ python3 extras/python/gen_build_matrix.py --format=standalone-ini \
 **3. Second-class citizen: defined, but not in CI.** For a board close enough to an
 existing CI-covered one that it does not need its own automated build, but where future
 iotsa *applications* will target it and should have a correct, already-verified board
-definition to start from. Do the first two steps from tier 2 (the `platformio.ini`
-section and the `BOARD_INFO` entry), but skip the `iotsa-build.json` step -- that is
-what keeps it out of `generated_envs.ini` and the CI matrix. Verify it once using tier
-1's throwaway single-example recipe, then commit just the board section and the
-`BOARD_INFO` entry.
+definition to start from. Do the first two steps from tier 2 (the trait, if new, and
+the `BOARD_INFO` entry), regenerate just `board-defs.ini`, but skip the
+`iotsa-build.json` step -- that is what keeps it out of `generated_envs.ini` and the CI
+matrix. Verify it once using tier 1's throwaway single-example recipe, then commit the
+`BOARD_INFO` entry and the regenerated `board-defs.ini`.
 
-Worth knowing either way: this toplevel `platformio.ini` only governs building *iotsa's
-own* examples/tests as a project. Downstream application repos (`iotsaNeoClock`,
-the `lissabon` apps, etc.) never reference these `[boardname]` sections -- they pull in
-iotsa only as a `lib_deps` library, and each app repo defines its own board section(s)
-from scratch in its own `platformio.ini` (see e.g. `iotsaNeoClock`'s
-`[esp32c3]`/`[env:crowpanel128]`). So a tier-2 or tier-3 section here is not
-automatically "used" by an app; it exists as the canonical, working reference an app
-author copies pin/flag choices from, and as what keeps iotsa's own example/test builds
-honest for that board.
+Worth knowing either way: `board-traits.ini`/`board-defs.ini` (pulled into the toplevel
+`platformio.ini` via `extra_configs`) only govern building *iotsa's own* examples/tests
+as a project. Downstream application repos (`iotsaNeoClock`, the `lissabon` apps, etc.)
+never reference these sections -- they pull in iotsa only as a `lib_deps` library, and
+each app repo defines its own board section(s) from scratch in its own `platformio.ini`
+(see e.g. `iotsaNeoClock`'s `[esp32c3]`/`[env:crowpanel128]`). So a tier-2 or tier-3
+board here is not automatically "used" by an app; it exists as the canonical, working
+reference an app author copies pin/flag choices from, and as what keeps iotsa's own
+example/test builds honest for that board. (Sharing `board-traits.ini`/`board-defs.ini`
+with those repos directly, instead of copying choices out of them by hand, is still an
+open idea -- see #222.)
 
 ### Both Arduino IDE and PlatformIO
 
