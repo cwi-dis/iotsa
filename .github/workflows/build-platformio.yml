@@ -118,6 +118,13 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install platformio
+        # tool-esptoolpy (espressif32 platform) currently ships an esptool build that
+        # imports intelhex for bootloader/partition-table generation without declaring
+        # it as a dependency -- install it explicitly or every build fails at
+        # "Generating partitions.bin" with ModuleNotFoundError: No module named
+        # 'intelhex'. Upstream packaging gap, not an iotsa issue -- drop this once
+        # tool-esptoolpy bundles/declares it itself.
+        pip install intelhex
 
     - name: Install PlatformIO dependencies
       run: |
