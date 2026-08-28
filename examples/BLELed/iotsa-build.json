@@ -17,16 +17,14 @@
       "board": "esp32c3devkit",
       "build_flags": [
         "-DIOTSA_WITH_BLE",
-        "-DNEOPIXEL_PIN=8",
-        "-DWITHOUT_VOLTAGE"
+        "-DIOTSA_PIN_NEOPIXEL=8"
       ]
     },
     {
       "board": "esp32s3supermini",
       "build_flags": [
         "-DIOTSA_WITH_BLE",
-        "-DNEOPIXEL_PIN=48",
-        "-DWITHOUT_VOLTAGE"
+        "-DIOTSA_PIN_NEOPIXEL=48"
       ],
       "ci": {
         "platformio": true,

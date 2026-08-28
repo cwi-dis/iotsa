@@ -29,8 +29,7 @@
         "-DIOTSA_WITH_BLE",
         "-DIOTSA_WITH_COAP",
         "-DIOTSA_WITH_HTTPS",
-        "-DNEOPIXEL_PIN=8",
-        "-DWITHOUT_VOLTAGE"
+        "-DIOTSA_PIN_NEOPIXEL=8"
       ]
     }
   ]

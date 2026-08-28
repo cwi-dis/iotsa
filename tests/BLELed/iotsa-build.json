@@ -24,8 +24,7 @@
       "label": "withble",
       "build_flags": [
         "-DIOTSA_WITH_BLE",
-        "-DNEOPIXEL_PIN=8",
-        "-DWITHOUT_VOLTAGE"
+        "-DIOTSA_PIN_NEOPIXEL=8"
       ]
     },
     {
@@ -67,8 +66,7 @@
         "-DIOTSA_WITHOUT_WEB",
         "-DIOTSA_WITHOUT_REST",
         "-DIOTSA_WITHOUT_COAP",
-        "-DNEOPIXEL_PIN=48",
-        "-DWITHOUT_VOLTAGE"
+        "-DIOTSA_PIN_NEOPIXEL=48"
       ]
     },
     {

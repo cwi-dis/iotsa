@@ -14,8 +14,8 @@
 #ifndef BUTTON_PIN
 #define BUTTON_PIN 4	// GPIO4 is the pushbutton
 #endif
-#ifndef NEOPIXEL_PIN
-#define NEOPIXEL_PIN 15  // pulled-down during boot, can be used for NeoPixel afterwards
+#ifndef IOTSA_PIN_NEOPIXEL
+#define IOTSA_PIN_NEOPIXEL 15  // pulled-down during boot, can be used for NeoPixel afterwards
 #endif
 
 IotsaApplication application("Button Server");
@@ -28,7 +28,7 @@ IotsaWifiMod wifiMod(application);  // wifi is always needed
 IotsaOtaMod otaMod(application);    // we want OTA for updating the software (will not work with esp-201)
 #endif
 
-IotsaLedMod ledMod(application, NEOPIXEL_PIN);
+IotsaLedMod ledMod(application, IOTSA_PIN_NEOPIXEL);
 
 Button buttons[] = {
   Button(BUTTON_PIN, true, false)
