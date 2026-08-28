@@ -224,7 +224,9 @@ void IotsaButtonMod::lateSetup() {
   api.setup("buttons", true, true);
   for(int i=0; i<nButton; i++) {
       String p = "buttons/" + String(i);
-      api.setup(p.c_str(), true, true);
+      // webPage=false: webHandler() doesn't distinguish by path, so a page here would
+      // just duplicate "buttons" -- see cwi-dis/iotsa#217.
+      api.setup(p.c_str(), true, true, false, false);
   }
   name = "buttons";
 }

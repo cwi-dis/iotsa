@@ -1,7 +1,7 @@
 #include "iotsaApi.h"
 
 #ifdef IOTSA_WITH_REST
-void IotsaApiServiceRest::setup(const char* path, bool get, bool put, bool post) {
+void IotsaApiServiceRest::setup(const char* path, bool get, bool put, bool post, bool webPage) {
     // xxxjack may be enabled later... if (!iotsaConfig.wifiEnabled) return;
     // Callers pass a bare name; REST is the one that cares about the /api/ prefix, both
     // for its own HTTP registration and for what it hands to the module's handlers, so it
@@ -12,7 +12,8 @@ void IotsaApiServiceRest::setup(const char* path, bool get, bool put, bool post)
     if (get) server->on(p, HTTP_GET, std::bind(&IotsaApiServiceRest::_getHandlerWrapper, this, p));
     if (put) server->on(p, HTTP_PUT, std::bind(&IotsaApiServiceRest::_putHandlerWrapper, this, p));
     if (post) server->on(p, HTTP_POST, std::bind(&IotsaApiServiceRest::_postHandlerWrapper, this, p));
-    if (next) next->setup(path, get, put, post);
+    // webPage is Web-only; REST ignores it and just forwards it down the chain.
+    if (next) next->setup(path, get, put, post, webPage);
 }
 
 void IotsaApiServiceRest::_getHandlerWrapper(const char *path) {

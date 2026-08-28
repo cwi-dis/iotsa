@@ -9,11 +9,13 @@
 // chain as IotsaApiServiceRest/Coap/Hps -- see cwi-dis/iotsa#213. A single
 // api.setup() call reaches every compiled-in transport, Web included; get=true
 // simply means "this path also has a page" (put/post aren't used here, a page
-// doesn't have separate variants the way REST/CoAP/HPS do).
+// doesn't have separate variants the way REST/CoAP/HPS do), unless webPage=false
+// overrides that -- see setup()'s doc comment on IotsaApiServiceProvider.
 //
-// A module with a collection/sub-path pattern (buttons/N, users/N -- see
-// cwi-dis/iotsa#217) ends up registering one redundant, identical page per
-// sub-path this way; accepted for now, to be revisited under #217.
+// A module with a collection/sub-path pattern (buttons/N, users/N) passes
+// webPage=false for the per-item calls, since webHandler() doesn't distinguish
+// by path and a page per item would just be a byte-identical duplicate of the
+// collection's own page -- see cwi-dis/iotsa#217.
 //
 class IotsaApiServiceWeb : public IotsaApiServiceProvider {
 public:
@@ -25,7 +27,7 @@ public:
     // exists before any module (this one included) is constructed.
     server(IotsaHttpServiceMod::serviceMod(_app)->server)
   {}
-  void setup(const char* path, bool get=false, bool put=false, bool post=false) override;
+  void setup(const char* path, bool get=false, bool put=false, bool post=false, bool webPage=true) override;
   // Public so API-having modules can reach the shared HTTP server through their own
   // `api.webService` link (e.g. `api.webService->server`) instead of holding a
   // `server` field of their own -- see cwi-dis/iotsa#211.

@@ -220,7 +220,9 @@ int IotsaMultiUserMod::_addUser(IotsaUser& newUser) {
   users.push_back(newUser);
   String bareName = String("users/")+String(oldLength);
   newUser.apiEndpoint = String("/api/") + bareName;
-  api.setup(bareName.c_str(), true, true, false);
+  // webPage=false: webHandler() doesn't distinguish by path, so a page here would
+  // just duplicate "users" -- see cwi-dis/iotsa#217.
+  api.setup(bareName.c_str(), true, true, false, false);
   configSave();
   return oldLength;
 }
@@ -236,7 +238,9 @@ void IotsaMultiUserMod::lateSetup() {
   for(auto u: users) {
     String bareName = String("users/")+String(idx++);
     u.apiEndpoint = String("/api/") + bareName;
-    api.setup(bareName.c_str(), true, true, false);
+    // webPage=false: webHandler() doesn't distinguish by path, so a page here would
+    // just duplicate "users" -- see cwi-dis/iotsa#217.
+    api.setup(bareName.c_str(), true, true, false, false);
   }
 }
 
