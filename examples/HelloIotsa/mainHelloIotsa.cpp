@@ -31,7 +31,7 @@ IotsaHelloMod helloMod(application);
 // Standard setup() method, hands off most work to the application framework
 void setup(void){
   application.setup();
-  application.serverSetup();
+  application.lateSetup();
 }
 
 // Standard loop() routine, hands off most work to the application framework

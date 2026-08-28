@@ -53,23 +53,23 @@ private:
 void
 IotsaBLEServerMod::webHandler() {
   bool anyChanged = false;
-  if (server->hasArg("isEnabled")) {
-    bool newIsEnabled = (bool)strtol(server->arg("isEnabled").c_str(), 0, 10);
+  if (api.webService->server->hasArg("isEnabled")) {
+    bool newIsEnabled = (bool)strtol(api.webService->server->arg("isEnabled").c_str(), 0, 10);
     if (newIsEnabled != isEnabled) {
       isEnabled = newIsEnabled;
       iotsaConfig.requestReboot(4000);
       anyChanged = true;
     }
   }
-  if( server->hasArg("adv_min")) {
-    adv_min = strtol(server->arg("adv_min").c_str(), 0, 10);
+  if( api.webService->server->hasArg("adv_min")) {
+    adv_min = strtol(api.webService->server->arg("adv_min").c_str(), 0, 10);
     anyChanged = true;
   }
-  if( server->hasArg("adv_max")) {
-    adv_max = strtol(server->arg("adv_max").c_str(), 0, 10);
+  if( api.webService->server->hasArg("adv_max")) {
+    adv_max = strtol(api.webService->server->arg("adv_max").c_str(), 0, 10);
     anyChanged = true;
-  }if( server->hasArg("tx_power_dbm")) {
-    tx_power_dbm = strtol(server->arg("tx_power_dbm").c_str(), 0, 10);
+  }if( api.webService->server->hasArg("tx_power_dbm")) {
+    tx_power_dbm = strtol(api.webService->server->arg("tx_power_dbm").c_str(), 0, 10);
     anyChanged = true;
   }
   if (anyChanged) configSave();
@@ -83,7 +83,7 @@ IotsaBLEServerMod::webHandler() {
   message += "Transmit power level: <input type='text' name='tx_power_dbm' value='" + String(tx_power_dbm) + "'> (raw dBm; -1: leave at hardware default; valid range is chip-dependent, e.g. -12..+9 on classic ESP32, -24..+21 on ESP32-C3/S3/C6)<br>";
   message += "Transmit power level (actual): " + String(tx_power_dbm_actual) + " dBm<br>";
   message += "<input type='submit'></form></body></html>";
-  server->send(200, "text/html", message);
+  api.webService->server->send(200, "text/html", message);
 }
 
 String IotsaBLEServerMod::info() {
@@ -271,7 +271,7 @@ bool IotsaBLEServerMod::putHandler(const char *path, const JsonVariant& request,
   return anyChanged;
 }
 
-void IotsaBLEServerMod::serverSetup() {
+void IotsaBLEServerMod::lateSetup() {
   api.setup("bleserver", true, true);
   name = "bleserver";
 }

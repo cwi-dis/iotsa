@@ -56,7 +56,7 @@ class IotsaBLEServerMod : public IotsaModule {
 public:
   using IotsaModule::IotsaModule;
   void setup() override;
-  void serverSetup() override;
+  void lateSetup() override;
   void lateSetupDone() override;
   void loop() override;
 #ifdef IOTSA_WITH_WEB

@@ -62,7 +62,7 @@ IotsaSimpleMod helloMod(application, "/hello", helloHandler, helloInfo);
 // Standard setup() method, hands off most work to the application framework
 void setup(void){
   application.setup();
-  application.serverSetup();
+  application.lateSetup();
   // Add your setup code here.
 }
 

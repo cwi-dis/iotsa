@@ -11,7 +11,7 @@ class IotsaStaticAuthMod : public IotsaAuthMod {
 public:
   using IotsaAuthMod::IotsaAuthMod;
   void setup() override;
-  void serverSetup() override;
+  void lateSetup() override;
   void loop() override;
   String info() override;
   bool allows(const char *right=NULL) override;

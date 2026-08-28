@@ -14,7 +14,7 @@ public:
     dht(pin, type)
   {}
   void setup() override;
-  void serverSetup() override;
+  void lateSetup() override;
   void loop() override;
   String info() override;
 private:

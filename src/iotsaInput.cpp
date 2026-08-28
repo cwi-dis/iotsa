@@ -55,7 +55,7 @@ void IotsaInputMod::setup() {
 #endif
 }
 
-void IotsaInputMod::serverSetup() {
+void IotsaInputMod::lateSetup() {
   name = "input";
 }
 

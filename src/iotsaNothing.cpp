@@ -6,9 +6,9 @@
 void
 IotsaNothingMod::webHandler() {
   bool anyChanged = false;
-  if( server->hasArg("argument")) {
+  if( api.webService->server->hasArg("argument")) {
     if (needsAuthentication()) return;
-    argument = server->arg("argument");
+    argument = api.webService->server->arg("argument");
     anyChanged = true;
   }
   if (anyChanged) configSave();
@@ -17,7 +17,7 @@ IotsaNothingMod::webHandler() {
   message += "<form method='get'>Argument: <input name='argument' value='";
   message += htmlEncode(argument);
   message += "'><br><input type='submit'></form>";
-  server->send(200, "text/html", message);
+  api.webService->server->send(200, "text/html", message);
 }
 
 String IotsaNothingMod::info() {
@@ -46,7 +46,7 @@ bool IotsaNothingMod::putHandler(const char *path, const JsonVariant& request, J
   return anyChanged;
 }
 
-void IotsaNothingMod::serverSetup() {
+void IotsaNothingMod::lateSetup() {
   api.setup("nothing", true, true);
   name = "nothing";
 }

@@ -46,11 +46,6 @@ IotsaHttpServiceMod::IotsaHttpServiceMod(IotsaApplication &_app)
 : IotsaBaseModule(_app, nullptr, true)
 {
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
-  // Note: at this point in construction, serviceMod(_app) still returns nullptr
-  // (we're the instance being constructed, _httpMod isn't assigned until our
-  // constructor returns) -- so the inherited IotsaBaseModule constructor left our
-  // own `server` field null. Assign the real object here instead of reading it
-  // from ourselves.
   server = new IotsaWebServer(IOTSA_WEBSERVER_PORT);
 #endif
 }
@@ -62,7 +57,7 @@ IotsaHttpServiceMod::setup() {
 
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
 void
-IotsaHttpServiceMod::serverSetup() {
+IotsaHttpServiceMod::lateSetup() {
   if (!iotsaConfig.wifiEnabled) return;
 
 #if defined(IOTSA_WITH_HTTPS) && defined(IOTSA_WITH_HTTP)
@@ -111,7 +106,7 @@ IotsaHttpServiceMod::loop() {
     // Apparently wifi was disabled when we booted, so setup the server
     // now.
     IFDEBUG IotsaSerial.println("Setup web server after WiFi enabled");
-    serverSetup();
+    lateSetup();
     return;
   }
   server->handleClient();
@@ -137,7 +132,7 @@ IotsaHttpServiceMod::webServerNotFoundHandler() {
   server->send(404, "text/plain", message);
 }
 #else // IOTSA_WITH_HTTP_OR_HTTPS
-void IotsaHttpServiceMod::serverSetup() {}
+void IotsaHttpServiceMod::lateSetup() {}
 void IotsaHttpServiceMod::loop() {}
 #endif // IOTSA_WITH_HTTP_OR_HTTPS
 

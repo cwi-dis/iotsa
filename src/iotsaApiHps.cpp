@@ -61,7 +61,7 @@ public:
   }
 
   void loop() override {}
-  void serverSetup() override {}
+  void lateSetup() override {}
 #ifdef IOTSA_WITH_WEB
   String info() override { return ""; }
 #endif

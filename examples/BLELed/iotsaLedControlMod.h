@@ -12,7 +12,7 @@ class IotsaLedControlMod : public IotsaLedMod {
 public:
   using IotsaLedMod::IotsaLedMod;
   void setup() override;
-  void serverSetup() override;
+  void lateSetup() override;
 #ifdef IOTSA_WITH_WEB
   String info() override;
 #endif

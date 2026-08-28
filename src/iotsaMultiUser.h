@@ -31,7 +31,7 @@ class IotsaMultiUserMod : public IotsaAuthMod {
 public:
   IotsaMultiUserMod(IotsaApplication &_app);
   void setup() override;
-  void serverSetup() override;
+  void lateSetup() override;
   void loop() override;
 #ifdef IOTSA_WITH_WEB
   String info() override;

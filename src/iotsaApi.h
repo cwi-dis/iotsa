@@ -71,10 +71,12 @@ class IotsaApiServiceWeb;
 //
 // Web is a link like any other (a single api.setup() call registers the REST/CoAP/HPS
 // endpoint(s) *and* the module's web page, when get=true) -- see cwi-dis/iotsa#213. A
-// module that also needs something a bare setup() call can't express (a not-found/
-// wildcard route, a two-callback upload handler) checks `webService` for non-null and
-// then uses its own `server` member directly to register it, since IOTSA_WITH_WEB
-// implies the module's page(s) are served over HTTP(S) via that same server anyway.
+// module's webHandler() body reaches the shared HTTP server through `webService`
+// (e.g. `api.webService->server`), instead of holding a `server` member of its own --
+// see cwi-dis/iotsa#211. A module that also needs something a bare setup() call can't
+// express, and that isn't really part of its own page (a not-found/wildcard route, a
+// two-callback upload handler -- see IotsaConfigMod's cert upload, cwi-dis/iotsa#221),
+// reaches app.server directly instead, the same way web-server-extension modules do.
 //
 class IotsaApiService : public IotsaApiServiceProvider {
 public:

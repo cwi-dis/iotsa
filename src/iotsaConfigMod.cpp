@@ -65,8 +65,8 @@ IotsaConfigMod::webHandler() {
   bool wrongMode = false;
   bool anyChanged = false;
   bool hostnameChanged = false;
-  if( server->hasArg("hostName")) {
-    String argValue = server->arg("hostName");
+  if( api.webService->server->hasArg("hostName")) {
+    String argValue = api.webService->server->arg("hostName");
     if (argValue != iotsaConfig.hostName) {
       if (iotsaConfig.inConfigurationOrFactoryMode()) {
         if (needsAuthentication("config")) return;
@@ -78,8 +78,8 @@ IotsaConfigMod::webHandler() {
       }
     }
   }
-  if( server->hasArg("rebootTimeout")) {
-    int newValue = server->arg("rebootTimeout").toInt();
+  if( api.webService->server->hasArg("rebootTimeout")) {
+    int newValue = api.webService->server->arg("rebootTimeout").toInt();
     if (newValue != iotsaConfig.configurationModeTimeout) {
       if (iotsaConfig.inConfigurationMode(true)) {
         if (needsAuthentication("config")) return;
@@ -90,8 +90,8 @@ IotsaConfigMod::webHandler() {
       }
     }
   }
-  if( server->hasArg("mode")) {
-    String argValue = server->arg("mode");
+  if( api.webService->server->hasArg("mode")) {
+    String argValue = api.webService->server->arg("mode");
     if (argValue != "0") {
       if (needsAuthentication("config")) return;
       iotsaConfig.nextConfigurationMode = config_mode(atoi(argValue.c_str()));
@@ -100,10 +100,10 @@ IotsaConfigMod::webHandler() {
     }
   }
 #ifdef IOTSA_WITH_HTTPS
-  if (server->hasArg("httpsKey") && server->arg("httpsKey") != "") {
+  if (api.webService->server->hasArg("httpsKey") && api.webService->server->arg("httpsKey") != "") {
     if (iotsaConfig.inConfigurationMode(true)) {
       if (needsAuthentication("config")) return;
-      String b64String(server->arg("httpsKey"));
+      String b64String(api.webService->server->arg("httpsKey"));
       if (b64String.startsWith("-----BEGIN RSA PRIVATE KEY-----")) {
         // Strip DER header and footer
         int first = b64String.indexOf('\n');
@@ -144,10 +144,10 @@ IotsaConfigMod::webHandler() {
       wrongMode = true;
     }
   }
-  if (server->hasArg("httpsCertificate") && server->arg("httpsCertificate") != "") {
+  if (api.webService->server->hasArg("httpsCertificate") && api.webService->server->arg("httpsCertificate") != "") {
     if (iotsaConfig.inConfigurationMode(true)) {
       if (needsAuthentication("config")) return;
-      String b64String(server->arg("httpsCertificate"));
+      String b64String(api.webService->server->arg("httpsCertificate"));
       if (b64String.startsWith("-----BEGIN CERTIFICATE-----")) {
         // Strip DER header and footer
         int first = b64String.indexOf('\n');
@@ -191,15 +191,15 @@ IotsaConfigMod::webHandler() {
     }
   }
 #endif // IOTSA_WITH_HTTPS
-  if( server->hasArg("factoryreset") && server->hasArg("iamsure")) {
-    if (server->arg("factoryreset") == "1" && server->arg("iamsure") == "1") {
+  if( api.webService->server->hasArg("factoryreset") && api.webService->server->hasArg("iamsure")) {
+    if (api.webService->server->arg("factoryreset") == "1" && api.webService->server->arg("iamsure") == "1") {
       iotsaConfig.nextConfigurationMode = IOTSA_MODE_FACTORY_RESET;
       iotsaConfig.nextConfigurationModeEndTime = millis() + iotsaConfig.configurationModeTimeout*1000;
       anyChanged = true;
     }
   }
- if( server->hasArg("wifiDisabledOnBoot")) {
-    int newValue = server->arg("wifiDisabledOnBoot").toInt();
+ if( api.webService->server->hasArg("wifiDisabledOnBoot")) {
+    int newValue = api.webService->server->arg("wifiDisabledOnBoot").toInt();
     if ((bool)newValue != iotsaConfig.wifiDisabledOnBoot) {
       if (iotsaConfig.inConfigurationMode(true)) {
         if (needsAuthentication("config")) return;
@@ -211,8 +211,8 @@ IotsaConfigMod::webHandler() {
     }
   }
 #ifdef IOTSA_WITH_BLE
- if( server->hasArg("bleDisabledOnBoot")) {
-    int newValue = server->arg("bleDisabledOnBoot").toInt();
+ if( api.webService->server->hasArg("bleDisabledOnBoot")) {
+    int newValue = api.webService->server->arg("bleDisabledOnBoot").toInt();
     if ((bool)newValue != iotsaConfig.bleDisabledOnBoot) {
       if (iotsaConfig.inConfigurationMode(true)) {
         if (needsAuthentication("config")) return;
@@ -306,7 +306,7 @@ IotsaConfigMod::webHandler() {
   message += "<br><input name='factoryreset' type='checkbox' value='1'> Factory-reset and clear all files. <input name='iamsure' type='checkbox' value='1'> Yes, I am sure.<br>";
   message += "<input type='submit'></form>";
   message += "</body></html>";
-  server->send(200, "text/html", message);
+  api.webService->server->send(200, "text/html", message);
   if (hostnameChanged) {
     iotsaConfig.requestReboot(2000);
   }
@@ -581,7 +581,7 @@ static bool _uploadOK;
 void
 IotsaConfigMod::uploadHandler() {
   if (needsAuthentication("config")) return;
-  HTTPUpload& upload = server->upload();
+  HTTPUpload& upload = app.server->upload();
   _uploadOK = false;
   if(upload.status == UPLOAD_FILE_START){
     if (upload.filename != "httpsKey.der" && upload.filename != "httpsCert.der") {
@@ -612,23 +612,23 @@ IotsaConfigMod::uploadOkHandler() {
   String message;
   if (_uploadOK) {
     IFDEBUG IotsaSerial.println("upload ok");
-    server->send(200, "text/plain", "OK");
+    app.server->send(200, "text/plain", "OK");
   } else {
     IFDEBUG IotsaSerial.println("upload failed");
-    server->send(403, "text/plain", "FAIL");
+    app.server->send(403, "text/plain", "FAIL");
   }
 }
 #endif // defined(IOTSA_WITH_WEB) || defined(IOTSA_WITH_API)
 
-void IotsaConfigMod::serverSetup() {
+void IotsaConfigMod::lateSetup() {
 #ifdef IOTSA_WITH_WEB
   // Two-callback upload shape (a completion handler plus a streaming upload
   // handler): not something a plain api.setup() call can express, see
-  // cwi-dis/iotsa#213. uploadHandler/uploadOkHandler are themselves only
-  // compiled under IOTSA_WITH_WEB (above), so this stays an #ifdef rather
-  // than an api.webService runtime check -- the two are equivalent here since
-  // IOTSA_WITH_WEB is one project-wide flag for the whole build.
-  server->on("/configupload", HTTP_POST, std::bind(&IotsaConfigMod::uploadOkHandler, this), std::bind(&IotsaConfigMod::uploadHandler, this));
+  // cwi-dis/iotsa#213 -- registered directly via app.server instead, same as the
+  // web-server-extension modules (this upload machinery really is that category,
+  // just bolted onto the config API module -- near-duplicate of
+  // IotsaFilesUploadMod, see cwi-dis/iotsa#221 for splitting it out properly).
+  app.server->on("/configupload", HTTP_POST, std::bind(&IotsaConfigMod::uploadOkHandler, this), std::bind(&IotsaConfigMod::uploadHandler, this));
 #endif
   api.setup("config", true, true);
   api.setup("version", true);

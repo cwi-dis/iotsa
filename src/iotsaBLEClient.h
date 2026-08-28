@@ -23,7 +23,7 @@ public:
   virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
   virtual String formHandler_field_perdevice(const char *deviceName);
   virtual void setup() override;
-  virtual void serverSetup() override;
+  virtual void lateSetup() override;
   virtual void formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig);
 #ifdef IOTSA_WITH_WEB
   virtual void webHandler() override;

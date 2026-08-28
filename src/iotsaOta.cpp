@@ -50,7 +50,7 @@ void IotsaOtaMod::_start() {
   started = true;
 }
 
-void IotsaOtaMod::serverSetup() {
+void IotsaOtaMod::lateSetup() {
   name = "ota";
 }
 

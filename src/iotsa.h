@@ -36,9 +36,9 @@ class IotsaConfigMod;
 // The shared HTTP(S) transport module (owns the actual IotsaWebServer instance) --
 // a peer service mod like IotsaCoapServiceMod/IotsaHpsServiceMod, not privileged
 // IotsaApplication inheritance, see cwi-dis/iotsa#207. Full definition lives in
-// iotsaHttpServer.h; only needed here as a forward declaration so IotsaBaseModule's
-// constructor (defined out-of-line in iotsa.cpp, for exactly this reason) can reach
-// the shared `server` pointer through it.
+// iotsaHttpServer.h; only needed here as a forward declaration, for the friend
+// declarations below (IotsaHttpServiceMod reads IotsaApplication::firstModule/
+// firstEarlyModule directly to render the root page).
 class IotsaHttpServiceMod;
 
 //
@@ -74,16 +74,25 @@ public:
   void addMod(IotsaBaseModule *mod);
   void addModEarly(IotsaBaseModule *mod);
   void setup();
-  void serverSetup();
+  void lateSetup();
   void loop();
   IotsaStatusInterface *status;
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
-  // Convenience for app-level sketch code that registers its own raw handler (e.g.
-  // IotsaSimpleMod's app-supplied handler function, which isn't a module method and
-  // so has no `this->server`) -- forwards to the shared IotsaHttpServiceMod, set once
-  // in the constructor. Not used by iotsa's own modules internally, which reach the
-  // same object through IotsaBaseModule::server or IotsaHttpServiceMod::serviceMod()
-  // directly; see cwi-dis/iotsa#207/#211.
+  // Convenience for app-level sketch code (e.g. tests/KitchenSink, examples/Hello,
+  // examples/Log) that registers its own raw handler outside of any module method,
+  // and for any module that isn't itself an API-having module with a webHandler()
+  // (web-server-extension modules like IotsaFilesUploadMod/IotsaLoggerMod/
+  // IotsaSimpleMod, and a module's own registrations that fall outside its page,
+  // like IotsaConfigMod's cert upload, cwi-dis/iotsa#221) -- forwards to the shared
+  // IotsaHttpServiceMod, set once in the constructor.
+  // Also still used by the auth-provider modules (IotsaUserMod/IotsaMultiUserMod/
+  // IotsaCapabilityMod), whose allows() implementations need to read credentials
+  // off the live HTTP request regardless of which module they're authenticating for
+  // -- a known wart, see cwi-dis/iotsa#107 (rights-earning redesign), which will
+  // replace this with a proper per-request context instead.
+  // API-having modules' webHandler() bodies reach the shared server through their
+  // own IotsaApiServiceWeb link instead (e.g. `api.webService->server`); see
+  // cwi-dis/iotsa#207/#211.
   IotsaWebServer *server = nullptr;
 #endif
 protected:
@@ -146,11 +155,11 @@ public:
 };
 
 // Base for every iotsa module -- deliberately lenient (setup()/loop() are the
-// only pure virtuals; serverSetup()/info() have harmless no-op defaults
+// only pure virtuals; lateSetup()/info() have harmless no-op defaults
 // rather than being forced) since some modules (e.g. IotsaCoapServiceMod, a
 // lifecycle-only companion mod with no page/endpoint of its own) genuinely
 // have nothing to contribute to either. A real module is expected to
-// override both anyway -- an empty info() or a no-op serverSetup() would be
+// override both anyway -- an empty info() or a no-op lateSetup() would be
 // an obviously incomplete module, not a subtle bug -- so this used to be two
 // classes (one lenient, one forcing overrides via `= 0`) purely to catch
 // that mistake at compile time; merged back into one, see cwi-dis/iotsa#206.
@@ -161,11 +170,17 @@ class IotsaBaseModule : public IotsaApiProvider, public IotsaBLEProvider {
   friend class IotsaHttpServiceMod;
   friend class IotsaBatteryMod;
 public:
-  // Defined out-of-line in iotsa.cpp: needs IotsaHttpServiceMod's full definition
-  // (iotsaHttpServer.h) to reach the shared `server` pointer, which would be a
-  // circular include if this stayed inline here -- IotsaHttpServiceMod itself
-  // derives from IotsaBaseModule.
-  IotsaBaseModule(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false);
+  IotsaBaseModule(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
+  : app(_app),
+    auth(_auth),
+    nextModule(NULL)
+  {
+    if (early) {
+      app.addModEarly(this);
+    } else {
+      app.addMod(this);
+    }
+  }
   IotsaBaseModule& operator=(const IotsaBaseModule& that) = delete;
 
   virtual void setup() = 0;
@@ -177,11 +192,11 @@ public:
   static String htmlEncode(String data); // Helper - convert strings to HTML-safe representation
   static void percentDecode(const String &src, String &dst); // Helper - convert string from url-encoded to normal
 #endif
-  virtual void serverSetup();
-  // Called once, after every module's setup() and serverSetup() have run. For most
+  virtual void lateSetup();
+  // Called once, after every module's setup() and lateSetup() have run. For most
   // modules the default no-op is correct; it exists for the small set of modules that
   // must not go "live" (e.g. start BLE advertising) until every other module has had a
-  // chance to register with them during setup()/serverSetup() -- see cwi-dis/iotsa#113.
+  // chance to register with them during setup()/lateSetup() -- see cwi-dis/iotsa#113.
   virtual void lateSetupDone() {}
   virtual bool needsAuthentication(const char *right=NULL);
   virtual bool needsAuthentication(const char *obj, IotsaApiOperation verb);
@@ -191,9 +206,6 @@ public:
 
 protected:
   IotsaApplication &app;
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
-  IotsaWebServer *server;
-#endif
   IotsaAuthenticationProvider *auth;
   IotsaBaseModule *nextModule;
   String name;

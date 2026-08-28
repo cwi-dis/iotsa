@@ -69,7 +69,7 @@ IotsaBLEServerMod bleserverMod(application);
 
 void setup(void){
   application.setup();
-  application.serverSetup();
+  application.lateSetup();
 #ifdef PIN_DISABLE_SLEEP
   batteryMod.setPinDisableSleep(PIN_DISABLE_SLEEP);
 #endif

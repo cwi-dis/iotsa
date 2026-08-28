@@ -26,72 +26,72 @@ void IRAM_ATTR watchdogTimerTriggered() {
 void
 IotsaBatteryMod::webHandler() {
   bool anyChanged = false;
-  if( server->hasArg("sleepDuration")) {
+  if( api.webService->server->hasArg("sleepDuration")) {
     if (needsAuthentication()) return;
-    sleepDuration = server->arg("sleepDuration").toInt();
+    sleepDuration = api.webService->server->arg("sleepDuration").toInt();
     anyChanged = true;
   }
-  if( server->hasArg("sleepMode")) {
+  if( api.webService->server->hasArg("sleepMode")) {
     if (needsAuthentication()) return;
-    sleepMode = (IotsaSleepMode)server->arg("sleepMode").toInt();
+    sleepMode = (IotsaSleepMode)api.webService->server->arg("sleepMode").toInt();
     anyChanged = true;
   }
-  if( server->hasArg("wakeDuration")) {
+  if( api.webService->server->hasArg("wakeDuration")) {
     if (needsAuthentication()) return;
-    wakeDuration = server->arg("wakeDuration").toInt();
+    wakeDuration = api.webService->server->arg("wakeDuration").toInt();
     anyChanged = true;
   }
   
 #ifdef ESP32
-  if( server->hasArg("watchdogDuration")) {
+  if( api.webService->server->hasArg("watchdogDuration")) {
     if (needsAuthentication()) return;
-    watchdogDuration = server->arg("watchdogDuration").toInt();
+    watchdogDuration = api.webService->server->arg("watchdogDuration").toInt();
     anyChanged = true;
   }
 #endif
-  if( server->hasArg("bootExtraWakeDuration")) {
+  if( api.webService->server->hasArg("bootExtraWakeDuration")) {
     if (needsAuthentication()) return;
-    bootExtraWakeDuration = server->arg("bootExtraWakeDuration").toInt();
+    bootExtraWakeDuration = api.webService->server->arg("bootExtraWakeDuration").toInt();
     anyChanged = true;
   }
-  if( server->hasArg("activityExtraWakeDuration")) {
+  if( api.webService->server->hasArg("activityExtraWakeDuration")) {
     if (needsAuthentication()) return;
-    iotsaConfig.activityExtraWakeDuration = server->arg("activityExtraWakeDuration").toInt();
+    iotsaConfig.activityExtraWakeDuration = api.webService->server->arg("activityExtraWakeDuration").toInt();
     anyChanged = true;
   }
-  if( server->hasArg("disableSleepOnUSBPower")) {
+  if( api.webService->server->hasArg("disableSleepOnUSBPower")) {
     if (needsAuthentication()) return;
-    disableSleepOnUSBPower = server->arg("disableSleepOnUSBPower").toInt();
+    disableSleepOnUSBPower = api.webService->server->arg("disableSleepOnUSBPower").toInt();
     anyChanged = true;
   }
-  if( server->hasArg("disableSleepOnWiFi")) {
+  if( api.webService->server->hasArg("disableSleepOnWiFi")) {
     if (needsAuthentication()) return;
-    disableSleepOnWiFi = server->arg("disableSleepOnWiFi").toInt();
+    disableSleepOnWiFi = api.webService->server->arg("disableSleepOnWiFi").toInt();
     anyChanged = true;
   }
-  if (server->hasArg("disableWiFiOnSleep")) {
+  if (api.webService->server->hasArg("disableWiFiOnSleep")) {
     if (needsAuthentication()) return;
-    disableWiFiOnSleep = server->arg("disableWiFiOnSleep").toInt();
+    disableWiFiOnSleep = api.webService->server->arg("disableWiFiOnSleep").toInt();
     anyChanged = true;
   } 
-  if( server->hasArg("correctionVBat")) {
+  if( api.webService->server->hasArg("correctionVBat")) {
     if (needsAuthentication()) return;
-    correctionVBat = server->arg("correctionVBat").toFloat();
+    correctionVBat = api.webService->server->arg("correctionVBat").toFloat();
     anyChanged = true;
   }
 #ifdef ESP32
-  if( server->hasArg("cpuFrequencyBoot")) {
+  if( api.webService->server->hasArg("cpuFrequencyBoot")) {
     if (needsAuthentication()) return;
-    cpuFrequencyBoot = server->arg("cpuFrequencyBoot").toInt();
+    cpuFrequencyBoot = api.webService->server->arg("cpuFrequencyBoot").toInt();
     anyChanged = true;
   }
-  if( server->hasArg("cpuFrequencySleep")) {
+  if( api.webService->server->hasArg("cpuFrequencySleep")) {
     if (needsAuthentication()) return;
-    cpuFrequencySleep = server->arg("cpuFrequencySleep").toInt();
+    cpuFrequencySleep = api.webService->server->arg("cpuFrequencySleep").toInt();
     anyChanged = true;
   }
-  if (server->hasArg("cpuFrequency")) {
-    int freq = server->arg("cpuFrequency").toInt();
+  if (api.webService->server->hasArg("cpuFrequency")) {
+    int freq = api.webService->server->arg("cpuFrequency").toInt();
     if (freq != 0) {
       setCpuFrequencyMhz(freq);
       IFDEBUG IotsaSerial.printf("Set CPU frequency to %d MHz\n", freq);
@@ -155,7 +155,7 @@ IotsaBatteryMod::webHandler() {
   message += "Current CPU frequency (MHz): <input name='cpuFrequency' value='" + String(freq) + "'><br>";
   #endif
   message += "<input type='submit'></form>";
-  server->send(200, "text/html", message);
+  api.webService->server->send(200, "text/html", message);
 }
 
 String IotsaBatteryMod::info() {
@@ -322,7 +322,7 @@ bool IotsaBatteryMod::bleGetHandler(UUIDstring charUUID) {
 }
 #endif // IOTSA_WITH_BLE
 
-void IotsaBatteryMod::serverSetup() {
+void IotsaBatteryMod::lateSetup() {
   api.setup("battery", true, true);
   name = "battery";
 }

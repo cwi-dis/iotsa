@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Web pages now register as a link in the same `IotsaApiService` transport chain as REST/CoAP/HPS -- a single `api.setup()` call also registers the module's page, instead of each module manually calling `server->on()`; module page logic moves from `handler()` to `webHandler()` (#213)
 - CI now runs a minimal-coverage build (just `KitchenSink` + a handful of examples not otherwise covered) on `develop` pushes and PRs, reserving the full example/test matrix for `master`/tag pushes and PRs by default; opt into minimal on a PR with the `ci-minimal` label (#216)
 - The HTTP(S) web server is now a peer service module (`IotsaHttpServiceMod`) instead of infrastructure privileged via `IotsaApplication` inheritance, the same tier as the CoAP/HPS companion mods; `IotsaApiServiceWeb`/`IotsaApiServiceRest` now share one server instance through it instead of each holding their own copy (#207)
+- Renamed `serverSetup()`→`lateSetup()` across the framework, and removed `IotsaBaseModule`'s per-module `server` field -- API-having modules reach the shared server through their own `IotsaApiServiceWeb` link, everyone else through `IotsaApplication::server` (#211). **Breaking**: any app module overriding `serverSetup()` needs renaming to `lateSetup()`; a module reading `this->server` directly needs updating to one of the above.
 
 ## [2.9.2] - 2026-08-22
 

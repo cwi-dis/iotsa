@@ -5,9 +5,9 @@ void IotsaSimpleMod::setup() {
   // Handled in client application, in normal setup() function
 }
 
-void IotsaSimpleMod::serverSetup() {
+void IotsaSimpleMod::lateSetup() {
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
-  server->on(url, hfun);
+  app.server->on(url, hfun);
 #endif
 }
 

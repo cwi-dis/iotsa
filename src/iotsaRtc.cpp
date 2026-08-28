@@ -82,9 +82,9 @@ void IotsaRtcMod::_updateCurrentTime() {
 void
 IotsaRtcMod::webHandler() {
   bool ok = true;
-  if( server->hasArg("isoTime")) {
+  if( api.webService->server->hasArg("isoTime")) {
     if (needsAuthentication("rtc")) return;
-    ok = setIsoTime(server->arg("isoTime"));
+    ok = setIsoTime(api.webService->server->arg("isoTime"));
   }
   String message = "<html><head><title>Realtime Clock Settings</title></head><body><h1>Realtime Clock Settings</h1>";
   if (!ok) {
@@ -96,7 +96,7 @@ IotsaRtcMod::webHandler() {
   message += isoTime();
   message += "'><br>";
   message += "<input type='submit'></form>";
-  server->send(200, "text/html", message);
+  api.webService->server->send(200, "text/html", message);
 }
 
 String IotsaRtcMod::info() {
@@ -129,7 +129,7 @@ bool IotsaRtcMod::putHandler(const char *path, const JsonVariant& request, JsonO
   return anyChanged;
 }
 
-void IotsaRtcMod::serverSetup() {
+void IotsaRtcMod::lateSetup() {
   api.setup("rtcconfig", true, true);
   name = "rtcconfig";
 }

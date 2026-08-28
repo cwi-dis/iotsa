@@ -81,21 +81,21 @@ String IotsaNtpMod::isoTime()
 void
 IotsaNtpMod::webHandler() {
   bool anyChanged = false;
-  if( server->hasArg("ntpServer")) {
+  if( api.webService->server->hasArg("ntpServer")) {
     if (needsAuthentication("ntp")) return;
-    ntpServer = server->arg("ntpServer");
+    ntpServer = api.webService->server->arg("ntpServer");
     anyChanged = true;
   }
 #ifdef IOTSA_WITH_TIMEZONE
-	if (server->hasArg("tzDescription")) {
+	if (api.webService->server->hasArg("tzDescription")) {
 		if (needsAuthentication("ntp")) return;
-		parseTimezone(server->arg("tzDescription"));
+		parseTimezone(api.webService->server->arg("tzDescription"));
 		anyChanged = true;
 	}
 #else
-  if( server->hasArg("minutesWest")) {
+  if( api.webService->server->hasArg("minutesWest")) {
     if (needsAuthentication("ntp")) return;
-    minutesWestFromUtc = server->arg("minutesWest").toInt();
+    minutesWestFromUtc = api.webService->server->arg("minutesWest").toInt();
     _setupTimezone();
     anyChanged = true;
   }
@@ -129,7 +129,7 @@ IotsaNtpMod::webHandler() {
   message += "'><br>";
 #endif
   message += "<input type='submit'></form>";
-  server->send(200, "text/html", message);
+  api.webService->server->send(200, "text/html", message);
 }
 
 String IotsaNtpMod::info() {
@@ -195,7 +195,7 @@ bool IotsaNtpMod::putHandler(const char *path, const JsonVariant& request, JsonO
   return anyChanged;
 }
 
-void IotsaNtpMod::serverSetup() {
+void IotsaNtpMod::lateSetup() {
   api.setup("ntpconfig", true, true);
   name = "ntpconfig";
 }

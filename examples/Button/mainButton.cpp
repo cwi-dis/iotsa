@@ -44,7 +44,7 @@ IotsaButtonMod buttonMod(application, buttons, nButton, NULL, buttonOk, buttonNo
 //
 void setup(void) {
   application.setup();
-  application.serverSetup();
+  application.lateSetup();
 }
  
 void loop(void) {

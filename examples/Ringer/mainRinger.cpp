@@ -23,7 +23,7 @@ IotsaAlarmMod alarmMod(application);
 //
 void setup(void) {
   application.setup();
-  application.serverSetup();
+  application.lateSetup();
 }
 
 void loop(void) {

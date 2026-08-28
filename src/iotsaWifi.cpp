@@ -234,24 +234,24 @@ IotsaWifiMod::webHandler() {
   bool wrongMode = false;
   if (needsAuthentication("config")) return;
   bool anyChanged = false;
-  if( server->hasArg("ssid")) {
+  if( api.webService->server->hasArg("ssid")) {
     if (iotsaConfig.inConfigurationOrFactoryMode()) {
-      ssid = server->arg("ssid");
+      ssid = api.webService->server->arg("ssid");
       anyChanged = true;
     } else {
       wrongMode = true;
     }
   }
-  if( server->hasArg("ssidPassword")) {
+  if( api.webService->server->hasArg("ssidPassword")) {
     if (iotsaConfig.inConfigurationOrFactoryMode()) {
-      ssidPassword = server->arg("ssidPassword");
+      ssidPassword = api.webService->server->arg("ssidPassword");
       anyChanged = true;
     } else {
       wrongMode = true;
     }
   }
-  if (server->hasArg("wifiPowerReduction")) {
-    int val = server->arg("wifiPowerReduction").toInt();
+  if (api.webService->server->hasArg("wifiPowerReduction")) {
+    int val = api.webService->server->arg("wifiPowerReduction").toInt();
     if ((bool) val != wifiPowerReduction) {
       if (iotsaConfig.inConfigurationOrFactoryMode()) {
         wifiPowerReduction = (bool)val;
@@ -309,7 +309,7 @@ IotsaWifiMod::webHandler() {
   }
 
   message += "</body></html>";
-  server->send(200, "text/html", message);
+  api.webService->server->send(200, "text/html", message);
 #if 0
   // Reboot is no longer needed, config change handled by changing wifi on the fly
   if (anyChanged) {
@@ -372,7 +372,7 @@ bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, Json
   return anyChanged;
 }
 
-void IotsaWifiMod::serverSetup() {
+void IotsaWifiMod::lateSetup() {
   api.setup("wificonfig", true, true);
   name = "wificonfig";
 }

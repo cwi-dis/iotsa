@@ -78,16 +78,16 @@ IotsaStaticTokenMod::IotsaStaticTokenMod(IotsaApplication &_app, IotsaAuthentica
 void
 IotsaStaticTokenMod::handler() {
   if (needsAuthentication("tokens")) return;
-  String command = server->arg("command");
+  String command = app.server->arg("command");
 
   if (command == "add") {
     IotsaStaticTokenObject newToken;
-    if (newToken.formHandler_args(server, "", true)) {
+    if (newToken.formHandler_args(app.server, "", true)) {
       _addToken(newToken);
       configSave();
     }
   } else if (command == "del") {
-    int index = server->arg("index").toInt();
+    int index = app.server->arg("index").toInt();
     _delToken(index);
     configSave();
   }
@@ -111,15 +111,15 @@ IotsaStaticTokenMod::handler() {
   message += "<input type='submit' name='command' value='add'>";
   message += "</form><hr>";
 
-  server->send(200, "text/html", message);
+  app.server->send(200, "text/html", message);
 }
 
 void IotsaStaticTokenMod::setup() {
   configLoad();
 }
 
-void IotsaStaticTokenMod::serverSetup() {
-  server->on("/tokens", std::bind(&IotsaStaticTokenMod::handler, this));
+void IotsaStaticTokenMod::lateSetup() {
+  app.server->on("/tokens", std::bind(&IotsaStaticTokenMod::handler, this));
 }
 
 int IotsaStaticTokenMod::_addToken(IotsaStaticTokenObject& newToken) {
@@ -165,8 +165,8 @@ String IotsaStaticTokenMod::info() {
 #endif
 
 bool IotsaStaticTokenMod::allows(const char *right) {
-  if (server->hasHeader("Authorization")) {
-    String authHeader = server->header("Authorization");
+  if (app.server->hasHeader("Authorization")) {
+    String authHeader = app.server->header("Authorization");
     if (authHeader.startsWith("Bearer ")) {
       String token = authHeader.substring(7);
       String rightField("/");

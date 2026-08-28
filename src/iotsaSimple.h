@@ -5,6 +5,10 @@
 typedef void (*handlerfunc)();
 typedef String (*infofunc)();
 
+// A web-server-extension module -- HTTP is all this is, not one of several
+// transports for a REST/CoAP/HPS API, so it reaches the shared server via
+// app.server rather than an IotsaApiServiceWeb link (which exists to let an API
+// also have a page) -- see cwi-dis/iotsa#211.
 class IotsaSimpleMod : public IotsaBaseModule {
   public:
 	IotsaSimpleMod(IotsaApplication &_app, const char *_url, handlerfunc _hfun, infofunc _ifun=NULL)
@@ -14,7 +18,7 @@ class IotsaSimpleMod : public IotsaBaseModule {
    		ifun(_ifun)
 	{}
 	void setup() override;
-	void serverSetup() override;
+	void lateSetup() override;
 	void loop() override;
 #ifdef IOTSA_WITH_WEB
 	String info() override;

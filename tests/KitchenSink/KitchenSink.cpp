@@ -133,7 +133,7 @@ void setup(void) {
   IotsaBLEClientMod::coordinateWithServer = true;
 #endif
   application.setup();
-  application.serverSetup();
+  application.lateSetup();
 }
 
 void loop(void) {

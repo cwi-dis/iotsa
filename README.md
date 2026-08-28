@@ -282,12 +282,12 @@ IotsaWifiMod wifiMod(application);
 
 ```
 
-In your `setup()` function you call `app.setup()` and `app.serverSetup()` which will initialize the Iotsa framework:
+In your `setup()` function you call `app.setup()` and `app.lateSetup()` which will initialize the Iotsa framework:
 
 ```
 void setup(void){
   application.setup();
-  application.serverSetup();
+  application.lateSetup();
   // Add your own setup code here....
 }
 ```
@@ -343,7 +343,7 @@ class IotsaHelloMod : public IotsaMod {
 public:
   IotsaHelloMod(IotsaApplication &_app) : IotsaMod(_app) {}
   void setup();
-  void serverSetup();
+  void lateSetup();
   void loop();
   String info();
 private:
@@ -352,10 +352,10 @@ private:
 
 ```
 
-Then you implement the 5 methods, of which only `serverSetup` needs explanation: it is called when this module is added to the application, and should register the URL:
+Then you implement the 5 methods, of which only `lateSetup` needs explanation: it is called when this module is added to the application, and should register the URL:
 
 ```
-void IotsaHelloMod::serverSetup() {
+void IotsaHelloMod::lateSetup() {
   // Setup the web server hooks for this module.
   server->on("/hello", std::bind(&IotsaHelloMod::handler, this));
 }
@@ -367,11 +367,11 @@ Finally you create a single object of your new `IotsaHelloMod` type and register
 IotsaHelloMod helloMod(application);
 ```
 
-Iotsa will now take care of calling your classes `IotsaHelloMod ::setup()`, `IotsaHelloMod ::serverSetup()` and `IotsaHelloMod ::loop()` methods at the right time without you needing to add any code to the normal `setup()` and `loop()` functions. Which means that this implementation of _Hello_ can be combined with as many other modules as you want, just by adding that 1-line declaration.
+Iotsa will now take care of calling your classes `IotsaHelloMod ::setup()`, `IotsaHelloMod ::lateSetup()` and `IotsaHelloMod ::loop()` methods at the right time without you needing to add any code to the normal `setup()` and `loop()` functions. Which means that this implementation of _Hello_ can be combined with as many other modules as you want, just by adding that 1-line declaration.
 
 ### Hello World with an API
 
-If you want your server to have a programming interface (either REST to access it over HTTP/TCP or COAP to access it over UDP) you use the base class `IotsaApiMod`. You provide methods for handling _GET_, _PUT_ and _POST_ requests (only for the ones you need) and register your API endpoint in your _serverSetup_. 
+If you want your server to have a programming interface (either REST to access it over HTTP/TCP or COAP to access it over UDP) you use the base class `IotsaApiMod`. You provide methods for handling _GET_, _PUT_ and _POST_ requests (only for the ones you need) and register your API endpoint in your _lateSetup_. 
 
 [HelloIotsa](examples/HelloIotsa) has the full details (its hello module extends `IotsaApiMod` directly, combining this with the class-based structure above), but here are the _GET_ and _PUT_ methods:
 
@@ -391,10 +391,10 @@ bool IotsaHelloMod::putHandler(const char *path, const JsonVariant& request, Jso
 }
 ```
 
-And here is the modified _serverSetup_ method:
+And here is the modified _lateSetup_ method:
 
 ```
-void IotsaHelloMod::serverSetup() {
+void IotsaHelloMod::lateSetup() {
   // Setup the web server hooks for this module.
   server->on("/hello", std::bind(&IotsaHelloMod::handler, this));
   api.setup("/api/hello", true, true);
@@ -446,7 +446,7 @@ Contains a class `IotsaApiMod`, a subclass of `IotsaMod`. Subclass this to imple
 void apiSetup(const char* path, bool get=false, bool put=false, bool post=false);
 ```
 
-Call this in your `serverSetup()` method. Call multiple times if your class implements multiple endpoints.
+Call this in your `lateSetup()` method. Call multiple times if your class implements multiple endpoints.
 You should also provide the following methods to implement your `GET`, `PUT` and `POST` methods (for the ones for which you passed `true` in your `apiSetup` call):
 
 ```

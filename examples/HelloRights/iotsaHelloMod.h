@@ -14,7 +14,7 @@ class IotsaHelloMod : public IotsaModule {
 public:
   IotsaHelloMod(IotsaApplication &_app, IotsaAuthMod *_auth=NULL) : IotsaModule(_app, _auth, false) {}
   void setup() override;
-  void serverSetup() override;
+  void lateSetup() override;
   void loop() override;
   String info() override;
   using IotsaBaseModule::needsAuthentication;

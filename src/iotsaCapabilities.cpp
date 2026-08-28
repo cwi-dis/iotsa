@@ -86,18 +86,18 @@ IotsaCapabilityMod::IotsaCapabilityMod(IotsaApplication &_app, IotsaAuthenticati
 #ifdef IOTSA_WITH_WEB
 void
 IotsaCapabilityMod::webHandler() {
-  String _trustedIssuer = server->arg("trustedIssuer");
-  String _issuerKey = server->arg("issuerKey");
+  String _trustedIssuer = api.webService->server->arg("trustedIssuer");
+  String _issuerKey = api.webService->server->arg("issuerKey");
   if (_trustedIssuer != "" || _issuerKey != "") {
     if (!iotsaConfig.inConfigurationMode(true)) {
-      server->send(403, "text/plain", "403 Forbidden, not in configuration mode");
+      api.webService->server->send(403, "text/plain", "403 Forbidden, not in configuration mode");
       return;
     }
     if (needsAuthentication("capabilities")) return;
     if (_trustedIssuer != "") trustedIssuer = _trustedIssuer;
     if (_issuerKey != "") issuerKey = _issuerKey;
     configSave();
-    server->send(200, "text/plain", "ok\r\n");
+    api.webService->server->send(200, "text/plain", "ok\r\n");
     return;
   }
   String message = "<html><head><title>Capability Authority</title></head><body><h1>Capability Authority</h1>";
@@ -109,7 +109,7 @@ IotsaCapabilityMod::webHandler() {
   message += String(issuerKey.length());
   message += ".<br>New key: <input name='issuerKey'><br><input type='Submit'></form></body></html>";
 
-  server->send(200, "text/html", message);
+  api.webService->server->send(200, "text/html", message);
 }
 
 String IotsaCapabilityMod::info() {
@@ -152,7 +152,7 @@ void IotsaCapabilityMod::setup() {
   configLoad();
 }
 
-void IotsaCapabilityMod::serverSetup() {
+void IotsaCapabilityMod::lateSetup() {
   api.setup("capabilities", true, true, false);
   name = "capabilities";
 }
@@ -214,12 +214,16 @@ void IotsaCapabilityMod::loadCapabilitiesFromRequest() {
   // Check that we can load and verify capabilities
   if (trustedIssuer == "" || issuerKey == "") return;
 
-  // Load the bearer token from the request
-  if (!server->hasHeader("Authorization")) {
+  // Load the bearer token from the request. Reaches app.server directly rather than
+  // through api.webService: this is called from allows(), the transport-agnostic
+  // IotsaAuthenticationProvider interface used for every module/transport, not just
+  // this one's own web page -- a known wart pending cwi-dis/iotsa#107's context-object
+  // redesign, see cwi-dis/iotsa#211.
+  if (!app.server->hasHeader("Authorization")) {
     IFDEBUGX Serial.println("No authorization header in request");
     return;
   }
-  String authHeader = server->header("Authorization");
+  String authHeader = app.server->header("Authorization");
   if (!authHeader.startsWith("Bearer ")) {
     IFDEBUGX Serial.println("No bearer token in request");
     return;

@@ -10,36 +10,39 @@
 // IotsaWebServerMixin with this).
 //
 // Unlike the CoAP/HPS companion mods, this one can't be created lazily on first
-// use by whichever API-having module happens to construct first: IotsaBaseModule's
-// constructor reads the shared `server` pointer for *every* module, API-having or
-// not, so it has to already exist before any module (early or regular) is
-// constructed. IotsaApplication's own constructor calls ensureServiceMod() to
-// guarantee that, relying on the existing convention that the application object
-// itself is declared before any module in the sketch.
+// use by whichever module happens to need it: several categories of module reach
+// for it during their own construction (web-server-extension modules) or need it
+// to exist before any module's constructor runs. IotsaApplication's own constructor
+// calls ensureServiceMod() to guarantee that, relying on the existing convention
+// that the application object itself is declared before any module in the sketch.
 //
-// IotsaApiServiceWeb and IotsaApiServiceRest both reach the shared `server`
-// through serviceMod(app)->server, instead of each holding their own copy --
-// see cwi-dis/iotsa#211, which this only partially addresses: IotsaBaseModule's
-// own per-module `server` field is deliberately left in place for now (still
-// re-sourced from here rather than from IotsaApplication), full removal is
-// #211's own, larger pass.
+// IotsaBaseModule has no `server` field of its own (see cwi-dis/iotsa#211) --
+// this is the one, single owner. Callers reach it as follows:
+//  - API-having modules' webHandler() bodies (get/put/postHandler + webHandler())
+//    go through their own IotsaApiServiceWeb link, e.g. `api.webService->server`.
+//  - Everyone else -- web-server-extension modules that are HTTP by nature rather
+//    than multi-transport API providers (IotsaFilesUploadMod, IotsaFilesBackupMod,
+//    IotsaFilesMod, IotsaLoggerMod, IotsaSimpleMod), a module's own registrations
+//    that fall outside its page (IotsaConfigMod's cert upload, cwi-dis/iotsa#221),
+//    the three auth-provider modules (IotsaUserMod/IotsaMultiUserMod/
+//    IotsaCapabilityMod, a known wart pending cwi-dis/iotsa#107's context-object
+//    redesign), and app-level sketch code -- reads IotsaApplication::server, which
+//    is populated from this same object once in IotsaApplication's constructor.
+//  - IotsaApiServiceRest/Web themselves reach it via serviceMod(app)->server.
 //
 class IotsaHttpServiceMod : public IotsaBaseModule {
 public:
   IotsaHttpServiceMod(IotsaApplication &_app);
   void setup() override;
-  void serverSetup() override;
+  void lateSetup() override;
   void loop() override;
   static void ensureServiceMod(IotsaApplication &app);
   static IotsaHttpServiceMod *serviceMod(IotsaApplication &app);
-  // The actual IotsaWebServer instance lives in the inherited IotsaBaseModule::server
-  // field -- reused rather than duplicated, since every module (this one included)
-  // already has that field. IotsaHttpServiceMod is the one module that assigns it
-  // (in its own constructor) instead of just reading a copy of it. Re-exposed as
-  // public here (it's protected on IotsaBaseModule) since IotsaApiServiceWeb/Rest,
-  // unrelated classes, need to read it.
+  // The actual IotsaWebServer instance. IotsaBaseModule no longer has a `server`
+  // field of its own (see cwi-dis/iotsa#211) -- this is the one, single owner; see
+  // the comment above for how the rest of the code reaches it.
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
-  using IotsaBaseModule::server;
+  IotsaWebServer *server = nullptr;
   bool serverInitialized = false;
 #endif
 private:

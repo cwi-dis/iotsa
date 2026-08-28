@@ -95,32 +95,32 @@ IotsaMultiUserMod::IotsaMultiUserMod(IotsaApplication &_app)
 #ifdef IOTSA_WITH_WEB
 void
 IotsaMultiUserMod::webHandler() {
-  String command = server->arg("command");
+  String command = api.webService->server->arg("command");
 
   if (command == "add") {
     if (needsAuthentication("users")) return;
     IotsaUser newUser;
-    if (newUser.formHandler_args(server, "", true)) {
+    if (newUser.formHandler_args(api.webService->server, "", true)) {
       _addUser(newUser);
     }
   } else if (command == "change") {
     if (needsAuthentication("users")) return;
-    String username = server->arg("username");
+    String username = api.webService->server->arg("username");
     bool ok = false;
     for (auto u: users) {
       if (u.username == username) {
-        if (u.formHandler_args(server, "", true)) {
+        if (u.formHandler_args(api.webService->server, "", true)) {
           ok = true;
           configSave();
         }
       }
     }
     if (!ok) {
-      server->send(404, "text/plain", "No such user\r\n");
+      api.webService->server->send(404, "text/plain", "No such user\r\n");
       return;
     }
   } else if (command != "") {
-    server->send(400, "text/plain", "Unknown command");
+    api.webService->server->send(400, "text/plain", "Unknown command");
     return;
   }
     
@@ -142,7 +142,7 @@ IotsaMultiUserMod::webHandler() {
   message += "<input type='submit' value='Add'>";
   message += "</form><hr>";
 
-  server->send(200, "text/html", message);
+  api.webService->server->send(200, "text/html", message);
 
 }
 
@@ -229,7 +229,7 @@ void IotsaMultiUserMod::setup() {
   configLoad();
 }
 
-void IotsaMultiUserMod::serverSetup() {
+void IotsaMultiUserMod::lateSetup() {
   api.setup("users", true, false, true);
   name = "users";
   int idx = 0;
@@ -268,9 +268,13 @@ bool IotsaMultiUserMod::allows(const char *right) {
   // No users means everything is allowed.
   if (users.empty()) return true;
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
+  // Reaches app.server directly rather than through api.webService: allows() is the
+  // transport-agnostic IotsaAuthenticationProvider interface, called for every
+  // module/transport, not just this one's own web page -- a known wart pending
+  // cwi-dis/iotsa#107's context-object redesign, see cwi-dis/iotsa#211.
   // Otherwise we loop over all users until we find one that matches.
   for(auto u: users) {
-    if (server->authenticate(u.username.c_str(), u.password.c_str())) {
+    if (app.server->authenticate(u.username.c_str(), u.password.c_str())) {
       // NULL or empty rights field means: only existence is required.
       if (right == NULL || *right == '\0') return true;
       String rightField("/");
@@ -282,7 +286,7 @@ bool IotsaMultiUserMod::allows(const char *right) {
       break;
     }
   }
-  server->requestAuthentication();
+  app.server->requestAuthentication();
   IotsaSerial.print("Return 401 Unauthorized for right=");
   IotsaSerial.println(right);
 

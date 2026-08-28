@@ -3,7 +3,7 @@
 void IotsaStaticAuthMod::setup() {
 }
 
-void IotsaStaticAuthMod::serverSetup() {
+void IotsaStaticAuthMod::lateSetup() {
 }
 
 void IotsaStaticAuthMod::loop() {
@@ -14,8 +14,8 @@ String IotsaStaticAuthMod::info() {
 }
 
 bool IotsaStaticAuthMod::allows(const char *right) {
-  if (!server->authenticate("admin", "admin")) {
-    server->requestAuthentication();
+  if (!app.server->authenticate("admin", "admin")) {
+    app.server->requestAuthentication();
     return false;
   }
   return true;

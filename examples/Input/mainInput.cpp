@@ -38,7 +38,7 @@ IotsaInputMod inputMod(application, inputs, sizeof(inputs)/sizeof(inputs[0]));
 
 void setup(void){
   application.setup();
-  application.serverSetup();
+  application.lateSetup();
 }
 
 int oldButtonValue = -1;

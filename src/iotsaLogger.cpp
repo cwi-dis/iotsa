@@ -56,18 +56,18 @@ void
 IotsaLoggerMod::handler() {
   if (needsAuthentication("logger")) return;
 #ifdef CONTENT_LENGTH_UNKNOWN
-  server->setContentLength(CONTENT_LENGTH_UNKNOWN);
+  app.server->setContentLength(CONTENT_LENGTH_UNKNOWN);
 #endif
-  server->send(200, "text/plain");
+  app.server->send(200, "text/plain");
   String msg;
   msg = "log generation="+String(logBuffer->generation)+", inp="+String(logBuffer->inp)+", outp="+String(logBuffer->outp)+"\n\n";
-  server->sendContent(msg);
+  app.server->sendContent(msg);
   if (logBuffer->inp == logBuffer->outp) return;
   if (logBuffer->inp > logBuffer->outp) {
-    server->sendContent_P((char *)logBuffer->buffer+logBuffer->outp, logBuffer->inp-logBuffer->outp);
+    app.server->sendContent_P((char *)logBuffer->buffer+logBuffer->outp, logBuffer->inp-logBuffer->outp);
   } else {
-    server->sendContent_P((char *)logBuffer->buffer+logBuffer->outp, IOTSA_LOGGER_BUFFER_SIZE-logBuffer->outp);
-    if (logBuffer->inp) server->sendContent_P((char *)logBuffer->buffer, logBuffer->inp); 
+    app.server->sendContent_P((char *)logBuffer->buffer+logBuffer->outp, IOTSA_LOGGER_BUFFER_SIZE-logBuffer->outp);
+    if (logBuffer->inp) app.server->sendContent_P((char *)logBuffer->buffer, logBuffer->inp); 
   }
 }
 
@@ -75,8 +75,8 @@ void IotsaLoggerMod::setup() {
   configLoad();
 }
 
-void IotsaLoggerMod::serverSetup() {
-  server->on("/logger", std::bind(&IotsaLoggerMod::handler, this));
+void IotsaLoggerMod::lateSetup() {
+  app.server->on("/logger", std::bind(&IotsaLoggerMod::handler, this));
   name = "logger";
 }
 

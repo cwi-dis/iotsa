@@ -65,7 +65,7 @@ void setup(void){
 #endif
 #endif
   application.setup();
-  application.serverSetup();
+  application.lateSetup();
 }
 
 // Standard loop() routine, hands off most work to the application framework

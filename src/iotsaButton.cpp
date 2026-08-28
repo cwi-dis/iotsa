@@ -62,14 +62,14 @@ void IotsaButtonMod::setup() {
 void IotsaButtonMod::webHandler() {
   bool any = false;
   // xxxjack do this different with args like button2.on, etc
-  for (uint8_t i=0; i<server->args(); i++){
+  for (uint8_t i=0; i<api.webService->server->args(); i++){
     for (int j=0; j<nButton; j++) {
-      if (buttons[j].req.formHandler_args(server, "button" + String(j+1), true)) {
+      if (buttons[j].req.formHandler_args(api.webService->server, "button" + String(j+1), true)) {
           any = true;
       }
       String wtdName = "button" + String(j+1) + "on";
-      if (server->hasArg(wtdName)) {
-        String arg = server->arg(wtdName);
+      if (api.webService->server->hasArg(wtdName)) {
+        String arg = api.webService->server->arg(wtdName);
         if (arg == "press") {
           buttons[j].sendOnPress = true;
           buttons[j].sendOnRelease = false;
@@ -116,7 +116,7 @@ void IotsaButtonMod::webHandler() {
     message += "> Never<br>\n";
   }
   message += "<input type='submit'></form></body></html>";
-  server->send(200, "text/html", message);
+  api.webService->server->send(200, "text/html", message);
 }
 
 String IotsaButtonMod::info() {
@@ -220,7 +220,7 @@ bool IotsaButtonMod::putHandler(const char *path, const JsonVariant& request, Js
   return anyChanged;
 }
 
-void IotsaButtonMod::serverSetup() {
+void IotsaButtonMod::lateSetup() {
   api.setup("buttons", true, true);
   for(int i=0; i<nButton; i++) {
       String p = "buttons/" + String(i);

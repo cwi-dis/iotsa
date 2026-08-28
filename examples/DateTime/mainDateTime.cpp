@@ -36,7 +36,7 @@ IotsaOtaMod otaMod(application, authProvider);
 
 void setup(void){
   application.setup();
-  application.serverSetup();
+  application.lateSetup();
 }
  
 void loop(void){

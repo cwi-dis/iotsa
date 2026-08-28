@@ -20,12 +20,12 @@ IotsaTemperatureMod::handler() {
   message += ",\"humidity\":";
   message += String(humidity);
   message += "}\n";
-  server->send(200, "application/json", message);
+  app.server->send(200, "application/json", message);
 }
 
-void IotsaTemperatureMod::serverSetup() {
+void IotsaTemperatureMod::lateSetup() {
   // Setup the web server hooks for this module.
-  server->on("/temperature", std::bind(&IotsaTemperatureMod::handler, this));
+  app.server->on("/temperature", std::bind(&IotsaTemperatureMod::handler, this));
 }
 
 String IotsaTemperatureMod::info() {

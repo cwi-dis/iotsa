@@ -18,7 +18,7 @@ public:
   IotsaBatteryMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL) : IotsaModule(_app, _auth, true) {}
 
   void setup() override;
-  void serverSetup() override;
+  void lateSetup() override;
   void loop() override;
 #ifdef IOTSA_WITH_WEB
   String info() override;

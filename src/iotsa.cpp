@@ -14,21 +14,6 @@
 // Will be overridden if the iotsaLogger module is included.
 Print *iotsaOverrideSerial = &Serial;
 
-IotsaBaseModule::IotsaBaseModule(IotsaApplication &_app, IotsaAuthenticationProvider *_auth, bool early)
-: app(_app),
-#ifdef IOTSA_WITH_HTTP_OR_HTTPS
-  server(IotsaHttpServiceMod::serviceMod(_app) ? IotsaHttpServiceMod::serviceMod(_app)->server : nullptr),
-#endif
-  auth(_auth),
-  nextModule(NULL)
-{
-  if (early) {
-    app.addModEarly(this);
-  } else {
-    app.addMod(this);
-  }
-}
-
 IotsaApplication::IotsaApplication(const char *_title)
 : status(NULL),
   firstModule(NULL),
@@ -36,11 +21,12 @@ IotsaApplication::IotsaApplication(const char *_title)
   title(_title),
   haveOTA(false)
 {
-  // The HTTP transport has to exist before any module (early or regular) is
-  // constructed, since IotsaBaseModule's own constructor (above) reads the shared
-  // `server` pointer unconditionally -- see iotsaHttpServer.h. This relies on the
-  // existing convention that IotsaApplication itself is declared before any module
-  // in the sketch.
+  // Unlike the CoAP/HPS companion mods, the HTTP transport can't be created lazily
+  // on first use by whichever module happens to need it -- several categories of
+  // module (web-server-extension modules, IotsaApiServiceWeb/Rest) reach for it
+  // during their own construction, see cwi-dis/iotsa#207/#211. Ensuring it here
+  // relies on the existing convention that IotsaApplication itself is declared
+  // before any module in the sketch.
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
   IotsaHttpServiceMod::ensureServiceMod(*this);
   server = IotsaHttpServiceMod::serviceMod(*this)->server;
@@ -117,16 +103,16 @@ IotsaApplication::setup() {
 }
 
 void
-IotsaApplication::serverSetup() {
+IotsaApplication::lateSetup() {
   // xxxjack this is wrong: if (!iotsaConfig.wifiEnabled) return;
   IotsaBaseModule *m;
 
   for (m=firstEarlyModule; m; m=m->nextModule) {
-  	m->serverSetup();
+  	m->lateSetup();
   }
 
   for (m=firstModule; m; m=m->nextModule) {
-  	m->serverSetup();
+  	m->lateSetup();
   }
 
   for (m=firstEarlyModule; m; m=m->nextModule) {
@@ -220,6 +206,6 @@ bool IotsaBaseModule::needsAuthentication(const char *right) {
   return auth ? !auth->allows(right) : false; 
 }
 
-void IotsaBaseModule::serverSetup() {
+void IotsaBaseModule::lateSetup() {
   // setup method that does nothing, usually overridden for IotsaBaseModule modules
 }

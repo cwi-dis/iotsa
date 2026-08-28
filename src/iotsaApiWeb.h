@@ -26,9 +26,12 @@ public:
     server(IotsaHttpServiceMod::serviceMod(_app)->server)
   {}
   void setup(const char* path, bool get=false, bool put=false, bool post=false) override;
+  // Public so API-having modules can reach the shared HTTP server through their own
+  // `api.webService` link (e.g. `api.webService->server`) instead of holding a
+  // `server` field of their own -- see cwi-dis/iotsa#211.
+  IotsaWebServer* server;
 private:
   IotsaApiProvider* provider;
-  IotsaWebServer* server;
   void _webHandlerWrapper();
 };
 #endif // IOTSA_WITH_WEB

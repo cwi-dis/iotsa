@@ -49,7 +49,7 @@ void IotsaLedMod::loop() {
   //IotsaSerial.println("led return");
 }
 
-void IotsaLedMod::serverSetup() {
+void IotsaLedMod::lateSetup() {
 	name = "led";
 }
 

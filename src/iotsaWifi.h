@@ -9,7 +9,7 @@ class IotsaWifiMod : public IotsaModule {
 public:
   IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL);
 	void setup() override;
-	void serverSetup() override;
+	void lateSetup() override;
 	void loop() override;
 #ifdef IOTSA_WITH_WEB
   String info() override;
@@ -43,7 +43,7 @@ class IotsaWifiMod : public IotsaBaseModule {
 public:
   using IotsaBaseModule::IotsaBaseModule;
   void setup() override {}
-  void serverSetup() override {}
+  void lateSetup() override {}
   void loop() override {}
   String info() override {return "";}
 };

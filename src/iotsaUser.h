@@ -7,7 +7,7 @@ class IotsaUserMod : public IotsaAuthMod {
 public:
   IotsaUserMod(IotsaApplication &_app, const char *_username="admin", const char *_password="");
   void setup() override;
-  void serverSetup() override;
+  void lateSetup() override;
   void loop() override;
 #ifdef IOTSA_WITH_WEB
   String info() override;

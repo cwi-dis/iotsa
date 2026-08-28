@@ -70,9 +70,9 @@ IotsaFilesBackupMod::handler() {
   if (needsAuthentication("backupfiles")) return;
   IFDEBUG IotsaSerial.println("Creating backup");
 #ifdef CONTENT_LENGTH_UNKNOWN
-  server->setContentLength(CONTENT_LENGTH_UNKNOWN);
+  app.server->setContentLength(CONTENT_LENGTH_UNKNOWN);
 #endif
-  server->send(200, "application/x-tar");
+  app.server->send(200, "application/x-tar");
   std::vector<String> fileNames;
   addFilenames(fileNames, "/");
   for(std::vector<String>::iterator it=fileNames.begin(); it != fileNames.end(); it++) {
@@ -106,24 +106,24 @@ IotsaFilesBackupMod::handler() {
   	memset(tarHeader->pad, '\0', 255);
   	checksum(tarHeader);
   	
-  	server->sendContent_P(buf, 512);
+  	app.server->sendContent_P(buf, 512);
   	// Write data
   	while (fileSize > 0) {
 	  	int curLen = fp.read((uint8_t *)buf, 512);
-	  	server->sendContent_P(buf, curLen);
+	  	app.server->sendContent_P(buf, curLen);
 	  	fileSize -= curLen;
 	}
 	fp.close();
   	// Write padding
   	if (filePadding) {
 	  	memset(buf, '\0', filePadding);
-  		server->sendContent_P(buf, filePadding);
+  		app.server->sendContent_P(buf, filePadding);
 	}
   }
 }
 
-void IotsaFilesBackupMod::serverSetup() {
-  server->on("/backup.tar", std::bind(&IotsaFilesBackupMod::handler, this));
+void IotsaFilesBackupMod::lateSetup() {
+  app.server->on("/backup.tar", std::bind(&IotsaFilesBackupMod::handler, this));
   name = "filesbackup";
 }
 

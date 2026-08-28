@@ -20,8 +20,8 @@ IotsaUserMod::webHandler() {
   bool newPasswordsMatch = false;
   String newUsername;
   
-  if( server->hasArg("username")) {
-    newUsername = server->arg("username");
+  if( api.webService->server->hasArg("username")) {
+    newUsername = api.webService->server->arg("username");
     if (newUsername == username) {
       // No change, really.
       newUsername = "";
@@ -31,11 +31,11 @@ IotsaUserMod::webHandler() {
       anyChanged = true;
     }
   }
-  if( server->hasArg("password")) {
+  if( api.webService->server->hasArg("password")) {
     // password authentication is checked later.
-    String pw1 = server->arg("password");
-    String pw2 = server->arg("again");
-    String old = server->arg("old");
+    String pw1 = api.webService->server->arg("password");
+    String pw2 = api.webService->server->arg("again");
+    String old = api.webService->server->arg("old");
     oldPasswordCorrect = (old == password);
     newPasswordsMatch = (pw1 == pw2);
     if (oldPasswordCorrect && newPasswordsMatch) {
@@ -73,7 +73,7 @@ IotsaUserMod::webHandler() {
   message += "'><br>Repeat New Password: <input type='password' name='again' value='";
   message += "";
   message += "'><br><input type='submit'></form>";
-  server->send(200, "text/html", message);
+  api.webService->server->send(200, "text/html", message);
 }
 
 String IotsaUserMod::info() {
@@ -131,7 +131,7 @@ void IotsaUserMod::setup() {
   configLoad();
 }
 
-void IotsaUserMod::serverSetup() {
+void IotsaUserMod::lateSetup() {
   api.setup("users", true, false, true);
   api.setup("users/0", true, true, false);
   name = "users";
@@ -165,10 +165,14 @@ bool IotsaUserMod::allows(const char *right) {
   if (password == "" || username == "")
     return true;
 #ifdef IOTSA_WITH_HTTP_OR_HTTPS
-  if (server->authenticate(username.c_str(), password.c_str())) {
+  // Reaches app.server directly rather than through api.webService: allows() is the
+  // transport-agnostic IotsaAuthenticationProvider interface, called for every
+  // module/transport, not just this one's own web page -- a known wart pending
+  // cwi-dis/iotsa#107's context-object redesign, see cwi-dis/iotsa#211.
+  if (app.server->authenticate(username.c_str(), password.c_str())) {
     return true;
   }
-  server->requestAuthentication();
+  app.server->requestAuthentication();
 #endif
   return false;
 }

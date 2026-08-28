@@ -57,7 +57,7 @@ IotsaFilesMod::listHandler() {
   String message = "<html><head><title>Files</title></head><body><h1>Files</h1>";
   _listDir(message, "/data");
   message += "</body></html>";
-  server->send(200, "text/html", message);
+  app.server->send(200, "text/html", message);
 }
 
 bool
@@ -69,7 +69,7 @@ IotsaFilesMod::accessAllowed(String& path)
 void
 IotsaFilesMod::notFoundHandler() {
   String message = "File Not Found\n\n";
-  String path = server->uri();
+  String path = app.server->uri();
   File dataFile;
   if (!accessAllowed(path)) {
   	// Path doesn't refer to a file that may be accessed
@@ -98,7 +98,7 @@ IotsaFilesMod::notFoundHandler() {
 		else if(path.endsWith(".pdf")) dataType = "application/pdf";
 		else if(path.endsWith(".zip")) dataType = "application/zip";
 		else if(path.endsWith(".bin")) dataType = "application/octet-stream";
-		server->streamFile(dataFile, dataType);
+		app.server->streamFile(dataFile, dataType);
 		dataFile.close();
 		return;
 	} else {
@@ -110,19 +110,19 @@ IotsaFilesMod::notFoundHandler() {
   message += "URI: ";
   message += path;
   message += "\nMethod: ";
-  message += (server->method() == HTTP_GET)?"GET":"POST";
+  message += (app.server->method() == HTTP_GET)?"GET":"POST";
   message += "\nArguments: ";
-  message += server->args();
+  message += app.server->args();
   message += "\n";
-  for (uint8_t i=0; i<server->args(); i++){
-    message += " " + server->argName(i) + ": " + server->arg(i) + "\n";
+  for (uint8_t i=0; i<app.server->args(); i++){
+    message += " " + app.server->argName(i) + ": " + app.server->arg(i) + "\n";
   }
-  server->send(404, "text/plain", message);
+  app.server->send(404, "text/plain", message);
 }
 
-void IotsaFilesMod::serverSetup() {
-  server->on("/data", std::bind(&IotsaFilesMod::listHandler, this));
-  server->onNotFound(std::bind(&IotsaFilesMod::notFoundHandler, this));
+void IotsaFilesMod::lateSetup() {
+  app.server->on("/data", std::bind(&IotsaFilesMod::listHandler, this));
+  app.server->onNotFound(std::bind(&IotsaFilesMod::notFoundHandler, this));
   name = "files";
 }
 

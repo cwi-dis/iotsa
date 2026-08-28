@@ -34,7 +34,7 @@ IotsaHelloMod helloMod(application, &myAuthenticator); // Our hello module (auth
 // Standard setup() method, hands off everything to the application framework
 void setup(void){
   application.setup();
-  application.serverSetup();
+  application.lateSetup();
 }
 
 // Standard loop() routine, hands off everything to the application framework

@@ -38,12 +38,12 @@ IotsaLightMod::handler() {
   message += ",\"lightLevel\":";
   message += String(lightLevel);
   message += "}\n";
-  server->send(200, "application/json", message);
+  app.server->send(200, "application/json", message);
 }
 
-void IotsaLightMod::serverSetup() {
+void IotsaLightMod::lateSetup() {
   // Setup the web server hooks for this module.
-  server->on("/light", std::bind(&IotsaLightMod::handler, this));
+  app.server->on("/light", std::bind(&IotsaLightMod::handler, this));
 }
 
 String IotsaLightMod::info() {

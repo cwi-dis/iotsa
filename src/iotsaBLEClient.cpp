@@ -58,7 +58,7 @@ void IotsaBLEClientMod::setupScanner() {
 void
 IotsaBLEClientMod::webHandler() {
   bool anyChanged = false;
-  anyChanged |= formHandler_args(server, "", true);
+  anyChanged |= formHandler_args(api.webService->server, "", true);
   if (anyChanged) configSave();
   String message = "<html><head><title>BLE Devices</title></head><body><h1>BLE Devices</h1>";
 
@@ -66,7 +66,7 @@ IotsaBLEClientMod::webHandler() {
 
   message += "<form method='post'><input type='submit' name='refresh' value='Refresh'></form>";
   message += "</body></html>";
-  server->send(200, "text/html", message);
+  api.webService->server->send(200, "text/html", message);
 }
 
 void IotsaBLEClientMod::formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) {
@@ -321,7 +321,7 @@ void IotsaBLEClientMod::onScanEnd(const NimBLEScanResults& scanResults, int reas
     scanHasEnded = true;
 }
 
-void IotsaBLEClientMod::serverSetup() {
+void IotsaBLEClientMod::lateSetup() {
   api.setup("bleclient", true, true, false);
   name = "bleclient";
 }

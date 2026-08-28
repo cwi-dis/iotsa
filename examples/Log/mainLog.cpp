@@ -69,7 +69,7 @@ IotsaSimpleMod helloMod(application, "/hello", helloHandler, helloInfo);
 void setup(void){
   application.setup();
   IotsaSerial.println("Logging Hello: setup called");
-  application.serverSetup();
+  application.lateSetup();
   // Add your setup code here.
   IotsaSerial.println("Logging Hello: setup returning");
 }

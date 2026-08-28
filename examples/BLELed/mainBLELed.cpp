@@ -70,7 +70,7 @@ void setup(void){
   batteryMod.allowBLEConfigModeSwitch();
 #endif
   application.setup();
-  application.serverSetup();
+  application.lateSetup();
 }
 
 // Standard loop() routine, hands off most work to the application framework

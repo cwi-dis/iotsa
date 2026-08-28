@@ -17,7 +17,7 @@ public:
   maxLight(0)
   {}
   void setup() override;
-  void serverSetup() override;
+  void lateSetup() override;
   void loop() override;
   String info() override;
 private:

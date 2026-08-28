@@ -28,8 +28,8 @@ IotsaLedControlMod::webHandler() {
   // optionally stores a new name to greet the next time.
   bool anyChanged = false;
   uint32_t _rgb = 0xffffff;
-  if( server->hasArg("rgb")) {
-    _rgb = strtol(server->arg("rgb").c_str(), 0, 16);
+  if( api.webService->server->hasArg("rgb")) {
+    _rgb = strtol(api.webService->server->arg("rgb").c_str(), 0, 16);
     anyChanged = true;
   }
   if (anyChanged) set(_rgb, 1000, 0, 0x7fff);
@@ -38,7 +38,7 @@ IotsaLedControlMod::webHandler() {
   message += "<form method='get'>";
   message += "Color (hex rrggbb): <input type='text' name='rgb' value='" + String(rgb, HEX) + "'><br>";
   message += "<input type='submit'></form></body></html>";
-  server->send(200, "text/html", message);
+  api.webService->server->send(200, "text/html", message);
 }
 
 String IotsaLedControlMod::info() {
@@ -68,7 +68,7 @@ bool IotsaLedControlMod::putHandler(const char *path, const JsonVariant& request
 }
 #endif // IOTSA_WITH_API
 
-void IotsaLedControlMod::serverSetup() {
+void IotsaLedControlMod::lateSetup() {
   name = "led";
   // Setup the web server hooks for this module.
 #ifdef IOTSA_WITH_API

@@ -8,11 +8,11 @@ void IotsaAlarmMod::setup() {
 void IotsaAlarmMod::webHandler() {
 
   String msg;
-  for (uint8_t i=0; i<server->args(); i++){
-    if (server->argName(i) == "alarm") {
-      const char *arg = server->arg(i).c_str();
+  for (uint8_t i=0; i<api.webService->server->args(); i++){
+    if (api.webService->server->argName(i) == "alarm") {
+      const char *arg = api.webService->server->arg(i).c_str();
       if (arg && *arg) {
-        int dur = atoi(server->arg(i).c_str());
+        int dur = atoi(api.webService->server->arg(i).c_str());
         if (dur) {
           alarmEndTime = millis() + dur*100;
           IotsaSerial.println("alarm on");
@@ -27,7 +27,7 @@ void IotsaAlarmMod::webHandler() {
   message += "<form method='get'>";
   message += "Alarm: <input name='alarm' value=''> (times 0.1 second)<br>\n";
   message += "<input type='submit'></form></body></html>";
-  server->send(200, "text/html", message);
+  api.webService->server->send(200, "text/html", message);
 
 }
 
@@ -65,7 +65,7 @@ bool IotsaAlarmMod::putHandler(const char *path, const JsonVariant& request, Jso
   return true;
 }
 
-void IotsaAlarmMod::serverSetup() {
+void IotsaAlarmMod::lateSetup() {
   // Setup the web server hooks for this module.
   api.setup("alarm", true, true);
   name = "alarm";

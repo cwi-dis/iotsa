@@ -9,17 +9,17 @@ void
 IotsaHelloMod::webHandler() {
   // Handles the page that is specific to the Hello module, greets the user and
   // optionally stores a new name to greet the next time.
-  if (server->hasArg("greeting")) {
+  if (api.webService->server->hasArg("greeting")) {
     if (needsAuthentication("hello")) {
       return;
     }
-    greeting = server->arg("greeting");
+    greeting = api.webService->server->arg("greeting");
   }
   String message = "<html><head><title>Hello Server</title></head><body><h1>Hello Server</h1>";
   message += "<form method='get'>Greeting: <input name='greeting' value='";
   message += htmlEncode(greeting);
   message += "'></form></body></html>";
-  server->send(200, "text/html", message);
+  api.webService->server->send(200, "text/html", message);
 }
 
 bool IotsaHelloMod::getHandler(const char *path, JsonObject& reply) {
@@ -36,7 +36,7 @@ bool IotsaHelloMod::putHandler(const char *path, const JsonVariant& request, Jso
   return false;
 }
 
-void IotsaHelloMod::serverSetup() {
+void IotsaHelloMod::lateSetup() {
   // Setup the web server hooks for this module.
   api.setup("hello", true, true);
   name = "hello";
