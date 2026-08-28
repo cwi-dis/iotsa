@@ -23,17 +23,4 @@ private:
   void _putHandlerWrapper(const char *path);
   void _postHandlerWrapper(const char *path);
 };
-
-class IotsaRestApiMod : public IotsaBaseModule {
-public:
-  IotsaRestApiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
-  : IotsaBaseModule(_app, _auth, early),
-    api(this, _app, _auth)
-  {}
-  virtual bool getHandler(const char *path, JsonObject& reply) override { return false; }
-  virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
-  virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
-protected:
-  IotsaApiServiceRest api;
-};
 #endif

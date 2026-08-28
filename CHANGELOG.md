@@ -34,6 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The HTTP(S) web server is now a peer service module (`IotsaHttpServiceMod`) instead of infrastructure privileged via `IotsaApplication` inheritance, the same tier as the CoAP/HPS companion mods; `IotsaApiServiceWeb`/`IotsaApiServiceRest` now share one server instance through it instead of each holding their own copy (#207)
 - Renamed `serverSetup()`→`lateSetup()` across the framework, and removed `IotsaBaseModule`'s per-module `server` field -- API-having modules reach the shared server through their own `IotsaApiServiceWeb` link, everyone else through `IotsaApplication::server` (#211). **Breaking**: any app module overriding `serverSetup()` needs renaming to `lateSetup()`; a module reading `this->server` directly needs updating to one of the above.
 
+### Removed
+
+- `IotsaRestApiMod`/`IotsaCoapApiMod`, unused example/template classes (every handler a no-op `return false`) never instantiated anywhere in iotsa or any sibling repo -- the underlying `IotsaApiServiceRest`/`IotsaApiServiceCoap` they wrapped are still exercised by every real `IotsaModule`-derived module, so nothing loses coverage (#222)
+
 ## [2.9.2] - 2026-08-22
 
 ### Added
