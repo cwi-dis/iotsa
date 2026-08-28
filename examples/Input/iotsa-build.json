@@ -1,14 +1,14 @@
 {
   "variants": [
     {
-      "board": "iotsa_v4",
+      "board": "vanilla_esp8266",
       "ci": {
         "platformio": true,
         "arduino": true
       }
     },
     {
-      "board": "esp32thing",
+      "board": "vanilla_esp32",
       "ci": {
         "platformio": true,
         "arduino": true
@@ -16,7 +16,7 @@
       "partitions": "min_spiffs.csv"
     },
     {
-      "board": "esp32c3devkit",
+      "board": "vanilla_esp32c3",
       "ci": {
         "platformio": true,
         "arduino": false
@@ -24,7 +24,7 @@
       "partitions": "min_spiffs.csv"
     },
     {
-      "board": "esp32s3supermini",
+      "board": "vanilla_esp32s3",
       "ci": {
         "platformio": true,
         "arduino": true

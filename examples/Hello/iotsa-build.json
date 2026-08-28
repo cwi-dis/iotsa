@@ -1,14 +1,14 @@
 {
   "variants": [
     {
-      "board": "iotsa_v4",
+      "board": "vanilla_esp8266",
       "ci": {
         "platformio": false,
         "arduino": true
       }
     },
     {
-      "board": "esp32thing",
+      "board": "vanilla_esp32",
       "ci": {
         "platformio": false,
         "arduino": true

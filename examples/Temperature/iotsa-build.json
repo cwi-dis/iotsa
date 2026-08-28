@@ -11,10 +11,10 @@
   },
   "variants": [
     {
-      "board": "iotsa_v4"
+      "board": "vanilla_esp8266"
     },
     {
-      "board": "esp32thing",
+      "board": "vanilla_esp32",
       "partitions": "min_spiffs.csv"
     }
   ]
