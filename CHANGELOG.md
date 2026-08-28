@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - BLE advertising could start before every module had registered its characteristics; CoAP/HPS companion modules depended on construction order to exist at all (#113)
 - `IOTSA_WITHOUT_API` combined with auth (`IotsaUserMod`/`IotsaMultiUserMod`/`IotsaCapabilityMod`) failed to build (#206)
 - `api.setup()` no longer registers a redundant, byte-identical web page per collection item (`IotsaButtonMod`/`IotsaMultiUserMod`/`IotsaUserMod`'s `name/N` sub-paths) (#217)
+- `IOTSA_HAS_COAPSERVER` now actually respects `IOTSA_WITHOUT_API` (the guard was dead code); `IOTSA_HAS_HPSSERVER` now also requires `IOTSA_WITH_API`, matching what its own comment always claimed (#205)
 
 ### Changed
 
@@ -28,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `IotsaBLEClientMod`'s `DEBUG_PRINT_ALL_CLIENTS` debug flag renamed to `IOTSA_DEBUG_BLE_PRINT_ALL_CLIENTS` -- a core-framework flag with no `IOTSA_` namespacing, real collision risk (#205)
 - `NEOPIXEL_PIN`/`PIN_VBAT`/`PIN_VUSB`/`PIN_DISABLESLEEP` (shared across `Led`/`BLELed`/`Button`/`KitchenSink`) renamed to `IOTSA_PIN_NEOPIXEL`/`IOTSA_PIN_VBAT`/`IOTSA_PIN_VUSB`/`IOTSA_PIN_DISABLESLEEP`; `WITHOUT_VOLTAGE` removed in favor of gating `IOTSA_PIN_VBAT`/`IOTSA_PIN_VUSB` directly on `CONFIG_IDF_TARGET_ESP32C3`/`ESP32S3` (#205)
 - Removed `IOTSA_WEBSERVER` (a debug-only string identifying which underlying WebServer implementation got selected -- useful during past implementation migrations, not since) and `IOTSA_WITH_SETRSACERT` (inlined at its one use site as the `!ESP32 && IOTSA_WITH_HTTPS` condition it was already equivalent to) (#205)
+- `iotsaBuildOptions.h` restructured into 6 explicit stages (plain-value defaults, default-on `WITH`, default-off `WITH` listed, sanity checks on raw input, derived `HAS_` values, sanity checks on derived values) instead of one undifferentiated pile (#205)
 - The HTTP(S) web server is now a peer service module (`IotsaHttpServiceMod`) instead of infrastructure privileged via `IotsaApplication` inheritance, the same tier as the CoAP/HPS companion mods; `IotsaApiServiceWeb`/`IotsaApiServiceRest` now share one server instance through it instead of each holding their own copy (#207)
 - Renamed `serverSetup()`→`lateSetup()` across the framework, and removed `IotsaBaseModule`'s per-module `server` field -- API-having modules reach the shared server through their own `IotsaApiServiceWeb` link, everyone else through `IotsaApplication::server` (#211). **Breaking**: any app module overriding `serverSetup()` needs renaming to `lateSetup()`; a module reading `this->server` directly needs updating to one of the above.
 
