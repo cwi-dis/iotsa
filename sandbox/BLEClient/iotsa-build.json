@@ -31,6 +31,27 @@
         "-DIOTSA_DEBUG_BLE_PRINT_ALL_CLIENTS",
         "-DCONFIG_NIMBLE_CPP_ENABLE_RETURN_CODE_TEXT"
       ]
+    },
+    {
+      "board": "esp32thing",
+      "label": "withble",
+      "ci": {
+        "platformio": true,
+        "arduino": true
+      }
+    },
+    {
+      "board": "esp32c3devkit",
+      "label": "withble"
+    },
+    {
+      "board": "lolin32",
+      "label": "coordinated",
+      "build_flags": [
+        "-DIOTSA_WITH_BLE",
+        "-DIOTSA_DEBUG_BLE_PRINT_ALL_CLIENTS",
+        "-DCOORDINATE_WITH_SERVER"
+      ]
     }
   ]
 }

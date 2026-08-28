@@ -22,7 +22,7 @@ The lopsidedness is the finding: of ~20 module headers in `src/`, only three are
 Everything else ships as reusable infrastructure, and the framework only promotes a use-case
 into `src/` once it's common enough across projects to be worth sharing (LED control,
 button-press handling, generic digital/rotary input). Confirmed by a 2026-07-27 survey of
-`examples/`: `Light`, `Temperature`, `Ringer`, and `BLEClient` each implement their actual
+`examples/`: `Light`, `Temperature`, `Ringer`, and `BLEClient` (since moved to `sandbox/`, #222) each implement their actual
 purpose (LDR reading, DHT21 reading, buzzer control, BLE central test rig) as bespoke
 app-specific module code — subclassing the generic `IotsaMod`/`IotsaApiMod` base directly —
 precisely because there is no standard "light sensor" or "buzzer" module to reuse. This is
@@ -177,7 +177,7 @@ If an app uses both `IotsaBLEServerMod` and `IotsaBLEClientMod` together (a devi
 BLE peripheral and a BLE central, e.g. a remote-control unit), `IotsaBLEClientMod::coordinateWithServer`
 (default `false`) can be set to have `startScanning()`/`stopScanning()` pause/resume the server's
 advertising for the duration of each scan, via the already-existing `IotsaBLEServerMod::pauseServer()`/
-`resumeServer()`. See `examples/BLEClient/` for a standalone test rig exercising both roles together.
+`resumeServer()`. See `sandbox/BLEClient/` for a standalone test rig exercising both roles together.
 
 ## Checking sibling repos
 

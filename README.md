@@ -690,14 +690,13 @@ building on the previous one:
   also wires up _iotsaBattery_ (VBAT/VUSB voltage measurement, disable-sleep pin) and shows
   how to let a BLE command switch the device into config mode, for low-power operation
   without a permanent WiFi/web connection.
-- [BLEClient](examples/BLEClient/BLEClient.ino) is a combined BLE server and client, used to test/demonstrate `IotsaBLEClientMod`-based device-to-device communication. Currently mainly a test rig; expect it to grow into a fuller example.
 - [Button](examples/Button/Button.ino) waits for a button to be pressed and then makes a call to a configurable URL. Pairs with _Ringer_ to implement a remote doorbell.
 - [Ringer](examples/Ringer/Ringer.ino) sounds a buzzer when a GET request is received. Pairs with _Button_ to implement a remote doorbell.
 - [Log](examples/Log/Log.ino) Example of using the _iotsaLogger_ module.
 - [FileShare](examples/FileShare/FileShare.ino) upload a file over HTTP and fetch it back
   again. Uses _iotsaFiles_, _iotsaFilesUpload_ and _iotsaFilesBackup_ together.
 
-Board/feature build coverage (not tutorial material) lives separately, under `tests/`, mirrored one-for-one against the `examples/` source they build -- see `extras/python/gen_build_matrix.py`.
+Board/feature build coverage (not tutorial material) lives separately, under `tests/`, mirrored one-for-one against the `examples/` source they build -- see `extras/python/gen_build_matrix.py`. Sketches under active development, not yet stable enough to be doc-grade material (e.g. [BLEClient](sandbox/BLEClient/BLEClient.ino), a test rig for `IotsaBLEClientMod`-based device-to-device communication), live under `sandbox/` instead -- still built on every push, just without `examples/`'s promise of being a stable starting point to copy.
 
 ## more projects using iotsa
 

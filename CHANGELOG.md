@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `KitchenSink`'s rotary encoder/pushbutton pins are now `IOTSA_PIN_ENCODER_A`/`IOTSA_PIN_ENCODER_B`/`IOTSA_PIN_BUTTON` defines instead of hardwired constants; the button now fires an `IotsaRequest` self-loopback GET against `/api/nothing` on press, the only exercise of `IotsaRequest` anywhere in `examples/`/`tests/` (#222)
+- New `sandbox/` toplevel, for sketches under active development that build on every push but aren't held to `examples/`'s doc-grade/full-board-coverage bar; `BLEClient` is the first tenant, moved out of `examples/` (#222)
 
 ## [2.9.2] - 2026-08-22
 

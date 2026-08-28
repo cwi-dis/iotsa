@@ -3,8 +3,8 @@
 # - <https://docs.github.com/en/free-pro-team@latest/actions/quickstart>
 #
 # The build matrix itself is not hand-maintained here: it is generated from
-# examples/*/iotsa-build.json and tests/*/iotsa-build.json by
-# extras/python/gen_build_matrix.py. See #156.
+# examples/*/iotsa-build.json, tests/*/iotsa-build.json, and sandbox/*/iotsa-build.json
+# by extras/python/gen_build_matrix.py. See #156/#222.
 name: build-arduino
 on:
   push:
@@ -31,8 +31,8 @@ on:
 
 jobs:
   #
-  # Job#1 - Compute the build matrix from examples/*/iotsa-build.json and
-  # tests/*/iotsa-build.json.
+  # Job#1 - Compute the build matrix from examples/*/iotsa-build.json,
+  # tests/*/iotsa-build.json, and sandbox/*/iotsa-build.json.
   #
   generate-matrix:
     runs-on: ubuntu-latest
@@ -45,8 +45,9 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v7
 
-    # See #216: full builds every example/test, minimal is just the tests/ tree
-    # plus the handful of examples/ that cover something tests/ doesn't. Default
+    # See #216: full builds every example/test/sandbox entry, minimal is just the
+    # tests/ and sandbox/ trees (#222) plus the handful of examples/ that cover
+    # something neither does. Default
     # is full (a push to develop is the one deliberate exception); a PR only
     # drops to minimal if it carries the "ci-minimal" label.
     - name: Determine build tier

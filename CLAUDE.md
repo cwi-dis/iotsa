@@ -93,18 +93,24 @@ The tool discovers devices via mDNS, communicates over HTTP/HTTPS (REST), CoAP, 
 `examples/` contains doc-grade sample sketches, one-to-one with the README's "sample
 programs" list. `tests/` holds board/feature build-coverage variants as data only
 (`iotsa-build.json`, pointing back at the `examples/` source they build) — not tutorial
-material. Both feed `extras/python/gen_build_matrix.py`, the single source of truth for
-the toplevel `platformio.ini` envs (`generated_envs.ini`), both CI workflows' build
-matrices, and each example's standalone `platformio.ini`. See #156.
+material. `sandbox/` (#222) holds sketches still under active development — self-contained,
+like `tests/KitchenSink`, rather than pointing back at an `examples/` source — that build on
+every push (so breakage is caught immediately) but, unlike `examples/`, carry no promise of
+being a stable starting point to copy, and aren't held to `examples/`'s full board/flag
+coverage bar. All three feed `extras/python/gen_build_matrix.py`, the single source of truth
+for the toplevel `platformio.ini` envs (`generated_envs.ini`), both CI workflows' build
+matrices, and each entry's standalone `platformio.ini`. See #156.
 
 - `Skeleton` — recommended starting point for new applications
 - `Hello` — simplest possible single-file "Hello, user" server
 - `HelloIotsa` — the same, but structured the way we recommend for real applications
   (app module in its own `.h`/`.cpp`), with a REST API added
 - `HelloPasswd`, `HelloRights`, `HelloToken`, `HelloUser` — auth patterns
-- `BLELed`, `BLEClient`, `Led`, `Light` — LED control / BLE
+- `BLELed`, `Led`, `Light` — LED control / BLE
 - `Button`, `Input`, `Ringer` — input handling
 - `Log`, `Temperature`, `DateTime` — logging and sensors
+- `sandbox/BLEClient` — active-development test rig for `IotsaBLEClientMod`-based
+  device-to-device communication; not in the list above since it isn't doc-grade
 
 ## CI
 
