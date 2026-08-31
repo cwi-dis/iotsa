@@ -7,8 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0a2] - 2026-08-31
+
+`v3.0a1` was tagged without a changelog section, so this covers everything since 2.9.2.
+
+### Added
+
+- `iotsa-board.json` -- toplevel single source of truth for the board catalogue: the build fields (`pio_board`/`fqbn`/`trait`/`partitions`/...) that were a dict in `gen_build_matrix.py`, plus human-facing fields (`display_name`/`description`/`chip`/`reference`/`provenance`/`best_example`/`constraints`/`status`). `docs/boards.md` is generated from it (`--format=boards-md`) as a board reference for outside developers; CI staleness-checks it (#224)
+
 ### Fixed
 
+- `iotsa-board-defs.ini` `[lolin32]` now maps to `board = lolin32_lite` -- the full LOLIN32 is not owned or tested anywhere (#228); `[crowpanel128]` gained `board_build.partitions = min_spiffs.csv` (default.csv's app0 overflows a full C3 app) (#226); new `[lolin32_oled]` board for the Wemos LOLIN32 OLED (#229)
+- `-Wreorder` in `IotsaApiServiceWeb`'s constructor (init-list order didn't match declaration order; cosmetic, but fired on every downstream compile) -- new on `develop` from the #211/#213 work
 - BLE advertising could start before every module had registered its characteristics; CoAP/HPS companion modules depended on construction order to exist at all (#113)
 - `IOTSA_WITHOUT_API` combined with auth (`IotsaUserMod`/`IotsaMultiUserMod`/`IotsaCapabilityMod`) failed to build (#206)
 - `api.setup()` no longer registers a redundant, byte-identical web page per collection item (`IotsaButtonMod`/`IotsaMultiUserMod`/`IotsaUserMod`'s `name/N` sub-paths) (#217)
