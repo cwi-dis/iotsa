@@ -85,7 +85,9 @@ jobs:
           exit 1
         }
         python3 extras/python/gen_build_matrix.py --format=board-defs-ini -o /tmp/iotsa-board-defs.ini
-        diff iotsa-board-defs.ini /tmp/iotsa-board-defs.ini || {
+        # ignore the "; Generated <date> ..." line -- it's an informational vintage
+        # marker for downstream vendored copies, not part of the staleness contract.
+        diff <(grep -v '^; Generated ' iotsa-board-defs.ini) <(grep -v '^; Generated ' /tmp/iotsa-board-defs.ini) || {
           echo "::error::iotsa-board-defs.ini is out of date. Regenerate it with:"
           echo "::error::  python3 extras/python/gen_build_matrix.py --format=board-defs-ini -o iotsa-board-defs.ini"
           exit 1
