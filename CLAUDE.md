@@ -97,9 +97,13 @@ material. `sandbox/` (#222) holds sketches still under active development — se
 like `tests/KitchenSink`, rather than pointing back at an `examples/` source — that build on
 every push (so breakage is caught immediately) but, unlike `examples/`, carry no promise of
 being a stable starting point to copy, and aren't held to `examples/`'s full board/flag
-coverage bar. All three feed `extras/python/gen_build_matrix.py`, the single source of truth
-for the toplevel `platformio.ini` envs (`generated_envs.ini`), both CI workflows' build
-matrices, and each entry's standalone `platformio.ini`. See #156.
+coverage bar. All three feed `extras/python/gen_build_matrix.py`, which — together with
+`iotsa-board.json` (the board catalogue: build fields + human-facing fields) — is the
+single source of truth for the toplevel `platformio.ini` envs (`generated_envs.ini`),
+`iotsa-board-defs.ini`, the human board reference (`docs/boards.md`), both CI workflows'
+build matrices, and each entry's standalone `platformio.ini`. See #156, #224. Regenerate
+with `--format={platformio-ini,board-defs-ini,boards-md,...}`; a CI step fails if any
+committed generated file is stale.
 
 - `Skeleton` — recommended starting point for new applications
 - `Hello` — simplest possible single-file "Hello, user" server

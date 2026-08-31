@@ -36,61 +36,33 @@ TRAIT_BUILD_FLAGS = {
                             "-DIOTSA_SERIAL_SPEED=460800", "-DIOTSA_DELAY_ON_BOOT=3"],
 }
 
-# Layer 2 board names (see iotsa-board-defs.ini and #222) -> the actual PlatformIO
-# board ID, the arduino-cli FQBN where supported, which layer-3 trait it
-# extends, which processor family (drives emit_standalone_ini's "platform ="
-# line), and the hardware facts unique to this board (not already covered by
-# its trait): build_flags (e.g. a neopixel pin), partitions/mcu/flash_size.
-# build_flags here is *board-specific only* -- emit_board_defs_ini pulls its
-# trait's flags in via ini extends/interpolation, while emit_github_matrix and
-# emit_standalone_ini (no ini inheritance available to them) combine
-# TRAIT_BUILD_FLAGS[trait] + this board's own build_flags themselves.
-BOARD_INFO = {
-    "iotsa_v4":         {"pio_board": "nodemcuv2",        "fqbn": "esp8266:esp8266:nodemcuv2", "family": "esp8266", "trait": "_esp8266",
-                          "build_flags": []},
-    "esp32thing":       {"pio_board": "esp32thing",       "fqbn": "esp32:esp32:esp32thing",    "family": "esp32", "trait": "_esp32_allvariants",
-                          "build_flags": []},
-    "esp32dev":         {"pio_board": "esp32dev",         "fqbn": None,                        "family": "esp32", "trait": "_esp32_allvariants",
-                          "build_flags": []},
-    # Key kept as "lolin32" (not renamed) so downstream `extends = lolin32` and
-    # existing `iotsa-build.json` refs keep resolving; pio_board is the Lite,
-    # which is the board actually in hand and deployed everywhere -- nobody owns
-    # or tests a full LOLIN32. See cwi-dis/iotsa#228.
-    "lolin32":          {"pio_board": "lolin32_lite",     "fqbn": "esp32:esp32:lolin32-lite",  "family": "esp32", "trait": "_esp32_allvariants",
-                          "build_flags": [], "partitions": "min_spiffs.csv"},
-    # LOLIN32 OLED (built-in SSD1306 on GPIO5/4, no LiPo charger, reduced GPIO
-    # breakout). No PlatformIO/Arduino profile of its own -- builds as the Lite
-    # (LED_BUILTIN=GPIO22 there doesn't clash with the OLED's SDA on GPIO5, as
-    # the full lolin32 profile's GPIO5 would). See cwi-dis/iotsa#229.
-    "lolin32_oled":     {"pio_board": "lolin32_lite",     "fqbn": "esp32:esp32:lolin32-lite",  "family": "esp32", "trait": "_esp32_allvariants",
-                          "build_flags": [], "partitions": "min_spiffs.csv"},
-    "pico32":           {"pio_board": "pico32",           "fqbn": None,                        "family": "esp32", "trait": "_esp32_allvariants",
-                          "build_flags": []},
-    "esp32c3devkit":    {"pio_board": "esp32-c3-devkitm-1", "fqbn": None,                      "family": "esp32", "trait": "_esp32c3_extusb",
-                          "build_flags": ["-DIOTSA_PIN_NEOPIXEL=8"]},
-    "esp32c3lcd":       {"pio_board": "esp32-c3-devkitm-1", "fqbn": None,                      "family": "esp32", "trait": "_esp32c3_nativeusb",
-                          "build_flags": [], "mcu": "esp32c3", "partitions": "bare_minimum_2MB.csv", "flash_size": "2MB"},
-    "esp32c3supermini": {"pio_board": "esp32-c3-devkitm-1", "fqbn": None,                      "family": "esp32", "trait": "_esp32c3_nativeusb",
-                          "build_flags": [], "mcu": "esp32c3", "partitions": "min_spiffs.csv", "flash_size": "4MB"},
-    # Same board-layer trio as [esp32c3supermini] (shared board, differ only in
-    # USB trait): default.csv's 1.25MB app0 overflows a full-featured C3 app
-    # (LovyanGFX + HTTPS). See cwi-dis/iotsa#226.
-    "crowpanel128":     {"pio_board": "esp32-c3-devkitm-1", "fqbn": None,                      "family": "esp32", "trait": "_esp32c3_extusb",
-                          "build_flags": [], "mcu": "esp32c3", "partitions": "min_spiffs.csv", "flash_size": "4MB"},
-    "esp32s3supermini": {"pio_board": "esp32-s3-devkitc-1", "fqbn": "esp32:esp32:esp32s3",      "family": "esp32", "trait": "_esp32s3_nativeusb",
-                          "build_flags": ["-DIOTSA_PIN_NEOPIXEL=48"], "mcu": "esp32s3", "partitions": "min_spiffs.csv", "flash_size": "4MB"},
-}
+# Layer 2 (boards we use) and layer 1 (vanilla_* role aliases) are authored in
+# the toplevel iotsa-board.json -- the single source of truth. Each board entry
+# also carries human-facing fields (display_name, description, chip, reference,
+# provenance, best_example, constraints, status, notes) consumed only by
+# emit_boards_md() -> docs/boards.md; the build emitters ignore them. See #224.
+#
+# Per board, the build-facing keys: pio_board (the real PlatformIO board ID),
+# fqbn (arduino-cli, or null), trait (layer 3, see TRAIT_BUILD_FLAGS above and
+# iotsa-board-traits.ini), family (drives emit_standalone_ini's "platform ="
+# line), and the hardware facts not covered by the trait -- build_flags (e.g. a
+# neopixel pin), partitions / mcu / flash_size. build_flags here is
+# *board-specific only*: emit_board_defs_ini pulls the trait's flags in via ini
+# extends/interpolation, while emit_github_matrix / emit_standalone_ini (no ini
+# inheritance) combine TRAIT_BUILD_FLAGS[trait] + this board's own themselves.
+_BOARD_JSON = os.path.join(REPO_ROOT, "iotsa-board.json")
+with open(_BOARD_JSON) as _f:
+    _board_data = json.load(_f)
+BOARD_INFO = _board_data["boards"]
 
-# Layer 1 role aliases (see iotsa-board-defs.ini and #222): pure synonyms for
-# "whichever layer-2 board is our current default for this chip family".
-# Resolved once, right after an iotsa-build.json variant is read, so every
-# emitter below only ever sees a real BOARD_INFO key.
-BOARD_ALIASES = {
-    "vanilla_esp8266": "iotsa_v4",
-    "vanilla_esp32":   "esp32thing",
-    "vanilla_esp32c3": "esp32c3devkit",
-    "vanilla_esp32s3": "esp32s3supermini",
-}
+# Layer 1 role aliases: pure synonyms for "whichever layer-2 board is our
+# current default for this chip family". Resolved once, right after an
+# iotsa-build.json variant is read, so every emitter below only ever sees a
+# real BOARD_INFO key. ALIAS_INFO keeps the per-alias description for
+# emit_boards_md(); BOARD_ALIASES is the bare name->target map everything else
+# uses.
+ALIAS_INFO = _board_data["aliases"]
+BOARD_ALIASES = {name: a["target"] for name, a in ALIAS_INFO.items()}
 
 
 def resolved_build_flags(board, extra_flags=()):
@@ -179,7 +151,7 @@ def emit_board_defs_ini(out):
     """Layer 1 (vanilla_* aliases) and layer 2 (boards we use) sections,
     extending the hand-authored layer-3 traits in iotsa-board-traits.ini. See
     platformio.ini's extra_configs and #222."""
-    out.write("; Generated by extras/python/gen_build_matrix.py from BOARD_INFO/BOARD_ALIASES --\n")
+    out.write("; Generated by extras/python/gen_build_matrix.py from iotsa-board.json --\n")
     out.write("; do not hand-edit, regenerate instead:\n")
     out.write(";   python3 extras/python/gen_build_matrix.py --format=board-defs-ini -o iotsa-board-defs.ini\n")
     out.write(";\n; Layer 2 -- boards we actually use. See iotsa-board-traits.ini for layer 3.\n\n")
@@ -203,6 +175,76 @@ def emit_board_defs_ini(out):
     for alias, target in BOARD_ALIASES.items():
         out.write(f"[{alias}]\n")
         out.write(f"extends = {target}\n\n")
+
+
+def _md_ref(ref):
+    """Render a board's `reference` value: a URL -> a link; anything else
+    (a repo-relative path, owner/repo:path) -> inline code; None -> em dash."""
+    if not ref:
+        return "—"
+    if ref.startswith(("http://", "https://")):
+        return f"[{ref}]({ref})"
+    return f"`{ref}`"
+
+
+def emit_boards_md(out):
+    """docs/boards.md -- the human-readable board reference, generated from the
+    same iotsa-board.json the build sections come from. Build-facing fields
+    (pio_board/fqbn/trait/partitions/...) plus the authored human fields
+    (display_name/description/chip/reference/provenance/best_example/
+    constraints/status/notes). See #224."""
+    out.write("<!-- Generated by extras/python/gen_build_matrix.py from iotsa-board.json --\n")
+    out.write("     do not hand-edit, regenerate instead:\n")
+    out.write("       python3 extras/python/gen_build_matrix.py --format=boards-md -o docs/boards.md\n")
+    out.write("-->\n")
+    out.write("# iotsa board reference\n\n")
+    out.write("Every board iotsa knows about, generated from the single source of truth\n")
+    out.write("[`iotsa-board.json`](../iotsa-board.json). The build sections in\n")
+    out.write("`iotsa-board-defs.ini` (and each example's `platformio.ini`) come from the same\n")
+    out.write("file. Processor/USB-wiring *traits* are one layer down, hand-authored in\n")
+    out.write("[`iotsa-board-traits.ini`](../iotsa-board-traits.ini).\n\n")
+
+    out.write("## At a glance\n\n")
+    out.write("| Board | Chip | Status | What it is |\n")
+    out.write("|---|---|---|---|\n")
+    for name, info in BOARD_INFO.items():
+        out.write(f"| [`{name}`](#{name}) | {info['chip']} | {info['status']} | {info['description']} |\n")
+    out.write("\n")
+
+    out.write("## Boards\n\n")
+    for name, info in BOARD_INFO.items():
+        out.write(f"### <a id=\"{name}\"></a>`{name}` — {info['display_name']}\n\n")
+        out.write(f"{info['description']}\n\n")
+        out.write(f"- **Chip:** {info['chip']}\n")
+        out.write(f"- **Status:** {info['status']}\n")
+        fqbn = info['fqbn'] or "—"
+        out.write(f"- **PlatformIO board:** `{info['pio_board']}` · **Arduino FQBN:** `{fqbn}`\n")
+        extras = []
+        if info.get("partitions"):
+            extras.append(f"partitions `{info['partitions']}`")
+        if info.get("flash_size"):
+            extras.append(f"flash {info['flash_size']}")
+        if info["build_flags"]:
+            extras.append(f"build flags `{' '.join(info['build_flags'])}`")
+        if extras:
+            out.write(f"- **Build:** {', '.join(extras)}\n")
+        out.write(f"- **Provenance:** {info['provenance']}\n")
+        if info.get("constraints"):
+            out.write(f"- **Constraints:** {info['constraints']}\n")
+        out.write(f"- **Reference:** {_md_ref(info['reference'])}\n")
+        out.write(f"- **Example:** {info['best_example'] or '—'}\n")
+        if info.get("notes"):
+            out.write(f"- **Notes:** {info['notes']}\n")
+        out.write("\n")
+
+    out.write("## Role aliases\n\n")
+    out.write("Build targets that mean \"whichever real board is iotsa's current default for\n")
+    out.write("this chip family\" -- examples and tests target these, not a concrete board.\n\n")
+    out.write("| Alias | Currently | Meaning |\n")
+    out.write("|---|---|---|\n")
+    for alias, ai in ALIAS_INFO.items():
+        out.write(f"| `{alias}` | [`{ai['target']}`](#{ai['target']}) | {ai['description']} |\n")
+    out.write("\n")
 
 
 def emit_platformio_ini(entries, out):
@@ -389,7 +431,7 @@ def emit_standalone_ini(entries, target_dir, out):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--format", required=True,
-                     choices=["board-defs-ini", "platformio-ini", "github-matrix", "standalone-ini"])
+                     choices=["board-defs-ini", "boards-md", "platformio-ini", "github-matrix", "standalone-ini"])
     ap.add_argument("--backend", choices=["platformio", "arduino"],
                      help="required for --format=github-matrix")
     ap.add_argument("--tier", choices=["full", "minimal"], default="full",
@@ -426,6 +468,8 @@ def main():
     try:
         if args.format == "board-defs-ini":
             emit_board_defs_ini(out)
+        elif args.format == "boards-md":
+            emit_boards_md(out)
         elif args.format == "platformio-ini":
             emit_platformio_ini(entries, out)
         elif args.format == "github-matrix":

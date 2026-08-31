@@ -76,7 +76,7 @@ jobs:
         MATRIX=$(python3 extras/python/gen_build_matrix.py --format=github-matrix --backend=platformio --tier=${{ steps.tier.outputs.tier }})
         echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
 
-    - name: Check generated_envs.ini and iotsa-board-defs.ini are up to date
+    - name: Check generated files are up to date with iotsa-board.json / iotsa-build.json
       run: |
         python3 extras/python/gen_build_matrix.py --format=platformio-ini -o /tmp/generated_envs.ini
         diff generated_envs.ini /tmp/generated_envs.ini || {
@@ -88,6 +88,12 @@ jobs:
         diff iotsa-board-defs.ini /tmp/iotsa-board-defs.ini || {
           echo "::error::iotsa-board-defs.ini is out of date. Regenerate it with:"
           echo "::error::  python3 extras/python/gen_build_matrix.py --format=board-defs-ini -o iotsa-board-defs.ini"
+          exit 1
+        }
+        python3 extras/python/gen_build_matrix.py --format=boards-md -o /tmp/boards.md
+        diff docs/boards.md /tmp/boards.md || {
+          echo "::error::docs/boards.md is out of date. Regenerate it with:"
+          echo "::error::  python3 extras/python/gen_build_matrix.py --format=boards-md -o docs/boards.md"
           exit 1
         }
   #

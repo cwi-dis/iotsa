@@ -35,7 +35,10 @@ If you have an iotsa board, see [docs/gettingStarted.md](docs/gettingStarted.md)
 
 ### Supported hardware variants
 
-Ordered from most to least capable for general use:
+Chip families below, ordered from most to least capable for general use. For the
+individual boards iotsa is built and tested against (PlatformIO ids, Arduino
+FQBNs, partition schemes, per-board quirks) see **[`docs/boards.md`](docs/boards.md)**,
+generated from [`iotsa-board.json`](iotsa-board.json).
 
 | Hardware | Flash / OTA | Status | Notes |
 |---|---|---|---|
@@ -123,20 +126,24 @@ expected to build against routinely, worth catching regressions on for every pus
   `_esp32c3_nativeusb`/`_esp8266`) and mirror its `build_flags` into
   `TRAIT_BUILD_FLAGS` in `extras/python/gen_build_matrix.py` -- see the layer-1/2/3
   board model, #222. Most new boards reuse an existing trait and skip this step.
-- Add the board to `BOARD_INFO` in `extras/python/gen_build_matrix.py`: its `pio_board`
-  id, `fqbn` if arduino-cli-buildable, which `trait` it extends, `family`
-  (`esp8266`/`esp32`), and any hardware facts unique to this board (`build_flags` for
-  e.g. a neopixel pin, `partitions`/`mcu`/`flash_size`). **Easy to forget, and
-  forgetting it fails quietly:** `emit_platformio_ini`/`emit_github_matrix` just print
-  a `warning: unknown board ... skipping` to stderr and drop the env, rather than
-  erroring. (Only `emit_standalone_ini`, used in tiers 1 and 3, hard-fails with a
-  `KeyError` on an unknown board -- if you hit that, this is the fix.)
+- Add the board to `boards` in **`iotsa-board.json`** (the single source of truth):
+  the build fields `pio_board`, `fqbn` (or `null`), `trait`, `family`
+  (`esp8266`/`esp32`), `build_flags` (e.g. a neopixel pin) and any of
+  `partitions`/`mcu`/`flash_size`; plus the human fields `display_name`,
+  `description`, `chip`, `reference`, `provenance`, `best_example`, `constraints`
+  (or `null`), `status`, `notes` -- these feed `docs/boards.md` and nothing else.
+  **Easy to forget the build side, and forgetting it fails quietly:**
+  `emit_platformio_ini`/`emit_github_matrix` just print a `warning: unknown board
+  ... skipping` to stderr and drop the env, rather than erroring. (Only
+  `emit_standalone_ini`, used in tiers 1 and 3, hard-fails with a `KeyError` on an
+  unknown board -- if you hit that, this is the fix.)
 - Add a variant entry for the board to `iotsa-build.json` in every example (and test)
   you want it covered for.
 - Regenerate the generated files and commit them alongside the source changes:
 
 ```
 $ python3 extras/python/gen_build_matrix.py --format=board-defs-ini -o iotsa-board-defs.ini
+$ python3 extras/python/gen_build_matrix.py --format=boards-md -o docs/boards.md
 $ python3 extras/python/gen_build_matrix.py --format=platformio-ini -o generated_envs.ini
 $ python3 extras/python/gen_build_matrix.py --format=standalone-ini \
     --dir=examples/<Example> -o examples/<Example>/platformio.ini   # for each touched example
@@ -148,10 +155,11 @@ $ python3 extras/python/gen_build_matrix.py --format=standalone-ini \
 existing CI-covered one that it does not need its own automated build, but where future
 iotsa *applications* will target it and should have a correct, already-verified board
 definition to start from. Do the first two steps from tier 2 (the trait, if new, and
-the `BOARD_INFO` entry), regenerate just `iotsa-board-defs.ini`, but skip the
-`iotsa-build.json` step -- that is what keeps it out of `generated_envs.ini` and the CI
-matrix. Verify it once using tier 1's throwaway single-example recipe, then commit the
-`BOARD_INFO` entry and the regenerated `iotsa-board-defs.ini`.
+the `iotsa-board.json` entry), regenerate `iotsa-board-defs.ini` and `docs/boards.md`,
+but skip the `iotsa-build.json` step -- that is what keeps it out of
+`generated_envs.ini` and the CI matrix. Verify it once using tier 1's throwaway
+single-example recipe, then commit the `iotsa-board.json` entry and the regenerated
+files.
 
 Worth knowing either way: `iotsa-board-traits.ini`/`iotsa-board-defs.ini` (pulled into the toplevel
 `platformio.ini` via `extra_configs`) only govern building *iotsa's own* examples/tests
