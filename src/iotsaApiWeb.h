@@ -21,11 +21,14 @@ class IotsaApiServiceWeb : public IotsaApiServiceProvider {
 public:
   IotsaApiServiceWeb(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth, IotsaApiServiceProvider* _next=nullptr)
   : IotsaApiServiceProvider(_next),
-    provider(_provider),
-    // Shared with IotsaApiServiceRest, owned by neither -- see cwi-dis/iotsa#207/#211.
-    // Guaranteed non-null: IotsaApplication's own constructor ensures the shared mod
-    // exists before any module (this one included) is constructed.
-    server(IotsaHttpServiceMod::serviceMod(_app)->server)
+    // Init-list order mirrors declaration order (server before provider) to
+    // avoid -Wreorder; neither initializer reads the other, so it's cosmetic.
+    // server is shared with IotsaApiServiceRest, owned by neither -- see
+    // cwi-dis/iotsa#207/#211. Guaranteed non-null: IotsaApplication's own
+    // constructor ensures the shared mod exists before any module (this one
+    // included) is constructed.
+    server(IotsaHttpServiceMod::serviceMod(_app)->server),
+    provider(_provider)
   {}
   void setup(const char* path, bool get=false, bool put=false, bool post=false, bool webPage=true) override;
   // Public so API-having modules can reach the shared HTTP server through their own
