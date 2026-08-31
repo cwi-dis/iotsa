@@ -52,7 +52,17 @@ BOARD_INFO = {
                           "build_flags": []},
     "esp32dev":         {"pio_board": "esp32dev",         "fqbn": None,                        "family": "esp32", "trait": "_esp32_allvariants",
                           "build_flags": []},
-    "lolin32":          {"pio_board": "lolin32",          "fqbn": None,                        "family": "esp32", "trait": "_esp32_allvariants",
+    # Key kept as "lolin32" (not renamed) so downstream `extends = lolin32` and
+    # existing `iotsa-build.json` refs keep resolving; pio_board is the Lite,
+    # which is the board actually in hand and deployed everywhere -- nobody owns
+    # or tests a full LOLIN32. See cwi-dis/iotsa#228.
+    "lolin32":          {"pio_board": "lolin32_lite",     "fqbn": "esp32:esp32:lolin32-lite",  "family": "esp32", "trait": "_esp32_allvariants",
+                          "build_flags": [], "partitions": "min_spiffs.csv"},
+    # LOLIN32 OLED (built-in SSD1306 on GPIO5/4, no LiPo charger, reduced GPIO
+    # breakout). No PlatformIO/Arduino profile of its own -- builds as the Lite
+    # (LED_BUILTIN=GPIO22 there doesn't clash with the OLED's SDA on GPIO5, as
+    # the full lolin32 profile's GPIO5 would). See cwi-dis/iotsa#229.
+    "lolin32_oled":     {"pio_board": "lolin32_lite",     "fqbn": "esp32:esp32:lolin32-lite",  "family": "esp32", "trait": "_esp32_allvariants",
                           "build_flags": [], "partitions": "min_spiffs.csv"},
     "pico32":           {"pio_board": "pico32",           "fqbn": None,                        "family": "esp32", "trait": "_esp32_allvariants",
                           "build_flags": []},
@@ -62,8 +72,11 @@ BOARD_INFO = {
                           "build_flags": [], "mcu": "esp32c3", "partitions": "bare_minimum_2MB.csv", "flash_size": "2MB"},
     "esp32c3supermini": {"pio_board": "esp32-c3-devkitm-1", "fqbn": None,                      "family": "esp32", "trait": "_esp32c3_nativeusb",
                           "build_flags": [], "mcu": "esp32c3", "partitions": "min_spiffs.csv", "flash_size": "4MB"},
+    # Same board-layer trio as [esp32c3supermini] (shared board, differ only in
+    # USB trait): default.csv's 1.25MB app0 overflows a full-featured C3 app
+    # (LovyanGFX + HTTPS). See cwi-dis/iotsa#226.
     "crowpanel128":     {"pio_board": "esp32-c3-devkitm-1", "fqbn": None,                      "family": "esp32", "trait": "_esp32c3_extusb",
-                          "build_flags": []},
+                          "build_flags": [], "mcu": "esp32c3", "partitions": "min_spiffs.csv", "flash_size": "4MB"},
     "esp32s3supermini": {"pio_board": "esp32-s3-devkitc-1", "fqbn": "esp32:esp32:esp32s3",      "family": "esp32", "trait": "_esp32s3_nativeusb",
                           "build_flags": ["-DIOTSA_PIN_NEOPIXEL=48"], "mcu": "esp32s3", "partitions": "min_spiffs.csv", "flash_size": "4MB"},
 }
