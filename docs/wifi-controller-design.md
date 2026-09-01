@@ -48,8 +48,10 @@ Events surfaced to the controller (via the platform WiFi event callbacks, not po
 - `sta_connected` / `sta_got_ip` (carries channel + BSSID)
 - `sta_failed(reason)` -- `reason` taken from the disconnect event
   (`info.wifi_sta_disconnected.reason` on ESP32, `WiFiEventStationModeDisconnected.reason`
-  on ESP8266), reduced to a small enum: `NO_AP_FOUND`, `AUTH_FAIL`, `OTHER`.
-  `WiFi.status()` is too coarse and too flaky to drive policy from.
+  on ESP8266), reduced by the driver to a small enum: `NO_AP_FOUND`, `AUTH_FAIL`, `OTHER`.
+  The reduction folds `HANDSHAKE_TIMEOUT` / `4WAY_HANDSHAKE_TIMEOUT` into `AUTH_FAIL` --
+  on many APs a wrong password surfaces as a handshake timeout rather than a clean auth
+  reject. `WiFi.status()` is too coarse and too flaky to drive policy from.
 - `sta_lost` -- was connected, connection dropped
 - `ap_client_connected` / `ap_client_disconnected` (carries count)
 
@@ -81,7 +83,7 @@ A real state machine, not an enum value shared with AP concerns:
 | `STA_OFF` | not attempting -- no credentials, or explicitly disabled (`wifiDisabledOnBoot`) |
 | `STA_CONNECTING` | connect issued, deadline armed |
 | `STA_CONNECTED` | have an IP |
-| `STA_HUNTING` | a connect attempt failed; retrying on a cadence set by (proven x reason), see below |
+| `STA_HUNTING` | a connect attempt failed; retrying on a cadence set by failure reason, see below |
 
 `sta_lost` from `STA_CONNECTED` goes to `STA_HUNTING`. The SDK's own
 `setAutoReconnect(true)` handles the fast transient blip (~1 s) below this state
@@ -93,7 +95,7 @@ machine; anything longer surfaces as `sta_failed`/`sta_lost` and is handled unif
 The AP is up if **any** of:
 
 - configuration mode is active (see "Config-mode interactions")
-- STA has been in `STA_HUNTING` past its escalation delay (see below)
+- STA has been failing for longer than the escalation delay (see below)
 - an explicit request (e.g. a physical config button, future work)
 - the AP-client hold is active (see below)
 
@@ -102,69 +104,68 @@ Otherwise the AP is down. No `IOTSA_WIFI_FACTORY`, no `IOTSA_WIFI_NOTFOUND`, no
 AP" (`privateWifi` in the `/api/config` reply) becomes the derived
 `ap.up && !sta.connected`.
 
-### Proven-credentials record
+### Fast-reconnect cache
 
-One small record, persisted next to ssid/password:
+One small record, **RTC RAM only** (survives deep sleep, lost on a true power-loss
+reboot -- that's fine, it is regenerated cheaply on the first connect after a cold boot):
 
 ```
-{ ssid, psk, bssid, channel, lastGoodMillis }
+{ ssid, bssid, channel, lastGoodMillis }
 ```
 
-- `proven` = we have completed at least one `sta_got_ip` with the *current* ssid+psk.
-- Set on the first `sta_got_ip`. Also refresh `bssid`/`channel`/`lastGoodMillis` on every
-  `sta_got_ip`.
-- Cleared when ssid or psk *actually* changes (compare first -- a no-op re-entry of the
-  same value must not clear it).
+- Refreshed on every `sta_got_ip`.
+- Discarded when the configured ssid changes (a cached BSSID for a different network is
+  useless).
 
 `bssid`/`channel` feed the targeted `startStation(ssid, psk, channel, bssid)` fast path
-(and, on deep-sleep devices, belong in RTC memory). A targeted connect skips the scan,
-which is also the only AP + STA-coming-up combination that coexists cleanly on one radio
-(see "AP/STA channel constraint").
+(~200 ms vs a ~2-4 s cold scan+connect). A targeted connect also skips the scan, which
+is the only AP + STA-coming-up combination that coexists cleanly on one radio (see
+"AP/STA channel constraint"). This is a pure speed optimisation -- it carries no policy
+role.
 
 ## Failure handling and retry policy
 
-The radio cannot distinguish "correct SSID whose AP is currently off/out of range" from
-"SSID that was mistyped and never existed" -- both yield `NO_AP_FOUND`. So the retry
-policy branches on **proven x reason**, not on failure reason alone and not on
-connection history:
+**The AP-raise decision is unconditional.** Sustained STA failure -> a few quick retries
+-> after the escalation delay (~1 minute) the AP-up derivation turns true. It does not
+matter whether the network was ever reachable before, or why the connect failed. The
+radio cannot tell "correct SSID whose AP is off" from "SSID that was mistyped" anyway
+(both give `NO_AP_FOUND`), and it does not need to: an early AP is what you want in both
+the setup-mistake case *and* the just-carried-this-device-somewhere case.
 
-| | `NO_AP_FOUND` | `AUTH_FAIL` |
-| --- | --- | --- |
-| **unproven** creds | probably a setup mistake (SSID or password). A few quick retries, then escalate. | same -- probably a setup mistake. |
-| **proven** creds | transient: the network is real and correct, just not here now. Patient retry. | the password changed under us. A few retries, then escalate. |
+Whether the AP then *persists* is not this controller's concern. On a battery / off-grid
+device the sleep cycle bounds it: the AP comes up ~1 minute after STA fails, then the
+wake window ends, the runmode module sleeps, `disableWiFiOnSleep` turns the radio (AP
+and STA both) off. So the AP is up ~1 minute per sleep cycle -- negligible, and nobody
+is standing at an unattended site anyway. A mains / USB-powered / non-sleeping device
+holds the AP, which is exactly right when someone has just moved it. The WiFi controller
+just publishes "hunting / AP up / N clients"; runmode acts on it. There is **no**
+site-policy flag and **no** proven/unproven distinction for this decision -- both were
+considered and both collapse into "runmode owns AP persistence via the sleep timer."
 
-"Escalate" = the escalation delay expires and the AP-up derivation turns true.
+The failure `reason` still matters, but only for **retry cadence**, not for the AP:
 
-Escalation delays:
+- `AUTH_FAIL` (incl. the folded-in handshake timeouts): back off hard. Hammering a
+  failed auth is counterproductive -- some APs rate-limit or temp-ban. Retry on a
+  stretching interval, not every few seconds.
+- `NO_AP_FOUND` / `OTHER`: steady cadence. After a long spell with no AP found, the
+  retry may stretch to once every ~10-15 min (the network genuinely is not coming back
+  soon) -- a tuning detail, not a decision.
 
-- unproven (any reason): ~30-60 s (after a few quick retries)
-- proven + `AUTH_FAIL`: ~short
-- proven + `NO_AP_FOUND`: **~5 minutes**, then escalate anyway. Not "wait forever" --
-  eventually the AP must come up so a human can request config mode -> reboot ->
-  reconfigure.
-- `OTHER`: treat as the patient case, or a middle path -- open question.
-
-Retry cadence within `STA_HUNTING`: former `10 x IOTSA_WIFI_TIMEOUT` (300 s) constant
-was arbitrary and is gone. Cadence is per-reason -- short/backoff for `AUTH_FAIL` (do
-not hammer a failed auth; some APs rate-limit or temp-ban), longer / sleep-driven for
-`NO_AP_FOUND`.
-
-Note `AUTH_FAIL` here specifically means "hammering it is counterproductive"; the retry
-loop must actually back off, not retry every few seconds.
+The former `10 x IOTSA_WIFI_TIMEOUT` (300 s) constant was arbitrary and is gone.
 
 ### AP-client hold
 
 The moment a client associates to our AP (`ap_client_connected`), arm a "no
-channel-hopping scan for ~2 minutes" hold. Re-arm on each new client connect (optionally
-also on each HTTP request). The disruptive channel-hopping hunt resumes only when the
-hold has expired **and** `ap.clientCount == 0`.
+channel-hopping scan for ~1 minute" hold (value tunable). Re-arm on each new client
+connect (optionally also on each HTTP request). The disruptive channel-hopping hunt
+resumes only when the hold has expired **and** `ap.clientCount == 0`.
 
 Rationale: someone configuring will disconnect/reconnect (WiFi flakiness, switching
 devices, the config flow itself), and the radio channel-hopping mid-session would knock
 them off. A timed hold gives a stable configuration window robust to transient drops.
 
 "Suspend hunting" means suspend the **channel-hopping scan** only. Home-channel-only
-retry and targeted-BSSID reconnect (proven network) do not disrupt the AP and may
+retry and targeted reconnect via the cached BSSID+channel do not disrupt the AP and may
 continue during the hold.
 
 Caveat: L2 association is not proof a human is configuring (phones probe open APs,
@@ -192,8 +193,8 @@ while the AP has a client** (see the AP-client hold). With no client, the contro
 run the hunt as a heartbeat -- "drop AP for ~5 s, full scan, re-raise AP" -- or restrict
 to home-channel-only retry. It never free-runs a scan under a live AP.
 
-This is the strongest argument for the proven-record carrying `{bssid, channel}`: a
-proven network gives the targeted reconnect, the only AP + STA-coming-up combination
+This is the strongest argument for the fast-reconnect cache carrying `{bssid, channel}`:
+a cached network gives the targeted reconnect, the only AP + STA-coming-up combination
 that is clean.
 
 **Must be bench-tested on real ESP8266 *and* ESP32 (plus C3 / S3) after implementation.**
@@ -277,13 +278,20 @@ pattern. The BLE server's mode-switch timing moves onto the same primitive.
 
 ## Open questions
 
-- `OTHER` failure reason -- patient handling, or a middle path?
-- Proven + `NO_AP_FOUND` for a very long time (hours) on a *relocated* device that will
-  never see its network again -- currently "AP up after 5 min, stays up." Any need for a
-  longer-term behaviour (deep-sleep-and-retry for battery devices is a runmode decision,
-  not this controller's -- the controller just publishes "hunting, AP up, 0 clients").
-- Exact per-reason retry cadences and escalation-delay values -- to be tuned against
-  real hardware.
+- Exact escalation delay and per-reason retry cadences -- to be tuned against real
+  hardware. Starting points: escalation ~1 min; `AUTH_FAIL` backoff stretching to
+  minutes; `NO_AP_FOUND`/`OTHER` steady, stretching to ~10-15 min after a long spell.
+- Tightening the AP-client hold from "client associated" to "client associated AND an
+  HTTP request in the last N seconds" -- a possible later refinement, not v1.
+- What "explicit request" for AP-up concretely is (physical config button, etc.) --
+  deferred, its own work.
+
+Resolved during design (recorded here so they are not re-litigated): the `proven` /
+`unproven` credentials distinction and a `fixed` vs `portable`/`off-grid` site-policy
+flag were both considered for gating the AP-raise decision and both dropped -- the
+AP-raise is unconditional, and AP *persistence* is already handled orthogonally by the
+runmode sleep timer + `disableWiFiOnSleep`. `OTHER` failure reason behaves like
+`NO_AP_FOUND`; `HANDSHAKE_TIMEOUT` is folded into `AUTH_FAIL` by the driver.
 
 ## Acceptance tests
 
@@ -296,16 +304,21 @@ claim to verify, not assume.
 2. **Config-mode exit does not churn STA.** Enter config mode while STA connected, then
    let it time out / leave explicitly -> AP drops, STA connection is uninterrupted.
    (Today: full STA disconnect/reconnect cycle.)
-3. **Proven network briefly absent.** Established connection, network goes away for
-   < 5 min, comes back -> device reconnects, AP never came up, no config-mode change.
-4. **Mistyped ssid.** Unproven creds, `NO_AP_FOUND` -> AP up within ~1 min, loud status.
-5. **Password changed.** Proven creds, `AUTH_FAIL` -> a few retries, backoff (not a
-   tight loop), AP up, loud status.
+3. **Brief outage.** Established connection, network gone for a few seconds to ~1 min,
+   comes back -> SDK auto-reconnect restores it, the controller never leaves the
+   connected path, AP never came up, no config-mode change.
+4. **Nonexistent ssid.** Configure an ssid that is not on the air -> after a few
+   retries, AP up within ~1 min, loud status.
+5. **Wrong password.** `AUTH_FAIL` -> a few retries then a stretching backoff (not a
+   tight loop -- verify the interval actually grows), AP up, loud status.
 6. **AP-client hold.** Client associates to the AP -> no channel-hopping scan for the
    hold window even if `clientCount` briefly hits 0.
-7. **AP/STA channel behaviour** -- bench, per chip: AP up + hunting, observe whether the
+7. **Sleep bounds the AP.** Battery device, off-grid, network absent -> AP comes up ~1
+   min after STA fails, then the wake window ends and `disableWiFiOnSleep` takes the
+   radio down; AP is not held across the sleep.
+8. **AP/STA channel behaviour** -- bench, per chip: AP up + hunting, observe whether the
    scan hops and whether AP clients survive; confirm the mutually-exclusive model holds.
-8. **Security invariant.** Device in post-escalation AP-fallback -> attempt to change a
+9. **Security invariant.** Device in post-escalation AP-fallback -> attempt to change a
    protected setting over the AP without config mode -> rejected.
 
 ## Sequencing
