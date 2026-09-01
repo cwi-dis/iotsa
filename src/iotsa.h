@@ -112,10 +112,12 @@ protected:
 //
 //  - instance() returns the one instance, or nullptr if the sketch never
 //    declared it and nothing has called ensure() yet.
-//  - ensure(app) returns it, constructing it (via a T(IotsaApplication&)
-//    constructor) the first time. Call this from code that needs the module to
-//    exist whether or not the sketch declared it -- e.g. IotsaBleApiService::
-//    setup() needs a BLE server module for HPS to work, see cwi-dis/iotsa#84.
+//  - ensure(app, ...) returns it, constructing it the first time via
+//    T(IotsaApplication&, <extra args forwarded>) -- most modules take just
+//    (app), IotsaConfigMod also takes an auth provider. Call this from code that
+//    needs the module to exist whether or not the sketch declared it -- e.g.
+//    IotsaBleApiService::setup() needs a BLE server module for HPS to work, see
+//    cwi-dis/iotsa#84.
 //  - T's real constructor must call claimSingleton(this), so an
 //    explicitly-declared instance is registered too and a second one is caught
 //    (loud log, first instance kept) rather than silently shadowing the first.
@@ -124,8 +126,10 @@ template <class T>
 class IotsaSingletonModule {
 public:
   static T *instance() { return _instance; }
-  static T *ensure(IotsaApplication &app) {
-    if (_instance == nullptr) new T(app); // constructor calls claimSingleton()
+  template <typename... Args>
+  static T *ensure(IotsaApplication &app, Args&&... args) {
+    // constructor calls claimSingleton()
+    if (_instance == nullptr) new T(app, static_cast<Args&&>(args)...);
     return _instance;
   }
 protected:

@@ -20,11 +20,16 @@ static int privateNetworkModeReason;
 
 IotsaWifiMod::IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth)
 : IotsaModule(_app, _auth, true),
-  configMod(_app, _auth),
   ssid(""),
   ssidPassword(""),
   searchTimeoutMillis(0)
 {
+  // IotsaConfigMod is core infrastructure, not a WiFi sub-object -- it used to be a
+  // member here purely so it got created, which meant a WiFi-less build lost
+  // /api/config entirely (cwi-dis/iotsa#195). Create it via the shared singleton
+  // instead, forwarding our auth provider; IotsaApplication::setup() also ensures
+  // it, so it exists even when there's no WiFi module at all.
+  IotsaConfigMod::ensure(_app, _auth);
 }
 
 void IotsaWifiMod::setup() {

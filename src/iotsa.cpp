@@ -1,6 +1,7 @@
 #include <Esp.h>
 #include "iotsa.h"
 #include "iotsaHttpServer.h"
+#include "iotsaConfigMod.h"
 #include "iotsaFS.h"
 #if defined(IOTSA_HAS_COAPSERVER) || defined(IOTSA_HAS_HPSSERVER)
 #include "iotsaApi.h"
@@ -76,9 +77,14 @@ IotsaApplication::setup() {
   } else {
     IFDEBUG IotsaSerial.println(IOTSA_FS_NAME " mounted");
   }
-  // Normally iotsaConfigMod is initialized by the WiFi module,
-  // but if the WiFi module isn't indluded we ensure that the configuration file is loaded anyway.
   iotsaConfig.ensureConfigLoaded();
+
+  // IotsaConfigMod (hostname, TLS certs, configuration-mode handling) is core
+  // infrastructure, independent of WiFi. It used to be created only as a member of
+  // IotsaWifiMod, so a WiFi-less build lost /api/config entirely (cwi-dis/iotsa#195).
+  // Ensure it here; an explicit declaration or IotsaWifiMod (which forwards its auth
+  // provider) still wins via the singleton.
+  IotsaConfigMod::ensure(*this);
 
   // Ensure the CoAP/HPS companion modules exist before any module's setup() runs,
   // rather than being lazily created as a side effect of whichever module happens to

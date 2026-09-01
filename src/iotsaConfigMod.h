@@ -3,7 +3,7 @@
 #include "iotsa.h"
 #include "iotsaApi.h"
 
-class IotsaConfigMod : public IotsaModule {
+class IotsaConfigMod : public IotsaModule, public IotsaSingletonModule<IotsaConfigMod> {
 public:
   IotsaConfigMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL)
   : IotsaModule(_app, _auth, true)
@@ -14,6 +14,7 @@ public:
   newKeyLength(0)
 #endif // IOTSA_WITH_HTTPS
   {
+    claimSingleton(this);
   }
 	void setup() override;
 	void lateSetup() override;

@@ -32,7 +32,6 @@ private:
   void _wifiStopAP(iotsa_wifi_mode mode);
   bool _wifiStartMDNS();
   void _wifiOff();
-  IotsaConfigMod configMod;
   String ssid;
   String ssidPassword;
   bool wifiPowerReduction;
