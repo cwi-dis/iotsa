@@ -9,10 +9,11 @@ deciding where each tangled responsibility in `IotsaConfig` / `IotsaConfigMod` /
 tenant of that decision, so it gets designed first: the controller's shape then informs
 the `IotsaRunmodeMod` / `IotsaConfigMod` split rather than the split being guessed at.
 
-See the 2026-09-01 findings comment on #106 for the full catalogue of what is wrong with
-the current `iotsaWifi.cpp`. The short version: one `iotsa_wifi_mode` enum fuses two
-orthogonal concerns (STA connection state and "is the AP also up"), three hand-rolled
-timers do one job, a config-file save triggers a state transition as a side effect,
+See the 2026-09-01 findings comment on #106 (`#issuecomment-5496898286`) for the full
+catalogue of what is wrong with the current `iotsaWifi.cpp`. The short version: one
+`iotsa_wifi_mode` enum fuses two orthogonal concerns (STA connection state and "is the
+AP also up"), three hand-rolled timers do one job, a config-file save triggers a state
+transition as a side effect,
 there is no single writer of the state, and there is at least one confirmed latent bug
 (a fresh device that is given credentials without an explicit `reboot` never leaves
 factory/AP mode -- `wifiMode` has no FACTORY->NORMAL transition except at boot).
@@ -74,6 +75,25 @@ expanded `iotsaConfig`, a new `iotsaControl`, or `IotsaRunmodeMod` -- is deliber
 concrete. The controller is written as its own state-machine type with its own header so
 the eventual move is mechanical.
 
+### The reconciliation model
+
+The controller never issues driver commands imperatively in response to an event. It
+keeps a **desired state** (mode, ssid/psk, whether the AP should be up) and, on every
+tick and every event, runs a **reconcile** step:
+
+1. `readActualState()` from the driver.
+2. Compare against desired.
+3. If they already match -- including "actual is *coming up* into the desired state"
+   (`STA_CONNECTING` toward the wanted ssid) -- **do nothing**.
+4. Otherwise issue the minimal driver command to close the gap, *if it is safe to act
+   right now* (e.g. do not restart the softAP while it has a client -- see "AP stability
+   while serving a client"). If it is not safe, leave the gap and reconcile again later.
+
+Everything else in this document is expressed as inputs to "desired state" or as
+"safe to act?" guards. Deferred application of a setting (a hostname change that renames
+the AP, say) needs no special bookkeeping: the setting is persisted immediately, desired
+state changes, and the next reconcile that finds it safe closes the gap.
+
 ### STA sub-state
 
 A real state machine, not an enum value shared with AP concerns:
@@ -89,6 +109,12 @@ A real state machine, not an enum value shared with AP concerns:
 `setAutoReconnect(true)` handles the fast transient blip (~1 s) below this state
 machine; anything longer surfaces as `sta_failed`/`sta_lost` and is handled uniformly by
 `STA_HUNTING`. There is no separate "was previously connected" code path.
+
+`setAutoReconnect(true)` is the one piece of autonomous SDK behaviour the design keeps.
+It does not violate "the controller is the sole authority" because it only ever does
+what the controller would ask for anyway -- reconnect to the same AP it was just on --
+and it does it faster than the controller's debounce could react. Anything it cannot fix
+within the blip window surfaces normally.
 
 ### AP state is a *derived fact*, not a state
 
@@ -153,6 +179,13 @@ The failure `reason` still matters, but only for **retry cadence**, not for the 
 
 The former `10 x IOTSA_WIFI_TIMEOUT` (300 s) constant was arbitrary and is gone.
 
+**Wedged stack.** If several consecutive connect attempts make no progress at all, or
+`readActualState()` shows the radio in an impossible state (`WL_IDLE_STATUS` /
+`WL_NO_SHIELD` when it should be connecting), the controller calls the driver's
+`reinitStack()` -- `WiFi.disconnect(true)` -> `WiFi.mode(WIFI_OFF)` -> `WiFi.mode(WIFI_STA)`
+-- and resumes hunting. This replaces today's `ESP.restart()` "WiFi unexpectedly gone
+idle, rebooting" sledgehammer. A reboot is never a WiFi-recovery action.
+
 ### AP stability while serving a client
 
 General rule: **once the softAP has a client, treat it as a stable resource -- defer
@@ -160,15 +193,17 @@ anything that would tear it down or restart it until the client leaves** (or the
 reboots, or the hold below expires). Two things this covers:
 
 1. **The channel-hopping STA scan.** The moment a client associates
-   (`ap_client_connected`), arm a "no channel-hopping scan for ~1 minute" hold (value
-   tunable). Re-arm on each new client connect (optionally also on each HTTP request).
-   The disruptive scan resumes only when the hold has expired **and**
-   `ap.clientCount == 0`. Rationale: someone configuring will disconnect/reconnect
-   (WiFi flakiness, switching devices, the config flow itself); channel-hopping
-   mid-session would knock them off, and a timed hold gives a stable window robust to
-   transient drops. "Suspend the scan" means the **channel-hopping scan** only --
-   home-channel-only retry and targeted reconnect via the cached BSSID+channel do not
-   disrupt the AP and may continue.
+   (`ap_client_connected`), arm the **AP-client hold** -- "no channel-hopping scan for
+   ~1 minute" (value tunable). Re-arm on each new client connect (optionally also on
+   each HTTP request). The disruptive scan resumes only when the hold has expired
+   **and** `ap.clientCount == 0`. Rationale: someone configuring will
+   disconnect/reconnect (WiFi flakiness, switching devices, the config flow itself);
+   channel-hopping mid-session would knock them off, and a timed hold gives a stable
+   window robust to transient drops. "Suspend the scan" means the **channel-hopping
+   scan** only -- home-channel-only retry may continue. A targeted reconnect via the
+   cached BSSID+channel is safe *only if that channel equals the current AP channel*;
+   on a different channel it yanks the softAP's channel and drops the client, so it too
+   is subject to the hold.
 
 2. **A softAP rename.** The AP name is `config-<hostname>`, so editing the hostname in
    config mode changes it -- restarting the AP would drop the client mid-session. This
@@ -218,6 +253,31 @@ The scan-during-softAP interaction is chip- and core-version-specific and barely
 documented. The design must not *assume* concurrent hunt+AP works; it picks the
 mutually-exclusive model and we verify what each chip actually does.
 
+## Radio coexistence and the calm-radio signal
+
+WiFi/BLE 2.4 GHz coexistence -- not crashing when both stacks want the radio -- is
+handled by the framework (`esp_coex` time-slicing on ESP32). What the framework does
+*not* know is application intent: "a human is loading a config page right now, WiFi
+should win over a background BLE scan."
+
+So the "keep the radio calm" state is **published by the controller**, not kept as a
+WiFi-module-private flag. A query -- working name `radioShouldStayCalm()` -- that any
+radio-using module can read:
+
+- **Contributors** (raise it): WiFi (the AP has a client; STA is mid-connect on a
+  marginal link; a channel-hopping scan is running), BLE (a client connection is being
+  established), possibly others later.
+- **Consumers** (respect it): `IotsaBLEClientMod` and the #208 outbound-command work
+  (defer or shorten scans, defer non-urgent outbound connections -- a BLE scan
+  channel-hops too and degrades exactly the softAP link the arbiter is trying to
+  protect); WiFi itself (its internal channel-hop hold is one instance); the runmode
+  module (a busy radio is a weak "not yet" for sleep).
+
+This is the same publish -> aggregate -> query shape as the sleep-inhibit interface
+(#106 part 2) and probably shares its mechanism. It is noted here as a cross-module
+concern to design *alongside* sleep-inhibit; not fully specified in this document. The
+one firm decision: the AP-busy / calm-radio state is deliberately not WiFi-private.
+
 ## Persistence strategy
 
 Lean on the SDK's own credential store (flash on ESP8266, NVS on ESP32) rather than
@@ -255,6 +315,12 @@ machinery:
   stronger).
 - **Configuration mode => the AP is always up**, for the whole duration, unconditionally.
   Replaces the scattered `if (inConfigurationMode())` AP checks in `_wifiGotoMode()`.
+- **STA runs normally throughout configuration mode.** Config mode only forces the AP
+  up *alongside* whatever STA is doing -- it does not stop, pause or gate STA. So a
+  fresh device given credentials over the config AP goes `STA_CONNECTING` immediately,
+  connects while still in config mode, and when config mode later times out the AP
+  drops with STA already connected. This is the mechanism that makes acceptance test 1
+  pass; today's `wifiMode` enum has no path out of `FACTORY` except a reboot.
 - **Leaving configuration mode drops the AP and touches STA not at all.** Today
   `endConfigurationMode()` cycles STA through a full disconnect/reconnect purely because
   "drop the AP" and "connect STA from scratch" share `_wifiGotoMode()`. In the new model
@@ -263,8 +329,10 @@ machinery:
   setting; the request handler that implies a transition triggers it explicitly.
 - `getStatusColor()` needs its own rethink -- it currently switches on `wifiMode` *and*
   `configurationMode` with an "extra white tint" hack. New inputs: `configurationMode`
-  (CONFIG / OTA / FACTORY_RESET), `sta.connected`, `ap.up`, radio-disabled. Whether
-  `STA_HUNTING` ("SEARCHING") deserves its own colour is a call for the status-LED work
+  (`CONFIG` / `OTA` / `FACTORY_RESET` -- the last being the wipe-and-reboot mode, a
+  `config_mode` enum value unrelated to the now-deleted `IOTSA_WIFI_FACTORY`),
+  `sta.connected`, `ap.up`, radio-disabled. Whether `STA_HUNTING` ("SEARCHING")
+  deserves its own colour is a call for the status-LED work
   ([#176](https://github.com/cwi-dis/iotsa/issues/176)); record the inputs here, design
   the colours there.
 
@@ -292,7 +360,36 @@ deadline on an event, check it in the tick -- instead of the current hand-rolled
 `wantWifiModeSwitchAtMillis` plus BLE's separate copy of the same `wantBleModeSwitchAtMillis`
 pattern. The BLE server's mode-switch timing moves onto the same primitive.
 
-## Open questions
+## Observability
+
+Two separate things, often conflated in the current code:
+
+**Trace log -- verbose, compile-time opt-in.** Behind `IOTSA_WIFI_DEBUG` (matching the
+existing `IOTSA_BLE_DEBUG` / `IOTSA_DEBUG_BLE_PRINT_ALL_CLIENTS` naming), the controller
+logs via `IotsaSerial` (so it also lands in the `IotsaLoggerMod` ring buffer when that
+module is present, retrievable over the network after a field failure). Lines are
+prefixed `iotsaWifi:` (the `name:` prefix convention already used throughout iotsa --
+tells you at a glance it is our code). Log:
+
+- every STA sub-state transition and every AP up/down
+- every driver event received, with its reason code
+- every scheduler timer arm / fire
+- every reconcile decision -- **including the no-ops** ("desired == actual, no action"),
+  which are what you need to answer "why did it not do X"
+
+Off by default; zero cost in a production build.
+
+**"Loud status" -- always on, user-facing.** Referred to in "Failure handling" and the
+acceptance tests. It is the persistent, no-tools-needed signal that WiFi is unhealthy:
+
+- an input to the status LED (see `getStatusColor()` above / [#176](https://github.com/cwi-dis/iotsa/issues/176))
+- a "wifi health" summary in the `/api/wificonfig` info output -- current STA state, the
+  last failure reason, whether the AP is up and why -- so a glance at `iotsa xInfo`
+  tells you what is wrong without a serial cable.
+
+## Open questions and settled points
+
+Still open:
 
 - Exact escalation delay and per-reason retry cadences -- to be tuned against real
   hardware. Starting points: escalation ~1 min; `AUTH_FAIL` backoff stretching to
@@ -302,12 +399,16 @@ pattern. The BLE server's mode-switch timing moves onto the same primitive.
 - What "explicit request" for AP-up concretely is (physical config button, etc.) --
   deferred, its own work.
 
-Resolved during design (recorded here so they are not re-litigated): the `proven` /
-`unproven` credentials distinction and a `fixed` vs `portable`/`off-grid` site-policy
-flag were both considered for gating the AP-raise decision and both dropped -- the
-AP-raise is unconditional, and AP *persistence* is already handled orthogonally by the
-runmode sleep timer + `disableWiFiOnSleep`. `OTHER` failure reason behaves like
-`NO_AP_FOUND`; `HANDSHAKE_TIMEOUT` is folded into `AUTH_FAIL` by the driver.
+Settled during the design discussion, recorded so they are not re-litigated:
+
+- The `proven` / `unproven` credentials distinction and a `fixed` vs
+  `portable`/`off-grid` site-policy flag were both considered for gating the AP-raise
+  decision and both dropped. The AP-raise is unconditional; AP *persistence* is handled
+  orthogonally by the runmode sleep timer + `disableWiFiOnSleep`.
+- `OTHER` failure reason behaves like `NO_AP_FOUND`; `HANDSHAKE_TIMEOUT` folds into
+  `AUTH_FAIL` in the driver.
+- The calm-radio state is controller-published, not WiFi-private (see "Radio
+  coexistence").
 
 ## Acceptance tests
 
