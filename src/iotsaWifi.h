@@ -29,50 +29,17 @@ private:
   // modules read; start/stop mDNS and poke the status LED on the edges.
   void _publishControllerState();
 
-  IotsaWifiController _controller{*this};  // the policy layer (cwi-dis/iotsa#106)
+  // The mechanism/policy pair (cwi-dis/iotsa#106). IotsaWifiMod owns both, wires
+  // them together, and keeps only the standard-module concerns for itself:
+  // config load/save, the /api/wificonfig + web interface, info(), lifecycle.
+  IotsaWifiDriver _driver;
+  IotsaWifiController _controller{_driver};
   bool _lastStaConnected = false;
   bool _lastApActive = false;
 
   String ssid;
   String ssidPassword;
   bool wifiPowerReduction;
-
-  // ===== Driver surface (cwi-dis/iotsa#106) =====
-  // A thin, policy-free mechanism layer: imperative radio ops, events latched by
-  // the platform WiFi callbacks, and introspection. Policy lives in
-  // IotsaWifiController (below). The shared value types (IotsaWifiActualState /
-  // IotsaWifiEvents / IotsaWifiStaFailReason) are declared in iotsaWifiController.h.
-  // For now this coexists with the legacy _wifi* machinery and loop() logic, which
-  // still runs; that goes once the controller is wired in (slice 3b).
-public:
-  // Radio ops: fire, report whether the *attempt* was issued (not whether it
-  // completed). No timers, no policy, no writes to iotsaConfig.wifiMode.
-  bool startStation(const String& targetSsid, const String& targetPsk, uint8_t channel = 0, const uint8_t* bssid = nullptr);
-  void stopStation();
-  bool startAP(const String& apName);
-  void stopAP();
-  void reinitStack();             // disconnect(true)/mode(OFF)/mode(STA) -- unwedge, never reboot
-
-  IotsaWifiActualState readActualState() const;
-  IotsaWifiEvents drainEvents();   // read-and-clear the latched events
-
-private:
-  void _installDriverEventHandlers();
-  static IotsaWifiStaFailReason _reduceStaFailReason(int reason);
-  // Latch storage, written only from the platform WiFi callbacks (foreign task
-  // context) -- single-word writes only, see cwi-dis/iotsa#236.
-  volatile bool _evStaGotIp = false;
-  volatile bool _evStaFailed = false;
-  volatile uint8_t _evStaFailReason = 0;
-  volatile bool _evStaLost = false;
-  volatile bool _evApClientCountChanged = false;
-  volatile uint8_t _evLastChannel = 0;
-  uint8_t _evLastBssid[6] = {0};
-  bool _driverHaveIp = false;      // touched only in the callbacks: staLost vs staFailed
-  bool _driverHandlersInstalled = false;
-#ifndef ESP32
-  WiFiEventHandler _evH_gotIp, _evH_disconnected, _evH_apConnect, _evH_apDisconnect;
-#endif
 };
 #elif IOTSA_WITH_PLACEHOLDERS
 class IotsaWifiMod : public IotsaBaseModule {

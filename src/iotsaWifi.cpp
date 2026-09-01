@@ -31,7 +31,7 @@ IotsaWifiMod::IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *
 
 void IotsaWifiMod::setup() {
   configLoad();  // also pushes credentials into the controller
-  _installDriverEventHandlers();   // cwi-dis/iotsa#106
+  _driver.begin();   // install the platform WiFi event handlers (cwi-dis/iotsa#106)
   _controller.setRadioEnabled(!iotsaConfig.wifiDisabledOnBoot);
   _controller.begin();
   // The controller does everything else from loop() -> tick(); it leaves the
@@ -266,6 +266,7 @@ void IotsaWifiMod::configLoad() {
     false
 #endif
   );
+  _driver.setTxPowerReduction(wifiPowerReduction);
   _controller.setCredentials(ssid, ssidPassword);
 }
 
@@ -278,6 +279,7 @@ void IotsaWifiMod::configSave() {
   // Persist only. The old factory->beginConfigurationMode() side effect and the
   // wantWifiModeSwitchAtMillis poke are gone (cwi-dis/iotsa#106): the request
   // handler tells the controller explicitly via credentialsChanged().
+  _driver.setTxPowerReduction(wifiPowerReduction);
   _controller.setCredentials(ssid, ssidPassword);
   _controller.credentialsChanged();
 }
@@ -290,161 +292,5 @@ void IotsaWifiMod::loop() {
   // mDNS happens asynchronously on ESP32
   if (iotsaConfig.mdnsEnabled) MDNS.update();
 #endif
-}
-
-// ===========================================================================
-// Driver surface (cwi-dis/iotsa#106). Policy-free mechanism, called by
-// IotsaWifiController.
-// ===========================================================================
-
-IotsaWifiStaFailReason IotsaWifiMod::_reduceStaFailReason(int reason) {
-  // The numeric values line up between the ESP8266 (WIFI_DISCONNECT_REASON_*) and
-  // ESP32 (WIFI_REASON_*) enums -- both extend the 802.11 spec reason codes.
-  switch (reason) {
-    case 201: // NO_AP_FOUND
-      return IotsaWifiStaFailReason::NoApFound;
-    case 202: // AUTH_FAIL
-    case 15:  // 4WAY_HANDSHAKE_TIMEOUT
-    case 204: // HANDSHAKE_TIMEOUT -- a wrong password often surfaces this way
-      return IotsaWifiStaFailReason::AuthFail;
-    default:
-      return IotsaWifiStaFailReason::Other;
-  }
-}
-
-void IotsaWifiMod::_installDriverEventHandlers() {
-  if (_driverHandlersInstalled) return;
-  _driverHandlersInstalled = true;
-#ifdef ESP32
-  WiFi.onEvent([this](WiFiEvent_t event, WiFiEventInfo_t info) {
-    switch (event) {
-      case ARDUINO_EVENT_WIFI_STA_GOT_IP:
-#ifdef ARDUINO_EVENT_WIFI_STA_GOT_IP6
-      case ARDUINO_EVENT_WIFI_STA_GOT_IP6:
-#endif
-        _evLastChannel = WiFi.channel();
-        { const uint8_t* b = WiFi.BSSID(); if (b) memcpy(_evLastBssid, b, 6); }
-        _driverHaveIp = true;
-        _evStaGotIp = true;
-        break;
-      case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
-        if (_driverHaveIp) { _evStaLost = true; _driverHaveIp = false; }
-        else { _evStaFailReason = (uint8_t)_reduceStaFailReason(info.wifi_sta_disconnected.reason); _evStaFailed = true; }
-        break;
-      case ARDUINO_EVENT_WIFI_AP_STACONNECTED:
-      case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED:
-        _evApClientCountChanged = true;
-        break;
-      default:
-        break;
-    }
-  });
-#else
-  _evH_gotIp = WiFi.onStationModeGotIP([this](const WiFiEventStationModeGotIP&) {
-    _evLastChannel = WiFi.channel();
-    const uint8_t* b = WiFi.BSSID();
-    if (b) memcpy(_evLastBssid, b, 6);
-    _driverHaveIp = true;
-    _evStaGotIp = true;
-  });
-  _evH_disconnected = WiFi.onStationModeDisconnected([this](const WiFiEventStationModeDisconnected& e) {
-    if (_driverHaveIp) { _evStaLost = true; _driverHaveIp = false; }
-    else { _evStaFailReason = (uint8_t)_reduceStaFailReason((int)e.reason); _evStaFailed = true; }
-  });
-  _evH_apConnect = WiFi.onSoftAPModeStationConnected([this](const WiFiEventSoftAPModeStationConnected&) {
-    _evApClientCountChanged = true;
-  });
-  _evH_apDisconnect = WiFi.onSoftAPModeStationDisconnected([this](const WiFiEventSoftAPModeStationDisconnected&) {
-    _evApClientCountChanged = true;
-  });
-#endif
-}
-
-IotsaWifiEvents IotsaWifiMod::drainEvents() {
-  IotsaWifiEvents e;
-  // Read-and-clear. Single-word volatile ops; the foreign-context callbacks only
-  // ever set these, so a lost race just defers an event one tick -- acceptable
-  // here, hardening tracked in cwi-dis/iotsa#236.
-  if (_evStaGotIp) {
-    e.staGotIp = true;
-    e.lastChannel = _evLastChannel;
-    memcpy(e.lastBssid, _evLastBssid, 6);
-    _evStaGotIp = false;
-  }
-  if (_evStaFailed) {
-    e.staFailed = true;
-    e.staFailReason = (IotsaWifiStaFailReason)_evStaFailReason;
-    _evStaFailed = false;
-  }
-  if (_evStaLost) { e.staLost = true; _evStaLost = false; }
-  if (_evApClientCountChanged) { e.apClientCountChanged = true; _evApClientCountChanged = false; }
-  return e;
-}
-
-IotsaWifiActualState IotsaWifiMod::readActualState() const {
-  IotsaWifiActualState st;
-  int mode = (int)WiFi.getMode();
-  st.staEnabled = (mode & (int)WIFI_STA) != 0;
-  st.apEnabled = (mode & (int)WIFI_AP) != 0;
-  wl_status_t link = WiFi.status();
-  st.staLinkStatus = (int)link;
-  st.staConnected = (link == WL_CONNECTED);
-  if (st.staConnected) st.staChannel = WiFi.channel();
-#ifdef ESP32
-  wifi_config_t conf;
-  if (esp_wifi_get_config(WIFI_IF_STA, &conf) == ESP_OK) {
-    st.staConfiguredSsid = String((const char *)conf.sta.ssid);
-    st.staConfiguredPsk = String((const char *)conf.sta.password);
-  }
-#else
-  st.staConfiguredSsid = WiFi.SSID();
-  st.staConfiguredPsk = WiFi.psk();
-#endif
-  if (st.apEnabled) {
-    st.apSsid = WiFi.softAPSSID();
-    st.apClientCount = WiFi.softAPgetStationNum();
-  }
-  return st;
-}
-
-bool IotsaWifiMod::startStation(const String& targetSsid, const String& targetPsk, uint8_t channel, const uint8_t* bssid) {
-  WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() | (int)WIFI_STA);
-  if (!WiFi.mode(newMode)) return false;
-  wl_status_t sts;
-  if (channel != 0 && bssid != nullptr) {
-    sts = WiFi.begin(targetSsid.c_str(), targetPsk.c_str(), channel, bssid);
-  } else {
-    sts = WiFi.begin(targetSsid.c_str(), targetPsk.c_str());
-  }
-#ifdef ESP32
-  if (wifiPowerReduction) WiFi.setTxPower(WIFI_POWER_8_5dBm);
-#endif
-  WiFi.setAutoReconnect(true);
-  return sts != WL_CONNECT_FAILED;
-}
-
-void IotsaWifiMod::stopStation() {
-  WiFi.disconnect(false); // keep stored credentials
-  WiFi.mode((WiFiMode_t)((int)WiFi.getMode() & ~(int)WIFI_STA));
-  _driverHaveIp = false;
-}
-
-bool IotsaWifiMod::startAP(const String& apName) {
-  WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() | (int)WIFI_AP);
-  if (!WiFi.mode(newMode)) return false;
-  return WiFi.softAP(apName.c_str());
-}
-
-void IotsaWifiMod::stopAP() {
-  WiFi.softAPdisconnect(false);
-  WiFi.mode((WiFiMode_t)((int)WiFi.getMode() & ~(int)WIFI_AP));
-}
-
-void IotsaWifiMod::reinitStack() {
-  WiFi.disconnect(true);
-  WiFi.mode(WIFI_OFF);
-  delay(10);
-  WiFi.mode(WIFI_STA);
-  _driverHaveIp = false;
 }
 #endif // IOTSA_WITH_WIFI

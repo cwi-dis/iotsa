@@ -2,51 +2,21 @@
 #define _IOTSAWIFICONTROLLER_H_
 #include <Arduino.h>
 #include "iotsaDeadline.h"
+#include "iotsaWifiDriver.h"   // IotsaWifiDriver + the shared value types
 
 //
 // The WiFi *policy* layer -- see docs/wifi-controller-design.md.
 //
-// IotsaWifiMod is the driver (radio ops + latched events + introspection) plus
-// module glue plus persisted settings. IotsaWifiController is policy only: the STA
-// state machine, the retry/escalation cadence, the derived "AP should be up" fact,
-// and a declare-desired / reconcile / safe-to-act loop. It has no IotsaModule-ness,
-// no persistence, no REST. IotsaWifiMod owns one as a member, feeds it the desired
-// state, and reads back the published state (which IotsaWifiMod then copies into
-// the iotsaConfig fields other modules read).
+// IotsaWifiDriver is the mechanism (radio ops + latched events + introspection).
+// IotsaWifiController is policy only: the STA state machine, the retry/escalation
+// cadence, the derived "AP should be up" fact, and a declare-desired / reconcile /
+// safe-to-act loop. No IotsaModule-ness, no persistence, no REST. IotsaWifiMod
+// owns both, feeds this one its desired state, and reads back the published state
+// (which IotsaWifiMod then copies into the iotsaConfig fields other modules read).
 //
 
-class IotsaWifiMod; // controller calls back into the driver methods on this
-
-// ---------------------------------------------------------------------------
-// Shared driver <-> controller value types (free, not nested, to avoid an
-// iotsaWifi.h <-> iotsaWifiController.h circular include).
-// ---------------------------------------------------------------------------
-
-// Mixed-case members throughout this file: several obvious SCREAMING_CASE names
+// Mixed-case enum members throughout: several obvious SCREAMING_CASE names
 // (DISABLED, CONNECTED, ...) are framework macros and collide even in an enum class.
-enum class IotsaWifiStaFailReason : uint8_t { None, NoApFound, AuthFail, Other };
-
-struct IotsaWifiActualState {
-  bool staEnabled = false;      // WiFi.getMode() has the STA bit
-  bool apEnabled = false;       // WiFi.getMode() has the AP bit
-  bool staConnected = false;    // WiFi.status() == WL_CONNECTED
-  int staLinkStatus = 0;        // raw wl_status_t
-  String staConfiguredSsid;     // the target, readable even mid-connect
-  String staConfiguredPsk;
-  uint8_t staChannel = 0;       // meaningful only while staConnected
-  String apSsid;
-  int apClientCount = 0;
-};
-
-struct IotsaWifiEvents {        // what the driver's callbacks latched since last drain
-  bool staGotIp = false;
-  bool staFailed = false;
-  IotsaWifiStaFailReason staFailReason = IotsaWifiStaFailReason::None;
-  bool staLost = false;         // was connected, then dropped
-  bool apClientCountChanged = false;
-  uint8_t lastChannel = 0;      // from the most recent staGotIp
-  uint8_t lastBssid[6] = {0};   // from the most recent staGotIp
-};
 
 // The two WiFi modes' states, published to iotsaConfig. Each enum just reports
 // its own mode; interesting *combinations* (fallback AP, config-mode AP, "setup
@@ -70,7 +40,7 @@ enum class IotsaWifiApState : uint8_t {
 
 class IotsaWifiController {
 public:
-  explicit IotsaWifiController(IotsaWifiMod &mod) : _mod(mod) {}
+  explicit IotsaWifiController(IotsaWifiDriver &driver) : _driver(driver) {}
 
   // Lifecycle, driven by IotsaWifiMod.
   void begin();  // from IotsaWifiMod::setup(), after configLoad()
@@ -101,7 +71,7 @@ private:
   bool _apDisruptionSafe() const;                        // no client + hold expired
   String _apName() const;                                // "config-<hostname>"
 
-  IotsaWifiMod &_mod;
+  IotsaWifiDriver &_driver;
 
   // desired state
   String _ssid, _psk;

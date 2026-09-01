@@ -1,6 +1,5 @@
 #include "iotsaWifiController.h"
-#include "iotsa.h"
-#include "iotsaWifi.h"
+#include "iotsa.h"   // for iotsaConfig (hostName)
 
 #ifdef IOTSA_WITH_WIFI
 
@@ -48,8 +47,8 @@ void IotsaWifiController::begin() {
 }
 
 void IotsaWifiController::tick() {
-  IotsaWifiEvents ev = _mod.drainEvents();
-  IotsaWifiActualState actual = _mod.readActualState();
+  IotsaWifiEvents ev = _driver.drainEvents();
+  IotsaWifiActualState actual = _driver.readActualState();
   _apClientCount = actual.apClientCount;
 
   _handleEvents(ev, actual);
@@ -131,7 +130,7 @@ void IotsaWifiController::_startStaAttempt() {
     ch = _cache.channel;
     bssid = _cache.bssid;
   }
-  bool issued = _mod.startStation(_ssid, _psk, ch, bssid);
+  bool issued = _driver.startStation(_ssid, _psk, ch, bssid);
   WCDEBUG("startStation ssid='%s' targeted=%d issued=%d", _ssid.c_str(), (int)(bssid != nullptr), (int)issued);
   if (!issued) {
     // WiFi.begin() outright refused -- treat like a connect failure, will retry.
@@ -141,7 +140,7 @@ void IotsaWifiController::_startStaAttempt() {
     if (!_escalationDeadline.armed()) _escalationDeadline.arm(ESCALATION_MS);
     if (++_noProgressAttempts >= NO_PROGRESS_LIMIT) {
       WCDEBUG("stack wedged -> reinitStack");
-      _mod.reinitStack();
+      _driver.reinitStack();
       _noProgressAttempts = 0;
     }
     return;
@@ -193,7 +192,7 @@ void IotsaWifiController::_serviceTimers() {
     if (!_escalationDeadline.armed()) _escalationDeadline.arm(ESCALATION_MS);
     if (++_noProgressAttempts >= NO_PROGRESS_LIMIT) {
       WCDEBUG("stack wedged -> reinitStack");
-      _mod.reinitStack();
+      _driver.reinitStack();
       _noProgressAttempts = 0;
     }
   }
@@ -211,7 +210,7 @@ void IotsaWifiController::_reconcile(const IotsaWifiActualState &actual) {
   if (!wantSta) {
     if (actual.staEnabled) {
       WCDEBUG("reconcile: STA not wanted -> stopStation");
-      _mod.stopStation();
+      _driver.stopStation();
     }
     if (_staState != IotsaWifiStaState::Off) _staState = IotsaWifiStaState::Off;
   } else {
@@ -248,14 +247,14 @@ void IotsaWifiController::_reconcile(const IotsaWifiActualState &actual) {
   const bool wantAp = _wantApUp();
   if (wantAp && !actual.apEnabled) {
     // Bringing the AP up is always safe (there is no client on an AP that is off).
-    if (_mod.startAP(_apName())) {
+    if (_driver.startAP(_apName())) {
       WCDEBUG("reconcile: AP up ('%s')", _apName().c_str());
       _apUp = true;
     }
   } else if (!wantAp && actual.apEnabled) {
     if (_apDisruptionSafe()) {
       WCDEBUG("reconcile: AP down");
-      _mod.stopAP();
+      _driver.stopAP();
       _apUp = false;
     }
     // else: keep it until the client leaves / the hold expires (docs "AP stability")
