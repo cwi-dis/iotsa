@@ -16,13 +16,10 @@
 
 #ifdef IOTSA_WITH_WIFI
 
-static int privateNetworkModeReason;
-
 IotsaWifiMod::IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth)
 : IotsaModule(_app, _auth, true),
   ssid(""),
-  ssidPassword(""),
-  searchTimeoutMillis(0)
+  ssidPassword("")
 {
   // IotsaConfigMod is core infrastructure, not a WiFi sub-object -- it used to be a
   // member here purely so it got created, which meant a WiFi-less build lost
@@ -33,165 +30,40 @@ IotsaWifiMod::IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *
 }
 
 void IotsaWifiMod::setup() {
-  configLoad();
-  _installDriverEventHandlers();   // cwi-dis/iotsa#106 -- inert until the controller drains them
-  if (iotsaConfig.wifiDisabledOnBoot) {
-    IFDEBUG IotsaSerial.println("WiFi disabled by iotsaBattery");
-    WiFiMode_t newMode = WIFI_OFF;
-    IotsaSerial.printf("WiFi.mode(%d)", newMode);
-    WiFi.mode(newMode);
-    iotsaConfig.wifiMode = iotsa_wifi_mode::IOTSA_WIFI_DISABLED;
+  configLoad();  // also pushes credentials into the controller
+  _installDriverEventHandlers();   // cwi-dis/iotsa#106
+  _controller.setRadioEnabled(!iotsaConfig.wifiDisabledOnBoot);
+  _controller.begin();
+  // The controller does everything else from loop() -> tick(); it leaves the
+  // radio untouched here so a wifiDisabledOnBoot device simply never turns it on.
+}
+
+void IotsaWifiMod::_publishControllerState() {
+  const bool staConn = _controller.staConnected();
+  const bool apAct = _controller.apActive();
+
+  iotsaConfig.wifiStationConnected = staConn;
+  iotsaConfig.wifiApActive = apAct;
+  iotsaConfig.wifiEnabled = (_controller.staState() != IotsaWifiStaState::Off) || apAct;
+
+  // Vestigial wifiMode -- kept written until slice 4 removes the enum and updates
+  // getStatusColor() / privateWifi / networkIsUp() / inConfigurationOrFactoryMode().
+  iotsa_wifi_mode m;
+  if (staConn) m = IOTSA_WIFI_NORMAL;
+  else if (_controller.staState() == IotsaWifiStaState::Connecting) m = IOTSA_WIFI_SEARCHING;
+  else if (_controller.staState() == IotsaWifiStaState::Hunting) m = apAct ? IOTSA_WIFI_NOTFOUND : IOTSA_WIFI_SEARCHING;
+  else m = apAct ? IOTSA_WIFI_FACTORY : IOTSA_WIFI_DISABLED;
+  if (m != iotsaConfig.wifiMode) iotsaConfig.wifiMode = m;
+
+  // mDNS follows the STA-connected / AP-active edges (each has its own IP).
+  if ((staConn && !_lastStaConnected) || (apAct && !_lastApActive)) {
+    _wifiStartMDNS();
+  }
+  if ((staConn != _lastStaConnected) || (apAct != _lastApActive)) {
     if (app.status) app.status->showStatus();
-    iotsaConfig.wantWifiModeSwitchAtMillis = 0;
-    return;
-  } else {
-    // Otherwise we presume Normal mode, which will revert to factory if we have no SSID.
-    iotsaConfig.wifiMode = iotsa_wifi_mode::IOTSA_WIFI_NORMAL;
   }
-  _wifiGotoMode();
-}
-
-void IotsaWifiMod::_wifiGotoMode() {
-  if (iotsaConfig.wifiMode != iotsa_wifi_mode::IOTSA_WIFI_DISABLED) {
-    configLoad();
-  }
-  if (iotsaConfig.wifiMode == iotsa_wifi_mode::IOTSA_WIFI_NORMAL) {
-    if (ssid.length() == 0) {
-      // If no ssid is configured we revert to fatory mode.
-      iotsaConfig.wifiMode = iotsa_wifi_mode::IOTSA_WIFI_FACTORY;
-    }
-  }
-  if (iotsaConfig.wifiMode == IOTSA_WIFI_DISABLED) {
-    _wifiStopStation();
-    _wifiStopAP(IOTSA_WIFI_DISABLED);
-    iotsaConfig.wifiEnabled = false;
-    return;
-  }
-  iotsaConfig.wifiEnabled = true;
-  if (iotsaConfig.wifiMode == IOTSA_WIFI_FACTORY) {
-    _wifiStopStation();
-    _wifiStartAP(IOTSA_WIFI_FACTORY);
-  } else {
-    if (iotsaConfig.inConfigurationMode()) {
-      // In configuration mode we want both AP and STA
-      if ((int)WiFi.getMode() & (int)WIFI_AP) {
-        ; // Already in AP mode. Leave it so.
-      } else {
-        _wifiStartAP(IOTSA_WIFI_SEARCHING);
-      }
-    } else {
-      // Try by Jack: continue in AP mode if we were in AP mode.
-      // _wifiStopAP(IOTSA_WIFI_SEARCHING);
-    }
-    _wifiStartStation();
-  }
-}
-
-bool IotsaWifiMod::_wifiStartStation() {
-  WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() | (int)WIFI_STA);
-  IotsaSerial.printf("WiFi.mode(%d)\n", newMode);
-  if (!WiFi.mode(newMode)) {
-    IotsaSerial.printf("WiFi.mode(WIFI_STA (%d)) failed", (int)newMode);
-    return false;
-  }
-  IFDEBUG IotsaSerial.print("Connecting to ");
-  IFDEBUG IotsaSerial.println(ssid);
-  wl_status_t sts = WiFi.begin(ssid.c_str(), ssidPassword.c_str());
-#ifdef ESP32
-  if (wifiPowerReduction) {
-    WiFi.setTxPower(WIFI_POWER_8_5dBm);
-    IFDEBUG IotsaSerial.println("WiFi power reduction enabled");
-  }
-#endif
-  if (sts == WL_CONNECT_FAILED) {
-    IotsaSerial.println("WiFi.begin(...) failed");
-    return false;
-  }
-  WiFi.setAutoReconnect(true);
-  IFDEBUG IotsaSerial.println("");
-  iotsaConfig.wifiMode = IOTSA_WIFI_SEARCHING;
-  searchTimeoutMillis = millis() + IOTSA_WIFI_TIMEOUT*1000;
-  if (app.status) app.status->showStatus();
-  return true;
-}
-
-void IotsaWifiMod::_wifiStopStation() {
-  WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() & ~(int)WIFI_STA);
-  IotsaSerial.printf("WiFi.mode(%d)\n", newMode);
-  if (!WiFi.mode(newMode)) {
-    IotsaSerial.printf("WiFi.mode(not WIFI_STA (%d)) failed", (int)newMode);
-    return;
-  }
-  IFDEBUG IotsaSerial.println("Disconnecting from WiFi network");
-}
-
-void IotsaWifiMod::_wifiStartStationSucceeded() {
-  iotsaConfig.wifiMode = IOTSA_WIFI_NORMAL;
-  if (app.status) app.status->showStatus();
-  IFDEBUG IotsaSerial.print("");
-  IFDEBUG IotsaSerial.print("Connected to ");
-  IFDEBUG IotsaSerial.println(ssid);
-  IFDEBUG IotsaSerial.print("IP address: ");
-  IFDEBUG IotsaSerial.println(WiFi.localIP());
-  
-  WiFi.setAutoReconnect(true);
-  _wifiStartMDNS();
-}
-
-void IotsaWifiMod::_wifiStartStationFailed() {
-  iotsaConfig.wifiMode = IOTSA_WIFI_NOTFOUND;
-  if (app.status) app.status->showStatus();
-  privateNetworkModeReason = WiFi.status();
-  IFDEBUG IotsaSerial.print("Cannot connect to ");
-  IFDEBUG IotsaSerial.print(ssid);
-  IFDEBUG IotsaSerial.print(", status=");
-  IFDEBUG IotsaSerial.println(privateNetworkModeReason);
-  // Stop searching, so we can enable AP.
-  _wifiStopStation(); 
-}
-
-bool IotsaWifiMod::_wifiStartAP(iotsa_wifi_mode mode) {
-  String networkName = "config-" + iotsaConfig.hostName;
-  WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() | (int)WIFI_AP);
-  IotsaSerial.printf("WiFi.mode(%d)\n", newMode);
-  if (!WiFi.mode(newMode)) {
-    IotsaSerial.printf("WiFi.mode(WIFI_AP (%d)) failed", (int)newMode);
-    return false;
-  }
-
-  if (!WiFi.softAP(networkName.c_str())) {
-    IotsaSerial.println("WiFi.SoftAP(...) failed");
-    return false;
-  }
-  IFDEBUG IotsaSerial.print("\nCreating softAP for network ");
-  IFDEBUG IotsaSerial.println(networkName);
-  IFDEBUG IotsaSerial.print("IP address: ");
-  IFDEBUG IotsaSerial.println(WiFi.softAPIP());
-  iotsaConfig.wifiMode = mode;
-  if (app.status) app.status->showStatus();
-  _wifiStartMDNS();
-  return true;
-}
-
-void IotsaWifiMod::_wifiStopAP(iotsa_wifi_mode mode) {
-  WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() & ~(int)WIFI_AP);
-  IotsaSerial.printf("WiFi.mode(%d)\n", newMode);
-  if (!WiFi.mode(newMode)) {
-    IotsaSerial.printf("WiFi.mode(WIFI_AP (%d)) failed", (int)newMode);
-    return;
-  }
-  iotsaConfig.wifiMode = mode;
-  if (app.status) app.status->showStatus();
-  IFDEBUG IotsaSerial.println("SoftAP turned off");
-}
-
-void IotsaWifiMod::_wifiOff() {
-  WiFiMode_t newMode = WIFI_OFF;
-  IotsaSerial.printf("WiFi.mode(%d)", newMode);
-  WiFi.mode(newMode);
-  iotsaConfig.wifiMode = IOTSA_WIFI_DISABLED;
-  if (app.status) app.status->showStatus();
-  IFDEBUG IotsaSerial.println("WiFi turned off");
+  _lastStaConnected = staConn;
+  _lastApActive = apAct;
 }
 
 bool IotsaWifiMod::_wifiStartMDNS() {
@@ -387,13 +259,14 @@ void IotsaWifiMod::configLoad() {
   IotsaConfigFileLoad cf("/config/wifi.cfg");
   cf.get("ssid", ssid, "");
   cf.get("ssidPassword", ssidPassword, "");
-  cf.get("wifiPowerReduction", wifiPowerReduction, 
+  cf.get("wifiPowerReduction", wifiPowerReduction,
 #ifdef ESP32C3
     true
 #else
     false
 #endif
-  );  
+  );
+  _controller.setCredentials(ssid, ssidPassword);
 }
 
 void IotsaWifiMod::configSave() {
@@ -402,88 +275,17 @@ void IotsaWifiMod::configSave() {
   cf.put("ssidPassword", ssidPassword);
   cf.put("wifiPowerReduction", wifiPowerReduction);
   IFDEBUG IotsaSerial.println("Saved wifi.cfg");
-  // If we were in factory mode enable config mode (so we keep the AP)
-  if (iotsaConfig.wifiMode == IOTSA_WIFI_FACTORY) {
-    iotsaConfig.beginConfigurationMode();
-  }
-  // And we always want to connect to the new SSID as STA.
-  iotsaConfig.wantWifiModeSwitchAtMillis = millis();
+  // Persist only. The old factory->beginConfigurationMode() side effect and the
+  // wantWifiModeSwitchAtMillis poke are gone (cwi-dis/iotsa#106): the request
+  // handler tells the controller explicitly via credentialsChanged().
+  _controller.setCredentials(ssid, ssidPassword);
+  _controller.credentialsChanged();
 }
 
 void IotsaWifiMod::loop() {
-  if (iotsaConfig.wantWifiModeSwitchAtMillis > 0 && iotsaConfig.wantWifiModeSwitchAtMillis < millis()) {
-    //
-    // Either setup() or saveConfig() or configuration mode change asked to change the WiFi mode. Do so.
-    //
-    iotsaConfig.wantWifiModeSwitchAtMillis = 0;
-    _wifiGotoMode();
-  }
-  //
-  // Depending on the current mode, check whether we need to change
-  // it due to the current WiFi status
-  //
-  wl_status_t curStatus = WiFi.status();
-#if 0
-  {
-    static uint32_t last;
-    if (millis() > last + 5000) {
-      IotsaSerial.printf("WiFi.status() == %d\n", curStatus);
-      last = millis();
-    }
-  }
-#endif
-  switch(iotsaConfig.wifiMode) {
-  case IOTSA_WIFI_DISABLED:
-    if (iotsaConfig.wantWifiModeSwitchAtMillis== 0 && curStatus != WL_IDLE_STATUS && curStatus != WL_NO_SHIELD) {
-      IFDEBUG IotsaSerial.printf("WiFi disabled, but status=%d\n", (int)curStatus);
-    }
-    break;
-  case IOTSA_WIFI_FACTORY:
-    break;
-  case IOTSA_WIFI_NORMAL:
-    if (curStatus != WL_CONNECTED) {
-      //
-      // Lost connection. 
-      IFDEBUG IotsaSerial.println("WiFi connection lost");
-      iotsaConfig.wifiMode = IOTSA_WIFI_SEARCHING;
-      searchTimeoutMillis = millis() + IOTSA_WIFI_TIMEOUT*1000;
-    }
-    break;
-  case IOTSA_WIFI_NOTFOUND:
-    // We are in AP mode because the network we really want couldn't be connected to.
-    // We stay in this mode until we time out, then we try connecting again.
-    if (searchTimeoutMillis != 0 && millis() > searchTimeoutMillis) {
-      IotsaSerial.println("Wifi retry connecting");
-      _wifiStartStation();
-    }
-    break;
-  case IOTSA_WIFI_SEARCHING:
-    if (curStatus == WL_CONNECTED) {
-      // Search succeeded, we are connected.
-      searchTimeoutMillis = 0;
-      _wifiStartStationSucceeded();
-      // The AP may be enabled or not, disabling it anyway, unless we are in configuration mode
-      if (!iotsaConfig.inConfigurationMode()) {
-        _wifiStopAP(IOTSA_WIFI_NORMAL);
-      }
-    } else if (searchTimeoutMillis != 0 && millis() > searchTimeoutMillis) {
-      // Search failed. Enable AP.
-      // Unfortunately we cannot continue searching (because this requires the radio to hop channels,
-      // which would kill the AP).
-      // We stay in AP mode for ten times search duration (300 seconds default)
-      searchTimeoutMillis = millis() + 10*IOTSA_WIFI_TIMEOUT*1000;
-      if (curStatus == WL_IDLE_STATUS || curStatus == WL_NO_SHIELD) {
-        // Unsure why this happens, maybe only when switching from one SSID to another?
-        // We think we are searching but the WiFi thinks nothing is happening.
-        // Reboot.
-        IotsaSerial.println("WiFi unexpectedly gone idle. Rebooting...");
-        iotsaConfig.requestReboot(2000);
-      }
-      _wifiStartStationFailed();
-      _wifiStartAP(IOTSA_WIFI_NOTFOUND);
-    }
-    break;
-  }
+  _controller.setConfigModeActive(iotsaConfig.inConfigurationMode());
+  _controller.tick();
+  _publishControllerState();
 #ifndef ESP32
   // mDNS happens asynchronously on ESP32
   if (iotsaConfig.mdnsEnabled) MDNS.update();
@@ -491,8 +293,8 @@ void IotsaWifiMod::loop() {
 }
 
 // ===========================================================================
-// Driver surface (cwi-dis/iotsa#106). Policy-free mechanism only. Nothing in
-// this file calls it yet -- the WiFi controller (a later slice) does.
+// Driver surface (cwi-dis/iotsa#106). Policy-free mechanism, called by
+// IotsaWifiController.
 // ===========================================================================
 
 IotsaWifiStaFailReason IotsaWifiMod::_reduceStaFailReason(int reason) {

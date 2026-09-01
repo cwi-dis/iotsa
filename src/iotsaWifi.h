@@ -24,19 +24,18 @@ private:
 #ifdef IOTSA_WITH_WEB
   void webHandler() override;
 #endif
-  void _wifiGotoMode();
-  bool _wifiStartStation();
-  void _wifiStopStation();
-  void _wifiStartStationSucceeded();
-  void _wifiStartStationFailed();
-  bool _wifiStartAP(iotsa_wifi_mode mode);
-  void _wifiStopAP(iotsa_wifi_mode mode);
   bool _wifiStartMDNS();
-  void _wifiOff();
+  // Copy IotsaWifiController's published state into the iotsaConfig fields other
+  // modules read; start/stop mDNS and poke the status LED on the edges.
+  void _publishControllerState();
+
+  IotsaWifiController _controller{*this};  // the policy layer (cwi-dis/iotsa#106)
+  bool _lastStaConnected = false;
+  bool _lastApActive = false;
+
   String ssid;
   String ssidPassword;
   bool wifiPowerReduction;
-  unsigned long searchTimeoutMillis;
 
   // ===== Driver surface (cwi-dis/iotsa#106) =====
   // A thin, policy-free mechanism layer: imperative radio ops, events latched by

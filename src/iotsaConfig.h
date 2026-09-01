@@ -43,6 +43,11 @@ private:
   void factoryReset();
 public:
   bool wifiEnabled = false;
+  // Orthogonal WiFi state, published by IotsaWifiMod from IotsaWifiController
+  // (cwi-dis/iotsa#106). Read by other modules instead of the wifiMode enum
+  // (which stays, vestigially written, until slice 4).
+  bool wifiStationConnected = false;   // STA has an IP
+  bool wifiApActive = false;           // softAP is up (for any reason)
   String hostName = "";
   bool mdnsEnabled = false;
 #ifdef IOTSA_WITH_HTTPS
