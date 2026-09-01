@@ -28,8 +28,7 @@ IotsaApplication::IotsaApplication(const char *_title)
   // relies on the existing convention that IotsaApplication itself is declared
   // before any module in the sketch.
 #ifdef IOTSA_HAS_WEBSERVER
-  IotsaHttpServiceMod::ensureServiceMod(*this);
-  server = IotsaHttpServiceMod::serviceMod(*this)->server;
+  server = IotsaHttpServiceMod::ensure(*this)->server;
 #endif
 }
 

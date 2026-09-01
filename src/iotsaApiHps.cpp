@@ -21,7 +21,7 @@ class IotsaHpsServiceEntryPoint {
    IotsaAuthenticationProvider* auth;
 };
 
-class IotsaHpsServiceMod : public IotsaBaseModule {
+class IotsaHpsServiceMod : public IotsaBaseModule, public IotsaSingletonModule<IotsaHpsServiceMod> {
   friend class IotsaApiServiceHps;
 
   const int HPSMaxBodySize = 512;
@@ -45,9 +45,8 @@ class IotsaHpsServiceMod : public IotsaBaseModule {
     BodyTruncated = 0x08
   };
 public:
-  IotsaHpsServiceMod(IotsaApplication &_app) : IotsaBaseModule(_app) {}
+  IotsaHpsServiceMod(IotsaApplication &_app) : IotsaBaseModule(_app) { claimSingleton(this); }
   void setup() override {
-    IotsaApiServiceHps::_hpsMod = this;
     name = "hps";
   }
 
@@ -293,7 +292,6 @@ protected:
   }
 };
 
-IotsaHpsServiceMod* IotsaApiServiceHps::_hpsMod = NULL;
 std::list<IotsaHpsServiceEntryPoint*> IotsaHpsServiceMod::getEntryPoints;
 std::list<IotsaHpsServiceEntryPoint*> IotsaHpsServiceMod::putEntryPoints;
 std::list<IotsaHpsServiceEntryPoint*> IotsaHpsServiceMod::postEntryPoints;
@@ -307,10 +305,7 @@ IotsaApiServiceHps::IotsaApiServiceHps(IotsaApiProvider* _provider, IotsaApplica
 }
 
 void IotsaApiServiceHps::ensureServiceMod(IotsaApplication &app) {
-  if (_hpsMod == NULL) {
-    IotsaSerial.println("IotsaApiServiceHps: allocate IotsaHpsServiceMod");
-    _hpsMod = new IotsaHpsServiceMod(app);
-  }
+  IotsaHpsServiceMod::ensure(app);
 }
   
 void IotsaApiServiceHps::setup(const char* path, bool get, bool put, bool post, bool webPage) {

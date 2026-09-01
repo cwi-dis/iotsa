@@ -102,6 +102,45 @@ protected:
   bool haveOTA;
 };
 
+//
+// Mix-in for the small set of modules that are single-instance infrastructure
+// rather than application features: the HTTP/CoAP/HPS transports today, and (as
+// cwi-dis/iotsa#85 progresses) IotsaWifiMod, IotsaConfigMod, IotsaOtaMod,
+// IotsaNtpMod, IotsaBLEServerMod. It gives every one of them the same
+// "there is at most one, create it on demand" shape, replacing the hand-rolled
+// static-pointer + ensureServiceMod() copies these classes used to carry.
+//
+//  - instance() returns the one instance, or nullptr if the sketch never
+//    declared it and nothing has called ensure() yet.
+//  - ensure(app) returns it, constructing it (via a T(IotsaApplication&)
+//    constructor) the first time. Call this from code that needs the module to
+//    exist whether or not the sketch declared it -- e.g. IotsaBleApiService::
+//    setup() needs a BLE server module for HPS to work, see cwi-dis/iotsa#84.
+//  - T's real constructor must call claimSingleton(this), so an
+//    explicitly-declared instance is registered too and a second one is caught
+//    (loud log, first instance kept) rather than silently shadowing the first.
+//
+template <class T>
+class IotsaSingletonModule {
+public:
+  static T *instance() { return _instance; }
+  static T *ensure(IotsaApplication &app) {
+    if (_instance == nullptr) new T(app); // constructor calls claimSingleton()
+    return _instance;
+  }
+protected:
+  static void claimSingleton(T *self) {
+    if (_instance != nullptr && _instance != self) {
+      IotsaSerial.println("IOTSA: duplicate singleton module ignored, keeping the first");
+      return;
+    }
+    _instance = self;
+  }
+  static T *_instance;
+};
+
+template <class T> T *IotsaSingletonModule<T>::_instance = nullptr;
+
 class IotsaAuthMod;
 
 class IotsaAuthenticationProvider {

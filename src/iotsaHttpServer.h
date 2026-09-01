@@ -13,7 +13,7 @@
 // use by whichever module happens to need it: several categories of module reach
 // for it during their own construction (web-server-extension modules) or need it
 // to exist before any module's constructor runs. IotsaApplication's own constructor
-// calls ensureServiceMod() to guarantee that, relying on the existing convention
+// calls ensure() to guarantee that, relying on the existing convention
 // that the application object itself is declared before any module in the sketch.
 //
 // IotsaBaseModule has no `server` field of its own (see cwi-dis/iotsa#211) --
@@ -28,16 +28,14 @@
 //    IotsaCapabilityMod, a known wart pending cwi-dis/iotsa#107's context-object
 //    redesign), and app-level sketch code -- reads IotsaApplication::server, which
 //    is populated from this same object once in IotsaApplication's constructor.
-//  - IotsaApiServiceRest/Web themselves reach it via serviceMod(app)->server.
+//  - IotsaApiServiceRest/Web themselves reach it via instance()->server.
 //
-class IotsaHttpServiceMod : public IotsaBaseModule {
+class IotsaHttpServiceMod : public IotsaBaseModule, public IotsaSingletonModule<IotsaHttpServiceMod> {
 public:
   IotsaHttpServiceMod(IotsaApplication &_app);
   void setup() override;
   void lateSetup() override;
   void loop() override;
-  static void ensureServiceMod(IotsaApplication &app);
-  static IotsaHttpServiceMod *serviceMod(IotsaApplication &app);
   // The actual IotsaWebServer instance. IotsaBaseModule no longer has a `server`
   // field of its own (see cwi-dis/iotsa#211) -- this is the one, single owner; see
   // the comment above for how the rest of the code reaches it.
@@ -52,7 +50,6 @@ private:
 #ifdef IOTSA_WITH_WEB
   void webServerRootHandler();
 #endif
-  static IotsaHttpServiceMod *_httpMod;
 };
 
 #endif

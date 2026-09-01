@@ -12,7 +12,7 @@ public:
     // Shared with IotsaApiServiceWeb, owned by neither -- see cwi-dis/iotsa#207/#211.
     // Guaranteed non-null: IotsaApplication's own constructor ensures the shared mod
     // exists before any module (this one included) is constructed.
-    server(IotsaHttpServiceMod::serviceMod(_app)->server)
+    server(IotsaHttpServiceMod::instance()->server)
   {}
   void setup(const char* path, bool get=false, bool put=false, bool post=false, bool webPage=true) override;
 private:

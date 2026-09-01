@@ -24,7 +24,6 @@ public:
   static constexpr UUIDstring bodyUUID = "2AB9";
   static constexpr UUIDstring controlPointUUID = "2ABA";
   static constexpr UUIDstring securityUUID = "2ABB";
-  static IotsaHpsServiceMod *_hpsMod;
 };
 #endif // IOTSA_HAS_HPSSERVER
 #endif

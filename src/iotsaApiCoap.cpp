@@ -5,9 +5,6 @@
 
 #define COAP_PROTOCOL_DEBUG
 
-// Static variable
-IotsaCoapServiceMod* IotsaApiServiceCoap::_coapMod = NULL;
-
 class CoapEndpoint {
 public:
   CoapEndpoint(IotsaApiProvider *_provider, const String &_path, bool _get, bool _put, bool _post)
@@ -136,7 +133,7 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
 #endif
 }
 
-class IotsaCoapServiceMod : public IotsaBaseModule {
+class IotsaCoapServiceMod : public IotsaBaseModule, public IotsaSingletonModule<IotsaCoapServiceMod> {
 public:
   IotsaCoapServiceMod(IotsaApplication &_app);
   void setup() override;
@@ -151,7 +148,9 @@ IotsaCoapServiceMod::IotsaCoapServiceMod(IotsaApplication &_app)
   : IotsaBaseModule(_app),
     udp(),
     coap(udp)
-  {}
+  {
+    claimSingleton(this);
+  }
 
 void IotsaCoapServiceMod::setup() {
     name = "coap";
@@ -177,7 +176,7 @@ IotsaApiServiceCoap::IotsaApiServiceCoap(IotsaApiProvider* _provider, IotsaAppli
 }
 
 void IotsaApiServiceCoap::ensureServiceMod(IotsaApplication &app) {
-  if (_coapMod == NULL) _coapMod = new IotsaCoapServiceMod(app);
+  IotsaCoapServiceMod::ensure(app);
 }
 
 void IotsaApiServiceCoap::setup(const char* path, bool get, bool put, bool post, bool webPage) {
@@ -187,7 +186,7 @@ void IotsaApiServiceCoap::setup(const char* path, bool get, bool put, bool post,
         // the module's handlers, to keep that contract identical to REST/HPS.
         String fullPath = String("/api/") + path;
         CoapEndpoint *ep = new CoapEndpoint(provider, fullPath, get, put, post);
-        _coapMod->addEndpoint(ep, path);
+        IotsaCoapServiceMod::instance()->addEndpoint(ep, path);
     }
     // webPage is Web-only; CoAP ignores it and just forwards it down the chain.
     if (next) next->setup(path, get, put, post, webPage);
