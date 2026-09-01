@@ -495,18 +495,18 @@ void IotsaWifiMod::loop() {
 // this file calls it yet -- the WiFi controller (a later slice) does.
 // ===========================================================================
 
-IotsaWifiMod::StaFailReason IotsaWifiMod::_reduceStaFailReason(int reason) {
+IotsaWifiStaFailReason IotsaWifiMod::_reduceStaFailReason(int reason) {
   // The numeric values line up between the ESP8266 (WIFI_DISCONNECT_REASON_*) and
   // ESP32 (WIFI_REASON_*) enums -- both extend the 802.11 spec reason codes.
   switch (reason) {
     case 201: // NO_AP_FOUND
-      return StaFailReason::NO_AP_FOUND;
+      return IotsaWifiStaFailReason::NoApFound;
     case 202: // AUTH_FAIL
     case 15:  // 4WAY_HANDSHAKE_TIMEOUT
     case 204: // HANDSHAKE_TIMEOUT -- a wrong password often surfaces this way
-      return StaFailReason::AUTH_FAIL;
+      return IotsaWifiStaFailReason::AuthFail;
     default:
-      return StaFailReason::OTHER;
+      return IotsaWifiStaFailReason::Other;
   }
 }
 
@@ -558,8 +558,8 @@ void IotsaWifiMod::_installDriverEventHandlers() {
 #endif
 }
 
-IotsaWifiMod::Events IotsaWifiMod::drainEvents() {
-  Events e;
+IotsaWifiEvents IotsaWifiMod::drainEvents() {
+  IotsaWifiEvents e;
   // Read-and-clear. Single-word volatile ops; the foreign-context callbacks only
   // ever set these, so a lost race just defers an event one tick -- acceptable
   // here, hardening tracked in cwi-dis/iotsa#236.
@@ -571,7 +571,7 @@ IotsaWifiMod::Events IotsaWifiMod::drainEvents() {
   }
   if (_evStaFailed) {
     e.staFailed = true;
-    e.staFailReason = (StaFailReason)_evStaFailReason;
+    e.staFailReason = (IotsaWifiStaFailReason)_evStaFailReason;
     _evStaFailed = false;
   }
   if (_evStaLost) { e.staLost = true; _evStaLost = false; }
@@ -579,8 +579,8 @@ IotsaWifiMod::Events IotsaWifiMod::drainEvents() {
   return e;
 }
 
-IotsaWifiMod::ActualState IotsaWifiMod::readActualState() const {
-  ActualState st;
+IotsaWifiActualState IotsaWifiMod::readActualState() const {
+  IotsaWifiActualState st;
   int mode = (int)WiFi.getMode();
   st.staEnabled = (mode & (int)WIFI_STA) != 0;
   st.apEnabled = (mode & (int)WIFI_AP) != 0;
