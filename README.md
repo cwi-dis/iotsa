@@ -814,13 +814,6 @@ A gateway that listens for Estimote Bluetooth LE sensors and exposes their readi
 
 Server to receive and transmit 433 MHz home automation signals (the cheap wireless remote controlled sockets, dimmers, garage doors, etc).
 
-### [iotsaSensor](http://github.com/cwi-dis/iotsaSensor)
-
-![build-platformio](https://github.com/cwi-dis/iotsaSensor/workflows/build-platformio/badge.svg)
-![build-arduino](https://github.com/cwi-dis/iotsaSensor/workflows/build-arduino/badge.svg)
-
-Read an analog sensor at an interval that can be specified. Sensor readings are kept in a rolling buffer, and the most recent 512 readings can be retreived through the web interface, together with the timestamp of reading. This program is intended to take readings every couple of seconds, or minutes at most.
-
 ### [iotsaDataLogger](http://github.com/cwi-dis/iotsaDataLogger)
 
 ![build-platformio](https://github.com/cwi-dis/iotsaDataLogger/workflows/build-platformio/badge.svg)

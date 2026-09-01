@@ -207,7 +207,6 @@ jobs:
         - cwi-dis/iotsaOLEDServer
         - cwi-dis/iotsaRGBWSensor
         - cwi-dis/iotsaResponseTime
-        - cwi-dis/iotsaSensor
         - cwi-dis/iotsaSmartMeter
         - cwi-dis/lissabon
     runs-on: ubuntu-latest
