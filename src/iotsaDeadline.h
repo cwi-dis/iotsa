@@ -31,6 +31,12 @@ public:
     return _armed && (int32_t)(millis() - _dueAtMillis) >= 0;
   }
 
+  // True while armed and NOT yet due -- i.e. a countdown is in progress. The
+  // natural "is this hold/backoff currently in effect" test.
+  bool pending() const {
+    return _armed && (int32_t)(millis() - _dueAtMillis) < 0;
+  }
+
   // expired() with consume: returns true at most once per arm(), disarming itself.
   // Use this for "did this deadline just fire" edge handling.
   bool fired() {

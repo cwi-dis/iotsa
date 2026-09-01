@@ -92,16 +92,14 @@ public:
   uint32_t escalationRemainingMillis() const { return _escalationDeadline.remainingMillis(); }
 
 private:
-  // The core loop: read actual state, compare to desired, act if safe.
-  void _reconcile();
-  // The derived-fact rule for whether the softAP should be up.
-  bool _wantApUp() const;
-  // Handle drained driver events.
-  void _handleEvents(const IotsaWifiEvents &ev);
-  // Per-reason retry cadence within HUNTING.
-  uint32_t _retryDelayMillis() const;
-  // Is it safe to disrupt the softAP right now (no client, hold expired)?
-  bool _apDisruptionSafe() const;
+  void _handleEvents(const IotsaWifiEvents &ev, const IotsaWifiActualState &actual);
+  void _serviceTimers();
+  void _reconcile(const IotsaWifiActualState &actual);   // desired vs actual, act if safe
+  void _startStaAttempt();
+  bool _wantApUp() const;                                // the derived AP-up rule
+  uint32_t _retryDelayMillis() const;                    // per-reason HUNTING cadence
+  bool _apDisruptionSafe() const;                        // no client + hold expired
+  String _apName() const;                                // "config-<hostname>"
 
   IotsaWifiMod &_mod;
 
@@ -112,9 +110,12 @@ private:
 
   // current state
   IotsaWifiStaState _staState = IotsaWifiStaState::Off;
-  bool _apUp = false;  // policy says the softAP should exist; apState() adds On vs InUse
+  bool _apUp = false;              // policy says the softAP should exist; apState() adds On vs InUse
+  bool _escalated = false;         // STA failed long enough -> AP-up derivation is true
   IotsaWifiStaFailReason _lastFailReason = IotsaWifiStaFailReason::None;
-  int _noProgressFailures = 0;  // consecutive failures with no state change -> reinitStack()
+  int _apClientCount = 0;          // last known softAP client count
+  int _retryCount = 0;            // consecutive HUNTING attempts (for AUTH_FAIL backoff)
+  int _noProgressAttempts = 0;    // connects that never even reached the radio -> reinitStack()
 
   // RTC-RAM fast-reconnect cache (docs "Fast-reconnect cache"): filled on GOT_IP,
   // used for a targeted scan-free reconnect. Not persisted -- regenerated cheaply
