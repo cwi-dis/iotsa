@@ -107,6 +107,8 @@ bool IotsaWifiController::_apDisruptionSafe() const {
 bool IotsaWifiController::_wantApUp() const {
   if (!_radioEnabled) return false;
   if (_configModeActive) return true;                      // config mode => AP always up
+  if (_ssid.length() == 0) return true;                    // unconfigured: offer the config AP
+                                                           // (slice 4 folds this into "no ssid => config mode")
   if (_staState == IotsaWifiStaState::Hunting && _escalated) return true; // fallback
   return false;
 }
@@ -213,12 +215,6 @@ void IotsaWifiController::_reconcile(const IotsaWifiActualState &actual) {
     }
     if (_staState != IotsaWifiStaState::Off) _staState = IotsaWifiStaState::Off;
   } else {
-    const bool radioPursuingTarget =
-        actual.staEnabled &&
-        actual.staConfiguredSsid == _ssid &&
-        actual.staConfiguredPsk == _psk &&
-        (actual.staConnected || actual.staLinkStatus == 0 /* WL_IDLE_STATUS, connecting */);
-
     switch (_staState) {
       case IotsaWifiStaState::Off:
         _startStaAttempt();
@@ -230,9 +226,14 @@ void IotsaWifiController::_reconcile(const IotsaWifiActualState &actual) {
         }
         break;
       case IotsaWifiStaState::Connecting:
-        if (!radioPursuingTarget && !actual.staConnected) {
-          // creds changed under us, or the radio isn't actually trying -- restart
-          WCDEBUG("reconcile: radio not pursuing target -> restart");
+        // Trust _connectDeadline (and the fail/got-ip events) to move us on --
+        // don't second-guess a connect in progress from a transient link status.
+        // Only bail early if the radio is demonstrably pursuing the wrong SSID
+        // (credentials changed under us mid-attempt).
+        if (actual.staEnabled &&
+            actual.staConfiguredSsid.length() > 0 &&
+            actual.staConfiguredSsid != _ssid) {
+          WCDEBUG("reconcile: radio pursuing stale SSID -> restart");
           _startStaAttempt();
         }
         break;
