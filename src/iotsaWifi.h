@@ -36,6 +36,66 @@ private:
   String ssidPassword;
   bool wifiPowerReduction;
   unsigned long searchTimeoutMillis;
+
+  // ===== Driver surface (cwi-dis/iotsa#106) =====
+  // A thin, policy-free mechanism layer: imperative radio ops, events latched by
+  // the platform WiFi callbacks, and introspection. The state machine / retry /
+  // fallback policy lives in the WiFi controller (added in a later slice), not
+  // here. For now this coexists with the legacy _wifi* machinery and loop()
+  // logic, which still runs; that goes once the controller is wired in.
+public:
+  enum class StaFailReason : uint8_t { NONE, NO_AP_FOUND, AUTH_FAIL, OTHER };
+
+  struct ActualState {
+    bool staEnabled = false;       // WiFi.getMode() has the STA bit
+    bool apEnabled = false;        // WiFi.getMode() has the AP bit
+    bool staConnected = false;     // WiFi.status() == WL_CONNECTED
+    int staLinkStatus = 0;         // raw wl_status_t
+    String staConfiguredSsid;      // the target, readable even mid-connect
+    String staConfiguredPsk;
+    uint8_t staChannel = 0;        // meaningful only while staConnected
+    String apSsid;
+    int apClientCount = 0;
+  };
+
+  struct Events {                  // snapshot of what the callbacks latched
+    bool staGotIp = false;
+    bool staFailed = false;
+    StaFailReason staFailReason = StaFailReason::NONE;
+    bool staLost = false;          // was connected, then dropped
+    bool apClientCountChanged = false;
+    uint8_t lastChannel = 0;       // from the most recent staGotIp
+    uint8_t lastBssid[6] = {0};    // from the most recent staGotIp
+  };
+
+  // Radio ops: fire, report whether the *attempt* was issued (not whether it
+  // completed). No timers, no policy, no writes to iotsaConfig.wifiMode.
+  bool startStation(const String& targetSsid, const String& targetPsk, uint8_t channel = 0, const uint8_t* bssid = nullptr);
+  void stopStation();
+  bool startAP(const String& apName);
+  void stopAP();
+  void reinitStack();             // disconnect(true)/mode(OFF)/mode(STA) -- unwedge, never reboot
+
+  ActualState readActualState() const;
+  Events drainEvents();           // read-and-clear the latched events
+
+private:
+  void _installDriverEventHandlers();
+  static StaFailReason _reduceStaFailReason(int reason);
+  // Latch storage, written only from the platform WiFi callbacks (foreign task
+  // context) -- single-word writes only, see cwi-dis/iotsa#236.
+  volatile bool _evStaGotIp = false;
+  volatile bool _evStaFailed = false;
+  volatile uint8_t _evStaFailReason = 0;
+  volatile bool _evStaLost = false;
+  volatile bool _evApClientCountChanged = false;
+  volatile uint8_t _evLastChannel = 0;
+  uint8_t _evLastBssid[6] = {0};
+  bool _driverHaveIp = false;      // touched only in the callbacks: staLost vs staFailed
+  bool _driverHandlersInstalled = false;
+#ifndef ESP32
+  WiFiEventHandler _evH_gotIp, _evH_disconnected, _evH_apConnect, _evH_apDisconnect;
+#endif
 };
 #elif IOTSA_WITH_PLACEHOLDERS
 class IotsaWifiMod : public IotsaBaseModule {
