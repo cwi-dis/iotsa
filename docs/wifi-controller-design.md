@@ -153,25 +153,41 @@ The failure `reason` still matters, but only for **retry cadence**, not for the 
 
 The former `10 x IOTSA_WIFI_TIMEOUT` (300 s) constant was arbitrary and is gone.
 
-### AP-client hold
+### AP stability while serving a client
 
-The moment a client associates to our AP (`ap_client_connected`), arm a "no
-channel-hopping scan for ~1 minute" hold (value tunable). Re-arm on each new client
-connect (optionally also on each HTTP request). The disruptive channel-hopping hunt
-resumes only when the hold has expired **and** `ap.clientCount == 0`.
+General rule: **once the softAP has a client, treat it as a stable resource -- defer
+anything that would tear it down or restart it until the client leaves** (or the device
+reboots, or the hold below expires). Two things this covers:
 
-Rationale: someone configuring will disconnect/reconnect (WiFi flakiness, switching
-devices, the config flow itself), and the radio channel-hopping mid-session would knock
-them off. A timed hold gives a stable configuration window robust to transient drops.
+1. **The channel-hopping STA scan.** The moment a client associates
+   (`ap_client_connected`), arm a "no channel-hopping scan for ~1 minute" hold (value
+   tunable). Re-arm on each new client connect (optionally also on each HTTP request).
+   The disruptive scan resumes only when the hold has expired **and**
+   `ap.clientCount == 0`. Rationale: someone configuring will disconnect/reconnect
+   (WiFi flakiness, switching devices, the config flow itself); channel-hopping
+   mid-session would knock them off, and a timed hold gives a stable window robust to
+   transient drops. "Suspend the scan" means the **channel-hopping scan** only --
+   home-channel-only retry and targeted reconnect via the cached BSSID+channel do not
+   disrupt the AP and may continue.
 
-"Suspend hunting" means suspend the **channel-hopping scan** only. Home-channel-only
-retry and targeted reconnect via the cached BSSID+channel do not disrupt the AP and may
-continue during the hold.
+2. **A softAP rename.** The AP name is `config-<hostname>`, so editing the hostname in
+   config mode changes it -- restarting the AP would drop the client mid-session. This
+   drops out of the "declare desired state, reconcile on mismatch" pattern for free:
+   the hostname change updates the *desired* AP name and is **persisted immediately**,
+   but the reconcile step checks "safe to act?" (`clientCount == 0`) before restarting
+   the AP. The client leaving, or a reboot, triggers the next reconcile and the rename
+   takes effect then. No "pending rename" bookkeeping -- the setting is saved now, its
+   radio-level effect is deferred to a safe point. (Same applies to the mDNS name,
+   though an mDNS restart does not disturb WiFi clients so deferring it is optional.)
 
-Caveat: L2 association is not proof a human is configuring (phones probe open APs,
-remembered SSIDs auto-join and idle). `clientCount > 0` is a decent proxy; tightening it
-to "client present AND an HTTP request in the last N seconds" is a possible later
-refinement, not v1.
+A config-mode timeout that would tear the AP down is a third case, largely moot: active
+requests should extend the timeout (`extendCurrentMode()`), so a client actually using
+the AP keeps it alive.
+
+Caveat on "has a client": L2 association is not proof a human is configuring (phones
+probe open APs, remembered SSIDs auto-join and idle). `clientCount > 0` is a decent
+proxy; tightening it to "client present AND an HTTP request in the last N seconds" is a
+possible later refinement, not v1.
 
 ## AP/STA channel constraint
 
