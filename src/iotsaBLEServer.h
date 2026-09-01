@@ -51,10 +51,14 @@ protected:
   IotsaBleApiService *next;
 };
 
-class IotsaBLEServerMod : public IotsaModule {
+class IotsaBLEServerMod : public IotsaModule, public IotsaSingletonModule<IotsaBLEServerMod> {
   friend class IotsaBleApiService;
 public:
-  using IotsaModule::IotsaModule;
+  IotsaBLEServerMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool _early=false)
+  : IotsaModule(_app, _auth, _early)
+  {
+    claimSingleton(this);
+  }
   void setup() override;
   void lateSetup() override;
   void lateSetupDone() override;

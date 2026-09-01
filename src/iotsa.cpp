@@ -5,6 +5,9 @@
 #if defined(IOTSA_HAS_COAPSERVER) || defined(IOTSA_HAS_HPSSERVER)
 #include "iotsaApi.h"
 #endif
+#ifdef IOTSA_WITH_BLE
+#include "iotsaBLEServer.h"
+#endif
 
 // There is an issue with the platformio library dependency finder, and it doesn't find the
 // esp8266httpclient library. This is a workaround.
@@ -85,6 +88,15 @@ IotsaApplication::setup() {
 #endif
 #ifdef IOTSA_HAS_HPSSERVER
   IotsaApiServiceHps::ensureServiceMod(*this);
+#endif
+#ifdef IOTSA_WITH_BLE
+  // Any BLE service (HPS, battery, an app's own) is registered against the one
+  // IotsaBLEServerMod, and only its lateSetupDone() actually starts advertising --
+  // so without an instance the GATT services exist but are never announced. Declaring
+  // the module in the sketch was easy to forget (see cwi-dis/iotsa#84); guarantee it
+  // here instead. Gated on IOTSA_WITH_BLE for now -- when BLE-client-only builds
+  // become real this moves to a server-role flag (see #84's discussion).
+  IotsaBLEServerMod::ensure(*this);
 #endif
 
   IotsaBaseModule *m;
