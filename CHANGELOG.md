@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Defining `IOTSA_WITH_BLE` no longer requires also declaring `IotsaBLEServerMod` in the sketch for HPS (or any BLE service) to actually advertise (#84)
+- A WiFi-less build (`IOTSA_WITHOUT_WIFI`, BLE-only devices) keeps `IotsaConfigMod` -- hostname, TLS certs, configuration-mode handling, `/api/config` -- instead of losing it entirely (#195)
+
+### Changed
+
+- Infrastructural single-instance modules now share one `IotsaSingletonModule<>` get-or-create mechanism, replacing three hand-rolled copies (HTTP/CoAP/HPS transports migrated; #85)
+
 ## [3.0a2] - 2026-08-31
 
 `v3.0a1` was tagged without a changelog section, so this covers everything since 2.9.2.
