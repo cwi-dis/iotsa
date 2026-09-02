@@ -68,25 +68,24 @@ void IotsaConfig::allowRCMDescription(const char *desc) { iotsaController.allowR
 // iotsaConfigSettingsWritable() (iotsaController.h).
 
 uint32_t IotsaConfig::getStatusColor() {
-  iotsa_mode configurationMode = iotsaController.currentMode();  // cwi-dis/iotsa#106
-  if (configurationMode == IOTSA_MODE_FACTORY_RESET) return 0x3f0000; // Red: Factory reset mode
+  // Faithful translation of the old wifiMode switch onto the iotsaStatus bus
+  // (cwi-dis/iotsa#106). The real LED-semantics rework (flash patterns, etc.) is
+  // cwi-dis/iotsa#176.
+  iotsa_mode mode = iotsaController.currentMode();
+  if (mode == IOTSA_MODE_FACTORY_RESET) return 0x3f0000;   // Red: factory-reset mode
+  if (!iotsaStatus.wifiEnabled) return 0;                   // radio disabled: LED off
+
   uint32_t extraColor = 0;
-  switch(wifiMode) {
-  case IOTSA_WIFI_DISABLED:
-    return 0;
-  case IOTSA_WIFI_SEARCHING:
-    return 0x3f1f00;  // Orange: searching for WiFi
-  case IOTSA_WIFI_FACTORY:
-  case IOTSA_WIFI_NOTFOUND:
-    extraColor = 0x1f1f1f;  // Add a bit of white to the configuration mode color
-    // Pass through
-  default:
-    // Pass through
-    ;
+  if (!iotsaStatus.wifiStationConnected) {
+    if (iotsaStatus.wifiApActive) {
+      extraColor = 0x1f1f1f;      // white tint: serving our own AP (fallback / unconfigured)
+    } else {
+      return 0x3f1f00;           // Orange: hunting for WiFi
+    }
   }
-  if (configurationMode == IOTSA_MODE_CONFIG) return extraColor | 0x3f003f;	// Magenta: user-requested configuration mode
-  if (configurationMode == IOTSA_MODE_OTA) return extraColor | 0x003f3f;	// Cyan: OTA mode
-  return extraColor; // Off: all ok, whiteish: factory reset network
+  if (mode == IOTSA_MODE_CONFIG) return extraColor | 0x3f003f;  // Magenta: configuration mode
+  if (mode == IOTSA_MODE_OTA)    return extraColor | 0x003f3f;  // Cyan: OTA mode
+  return extraColor; // Off when connected+normal; whiteish on the fallback AP
 }
 
 void IotsaConfig::pauseSleep() { 

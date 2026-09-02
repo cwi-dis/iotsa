@@ -181,19 +181,19 @@ sweep the ~20 downstream repos to the new names and drop the forwarders.
   (BLE-enable, sleep-wifi-off, `disableSleepOnWiFi`), the `wifiDisabled` REST PUT and its
   reply are off the `wifiMode` enum now. Dead `wantWifiModeSwitchAtMillis` removed
   (BLE's `wantBleModeSwitchAtMillis` twin stays -- still read by `iotsaBLEServer`).
+- `iotsa_wifi_mode` enum + `wifiMode` field deleted. Last readers rewired:
+  `getStatusColor()` is a faithful translation of the old `wifiMode` switch onto
+  `iotsaController.currentMode()` + the `iotsaStatus.wifi*` booleans (same colours, same
+  precedence -- the real LED-semantics rework, flash patterns etc., stays
+  [#176](https://github.com/cwi-dis/iotsa/issues/176)); the `privateWifi` reply is
+  `wifiApActive && !wifiStationConnected`; `IotsaWifiMod::info()` shows
+  `staState()`/`apState()` instead. No downstream users of the enum.
 
 ## Deferred (was "slice 4"; folds into this work)
 
-- Delete the `iotsa_wifi_mode` enum + `wifiMode` field; its status values are already
-  superseded by `IotsaWifiController` + the `iotsaStatus` fields. Last readers:
-  `getStatusColor()` and the `privateWifi` reply field.
-- `getStatusColor()` rework -- becomes a free function over `iotsaStatus` with an
-  explicit precedence: factory-reset > maintenance window (CONFIG/OTA colour) >
-  connectivity problem (hunting = flash, fallback-AP / unprovisioned = solid, possibly
-  tinted onto the mode colour) > normal. Status-LED colour choices tracked in
-  [#176](https://github.com/cwi-dis/iotsa/issues/176).
-- Collapse `inConfigurationOrFactoryMode()` -> `inConfigurationMode()` (9 call sites: 6
-  in `iotsaWifi.cpp`, 3 in `iotsaConfigMod.cpp`).
+- `getStatusColor()` LED-semantics rework (flash for hunting, etc.) -- [#176].
+- Collapse `iotsaConfigSettingsWritable()` -> `inConfigurationMode()` once "no SSID =>
+  config mode" lands.
 - "No SSID configured => enter config mode" so `inConfigurationMode()` alone gates
   wifi-cred writes and there is no `IOTSA_WIFI_FACTORY` pseudo-mode. `_wantApUp()` in
   `IotsaWifiController` already anticipates this.

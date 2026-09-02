@@ -334,7 +334,7 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   if (iotsaController.currentMode()) {
     reply["currentModeTimeout"] = (iotsaController.currentModeEndTime() - millis())/1000;
   }
-  reply["privateWifi"] = iotsaConfig.wifiMode == IOTSA_WIFI_FACTORY || iotsaConfig.wifiMode == IOTSA_WIFI_NOTFOUND;
+  reply["privateWifi"] = iotsaStatus.wifiApActive && !iotsaStatus.wifiStationConnected;
   reply["mdnsEnabled"] = iotsaStatus.mdnsEnabled;
   reply["requestedMode"] = int(iotsaController.requestedMode());
   if (iotsaController.requestedMode()) {

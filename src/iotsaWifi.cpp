@@ -66,15 +66,6 @@ void IotsaWifiMod::_publishControllerState() {
   iotsaStatus.wifiApActive = apAct;
   iotsaStatus.wifiEnabled = _wifiRadioWanted();  // "radio may be powered", not "connected"
 
-  // Vestigial wifiMode -- kept written until the iotsa_wifi_mode enum removal
-  // (cwi-dis/iotsa#106) updates getStatusColor() and the privateWifi reply field.
-  iotsa_wifi_mode m;
-  if (staConn) m = IOTSA_WIFI_NORMAL;
-  else if (_controller.staState() == IotsaWifiStaState::Connecting) m = IOTSA_WIFI_SEARCHING;
-  else if (_controller.staState() == IotsaWifiStaState::Hunting) m = apAct ? IOTSA_WIFI_NOTFOUND : IOTSA_WIFI_SEARCHING;
-  else m = apAct ? IOTSA_WIFI_FACTORY : IOTSA_WIFI_DISABLED;
-  if (m != iotsaConfig.wifiMode) iotsaConfig.wifiMode = m;
-
   // Edge-triggered: log the transition, (re)start mDNS, poke the status LED.
   if (staConn != _lastStaConnected) {
     if (staConn) {
@@ -229,7 +220,10 @@ IotsaWifiMod::webHandler() {
 
 String IotsaWifiMod::info() {
   IPAddress x;
-  String message = "<p>WiFi mode: " + String((int)WiFi.getMode()) + ", iotsaWifiMode: " + String((int)iotsaConfig.wifiMode) + ", WiFi status: " + String((int)WiFi.status()) + ".</p>";
+  String message = "<p>WiFi mode: " + String((int)WiFi.getMode())
+    + ", STA state: " + String((int)_controller.staState())
+    + ", AP state: " + String((int)_controller.apState())
+    + ", WiFi status: " + String((int)WiFi.status()) + ".</p>";
   message += "<p>IP address is ";
   uint32_t ip = WiFi.localIP();
   if (ip == 0) {
