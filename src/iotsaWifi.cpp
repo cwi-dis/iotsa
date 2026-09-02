@@ -34,8 +34,21 @@ void IotsaWifiMod::setup() {
   _driver.begin();   // install the platform WiFi event handlers (cwi-dis/iotsa#106)
   _controller.setRadioEnabled(!iotsaConfig.wifiDisabledOnBoot);
   _controller.begin();
-  // The controller does everything else from loop() -> tick(); it leaves the
-  // radio untouched here so a wifiDisabledOnBoot device simply never turns it on.
+  // iotsaConfig.wifiEnabled means "the radio is not disabled", NOT "connected"
+  // (that's networkIsUp()).
+  iotsaConfig.wifiEnabled = !iotsaConfig.wifiDisabledOnBoot;
+  // One reconcile now, synchronously. This is what actually brings the WiFi /
+  // TCP-IP stack up (the first startStation()/startAP() -> WiFi.mode()/begin()),
+  // which the old IotsaWifiMod::setup() did too -- modules that bind a socket in
+  // their own setup()/lateSetup() (IotsaHttpServiceMod::server->begin(),
+  // IotsaCoapServiceMod::coap.start()) crash on an uninitialised lwIP otherwise.
+  // Re-establishing that implicit contract here is a workaround; the dependents
+  // ought to react to network-up instead -- see cwi-dis/iotsa#239 (and #238).
+  // The connection then continues from loop() -> tick() as normal.
+  if (!iotsaConfig.wifiDisabledOnBoot) {
+    _controller.tick();
+    _publishControllerState();
+  }
 }
 
 void IotsaWifiMod::_publishControllerState() {
@@ -44,7 +57,7 @@ void IotsaWifiMod::_publishControllerState() {
 
   iotsaConfig.wifiStationConnected = staConn;
   iotsaConfig.wifiApActive = apAct;
-  iotsaConfig.wifiEnabled = (_controller.staState() != IotsaWifiStaState::Off) || apAct;
+  iotsaConfig.wifiEnabled = !iotsaConfig.wifiDisabledOnBoot;  // "radio not disabled", not "connected"
 
   // Vestigial wifiMode -- kept written until slice 4 removes the enum and updates
   // getStatusColor() / privateWifi / networkIsUp() / inConfigurationOrFactoryMode().
@@ -55,9 +68,19 @@ void IotsaWifiMod::_publishControllerState() {
   else m = apAct ? IOTSA_WIFI_FACTORY : IOTSA_WIFI_DISABLED;
   if (m != iotsaConfig.wifiMode) iotsaConfig.wifiMode = m;
 
-  // mDNS follows the STA-connected / AP-active edges (each has its own IP).
+  // Edge-triggered: log the transition, (re)start mDNS, poke the status LED.
+  if (staConn != _lastStaConnected) {
+    if (staConn) {
+      IotsaSerial.printf("WiFi connected: %s, IP %s\n", ssid.c_str(), WiFi.localIP().toString().c_str());
+    } else {
+      IotsaSerial.println("WiFi connection lost");
+    }
+  }
+  if (apAct != _lastApActive && apAct) {
+    IotsaSerial.printf("WiFi AP up: config-%s, IP %s\n", iotsaConfig.hostName.c_str(), WiFi.softAPIP().toString().c_str());
+  }
   if ((staConn && !_lastStaConnected) || (apAct && !_lastApActive)) {
-    _wifiStartMDNS();
+    _wifiStartMDNS();  // each of STA / AP has its own IP
   }
   if ((staConn != _lastStaConnected) || (apAct != _lastApActive)) {
     if (app.status) app.status->showStatus();
