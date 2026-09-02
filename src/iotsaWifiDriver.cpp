@@ -25,9 +25,13 @@ IotsaWifiStaFailReason IotsaWifiDriver::_reduceStaFailReason(int reason) {
 void IotsaWifiDriver::begin() {
   if (_handlersInstalled) return;
   _handlersInstalled = true;
+  WiFi.setAutoReconnect(_autoReconnect);   // on by default; the controller may flip it
 #ifdef ESP32
   WiFi.onEvent([this](WiFiEvent_t event, WiFiEventInfo_t info) {
     switch (event) {
+      case ARDUINO_EVENT_WIFI_STA_CONNECTED:
+        _l2Associated = true;     // associated + authed; DHCP still to come
+        break;
       case ARDUINO_EVENT_WIFI_STA_GOT_IP:
 #ifdef ARDUINO_EVENT_WIFI_STA_GOT_IP6
       case ARDUINO_EVENT_WIFI_STA_GOT_IP6:
@@ -38,6 +42,7 @@ void IotsaWifiDriver::begin() {
         _evStaGotIp = true;
         break;
       case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
+        _l2Associated = false;
         if (_haveIp) { _evStaLost = true; _haveIp = false; }
         else { _evStaFailReason = (uint8_t)_reduceStaFailReason(info.wifi_sta_disconnected.reason); _evStaFailed = true; }
         break;
@@ -57,7 +62,11 @@ void IotsaWifiDriver::begin() {
     _haveIp = true;
     _evStaGotIp = true;
   });
+  _evH_connected = WiFi.onStationModeConnected([this](const WiFiEventStationModeConnected &) {
+    _l2Associated = true;         // associated + authed; DHCP still to come
+  });
   _evH_disconnected = WiFi.onStationModeDisconnected([this](const WiFiEventStationModeDisconnected &e) {
+    _l2Associated = false;
     if (_haveIp) { _evStaLost = true; _haveIp = false; }
     else { _evStaFailReason = (uint8_t)_reduceStaFailReason((int)e.reason); _evStaFailed = true; }
   });
@@ -68,6 +77,12 @@ void IotsaWifiDriver::begin() {
     _evApClientCountChanged = true;
   });
 #endif
+}
+
+void IotsaWifiDriver::setAutoReconnect(bool on) {
+  _autoReconnect = on;
+  WiFi.setAutoReconnect(on);
+  if (!on) WiFi.disconnect(false);   // halt the SDK's in-flight retry loop, keep stored creds
 }
 
 IotsaWifiEvents IotsaWifiDriver::drainEvents() {
@@ -99,6 +114,7 @@ IotsaWifiActualState IotsaWifiDriver::readActualState() const {
   wl_status_t link = WiFi.status();
   st.staLinkStatus = (int)link;
   st.staConnected = (link == WL_CONNECTED);
+  st.staAssociated = _l2Associated;
   if (st.staConnected) st.staChannel = WiFi.channel();
 #ifdef ESP32
   wifi_config_t conf;
@@ -118,6 +134,7 @@ IotsaWifiActualState IotsaWifiDriver::readActualState() const {
 }
 
 bool IotsaWifiDriver::startStation(const String &ssid, const String &psk, uint8_t channel, const uint8_t *bssid) {
+  _l2Associated = false;
   WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() | (int)WIFI_STA);
   if (!WiFi.mode(newMode)) return false;
   wl_status_t sts;
@@ -129,7 +146,7 @@ bool IotsaWifiDriver::startStation(const String &ssid, const String &psk, uint8_
 #ifdef ESP32
   if (_txPowerReduction) WiFi.setTxPower(WIFI_POWER_8_5dBm);
 #endif
-  WiFi.setAutoReconnect(true);
+  WiFi.setAutoReconnect(_autoReconnect);   // some SDK versions reset this in begin()
   return sts != WL_CONNECT_FAILED;
 }
 
@@ -137,6 +154,7 @@ void IotsaWifiDriver::stopStation() {
   WiFi.disconnect(false); // keep stored credentials
   WiFi.mode((WiFiMode_t)((int)WiFi.getMode() & ~(int)WIFI_STA));
   _haveIp = false;
+  _l2Associated = false;
 }
 
 bool IotsaWifiDriver::startAP(const String &apName) {
@@ -156,6 +174,7 @@ void IotsaWifiDriver::reinitStack() {
   delay(10);
   WiFi.mode(WIFI_STA);
   _haveIp = false;
+  _l2Associated = false;
 }
 
 #endif // IOTSA_WITH_WIFI

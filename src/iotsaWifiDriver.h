@@ -25,6 +25,7 @@ struct IotsaWifiActualState {
   bool staEnabled = false;      // WiFi.getMode() has the STA bit
   bool apEnabled = false;       // WiFi.getMode() has the AP bit
   bool staConnected = false;    // WiFi.status() == WL_CONNECTED
+  bool staAssociated = false;   // L2 associated (STA_CONNECTED seen) -- may be mid-DHCP, no IP yet
   int staLinkStatus = 0;        // raw wl_status_t
   String staConfiguredSsid;     // the target, readable even mid-connect
   String staConfiguredPsk;
@@ -48,6 +49,12 @@ public:
   void begin();                 // install the platform WiFi event handlers (once)
   void setTxPowerReduction(bool on) { _txPowerReduction = on; }
 
+  // SDK auto-reconnect. On by default (good for a transient blip). IotsaWifiController
+  // turns it *off* when it takes over the AP/hunt duty cycle -- with it on, the SDK
+  // channel-hops every few seconds and drags the softAP off its channel. Turning it
+  // off also halts the SDK's in-flight retry loop.
+  void setAutoReconnect(bool on);
+
   // Radio ops: fire, report whether the *attempt* was issued (not whether it
   // completed).
   bool startStation(const String &ssid, const String &psk, uint8_t channel = 0, const uint8_t *bssid = nullptr);
@@ -63,6 +70,7 @@ private:
   static IotsaWifiStaFailReason _reduceStaFailReason(int reason);
 
   bool _txPowerReduction = false;
+  bool _autoReconnect = true;   // re-asserted after each WiFi.begin(); see setAutoReconnect()
   bool _handlersInstalled = false;
 
   // Latch storage, written only from the platform WiFi callbacks (foreign task
@@ -73,10 +81,11 @@ private:
   volatile bool _evStaLost = false;
   volatile bool _evApClientCountChanged = false;
   volatile uint8_t _evLastChannel = 0;
+  volatile bool _l2Associated = false; // level, not a latch: L2 associated, cleared on disconnect / startStation
   uint8_t _evLastBssid[6] = {0};
   bool _haveIp = false;          // touched only in the callbacks: staLost vs staFailed
 #ifndef ESP32
-  WiFiEventHandler _evH_gotIp, _evH_disconnected, _evH_apConnect, _evH_apDisconnect;
+  WiFiEventHandler _evH_gotIp, _evH_disconnected, _evH_connected, _evH_apConnect, _evH_apDisconnect;
 #endif
 };
 

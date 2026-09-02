@@ -8,11 +8,21 @@
 // The WiFi *policy* layer -- see docs/wifi-controller-design.md.
 //
 // IotsaWifiDriver is the mechanism (radio ops + latched events + introspection).
-// IotsaWifiController is policy only: the STA state machine, the retry/escalation
-// cadence, the derived "AP should be up" fact, and a declare-desired / reconcile /
-// safe-to-act loop. No IotsaModule-ness, no persistence, no REST. IotsaWifiMod
-// owns both, feeds this one its desired state, and reads back the published state
-// (which IotsaWifiMod then copies into the iotsaConfig fields other modules read).
+// IotsaWifiController is policy only: the STA state machine, the fallback-AP /
+// hunt duty cycle, and a declare-desired / reconcile / safe-to-act loop. No
+// IotsaModule-ness, no persistence, no REST. IotsaWifiMod owns both, feeds this
+// one its desired state, and reads back the published state (which IotsaWifiMod
+// then copies into the iotsaConfig fields other modules read).
+//
+// STA connect strategy, in two phases:
+//   1. Normal: SDK auto-reconnect is ON -- it handles a fast initial connect and
+//      transient blips. The controller just watches.
+//   2. Takeover: if STA stays down for TAKEOVER_MS, the SDK is clearly not
+//      getting there. The controller turns auto-reconnect OFF (it channel-hops
+//      and drags the softAP around) and runs its own duty cycle: HUNT_WINDOW_MS
+//      of STA hunting with the AP down, then AP_WINDOW_MS of a stable, joinable
+//      config AP with STA quiet, repeat. A client on the AP forestalls the next
+//      hunt. got-IP at any point returns to phase 1.
 //
 
 // Mixed-case enum members throughout: several obvious SCREAMING_CASE names
@@ -26,7 +36,7 @@ enum class IotsaWifiStaState : uint8_t {
   Off,          // not attempting (no credentials, or wifiDisabledOnBoot)
   Connecting,   // connect issued, nothing wrong yet
   Connected,    // has an IP
-  Hunting       // a connect attempt failed; retrying on a per-reason cadence
+  Hunting       // a connect attempt failed; SDK auto-reconnect or the duty cycle is retrying
 };
 enum class IotsaWifiApState : uint8_t {
   Off,          // no softAP
@@ -58,16 +68,16 @@ public:
   bool staConnected() const { return _staState == IotsaWifiStaState::Connected; }  // convenience
   bool apActive() const { return apState() != IotsaWifiApState::Off; }             // convenience
   IotsaWifiStaFailReason lastFailReason() const { return _lastFailReason; }
-  // ms until the config AP is raised while STA is failing; 0 if not counting / already up
-  uint32_t escalationRemainingMillis() const { return _escalationDeadline.remainingMillis(); }
+  bool inManualHunt() const { return _manualHunt; }   // running the AP/hunt duty cycle
 
 private:
   void _handleEvents(const IotsaWifiEvents &ev, const IotsaWifiActualState &actual);
-  void _serviceTimers();
-  void _reconcile(const IotsaWifiActualState &actual);   // desired vs actual, act if safe
+  void _serviceTimers(const IotsaWifiActualState &actual);   // takeover + duty-cycle phase transitions
+  void _reconcile(const IotsaWifiActualState &actual);       // desired vs actual, act if safe
   void _startStaAttempt();
-  bool _wantApUp() const;                                // the derived AP-up rule
-  uint32_t _retryDelayMillis() const;                    // per-reason HUNTING cadence
+  void _enterManualHunt();
+  void _leaveManualHunt();
+  bool _wantApUp() const;                                // AP-up rule for the non-manual-hunt case
   bool _apDisruptionSafe() const;                        // no client + hold expired
   String _apName() const;                                // "config-<hostname>"
 
@@ -81,11 +91,14 @@ private:
   // current state
   IotsaWifiStaState _staState = IotsaWifiStaState::Off;
   bool _apUp = false;              // policy says the softAP should exist; apState() adds On vs InUse
-  bool _escalated = false;         // STA failed long enough -> AP-up derivation is true
   IotsaWifiStaFailReason _lastFailReason = IotsaWifiStaFailReason::None;
   int _apClientCount = 0;          // last known softAP client count
-  int _retryCount = 0;            // consecutive HUNTING attempts (for AUTH_FAIL backoff)
-  int _noProgressAttempts = 0;    // connects that never even reached the radio -> reinitStack()
+
+  // Duty cycle (phase 2). _manualHunt: SDK auto-reconnect off, we own both radios.
+  bool _manualHunt = false;
+  bool _dutyApPhase = false;       // within _manualHunt: true = AP window, false = hunt window
+  bool _huntGraceUsed = false;     // one grace extension per hunt window (mid-DHCP protection)
+  int _noProgressHunts = 0;        // hunt windows that produced no association -> reinitStack()
 
   // RTC-RAM fast-reconnect cache (docs "Fast-reconnect cache"): filled on GOT_IP,
   // used for a targeted scan-free reconnect. Not persisted -- regenerated cheaply
@@ -98,10 +111,9 @@ private:
   } _cache;
 
   // One IotsaDeadline per purpose (docs "Scheduler primitive").
-  IotsaDeadline _connectDeadline;    // STA connect attempt timeout
-  IotsaDeadline _retryDeadline;      // gap before the next HUNTING attempt
-  IotsaDeadline _escalationDeadline; // STA failing -> raise the config AP after this
-  IotsaDeadline _apClientHold;       // no channel-hopping scan while a client is on the AP
+  IotsaDeadline _takeoverDeadline;  // STA down this long with SDK auto-reconnect -> _enterManualHunt()
+  IotsaDeadline _dutyDeadline;      // current duty-cycle phase (hunt window / AP window / grace)
+  IotsaDeadline _apClientHold;      // no channel-hopping scan while / just after a client is on the AP
 };
 
 #endif

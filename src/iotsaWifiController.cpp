@@ -7,35 +7,21 @@
 // IotsaWifiController -- the WiFi policy layer. See docs/wifi-controller-design.md.
 // IotsaWifiMod owns one, feeds it desired state (setCredentials / setRadioEnabled /
 // setConfigModeActive) each tick, and reads back staState() / apState() to publish
-// into iotsaConfig. The controller drives the radio only through the driver methods
-// on IotsaWifiMod (startStation / stopStation / startAP / stopAP / reinitStack /
-// readActualState / drainEvents).
+// into iotsaConfig. The controller drives the radio only through the driver.
 //
 
-// Tunables (docs "Open questions" -- to be adjusted against real hardware).
-static const uint32_t CONNECT_TIMEOUT_MS   = IOTSA_WIFI_TIMEOUT * 1000UL; // per STA connect attempt
-static const uint32_t ESCALATION_MS        = 60UL * 1000UL;              // STA failing -> raise the config AP
-static const uint32_t RETRY_BASE_MS        = 15UL * 1000UL;              // gap between HUNTING attempts (NoApFound/Other)
-static const uint32_t RETRY_AUTHFAIL_MS    = 30UL * 1000UL;              // first AUTH_FAIL retry gap (then doubles)
-static const uint32_t RETRY_CAP_MS         = 15UL * 60UL * 1000UL;       // longest retry gap
-static const uint32_t AP_CLIENT_HOLD_MS    = 60UL * 1000UL;              // no channel-hop scan while / after a client
-static const int      NO_PROGRESS_LIMIT    = 5;                          // dead connects before reinitStack()
+// Tunables (docs "Open questions" -- adjusted against real hardware, cwi-dis/iotsa#106).
+static const uint32_t TAKEOVER_MS      = 10UL * 1000UL;   // STA down this long w/ SDK auto-reconnect -> take over
+static const uint32_t HUNT_WINDOW_MS   = 10UL * 1000UL;   // one STA hunt window (also the mid-DHCP grace extension)
+static const uint32_t AP_WINDOW_MS     = 30UL * 1000UL;   // one stable-config-AP window
+static const uint32_t AP_CLIENT_HOLD_MS= 60UL * 1000UL;   // no hunt while / just after a client is on the AP
+static const int      NO_PROGRESS_LIMIT= 5;               // hunt windows with no association -> reinitStack()
 
 #ifdef IOTSA_WIFI_DEBUG
 #define WCDEBUG(...) do { IotsaSerial.printf("iotsaWifi: " __VA_ARGS__); IotsaSerial.println(); } while (0)
 #else
 #define WCDEBUG(...) do {} while (0)
 #endif
-
-static const char *_staName(IotsaWifiStaState s) {
-  switch (s) {
-    case IotsaWifiStaState::Off:        return "Off";
-    case IotsaWifiStaState::Connecting: return "Connecting";
-    case IotsaWifiStaState::Connected:  return "Connected";
-    case IotsaWifiStaState::Hunting:    return "Hunting";
-  }
-  return "?";
-}
 
 // ---------------------------------------------------------------------------
 // Lifecycle
@@ -52,7 +38,7 @@ void IotsaWifiController::tick() {
   _apClientCount = actual.apClientCount;
 
   _handleEvents(ev, actual);
-  _serviceTimers();
+  _serviceTimers(actual);
   _reconcile(actual);
 }
 
@@ -71,15 +57,14 @@ void IotsaWifiController::setRadioEnabled(bool on) { _radioEnabled = on; }
 void IotsaWifiController::setConfigModeActive(bool active) { _configModeActive = active; }
 
 void IotsaWifiController::credentialsChanged() {
-  // A save of new credentials -> reconnect now, don't wait out a retry gap.
+  // A save of new credentials -> reconnect now, from a clean slate.
   WCDEBUG("credentialsChanged -> restart STA");
+  if (_manualHunt) _leaveManualHunt();
   _staState = IotsaWifiStaState::Off;
-  _escalated = false;
-  _retryCount = 0;
-  _noProgressAttempts = 0;
-  _connectDeadline.disarm();
-  _retryDeadline.disarm();
-  _escalationDeadline.disarm();
+  _huntGraceUsed = false;
+  _noProgressHunts = 0;
+  _takeoverDeadline.disarm();
+  _dutyDeadline.disarm();
 }
 
 // ---------------------------------------------------------------------------
@@ -104,23 +89,12 @@ bool IotsaWifiController::_apDisruptionSafe() const {
 }
 
 bool IotsaWifiController::_wantApUp() const {
+  // Only consulted outside _manualHunt (the duty cycle owns the AP while hunting).
   if (!_radioEnabled) return false;
-  if (_configModeActive) return true;                      // config mode => AP always up
+  if (_configModeActive) return true;                      // config mode => AP up alongside STA
   if (_ssid.length() == 0) return true;                    // unconfigured: offer the config AP
                                                            // (slice 4 folds this into "no ssid => config mode")
-  if (_staState == IotsaWifiStaState::Hunting && _escalated) return true; // fallback
   return false;
-}
-
-uint32_t IotsaWifiController::_retryDelayMillis() const {
-  if (_lastFailReason == IotsaWifiStaFailReason::AuthFail) {
-    // back off hard -- hammering a failed auth gets rate-limited / temp-banned
-    uint32_t d = RETRY_AUTHFAIL_MS << (_retryCount > 6 ? 6 : _retryCount);
-    return d > RETRY_CAP_MS ? RETRY_CAP_MS : d;
-  }
-  // NoApFound / Other: steady, stretching out after a long spell
-  uint32_t d = RETRY_BASE_MS + (uint32_t)(_retryCount > 20 ? 20 : _retryCount) * RETRY_BASE_MS;
-  return d > RETRY_CAP_MS ? RETRY_CAP_MS : d;
 }
 
 void IotsaWifiController::_startStaAttempt() {
@@ -132,36 +106,55 @@ void IotsaWifiController::_startStaAttempt() {
   }
   bool issued = _driver.startStation(_ssid, _psk, ch, bssid);
   WCDEBUG("startStation ssid='%s' targeted=%d issued=%d", _ssid.c_str(), (int)(bssid != nullptr), (int)issued);
-  if (!issued) {
-    // WiFi.begin() outright refused -- treat like a connect failure, will retry.
-    _staState = IotsaWifiStaState::Hunting;
-    _lastFailReason = IotsaWifiStaFailReason::Other;
-    _retryDeadline.arm(_retryDelayMillis());
-    if (!_escalationDeadline.armed()) _escalationDeadline.arm(ESCALATION_MS);
-    if (++_noProgressAttempts >= NO_PROGRESS_LIMIT) {
-      WCDEBUG("stack wedged -> reinitStack");
-      _driver.reinitStack();
-      _noProgressAttempts = 0;
-    }
+  _staState = IotsaWifiStaState::Connecting;
+}
+
+void IotsaWifiController::_enterManualHunt() {
+  WCDEBUG("takeover: SDK auto-reconnect not getting there -> manual hunt/AP duty cycle");
+  _manualHunt = true;
+  _huntGraceUsed = false;
+  _noProgressHunts = 0;
+  _takeoverDeadline.disarm();
+  _driver.setAutoReconnect(false);   // it channel-hops and drags the softAP around
+
+  // The AP may already be up (config mode / unconfigured raised it via _reconcile).
+  IotsaWifiActualState a = _driver.readActualState();
+  if (a.apEnabled && !_apDisruptionSafe()) {
+    // A client is on it -- don't disrupt; start in an AP window instead.
+    WCDEBUG("manual hunt: AP already in use -> start in AP window");
+    _apUp = true;
+    _dutyApPhase = true;
+    _dutyDeadline.arm(AP_WINDOW_MS);
     return;
   }
-  _noProgressAttempts = 0;
-  _staState = IotsaWifiStaState::Connecting;
-  _connectDeadline.arm(CONNECT_TIMEOUT_MS);
-  _retryDeadline.disarm();
+  if (a.apEnabled) {                 // idle AP: clear it so the hunt scan doesn't drag it
+    _driver.stopAP();
+    _apUp = false;
+  }
+  _dutyApPhase = false;              // start in a hunt window
+  _startStaAttempt();
+  _dutyDeadline.arm(HUNT_WINDOW_MS);
+}
+
+void IotsaWifiController::_leaveManualHunt() {
+  if (!_manualHunt) return;
+  WCDEBUG("leaving manual hunt");
+  _manualHunt = false;
+  _dutyApPhase = false;
+  _huntGraceUsed = false;
+  _dutyDeadline.disarm();
+  _driver.setAutoReconnect(true);
 }
 
 void IotsaWifiController::_handleEvents(const IotsaWifiEvents &ev, const IotsaWifiActualState &actual) {
   if (ev.staGotIp) {
     WCDEBUG("event: got IP, ch=%d", ev.lastChannel);
+    if (_manualHunt) _leaveManualHunt();
     _staState = IotsaWifiStaState::Connected;
     _lastFailReason = IotsaWifiStaFailReason::None;
-    _escalated = false;
-    _retryCount = 0;
-    _noProgressAttempts = 0;
-    _connectDeadline.disarm();
-    _retryDeadline.disarm();
-    _escalationDeadline.disarm();
+    _noProgressHunts = 0;
+    _takeoverDeadline.disarm();
+    _dutyDeadline.disarm();
     // refresh the fast-reconnect cache
     _cache.ssid = _ssid;
     _cache.channel = ev.lastChannel;
@@ -172,9 +165,8 @@ void IotsaWifiController::_handleEvents(const IotsaWifiEvents &ev, const IotsaWi
     _lastFailReason = ev.staFailed ? ev.staFailReason : IotsaWifiStaFailReason::Other;
     WCDEBUG("event: sta %s reason=%d", ev.staLost ? "lost" : "failed", (int)_lastFailReason);
     _staState = IotsaWifiStaState::Hunting;
-    _connectDeadline.disarm();
-    _retryDeadline.arm(_retryDelayMillis());
-    if (!_escalationDeadline.armed()) _escalationDeadline.arm(ESCALATION_MS);
+    // Phase 1: let the SDK retry; give it TAKEOVER_MS before we step in. Arm once.
+    if (!_manualHunt && !_takeoverDeadline.armed()) _takeoverDeadline.arm(TAKEOVER_MS);
   }
   if (ev.apClientCountChanged) {
     WCDEBUG("event: AP clients=%d", actual.apClientCount);
@@ -182,51 +174,90 @@ void IotsaWifiController::_handleEvents(const IotsaWifiEvents &ev, const IotsaWi
   }
 }
 
-void IotsaWifiController::_serviceTimers() {
-  if (_connectDeadline.fired()) {
-    // No got-ip and no disconnect event within the window -- silent timeout.
-    WCDEBUG("connect timeout");
-    _lastFailReason = IotsaWifiStaFailReason::Other;
-    _staState = IotsaWifiStaState::Hunting;
-    _retryDeadline.arm(_retryDelayMillis());
-    if (!_escalationDeadline.armed()) _escalationDeadline.arm(ESCALATION_MS);
-    if (++_noProgressAttempts >= NO_PROGRESS_LIMIT) {
-      WCDEBUG("stack wedged -> reinitStack");
-      _driver.reinitStack();
-      _noProgressAttempts = 0;
+void IotsaWifiController::_serviceTimers(const IotsaWifiActualState &actual) {
+  // Phase 1 -> 2: SDK auto-reconnect had its window and STA is still down.
+  if (_takeoverDeadline.fired()) {
+    const bool wantSta = _radioEnabled && _ssid.length() > 0;
+    if (wantSta && _staState != IotsaWifiStaState::Connected) _enterManualHunt();
+    return;
+  }
+
+  if (!_manualHunt || !_dutyDeadline.fired()) return;
+
+  if (!_dutyApPhase) {
+    // --- hunt window ended ---
+    if (actual.staAssociated && !actual.staConnected && !_huntGraceUsed) {
+      // A join is in flight (associated, DHCP pending) -- don't tear it down.
+      WCDEBUG("hunt: associated, awaiting IP -> grace");
+      _huntGraceUsed = true;
+      _dutyDeadline.arm(HUNT_WINDOW_MS);
+      return;
     }
+    if (!actual.staAssociated) {
+      if (++_noProgressHunts >= NO_PROGRESS_LIMIT) {
+        WCDEBUG("stack wedged (%d dead hunt windows) -> reinitStack", _noProgressHunts);
+        _driver.reinitStack();
+        _noProgressHunts = 0;
+      }
+    } else {
+      _noProgressHunts = 0;
+    }
+    WCDEBUG("hunt window end -> AP window");
+    _driver.stopStation();
+    if (_driver.startAP(_apName())) _apUp = true;
+    _dutyApPhase = true;
+    _huntGraceUsed = false;
+    _dutyDeadline.arm(AP_WINDOW_MS);
+  } else {
+    // --- AP window ended ---
+    if (!_apDisruptionSafe()) {
+      // Someone is using the config AP (or just left) -- keep it, skip this hunt.
+      WCDEBUG("AP window end, AP in use -> extend");
+      _dutyDeadline.arm(AP_WINDOW_MS);
+      return;
+    }
+    WCDEBUG("AP window end -> hunt window");
+    _driver.stopAP();
+    _apUp = false;
+    _dutyApPhase = false;
+    _startStaAttempt();
+    _dutyDeadline.arm(HUNT_WINDOW_MS);
   }
-  if (_escalationDeadline.fired()) {
-    WCDEBUG("escalation: raising config AP");
-    _escalated = true;
-  }
-  // _retryDeadline is consumed in _reconcile() (it gates the next attempt).
 }
 
 void IotsaWifiController::_reconcile(const IotsaWifiActualState &actual) {
   const bool wantSta = _radioEnabled && _ssid.length() > 0;
 
-  // ---- STA ----
+  if (_manualHunt) {
+    if (!wantSta) {
+      // Radio disabled or credentials cleared out from under us.
+      WCDEBUG("reconcile: STA no longer wanted -> leave manual hunt");
+      _driver.stopStation();
+      if (actual.apEnabled && _apDisruptionSafe()) { _driver.stopAP(); }
+      _leaveManualHunt();
+      _staState = IotsaWifiStaState::Off;
+      _apUp = actual.apEnabled;
+      return;
+    }
+    // The duty cycle in _serviceTimers() owns both radios while hunting.
+    _apUp = actual.apEnabled;
+    return;
+  }
+
+  // ---- STA (non-manual-hunt) ----
   if (!wantSta) {
+    _takeoverDeadline.disarm();
     if (actual.staEnabled) {
       WCDEBUG("reconcile: STA not wanted -> stopStation");
       _driver.stopStation();
     }
-    if (_staState != IotsaWifiStaState::Off) _staState = IotsaWifiStaState::Off;
+    _staState = IotsaWifiStaState::Off;
   } else {
     switch (_staState) {
       case IotsaWifiStaState::Off:
         _startStaAttempt();
         break;
-      case IotsaWifiStaState::Hunting:
-        if (!_retryDeadline.pending()) {   // gap elapsed (or never armed)
-          _retryCount++;
-          _startStaAttempt();
-        }
-        break;
       case IotsaWifiStaState::Connecting:
-        // Trust _connectDeadline (and the fail/got-ip events) to move us on --
-        // don't second-guess a connect in progress from a transient link status.
         // Only bail early if the radio is demonstrably pursuing the wrong SSID
         // (credentials changed under us mid-attempt).
         if (actual.staEnabled &&
@@ -236,6 +267,9 @@ void IotsaWifiController::_reconcile(const IotsaWifiActualState &actual) {
           _startStaAttempt();
         }
         break;
+      case IotsaWifiStaState::Hunting:
+        // SDK auto-reconnect is retrying; wait for _takeoverDeadline.
+        break;
       case IotsaWifiStaState::Connected:
         // setAutoReconnect(true) covers a transient blip; a real loss arrives as
         // ev.staLost. Nothing to do here.
@@ -243,10 +277,9 @@ void IotsaWifiController::_reconcile(const IotsaWifiActualState &actual) {
     }
   }
 
-  // ---- AP (derived fact) ----
+  // ---- AP (derived fact, non-manual-hunt) ----
   const bool wantAp = _wantApUp();
   if (wantAp && !actual.apEnabled) {
-    // Bringing the AP up is always safe (there is no client on an AP that is off).
     if (_driver.startAP(_apName())) {
       WCDEBUG("reconcile: AP up ('%s')", _apName().c_str());
       _apUp = true;
