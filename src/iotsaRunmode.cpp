@@ -78,12 +78,10 @@ void IotsaRunmodeMod::webHandler() {
       message += "<p><em>WiFi radio enabled.</em></p>";
 #ifdef IOTSA_WITH_BLE
     } else if (action == "ble-disable") {
-      iotsaConfig.bleMode = iotsa_ble_mode::IOTSA_BLE_DISABLED;
-      iotsaConfig.wantBleModeSwitchAtMillis = millis() + 1000;
+      iotsaController.setBleRadioEnabled(false);
       message += "<p><em>BLE radio disabled.</em></p>";
     } else if (action == "ble-enable") {
-      iotsaConfig.bleMode = iotsa_ble_mode::IOTSA_BLE_ENABLED;
-      iotsaConfig.wantBleModeSwitchAtMillis = millis() + 1000;
+      iotsaController.setBleRadioEnabled(true);
       message += "<p><em>BLE radio enabled.</em></p>";
 #endif
     }
@@ -174,7 +172,7 @@ bool IotsaRunmodeMod::getHandler(const char *path, JsonObject& reply) {
   reply["modeTimeout"] = iotsaConfig.configurationModeTimeout;   // read-only mirror; owned by /api/config
   reply["wifiDisabled"] = !iotsaStatus.wifiEnabled;
 #ifdef IOTSA_WITH_BLE
-  reply["bleDisabled"] = iotsaConfig.bleMode == iotsa_ble_mode::IOTSA_BLE_DISABLED;
+  reply["bleDisabled"] = !iotsaController.bleRadioWanted();
 #endif
   return true;
 }
@@ -191,8 +189,7 @@ bool IotsaRunmodeMod::putHandler(const char *path, const JsonVariant& request, J
 #ifdef IOTSA_WITH_BLE
   bool bleDisabled;
   if (getFromRequest<int>(reqObj, "bleDisabled", bleDisabled)) {
-    iotsaConfig.bleMode = bleDisabled ? iotsa_ble_mode::IOTSA_BLE_DISABLED : iotsa_ble_mode::IOTSA_BLE_ENABLED;
-    iotsaConfig.wantBleModeSwitchAtMillis = millis() + 1000;
+    iotsaController.setBleRadioEnabled(!bleDisabled);
     anyChanged = true;
   }
 #endif

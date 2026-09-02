@@ -12,9 +12,9 @@ typedef std::function<void(void)> extensionCallback;
 // operation is suspended so the device can be worked on. Distinct from the
 // "runmode" concept (sleep/wake and radio rhythm) -- see cwi-dis/iotsa#106.
 typedef enum { IOTSA_MODE_NORMAL, IOTSA_MODE_CONFIG, IOTSA_MODE_OTA, IOTSA_MODE_FACTORY_RESET } iotsa_mode;
-// iotsa_wifi_mode removed (cwi-dis/iotsa#106): WiFi state is IotsaWifiController's
-// staState()/apState() plus the iotsaStatus.wifi* booleans.
-typedef enum { IOTSA_BLE_DISABLED, IOTSA_BLE_ENABLED } iotsa_ble_mode;
+// iotsa_wifi_mode / iotsa_ble_mode removed (cwi-dis/iotsa#106): radio state is
+// IotsaController's {wifi,ble}RadioWanted() policy plus the iotsaStatus.wifi*
+// booleans; IotsaBLEServerMod reconciles advertising with it.
 
 class IotsaConfig {
   friend class IotsaConfigMod;
@@ -29,9 +29,7 @@ private:
   bool otaEnabled = false;
   bool wifiDisabledOnBoot = false;
 #ifdef IOTSA_WITH_BLE
-  bool bleDisabledOnBoot = false;
-  iotsa_ble_mode bleMode = IOTSA_BLE_DISABLED;
-  uint32_t wantBleModeSwitchAtMillis = 0;
+  bool bleDisabledOnBoot = false;   // boot policy; IotsaController seeds _bleRadioEnabled from it
 #endif
   // The iotsa_mode state machine moved to IotsaController (cwi-dis/iotsa#106).
   uint32_t postponeSleepMillis = 0;

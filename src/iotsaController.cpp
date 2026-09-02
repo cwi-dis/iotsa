@@ -20,10 +20,13 @@ static const char *PENDING_MODE_FILE = "/config/pendingmode.cfg";
 // ---------------------------------------------------------------------------
 
 void IotsaController::begin() {
-  // Seed the runtime WiFi-radio state from the persisted boot policy. From here
-  // on setWifiRadioEnabled() (REST/BLE toggle, battery sleep) moves it, and
-  // wifiRadioWanted() layers "CONFIG/OTA forces it on" over the top.
+  // Seed the runtime radio state from the persisted boot policy. From here on
+  // setWifiRadioEnabled() / setBleRadioEnabled() (REST/web toggles, battery
+  // sleep) move it, and {wifi,ble}RadioWanted() layer the mode forcing on top.
   _wifiRadioEnabled = !iotsaConfig.wifiDisabledOnBoot;
+#ifdef IOTSA_WITH_BLE
+  _bleRadioEnabled = !iotsaConfig.bleDisabledOnBoot;
+#endif
 
   // Consume the one-shot mailbox that requestMode() wrote before the last reboot.
   iotsa_mode pending = IOTSA_MODE_NORMAL;

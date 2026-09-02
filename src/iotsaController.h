@@ -46,6 +46,20 @@ public:
     return _wifiRadioEnabled;
   }
 
+#ifdef IOTSA_WITH_BLE
+  // BLE radio-enablement policy, same shape as WiFi above (cwi-dis/iotsa#106).
+  // _bleRadioEnabled is seeded in begin() from !bleDisabledOnBoot, then moved by
+  // setBleRadioEnabled() (the bleDisabled REST/web toggle). bleRadioWanted() is
+  // what IotsaBLEServerMod reconciles its advertising with each tick. CONFIG mode
+  // forces it on (a BLE gesture is how you steer a wifiDisabledOnBoot device into
+  // a mode); OTA does NOT -- OTA is a WiFi path, BLE up would just waste radio.
+  void setBleRadioEnabled(bool on) { _bleRadioEnabled = on; }
+  bool bleRadioWanted() const {
+    if (_mode == IOTSA_MODE_CONFIG) return true;
+    return _bleRadioEnabled;
+  }
+#endif
+
   // ---- iotsa_mode state machine ----
 
   // Request a mode for the *next* boot. Writes the mailbox; honoured by begin()
@@ -81,6 +95,9 @@ private:
 
   uint32_t _rebootAtMillis = 0;
   bool _wifiRadioEnabled = true;   // runtime desired state; begin() seeds it from !wifiDisabledOnBoot
+#ifdef IOTSA_WITH_BLE
+  bool _bleRadioEnabled = true;    // ditto, seeded from !bleDisabledOnBoot
+#endif
   iotsa_mode _mode = IOTSA_MODE_NORMAL;
   iotsa_mode _nextMode = IOTSA_MODE_NORMAL;
   uint32_t _modeEndTime = 0;

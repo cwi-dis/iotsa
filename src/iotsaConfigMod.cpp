@@ -302,7 +302,7 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   reply["wifiDisabled"] = !iotsaStatus.wifiEnabled;
   reply["wifiDisabledOnBoot"] = iotsaConfig.wifiDisabledOnBoot;
 #ifdef IOTSA_WITH_BLE
-  reply["bleDisabled"] = iotsaConfig.bleMode == iotsa_ble_mode::IOTSA_BLE_DISABLED;
+  reply["bleDisabled"] = !iotsaController.bleRadioWanted();   // deprecated forwarder, canonical in /api/runmode
   reply["bleDisabledOnBoot"] = iotsaConfig.bleDisabledOnBoot;
 #endif
   reply["program"] = app.title;
@@ -371,9 +371,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
 #ifdef IOTSA_WITH_BLE
   bool bleDisabled;
   if (getFromRequest<int>(reqObj, "bleDisabled", bleDisabled)) {
-    iotsa_ble_mode newMode = bleDisabled ? iotsa_ble_mode::IOTSA_BLE_DISABLED : iotsa_ble_mode::IOTSA_BLE_ENABLED;
-    iotsaConfig.bleMode = newMode;
-    iotsaConfig.wantBleModeSwitchAtMillis = millis()+1000;
+    iotsaController.setBleRadioEnabled(!bleDisabled);  // cwi-dis/iotsa#106
     radioModeChanged = true;
   }
 #endif

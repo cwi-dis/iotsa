@@ -149,12 +149,10 @@ void IotsaBLEServerMod::_startServer() {
   // Note: services no longer need starting explicitly here -- NimBLEService::start()
   // is now a deprecated no-op; NimBLEAdvertising::start() (called via _bleGotoMode()
   // below) starts the GATT server itself before advertising begins.
-  if (iotsaConfig.bleDisabledOnBoot) {
-    iotsaConfig.bleMode = iotsa_ble_mode::IOTSA_BLE_DISABLED;
-  } else {
-    iotsaConfig.bleMode = iotsa_ble_mode::IOTSA_BLE_ENABLED;
-  }
+  // The boot enable/disable decision is IotsaController policy now
+  // (cwi-dis/iotsa#106): begin() seeded it from !bleDisabledOnBoot.
   _bleGotoMode();
+  _lastBleRadioWanted = iotsaController.bleRadioWanted();
 }
 
 void IotsaBLEServerMod::_bleGotoMode() {
@@ -162,7 +160,7 @@ void IotsaBLEServerMod::_bleGotoMode() {
   NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
   if (pAdvertising == nullptr) return;
   bool wasActive = pAdvertising->isAdvertising();
-  bool isActive = iotsaConfig.bleMode == iotsa_ble_mode::IOTSA_BLE_ENABLED;
+  bool isActive = iotsaController.bleRadioWanted();
   if (wasActive == isActive) {
     IFBLEDEBUG IotsaSerial.printf("BLE advertising is already %s\n", isActive ? "active" : "inactive");
     return;
@@ -316,12 +314,14 @@ void IotsaBLEServerMod::configSave() {
 }
 
 void IotsaBLEServerMod::loop() {
-  if (iotsaConfig.wantBleModeSwitchAtMillis > 0 && iotsaConfig.wantBleModeSwitchAtMillis < millis()) {
-      IFBLEDEBUG IotsaSerial.println("BLE mode switch requested");
-    //
-    // Either setup() or saveConfig() or configuration mode change asked to change the BLE mode. Do so.
-    //
-    iotsaConfig.wantBleModeSwitchAtMillis = 0;
+  // Reconcile advertising with IotsaController's BLE radio-enablement policy
+  // (cwi-dis/iotsa#106). Poll for a change rather than an armed timer -- and only
+  // on an actual change, so pauseServer()/resumeServer() (light sleep) aren't
+  // fought by a same-tick restart.
+  bool bleWanted = iotsaController.bleRadioWanted();
+  if (bleWanted != _lastBleRadioWanted) {
+    IFBLEDEBUG IotsaSerial.printf("BLE radio %s by policy\n", bleWanted ? "wanted" : "not wanted");
+    _lastBleRadioWanted = bleWanted;
     _bleGotoMode();
   }
   if (advertisingRetryAtMillis != 0 && millis() >= advertisingRetryAtMillis) {
