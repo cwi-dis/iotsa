@@ -13,7 +13,7 @@ public:
   }
   void notFound() {
     String newLoc = "https://";
-    if (!iotsaConfig.mdnsEnabled) {
+    if (!iotsaStatus.mdnsEnabled) {
       newLoc += "192.168.4.1";
     } else {
       newLoc += iotsaConfig.hostName;
@@ -49,7 +49,7 @@ IotsaHttpServiceMod::setup() {
 #ifdef IOTSA_HAS_WEBSERVER
 void
 IotsaHttpServiceMod::lateSetup() {
-  if (!iotsaConfig.wifiEnabled) return;
+  if (!iotsaStatus.wifiEnabled) return;
 
 #ifdef IOTSA_HAS_FORWARDING_WEBSERVER
   if (singletonTFS == NULL)
@@ -93,7 +93,7 @@ IotsaHttpServiceMod::lateSetup() {
 
 void
 IotsaHttpServiceMod::loop() {
-  if (!iotsaConfig.wifiEnabled) return;
+  if (!iotsaStatus.wifiEnabled) return;
   if (!serverInitialized) {
     // Wifi is enabled but the server has not been initialized yet.
     // Apparently wifi was disabled when we booted, so setup the server

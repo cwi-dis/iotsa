@@ -1,0 +1,97 @@
+#include "iotsa.h"
+#include "iotsaStatus.h"
+#ifdef ESP32
+#include <esp_log.h>
+#include <rom/rtc.h>
+#endif
+
+//
+// Global variable definition
+//
+IotsaStatus iotsaStatus;
+
+bool IotsaStatus::networkIsUp() {
+  return wifiStationConnected;
+}
+
+const char* IotsaStatus::getBootReason() {
+  static const char *reason = NULL;
+  if (reason == NULL) {
+    reason = "unknown";
+#ifndef ESP32
+    rst_info *rip = ESP.getResetInfoPtr();
+    static const char *reasons[] = {
+      "power",
+      "hardwareWatchdog",
+      "exception",
+      "softwareWatchdog",
+      "softwareReboot",
+      "deepSleepAwake",
+      "externalReset"
+    };
+    if (rip->reason < sizeof(reasons)/sizeof(reasons[0])) {
+      reason = reasons[(int)rip->reason];
+    }
+#else
+#if 1
+    esp_reset_reason_t r = esp_reset_reason();
+    switch(r) {
+      case ESP_RST_UNKNOWN: reason = "unknown"; break;
+      case ESP_RST_POWERON: reason = "power"; break;
+      case ESP_RST_EXT: reason = "externalReset"; break;
+      case ESP_RST_SW: reason = "softwareReboot"; break;
+      case ESP_RST_PANIC: reason = "panic"; break;
+      case ESP_RST_INT_WDT: reason = "interruptWatchdog"; break;
+      case ESP_RST_TASK_WDT: reason = "taskWatchdog"; break;
+      case ESP_RST_WDT: reason = "hardwareWatchdog"; break;
+      case ESP_RST_DEEPSLEEP: reason = "deepSleepAwake"; break;
+      case ESP_RST_BROWNOUT: reason = "brownout"; break;
+      case ESP_RST_SDIO: reason = "sdioReset"; break;
+      default: reason = "other"; break;
+    }
+#else
+  RESET_REASON r1 = rtc_get_reset_reason(0);
+  RESET_REASON r2 = rtc_get_reset_reason(1);
+  static char reasonBuffer[64];
+  // Determine best reset reason
+  static const char *reasons[] = {
+    "0",
+    "power",
+    "2",
+    "softwareReboot",
+    "legacyWatchdog",
+    "deepSleepAwake",
+    "sdio",
+    "tg0Watchdog",
+    "tg1Watchdog",
+    "rtcWatchdog",
+    "intrusion",
+    "tgWatchdogCpu",
+    "softwareRebootCpu",
+    "rtcWatchdogCpu",
+    "externalReset",
+    "brownout",
+    "rtcWatchdogRtc"
+  };
+  if ((int)r1 < sizeof(reasons)/sizeof(reasons[0])) {
+    strcpy(reasonBuffer, reasons[(int)r1]);
+  }
+  strcpy(reasonBuffer + strlen(reasonBuffer), "/");
+  if ((int)r2 < sizeof(reasons)/sizeof(reasons[0])) {
+    strcat(reasonBuffer, reasons[(int)r2]);
+  }
+  reason = reasonBuffer;
+#endif
+#endif
+  }
+  return reason;
+}
+
+void IotsaStatus::printHeapSpace() {
+  // Difficult to print on esp8266. Debugging only, so just don't print anything.
+#ifdef ESP32
+  size_t memAvail = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+  size_t largestBlock = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
+  IFDEBUG IotsaSerial.printf("Time since boot: %lld ms. Available heap space: %u bytes, largest block: %u bytes\n", (int64_t)millis(), memAvail, largestBlock);
+#endif
+}

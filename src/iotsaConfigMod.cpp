@@ -20,7 +20,7 @@
 
 void IotsaConfigMod::setup() {
   IFDEBUG IotsaSerial.print("boot reason: ");
-  IFDEBUG IotsaSerial.println(iotsaConfig.getBootReason());
+  IFDEBUG IotsaSerial.println(iotsaStatus.getBootReason());
   iotsaConfig.setDefaultCertificate();
   configLoad();
   if (app.status) app.status->showStatus();
@@ -334,7 +334,7 @@ String IotsaConfigMod::info() {
   }
   message += "<p>" + app.title + " is based on iotsa " + IOTSA_FULL_VERSION + ". See <a href=\"/config\">/config</a> to change configuration.<br>";
   message += "Last boot " + String((int)millis()/1000) + " seconds ago, reason ";
-  message += iotsaConfig.getBootReason();
+  message += iotsaStatus.getBootReason();
   message += ".</p>";
   return message;
 }
@@ -367,7 +367,7 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
     reply["currentModeTimeout"] = (iotsaConfig.configurationModeEndTime - millis())/1000;
   }
   reply["privateWifi"] = iotsaConfig.wifiMode == IOTSA_WIFI_FACTORY || iotsaConfig.wifiMode == IOTSA_WIFI_NOTFOUND;
-  reply["mdnsEnabled"] = iotsaConfig.mdnsEnabled;
+  reply["mdnsEnabled"] = iotsaStatus.mdnsEnabled;
   reply["requestedMode"] = int(iotsaConfig.nextConfigurationMode);
   if (iotsaConfig.nextConfigurationMode) {
     reply["requestedModeTimeout"] = (iotsaConfig.nextConfigurationModeEndTime - millis())/1000;
@@ -384,7 +384,7 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   reply["has_httpsKey"] = IOTSA_FS.exists("/config/httpsKey.der");
   reply["has_httpsCert"] = IOTSA_FS.exists("/config/httpsCert.der");
 #endif
-  reply["bootCause"] = iotsaConfig.getBootReason();
+  reply["bootCause"] = iotsaStatus.getBootReason();
   reply["uptime"] = millis() / 1000;
   reply["fsTotalBytes"] = iotsaFSTotalBytes();
   reply["fsUsedBytes"] = iotsaFSUsedBytes();
@@ -422,7 +422,7 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   features.add("ble");
 #endif
   features.add("littlefs");
-  if (iotsaConfig.mdnsEnabled) features.add("mdns");
+  if (iotsaStatus.mdnsEnabled) features.add("mdns");
 
   return true;
 }

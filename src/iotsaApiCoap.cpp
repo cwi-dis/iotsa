@@ -154,17 +154,17 @@ IotsaCoapServiceMod::IotsaCoapServiceMod(IotsaApplication &_app)
 
 void IotsaCoapServiceMod::setup() {
     name = "coap";
-    if (!iotsaConfig.wifiEnabled) return;
+    if (!iotsaStatus.wifiEnabled) return;
     coap.start();
 }
 
 void IotsaCoapServiceMod::loop() {
-    if (!iotsaConfig.wifiEnabled) return;
+    if (!iotsaStatus.wifiEnabled) return;
     coap.loop();
 }
 
 void IotsaCoapServiceMod::addEndpoint(CoapEndpoint *ep, const char *path) {
-    if (!iotsaConfig.wifiEnabled) return;
+    if (!iotsaStatus.wifiEnabled) return;
     coap.server(ep->getCallback(&coap), String(path));
 }
 
@@ -180,7 +180,7 @@ void IotsaApiServiceCoap::ensureServiceMod(IotsaApplication &app) {
 }
 
 void IotsaApiServiceCoap::setup(const char* path, bool get, bool put, bool post, bool webPage) {
-    if (iotsaConfig.wifiEnabled) {
+    if (iotsaStatus.wifiEnabled) {
         // CoAP has no use for an HTTP-ism in its own resource namespace, so it registers
         // the bare name directly; it still reconstructs /api/+name for what it hands to
         // the module's handlers, to keep that contract identical to REST/HPS.

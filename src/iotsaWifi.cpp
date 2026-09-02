@@ -34,9 +34,9 @@ void IotsaWifiMod::setup() {
   _driver.begin();   // install the platform WiFi event handlers (cwi-dis/iotsa#106)
   _controller.setRadioEnabled(!iotsaConfig.wifiDisabledOnBoot);
   _controller.begin();
-  // iotsaConfig.wifiEnabled means "the radio is not disabled", NOT "connected"
+  // iotsaStatus.wifiEnabled means "the radio is not disabled", NOT "connected"
   // (that's networkIsUp()).
-  iotsaConfig.wifiEnabled = !iotsaConfig.wifiDisabledOnBoot;
+  iotsaStatus.wifiEnabled = !iotsaConfig.wifiDisabledOnBoot;
   // One reconcile now, synchronously. This is what actually brings the WiFi /
   // TCP-IP stack up (the first startStation()/startAP() -> WiFi.mode()/begin()),
   // which the old IotsaWifiMod::setup() did too -- modules that bind a socket in
@@ -55,9 +55,9 @@ void IotsaWifiMod::_publishControllerState() {
   const bool staConn = _controller.staConnected();
   const bool apAct = _controller.apActive();
 
-  iotsaConfig.wifiStationConnected = staConn;
-  iotsaConfig.wifiApActive = apAct;
-  iotsaConfig.wifiEnabled = !iotsaConfig.wifiDisabledOnBoot;  // "radio not disabled", not "connected"
+  iotsaStatus.wifiStationConnected = staConn;
+  iotsaStatus.wifiApActive = apAct;
+  iotsaStatus.wifiEnabled = !iotsaConfig.wifiDisabledOnBoot;  // "radio not disabled", not "connected"
 
   // Vestigial wifiMode -- kept written until slice 4 removes the enum and updates
   // getStatusColor() / privateWifi / networkIsUp() / inConfigurationOrFactoryMode().
@@ -125,7 +125,7 @@ bool IotsaWifiMod::_wifiStartMDNS() {
   }
  
   IFDEBUG IotsaSerial.println("MDNS responder started");
-  iotsaConfig.mdnsEnabled = true;
+  iotsaStatus.mdnsEnabled = true;
   return true;
 }
 
@@ -232,7 +232,7 @@ String IotsaWifiMod::info() {
   message += ", hostname is ";
   message += htmlEncode(iotsaConfig.hostName);
   message += ".local. ";
-  if (!iotsaConfig.mdnsEnabled) {
+  if (!iotsaStatus.mdnsEnabled) {
     message += " (but no mDNS on this WiFi network, so using hostname will not work). ";
   }
   message += "See <a href=\"/wificonfig\">/wificonfig</a> to change network parameters.</p>";
@@ -313,7 +313,7 @@ void IotsaWifiMod::loop() {
   _publishControllerState();
 #ifndef ESP32
   // mDNS happens asynchronously on ESP32
-  if (iotsaConfig.mdnsEnabled) MDNS.update();
+  if (iotsaStatus.mdnsEnabled) MDNS.update();
 #endif
 }
 #endif // IOTSA_WITH_WIFI

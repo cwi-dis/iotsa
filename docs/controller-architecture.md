@@ -142,6 +142,14 @@ sweep the ~20 downstream repos to the new names and drop the forwarders.
 
 - `9d8a93d` -- `config_mode` typedef renamed to `iotsa_mode` (values unchanged; REST API
   and Python tool untouched). The device mode is a distinct concept from "runmode".
+- `iotsaStatus` split out of `IotsaConfig`: the `wifiEnabled` / `wifiStationConnected` /
+  `wifiApActive` / `mdnsEnabled` fields and `networkIsUp()` / `getBootReason()` /
+  `printHeapSpace()` now live in `IotsaStatus` (`src/iotsaStatus.{h,cpp}`), a plain
+  global struct. `iotsaConfig` keeps `[[deprecated]]` forwarders for the three methods;
+  the fields had no downstream users so they moved without aliases. `networkIsUp()` now
+  reads `wifiStationConnected` directly (was `wifiMode == IOTSA_WIFI_NORMAL`).
+  `getStatusColor()` stays in `iotsaConfig` until its precedence rework (still reads
+  `wifiMode` + `configurationMode`).
 
 ## Deferred (was "slice 4"; folds into this work)
 

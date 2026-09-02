@@ -46,14 +46,9 @@ private:
   void endConfigurationMode();
   void factoryReset();
 public:
-  bool wifiEnabled = false;
-  // Orthogonal WiFi state, published by IotsaWifiMod from IotsaWifiController
-  // (cwi-dis/iotsa#106). Read by other modules instead of the wifiMode enum
-  // (which stays, vestigially written, until slice 4).
-  bool wifiStationConnected = false;   // STA has an IP
-  bool wifiApActive = false;           // softAP is up (for any reason)
+  // wifiEnabled / wifiStationConnected / wifiApActive / mdnsEnabled moved to
+  // IotsaStatus (cwi-dis/iotsa#106). Use iotsaStatus.* instead.
   String hostName = "";
-  bool mdnsEnabled = false;
 #ifdef IOTSA_WITH_HTTPS
   const uint8_t* httpsCertificate;
   size_t httpsCertificateLength;
@@ -67,6 +62,7 @@ public:
   void configLoad();
   void configSave();
   void ensureConfigLoaded();
+  [[deprecated("moved to iotsaStatus.getBootReason()")]]
   const char* getBootReason();
   const char *modeName(iotsa_mode mode);
   void setDefaultHostName();
@@ -83,7 +79,9 @@ public:
   uint32_t postponeSleep(uint32_t ms);
   bool canSleep();
   void requestReboot(uint32_t ms);
+  [[deprecated("moved to iotsaStatus.printHeapSpace()")]]
   void printHeapSpace();
+  [[deprecated("moved to iotsaStatus.networkIsUp()")]]
   bool networkIsUp();
   void setExtensionCallback(extensionCallback ecmcb);
 };

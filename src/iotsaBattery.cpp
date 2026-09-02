@@ -503,7 +503,7 @@ void IotsaBatteryMod::loop() {
 #endif
   }
 #endif
-  if (disableWiFiOnSleep && iotsaConfig.wifiEnabled) {
+  if (disableWiFiOnSleep && iotsaStatus.wifiEnabled) {
     static bool haveDisabledWiFi = false;
     if (!haveDisabledWiFi) {
       IFDEBUG IotsaSerial.println("Will disable WiFi for sleep");
@@ -588,7 +588,7 @@ void IotsaBatteryMod::loop() {
     return;
   }
   // Before sleeping we turn off the radios.
-  if (iotsaConfig.wifiEnabled) esp_wifi_stop();
+  if (iotsaStatus.wifiEnabled) esp_wifi_stop();
   esp_bt_controller_disable();
   // For hibernation we also turn off various peripherals.
   if (sleepMode == IOTSA_SLEEP_HIBERNATE) {

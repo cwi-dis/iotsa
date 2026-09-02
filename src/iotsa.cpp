@@ -155,7 +155,7 @@ IotsaApplication::loop() {
     // Print available free heap space first time we have gone through all loop() calls.
     static bool once = false;
     if (!once) {
-      iotsaConfig.printHeapSpace();
+      iotsaStatus.printHeapSpace();
       once = true;
     }
   }
