@@ -2,6 +2,7 @@
 #define _IOTSARUNMODE_H_
 #include "iotsa.h"
 #include "iotsaApi.h"
+#include "iotsaBLEServer.h"
 
 //
 // IotsaRunmodeMod -- the external control surface onto IotsaController
@@ -38,6 +39,23 @@ protected:
 #ifdef IOTSA_WITH_WEB
   void webHandler() override;
 #endif
+#ifdef IOTSA_WITH_BLE
+  // The BLE control service: read the current mode, request a mode for the next
+  // boot, reboot. A client that discovers an iotsa device over BLE also wants to
+  // steer it (cwi-dis/iotsa#106, #233). Writes are stashed here and acted on
+  // from loop() -- blePutHandler runs in the NimBLE host task.
+  bool blePutHandler(UUIDstring charUUID) override;
+  bool bleGetHandler(UUIDstring charUUID) override;
+  IotsaBleApiService bleApi;
+  int _pendingBleMode = -1;       // -1: nothing pending; else an iotsa_mode value
+  bool _pendingBleReboot = false;
+  // Minted for iotsa#106 -- the iotsa runmode control service. xxxx0001 is the
+  // service, xxxx0002+ the characteristics (same convention as elsewhere).
+  static constexpr UUIDstring serviceUUID       = "6E5D0001-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
+  static constexpr UUIDstring currentModeUUID   = "6E5D0002-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
+  static constexpr UUIDstring requestedModeUUID = "6E5D0003-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
+  static constexpr UUIDstring rebootUUID        = "6E5D0004-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
+#endif // IOTSA_WITH_BLE
 };
 
 #endif

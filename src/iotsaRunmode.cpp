@@ -10,11 +10,28 @@ void IotsaRunmodeMod::setup() {
 }
 
 void IotsaRunmodeMod::lateSetup() {
+#ifdef IOTSA_WITH_BLE
+  bleApi.setup(serviceUUID, this);
+  bleApi.addCharacteristic(currentModeUUID, bleApi.BLE_READ, NimBLE2904::FORMAT_UINT8, 0x2700, "Current mode");
+  bleApi.addCharacteristic(requestedModeUUID, bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "Request mode for next boot");
+  bleApi.addCharacteristic(rebootUUID, bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "Reboot");
+#endif
   api.setup("runmode", true, true);
   name = "runmode";
 }
 
 void IotsaRunmodeMod::loop() {
+#ifdef IOTSA_WITH_BLE
+  // Act on BLE writes here, out of the NimBLE host task (cwi-dis/iotsa#106).
+  if (_pendingBleMode >= 0) {
+    iotsaController.requestMode(iotsa_mode(_pendingBleMode));
+    _pendingBleMode = -1;
+  }
+  if (_pendingBleReboot) {
+    _pendingBleReboot = false;
+    iotsaController.requestReboot(1000);   // let the BLE stack finish the write ack (see #130)
+  }
+#endif
 }
 
 #ifdef IOTSA_WITH_WEB
@@ -136,7 +153,11 @@ String IotsaRunmodeMod::info() {
   } else if (iotsaController.currentModeEndTime()) {
     message += "<p>Strange, no configuration mode but timeout is " + String(iotsaController.currentModeEndTime()-millis()) + "ms.</p>";
   }
-  message += "<p>See <a href=\"/runmode\">/runmode</a> to reboot or change mode.</p>";
+  message += "<p>See <a href=\"/runmode\">/runmode</a> to reboot or change mode.";
+#ifdef IOTSA_WITH_BLE
+  message += " Or use BLE service " + String(serviceUUID) + " on device " + iotsaConfig.hostName + ".";
+#endif
+  message += "</p>";
   return message;
 }
 #endif // IOTSA_WITH_WEB
@@ -195,3 +216,27 @@ bool IotsaRunmodeMod::putHandler(const char *path, const JsonVariant& request, J
   }
   return anyChanged;
 }
+
+#ifdef IOTSA_WITH_BLE
+bool IotsaRunmodeMod::blePutHandler(UUIDstring charUUID) {
+  if (charUUID == requestedModeUUID) {
+    _pendingBleMode = bleApi.getAsInt(requestedModeUUID);
+    IFDEBUG IotsaSerial.printf("runmode: BLE requested mode %d\n", _pendingBleMode);
+    return true;
+  }
+  if (charUUID == rebootUUID) {
+    if (bleApi.getAsInt(rebootUUID)) _pendingBleReboot = true;
+    IFDEBUG IotsaSerial.println("runmode: BLE reboot requested");
+    return true;
+  }
+  return false;
+}
+
+bool IotsaRunmodeMod::bleGetHandler(UUIDstring charUUID) {
+  if (charUUID == currentModeUUID) {
+    bleApi.set(currentModeUUID, (uint8_t)iotsaController.currentMode());
+    return true;
+  }
+  return false;
+}
+#endif // IOTSA_WITH_BLE
