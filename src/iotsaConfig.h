@@ -25,8 +25,8 @@ private:
   bool configWasLoaded = false;
   bool otaEnabled = false;
   bool wifiDisabledOnBoot = false;
-  iotsa_wifi_mode wifiMode = IOTSA_WIFI_DISABLED;
-  uint32_t wantWifiModeSwitchAtMillis = 0;
+  iotsa_wifi_mode wifiMode = IOTSA_WIFI_DISABLED;  // vestigial: only getStatusColor()
+                                                  // + privateWifi read it now (Commit B)
 #ifdef IOTSA_WITH_BLE
   bool bleDisabledOnBoot = false;
   iotsa_ble_mode bleMode = IOTSA_BLE_DISABLED;

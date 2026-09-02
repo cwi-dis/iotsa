@@ -174,17 +174,19 @@ sweep the ~20 downstream repos to the new names and drop the forwarders.
   The `IOTSA_WIFI_FACTORY` enum value is now read only by `getStatusColor()` (its
   removal is part of the `iotsa_wifi_mode` deletion below). No downstream callers, so
   the method was deleted outright, no forwarder.
+- Runtime WiFi radio enable/disable rewired (fixes the latent regression). `IotsaController`
+  gained a thin `setWifiRadioEnabled()` / `wifiRadioEnabled()` flag; `IotsaWifiMod`
+  combines it with `wifiDisabledOnBoot` in `_wifiRadioWanted()` and feeds
+  `_controller.setRadioEnabled()` every `loop()` (not just once at setup). `iotsaBattery`
+  (BLE-enable, sleep-wifi-off, `disableSleepOnWiFi`), the `wifiDisabled` REST PUT and its
+  reply are off the `wifiMode` enum now. Dead `wantWifiModeSwitchAtMillis` removed
+  (BLE's `wantBleModeSwitchAtMillis` twin stays -- still read by `iotsaBLEServer`).
 
 ## Deferred (was "slice 4"; folds into this work)
 
 - Delete the `iotsa_wifi_mode` enum + `wifiMode` field; its status values are already
   superseded by `IotsaWifiController` + the `iotsaStatus` fields. Last readers:
   `getStatusColor()` and the `privateWifi` reply field.
-- Rewire runtime radio enable/disable (`wifiDisabled` REST toggle, battery
-  sleep-wifi-off, BLE enable-wifi) -- currently a **latent regression**: earlier #106
-  slices stopped `IotsaWifiMod` polling `wantWifiModeSwitchAtMillis`, so these paths no
-  longer reach the controller. `wantWifiModeSwitchAtMillis` itself has zero readers and
-  can go.
 - `getStatusColor()` rework -- becomes a free function over `iotsaStatus` with an
   explicit precedence: factory-reset > maintenance window (CONFIG/OTA colour) >
   connectivity problem (hunting = flash, fallback-AP / unprovisioned = solid, possibly

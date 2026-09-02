@@ -31,6 +31,14 @@ public:
 
   void requestReboot(uint32_t ms);   // ESP.restart() after ms milliseconds
 
+  // Runtime WiFi radio enable (cwi-dis/iotsa#106). A thin flag for now -- the full
+  // radio-enablement policy lands with the IotsaBatteryMod shrink. IotsaWifiMod
+  // combines this with wifiDisabledOnBoot to drive IotsaWifiController each tick.
+  // Set false by iotsaBattery (sleep) / the wifiDisabled REST toggle, true by the
+  // BLE "enable WiFi" command.
+  void setWifiRadioEnabled(bool on) { _wifiRadioEnabled = on; }
+  bool wifiRadioEnabled() const { return _wifiRadioEnabled; }
+
   // ---- iotsa_mode state machine ----
 
   // Request a mode for the *next* boot. Writes the mailbox; honoured by begin()
@@ -65,6 +73,7 @@ private:
   void _consumePendingMode();   // read + delete the mailbox file
 
   uint32_t _rebootAtMillis = 0;
+  bool _wifiRadioEnabled = true;
   iotsa_mode _mode = IOTSA_MODE_NORMAL;
   iotsa_mode _nextMode = IOTSA_MODE_NORMAL;
   uint32_t _modeEndTime = 0;

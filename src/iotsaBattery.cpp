@@ -443,12 +443,9 @@ void IotsaBatteryMod::loop() {
         IFDEBUG IotsaSerial.println("Configmode change from BLE requested but not allowed");
       }
     } else if (doSoftReboot == 3) {
-      // Enable WiFi
-      iotsa_wifi_mode newMode = iotsa_wifi_mode::IOTSA_WIFI_NORMAL;
-      iotsaConfig.wifiMode = newMode;
-      iotsaConfig.wantWifiModeSwitchAtMillis = millis()+1000;
+      // Enable WiFi (cwi-dis/iotsa#106: runtime flag, picked up by IotsaWifiMod::loop())
+      iotsaController.setWifiRadioEnabled(true);
       IFDEBUG IotsaSerial.println("Enable WiFi from BLE");
-   
     } else {
       // doSoftReboot is probably 1. Reboot, but not immediately: give the BLE
       // stack time to flush the write response back to the client first
@@ -467,7 +464,7 @@ void IotsaBatteryMod::loop() {
   // Again, return quickly if no sleep or wifi sleep is required.
   if (!shouldSleep) return;
   // Now check for other reasons NOT to go to sleep or disable wifi
-  if (disableSleepOnWiFi && iotsaConfig.wifiMode != iotsa_wifi_mode::IOTSA_WIFI_DISABLED) {
+  if (disableSleepOnWiFi && iotsaStatus.wifiEnabled) {
     return;
   }
   if (pinDisableSleep >= 0 && digitalRead(pinDisableSleep) == LOW) {
@@ -508,8 +505,7 @@ void IotsaBatteryMod::loop() {
     if (!haveDisabledWiFi) {
       IFDEBUG IotsaSerial.println("Will disable WiFi for sleep");
       haveDisabledWiFi = true;
-      iotsaConfig.wifiMode = iotsa_wifi_mode::IOTSA_WIFI_DISABLED;
-      iotsaConfig.wantWifiModeSwitchAtMillis = millis() + 1000;
+      iotsaController.setWifiRadioEnabled(false);  // cwi-dis/iotsa#106
       iotsaConfig.postponeSleep(2000); // give time to disable wifi
       return;
     }

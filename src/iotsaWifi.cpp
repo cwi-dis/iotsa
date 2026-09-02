@@ -16,6 +16,13 @@
 
 #ifdef IOTSA_WITH_WIFI
 
+// Should the WiFi radio be powered right now? Boot policy (wifiDisabledOnBoot) AND
+// the runtime flag IotsaController owns (cwi-dis/iotsa#106). Member function so it
+// can see IotsaConfig's private wifiDisabledOnBoot (IotsaWifiMod is a friend).
+bool IotsaWifiMod::_wifiRadioWanted() {
+  return !iotsaConfig.wifiDisabledOnBoot && iotsaController.wifiRadioEnabled();
+}
+
 IotsaWifiMod::IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth)
 : IotsaModule(_app, _auth, true),
   ssid(""),
@@ -32,11 +39,11 @@ IotsaWifiMod::IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *
 void IotsaWifiMod::setup() {
   configLoad();  // also pushes credentials into the controller
   _driver.begin();   // install the platform WiFi event handlers (cwi-dis/iotsa#106)
-  _controller.setRadioEnabled(!iotsaConfig.wifiDisabledOnBoot);
+  _controller.setRadioEnabled(_wifiRadioWanted());
   _controller.begin();
   // iotsaStatus.wifiEnabled means "the radio is not disabled", NOT "connected"
   // (that's networkIsUp()).
-  iotsaStatus.wifiEnabled = !iotsaConfig.wifiDisabledOnBoot;
+  iotsaStatus.wifiEnabled = _wifiRadioWanted();
   // One reconcile now, synchronously. This is what actually brings the WiFi /
   // TCP-IP stack up (the first startStation()/startAP() -> WiFi.mode()/begin()),
   // which the old IotsaWifiMod::setup() did too -- modules that bind a socket in
@@ -57,7 +64,7 @@ void IotsaWifiMod::_publishControllerState() {
 
   iotsaStatus.wifiStationConnected = staConn;
   iotsaStatus.wifiApActive = apAct;
-  iotsaStatus.wifiEnabled = !iotsaConfig.wifiDisabledOnBoot;  // "radio not disabled", not "connected"
+  iotsaStatus.wifiEnabled = _wifiRadioWanted();  // "radio may be powered", not "connected"
 
   // Vestigial wifiMode -- kept written until the iotsa_wifi_mode enum removal
   // (cwi-dis/iotsa#106) updates getStatusColor() and the privateWifi reply field.
@@ -310,6 +317,7 @@ void IotsaWifiMod::configSave() {
 }
 
 void IotsaWifiMod::loop() {
+  _controller.setRadioEnabled(_wifiRadioWanted());
   _controller.setConfigModeActive(iotsaController.inConfigurationMode());
   _controller.tick();
   _publishControllerState();

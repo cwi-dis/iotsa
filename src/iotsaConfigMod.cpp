@@ -340,7 +340,7 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   if (iotsaController.requestedMode()) {
     reply["requestedModeTimeout"] = (iotsaController.requestedModeEndTime() - millis())/1000;
   }
-  reply["wifiDisabled"] = iotsaConfig.wifiMode == iotsa_wifi_mode::IOTSA_WIFI_DISABLED;
+  reply["wifiDisabled"] = !iotsaStatus.wifiEnabled;
   reply["wifiDisabledOnBoot"] = iotsaConfig.wifiDisabledOnBoot;
 #ifdef IOTSA_WITH_BLE
   reply["bleDisabled"] = iotsaConfig.bleMode == iotsa_ble_mode::IOTSA_BLE_DISABLED;
@@ -403,9 +403,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   // First look for arguments that are also valid in normal mode.
   bool wifiDisabled;
   if (getFromRequest<int>(reqObj, "wifiDisabled", wifiDisabled)) {
-    iotsa_wifi_mode newMode = wifiDisabled ? iotsa_wifi_mode::IOTSA_WIFI_DISABLED : iotsa_wifi_mode::IOTSA_WIFI_NORMAL;
-    iotsaConfig.wifiMode = newMode;
-    iotsaConfig.wantWifiModeSwitchAtMillis = millis()+1000;
+    iotsaController.setWifiRadioEnabled(!wifiDisabled);  // cwi-dis/iotsa#106
     radioModeChanged = true;
   }
 #ifdef IOTSA_WITH_BLE
