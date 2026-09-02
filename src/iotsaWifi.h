@@ -25,7 +25,6 @@ private:
   void webHandler() override;
 #endif
   bool _wifiStartMDNS();
-  bool _wifiRadioWanted();   // !wifiDisabledOnBoot && iotsaController.wifiRadioEnabled()
   // Copy IotsaWifiController's published state into the iotsaConfig fields other
   // modules read; start/stop mDNS and poke the status LED on the edges.
   void _publishControllerState();

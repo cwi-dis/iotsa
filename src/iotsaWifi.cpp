@@ -16,12 +16,9 @@
 
 #ifdef IOTSA_WITH_WIFI
 
-// Should the WiFi radio be powered right now? Boot policy (wifiDisabledOnBoot) AND
-// the runtime flag IotsaController owns (cwi-dis/iotsa#106). Member function so it
-// can see IotsaConfig's private wifiDisabledOnBoot (IotsaWifiMod is a friend).
-bool IotsaWifiMod::_wifiRadioWanted() {
-  return !iotsaConfig.wifiDisabledOnBoot && iotsaController.wifiRadioEnabled();
-}
+// "Should the WiFi radio be powered right now?" is now IotsaController policy
+// (boot default + runtime toggles + CONFIG/OTA forcing): iotsaController.wifiRadioWanted()
+// (cwi-dis/iotsa#106).
 
 IotsaWifiMod::IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth)
 : IotsaModule(_app, _auth, true),
@@ -39,11 +36,11 @@ IotsaWifiMod::IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *
 void IotsaWifiMod::setup() {
   configLoad();  // also pushes credentials into the controller
   _driver.begin();   // install the platform WiFi event handlers (cwi-dis/iotsa#106)
-  _controller.setRadioEnabled(_wifiRadioWanted());
+  _controller.setRadioEnabled(iotsaController.wifiRadioWanted());
   _controller.begin();
   // iotsaStatus.wifiEnabled means "the radio is not disabled", NOT "connected"
   // (that's networkIsUp()).
-  iotsaStatus.wifiEnabled = _wifiRadioWanted();
+  iotsaStatus.wifiEnabled = iotsaController.wifiRadioWanted();
   // One reconcile now, synchronously. This is what actually brings the WiFi /
   // TCP-IP stack up (the first startStation()/startAP() -> WiFi.mode()/begin()),
   // which the old IotsaWifiMod::setup() did too -- modules that bind a socket in
@@ -51,8 +48,10 @@ void IotsaWifiMod::setup() {
   // IotsaCoapServiceMod::coap.start()) crash on an uninitialised lwIP otherwise.
   // Re-establishing that implicit contract here is a workaround; the dependents
   // ought to react to network-up instead -- see cwi-dis/iotsa#239 (and #238).
-  // The connection then continues from loop() -> tick() as normal.
-  if (!iotsaConfig.wifiDisabledOnBoot) {
+  // The connection then continues from loop() -> tick() as normal. Skipped only
+  // when the radio is not wanted at boot -- a wifiDisabledOnBoot device that is
+  // NOT booting into CONFIG/OTA (wifiRadioWanted() folds both in, cwi-dis/iotsa#106).
+  if (iotsaController.wifiRadioWanted()) {
     _controller.tick();
     _publishControllerState();
   }
@@ -64,7 +63,7 @@ void IotsaWifiMod::_publishControllerState() {
 
   iotsaStatus.wifiStationConnected = staConn;
   iotsaStatus.wifiApActive = apAct;
-  iotsaStatus.wifiEnabled = _wifiRadioWanted();  // "radio may be powered", not "connected"
+  iotsaStatus.wifiEnabled = iotsaController.wifiRadioWanted();  // "radio may be powered", not "connected"
 
   // Edge-triggered: log the transition, (re)start mDNS, poke the status LED.
   if (staConn != _lastStaConnected) {
@@ -311,7 +310,7 @@ void IotsaWifiMod::configSave() {
 }
 
 void IotsaWifiMod::loop() {
-  _controller.setRadioEnabled(_wifiRadioWanted());
+  _controller.setRadioEnabled(iotsaController.wifiRadioWanted());
   _controller.setConfigModeActive(iotsaController.inConfigurationMode());
   _controller.tick();
   _publishControllerState();

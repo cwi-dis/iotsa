@@ -19,6 +19,7 @@ typedef enum { IOTSA_BLE_DISABLED, IOTSA_BLE_ENABLED } iotsa_ble_mode;
 class IotsaConfig {
   friend class IotsaConfigMod;
   friend class IotsaRunmodeMod;
+  friend class IotsaController;
   friend class IotsaOtaMod;
   friend class IotsaWifiMod;
   friend class IotsaBLEServerMod;

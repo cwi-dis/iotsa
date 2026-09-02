@@ -20,8 +20,10 @@
 //   - the iotsa_mode state machine: current/requested mode, the auto-expiry
 //     timeout, the boot-time anti-tamper gate, and the one-shot "pending mode"
 //     mailbox that carries a request across a reboot.
+//   - WiFi radio-enablement policy: the boot default (wifiDisabledOnBoot), the
+//     runtime enable/disable requests, and "CONFIG/OTA mode forces the radio on".
 //
-// Still to move here: radio-enablement and sleep/wake policy.
+// Still to move here: BLE radio-enablement and sleep/wake policy.
 //
 
 class IotsaController {
@@ -31,13 +33,18 @@ public:
 
   void requestReboot(uint32_t ms);   // ESP.restart() after ms milliseconds
 
-  // Runtime WiFi radio enable (cwi-dis/iotsa#106). A thin flag for now -- the full
-  // radio-enablement policy lands with the IotsaBatteryMod shrink. IotsaWifiMod
-  // combines this with wifiDisabledOnBoot to drive IotsaWifiController each tick.
-  // Set false by iotsaBattery (sleep) / the wifiDisabled REST toggle, true by the
-  // BLE "enable WiFi" command.
+  // WiFi radio-enablement policy (cwi-dis/iotsa#106). The runtime desired state
+  // (_wifiRadioEnabled) is seeded in begin() from !wifiDisabledOnBoot, then moved
+  // by setWifiRadioEnabled(): the wifiDisabled REST/BLE toggle, iotsaBattery
+  // (sleep), the BLE "enable WiFi" command. wifiRadioWanted() is the answer
+  // IotsaWifiMod feeds to IotsaWifiController every tick -- the runtime state,
+  // except CONFIG / OTA mode always force the radio on so the device stays
+  // reachable while it is being worked on.
   void setWifiRadioEnabled(bool on) { _wifiRadioEnabled = on; }
-  bool wifiRadioEnabled() const { return _wifiRadioEnabled; }
+  bool wifiRadioWanted() const {
+    if (_mode == IOTSA_MODE_CONFIG || _mode == IOTSA_MODE_OTA) return true;
+    return _wifiRadioEnabled;
+  }
 
   // ---- iotsa_mode state machine ----
 
@@ -73,7 +80,7 @@ private:
   void _consumePendingMode();   // read + delete the mailbox file
 
   uint32_t _rebootAtMillis = 0;
-  bool _wifiRadioEnabled = true;
+  bool _wifiRadioEnabled = true;   // runtime desired state; begin() seeds it from !wifiDisabledOnBoot
   iotsa_mode _mode = IOTSA_MODE_NORMAL;
   iotsa_mode _nextMode = IOTSA_MODE_NORMAL;
   uint32_t _modeEndTime = 0;
