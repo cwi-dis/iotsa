@@ -13,7 +13,7 @@ void IotsaRunmodeMod::lateSetup() {
 #ifdef IOTSA_WITH_BLE
   bleApi.setup(serviceUUID, this);
   bleApi.addCharacteristic(currentModeUUID, bleApi.BLE_READ, NimBLE2904::FORMAT_UINT8, 0x2700, "Current mode");
-  bleApi.addCharacteristic(requestedModeUUID, bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "Request mode for next boot");
+  bleApi.addCharacteristic(requestedModeUUID, bleApi.BLE_READ|bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "Request mode for next boot");
   bleApi.addCharacteristic(rebootUUID, bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "Reboot");
 #endif
   api.setup("runmode", true, true);
@@ -235,6 +235,10 @@ bool IotsaRunmodeMod::blePutHandler(UUIDstring charUUID) {
 bool IotsaRunmodeMod::bleGetHandler(UUIDstring charUUID) {
   if (charUUID == currentModeUUID) {
     bleApi.set(currentModeUUID, (uint8_t)iotsaController.currentMode());
+    return true;
+  }
+  if (charUUID == requestedModeUUID) {
+    bleApi.set(requestedModeUUID, (uint8_t)iotsaController.requestedMode());
     return true;
   }
   return false;
