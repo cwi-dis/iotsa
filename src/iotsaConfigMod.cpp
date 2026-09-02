@@ -60,14 +60,8 @@ IotsaConfigMod::webHandler() {
       }
     }
   }
-  if( api.webService->server->hasArg("mode")) {
-    String argValue = api.webService->server->arg("mode");
-    if (argValue != "0") {
-      if (needsAuthentication("config")) return;
-      iotsaController.requestMode(iotsa_mode(atoi(argValue.c_str())));
-      anyChanged = true;
-    }
-  }
+  // Mode requests + factory-reset moved to IotsaRunmodeMod / the /runmode page
+  // (cwi-dis/iotsa#106).
 #ifdef IOTSA_WITH_HTTPS
   if (api.webService->server->hasArg("httpsKey") && api.webService->server->arg("httpsKey") != "") {
     if (iotsaController.inConfigurationMode(true)) {
@@ -160,12 +154,6 @@ IotsaConfigMod::webHandler() {
     }
   }
 #endif // IOTSA_WITH_HTTPS
-  if( api.webService->server->hasArg("factoryreset") && api.webService->server->hasArg("iamsure")) {
-    if (api.webService->server->arg("factoryreset") == "1" && api.webService->server->arg("iamsure") == "1") {
-      iotsaController.requestMode(IOTSA_MODE_FACTORY_RESET);
-      anyChanged = true;
-    }
-  }
  if( api.webService->server->hasArg("wifiDisabledOnBoot")) {
     int newValue = api.webService->server->arg("wifiDisabledOnBoot").toInt();
     if ((bool)newValue != iotsaConfig.wifiDisabledOnBoot) {
@@ -201,18 +189,6 @@ IotsaConfigMod::webHandler() {
     message += "<p>Settings saved to Flash.</p>";
     if (hostnameChanged) {
       message += "<p><em>Rebooting device to change hostname</em>.</p>";
-    }
-    if (iotsaController.requestedMode()) {
-      message += "<p><em>Special mode ";
-      message += iotsaController.modeName(iotsaController.requestedMode());
-      message += " has been requested. Enable within ";
-      message += String((iotsaController.requestedModeEndTime() - millis())/1000);
-      message += " seconds by power cycling";
-      if (iotsaController.rcmInteractionDescription) {
-        message += " or ";
-        message += iotsaController.rcmInteractionDescription;
-      }
-      message += ".</em></p>";
     }
   }
   if (!iotsaController.inConfigurationMode()) {
@@ -266,13 +242,8 @@ IotsaConfigMod::webHandler() {
   if (iotsaConfig.bleDisabledOnBoot) message += " checked";
   message += "> BLE disabled on boot.<br>";
 #endif
-  message += "<input name='mode' type='radio' value='0' checked> Enter normal mode after next reboot.<br>";
-  message += "<input name='mode' type='radio' value='1'> Enter configuration mode after next reboot.<br>";
-  if (iotsaConfig.otaEnabled) {
-    message += "<input name='mode' type='radio' value='2'> Enable over-the-air update after next reboot.<br>";
-  }
-  message += "<br><input name='factoryreset' type='checkbox' value='1'> Factory-reset and clear all files. <input name='iamsure' type='checkbox' value='1'> Yes, I am sure.<br>";
   message += "<input type='submit'></form>";
+  message += "<p>Mode requests (configuration / OTA / factory-reset) moved to <a href=\"/runmode\">/runmode</a>.</p>";
   message += "</body></html>";
   api.webService->server->send(200, "text/html", message);
   if (hostnameChanged) {
@@ -282,24 +253,8 @@ IotsaConfigMod::webHandler() {
 
 String IotsaConfigMod::info() {
   String message;
-  if (iotsaController.currentMode()) {
-  	message += "<p>In configuration mode ";
-    message += iotsaController.modeName(iotsaController.currentMode());
-    message += ", will timeout in " + String((iotsaController.currentModeEndTime()-millis())/1000) + " seconds.</p>";
-  } else if (iotsaController.requestedMode()) {
-    message += "<p>Special mode ";
-    message += iotsaController.modeName(iotsaController.requestedMode());
-    message += " has been requested. Enable within ";
-    message += String((iotsaController.requestedModeEndTime() - millis())/1000);
-    message += " seconds by power cycling";
-    if (iotsaController.rcmInteractionDescription) {
-      message += " or ";
-      message += iotsaController.rcmInteractionDescription;
-    }
-    message += ".</p>";
-  } else if (iotsaController.currentModeEndTime()) {
-  	message += "<p>Strange, no configuration mode but timeout is " + String(iotsaController.currentModeEndTime()-millis()) + "ms.</p>";
-  }
+  // The mode-status blurb (in configuration mode / special mode requested / ...)
+  // moved to IotsaRunmodeMod::info() (cwi-dis/iotsa#106).
   message += "<p>" + app.title + " is based on iotsa " + IOTSA_FULL_VERSION + ". See <a href=\"/config\">/config</a> to change configuration.<br>";
   message += "Last boot " + String((int)millis()/1000) + " seconds ago, reason ";
   message += iotsaStatus.getBootReason();
@@ -330,6 +285,10 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   }
   reply["hostName"] = iotsaConfig.hostName;
   reply["modeTimeout"] = iotsaConfig.configurationModeTimeout;
+  // currentMode / currentModeTimeout / requestedMode / requestedModeTimeout /
+  // wifiDisabled are [[deprecated]] forwarders: canonical in /api/runmode now,
+  // kept here for one release so existing scripts and the Python CLI keep
+  // working (cwi-dis/iotsa#106, docs/controller-architecture.md).
   reply["currentMode"] = int(iotsaController.currentMode());
   if (iotsaController.currentMode()) {
     reply["currentModeTimeout"] = (iotsaController.currentModeEndTime() - millis())/1000;
@@ -401,6 +360,9 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
 
   JsonObject reqObj = request.as<JsonObject>();
   // First look for arguments that are also valid in normal mode.
+  // wifiDisabled / bleDisabled / requestedMode / reboot are [[deprecated]]
+  // forwarders here -- canonical in /api/runmode (cwi-dis/iotsa#106). Kept for
+  // one release so existing scripts and the Python CLI keep working.
   bool wifiDisabled;
   if (getFromRequest<int>(reqObj, "wifiDisabled", wifiDisabled)) {
     iotsaController.setWifiRadioEnabled(!wifiDisabled);  // cwi-dis/iotsa#106

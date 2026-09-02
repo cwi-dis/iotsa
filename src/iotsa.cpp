@@ -2,6 +2,7 @@
 #include "iotsa.h"
 #include "iotsaHttpServer.h"
 #include "iotsaConfigMod.h"
+#include "iotsaRunmode.h"
 #include "iotsaFS.h"
 #if defined(IOTSA_HAS_COAPSERVER) || defined(IOTSA_HAS_HPSSERVER)
 #include "iotsaApi.h"
@@ -88,6 +89,11 @@ IotsaApplication::setup() {
   // Ensure it here; an explicit declaration or IotsaWifiMod (which forwards its auth
   // provider) still wins via the singleton.
   IotsaConfigMod::ensure(*this);
+
+  // IotsaRunmodeMod (the control surface onto IotsaController: mode requests,
+  // reboot, runtime radio toggles) is core-tier too, same treatment as
+  // IotsaConfigMod -- see docs/controller-architecture.md (cwi-dis/iotsa#106).
+  IotsaRunmodeMod::ensure(*this);
 
   // Ensure the CoAP/HPS companion modules exist before any module's setup() runs,
   // rather than being lazily created as a side effect of whichever module happens to
