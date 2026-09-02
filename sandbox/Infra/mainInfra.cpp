@@ -18,6 +18,9 @@
 #include "iotsaLogger.h"
 #include "iotsaFilesBackup.h"
 #include "iotsaNothing.h"
+#ifdef IOTSA_PIN_NEOPIXEL
+#include "iotsaLed.h"
+#endif
 
 IotsaApplication application("Iotsa Infra test rig");
 
@@ -26,6 +29,11 @@ IotsaBatteryMod batteryMod(application);
 IotsaOtaMod otaMod(application);
 IotsaLoggerMod loggerMod(application);
 IotsaFilesBackupMod filesBackupMod(application);
+#ifdef IOTSA_PIN_NEOPIXEL
+// Only when the board definition says this board has a NeoPixel -- then the
+// status LED (and getStatusColor()) is exercised too.
+IotsaLedMod ledMod(application, IOTSA_PIN_NEOPIXEL);
+#endif
 
 #ifdef IOTSA_WITH_BLE
 #include "iotsaBLEServer.h"
