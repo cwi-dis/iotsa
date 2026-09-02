@@ -178,7 +178,7 @@ bool IotsaMultiUserMod::getHandler(const char *path, JsonObject& reply) {
 bool IotsaMultiUserMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
 #ifdef IOTSA_WITH_API
   if (strncmp(path, "/api/users/", 11) != 0) return false;
-  if (!iotsaConfig.inConfigurationMode()) return false;
+  if (!iotsaController.inConfigurationMode()) return false;
   // xxxjack should also check access rights? Maybe in stead of configurationMode?
   String num(path);
   num.remove(0, 11);
@@ -199,7 +199,7 @@ bool IotsaMultiUserMod::putHandler(const char *path, const JsonVariant& request,
 bool IotsaMultiUserMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
 #ifdef IOTSA_WITH_API
   if (strcmp(path, "/api/users") != 0) return false;
-  if (!iotsaConfig.inConfigurationMode()) return false;
+  if (!iotsaController.inConfigurationMode()) return false;
   bool anyChanged = false;
   IotsaUser newUser;
   JsonObject reqObj = request.as<JsonObject>();

@@ -23,39 +23,9 @@ void IotsaConfigMod::setup() {
   IFDEBUG IotsaSerial.println(iotsaStatus.getBootReason());
   iotsaConfig.setDefaultCertificate();
   configLoad();
-  if (app.status) app.status->showStatus();
-  if (iotsaConfig.configurationMode) {
-  	IFDEBUG IotsaSerial.println("configurationMode, re-saving config.cfg without it");
-  	configSave();
-    iotsaConfig.configurationModeEndTime = millis() + 1000*iotsaConfig.configurationModeTimeout;
-    IFDEBUG IotsaSerial.print("configurationMode=");
-    IFDEBUG IotsaSerial.print((int)iotsaConfig.configurationMode);
-    IFDEBUG IotsaSerial.print(", timeout at ");
-    IFDEBUG IotsaSerial.println(iotsaConfig.configurationModeEndTime);
-}
-  // If a configuration mode was requested but the reset reason was not
-  // external reset (the button) or powerup we do not honor the configuration mode
-  // request: it could be triggered through a software bug or so, and we want to require
-  // user interaction.
-#ifndef ESP32
-  rst_info *rip = ESP.getResetInfoPtr();
-  int reason = (int)rip->reason;
-  bool badReason = rip->reason != REASON_DEFAULT_RST && rip->reason != REASON_EXT_SYS_RST;
-#else
-  int reason = rtc_get_reset_reason(0);
-  // xxxjack Not sure why I sometimes see the WDT reset on pressing the reset button...
-  bool badReason = reason != POWERON_RESET && reason != RTCWDT_RTC_RESET;
-#endif
-  if (badReason && iotsaConfig.configurationMode != IOTSA_MODE_NORMAL) {
-    iotsaConfig.configurationMode = IOTSA_MODE_NORMAL;
-    iotsaConfig.configurationModeEndTime = 0;
-    IFDEBUG IotsaSerial.print("configurationMode not honoured because of reset reason:");
-    IFDEBUG IotsaSerial.println(reason);
-  }
-  // If factory reset is requested format the Flash and reboot
-  if (iotsaConfig.configurationMode == IOTSA_MODE_FACTORY_RESET) {
-    iotsaConfig.factoryReset();
-  }
+  // The pending-mode mailbox, the boot anti-tamper gate and the factory-reset
+  // trigger moved to IotsaController::begin(), which IotsaApplication::setup()
+  // has already run by now (cwi-dis/iotsa#106).
   if (app.status) app.status->showStatus();
 }
 
@@ -81,7 +51,7 @@ IotsaConfigMod::webHandler() {
   if( api.webService->server->hasArg("rebootTimeout")) {
     int newValue = api.webService->server->arg("rebootTimeout").toInt();
     if (newValue != iotsaConfig.configurationModeTimeout) {
-      if (iotsaConfig.inConfigurationMode(true)) {
+      if (iotsaController.inConfigurationMode(true)) {
         if (needsAuthentication("config")) return;
         iotsaConfig.configurationModeTimeout = newValue;
         anyChanged = true;
@@ -94,14 +64,13 @@ IotsaConfigMod::webHandler() {
     String argValue = api.webService->server->arg("mode");
     if (argValue != "0") {
       if (needsAuthentication("config")) return;
-      iotsaConfig.nextConfigurationMode = iotsa_mode(atoi(argValue.c_str()));
-      iotsaConfig.nextConfigurationModeEndTime = millis() + iotsaConfig.configurationModeTimeout*1000;
+      iotsaController.requestMode(iotsa_mode(atoi(argValue.c_str())));
       anyChanged = true;
     }
   }
 #ifdef IOTSA_WITH_HTTPS
   if (api.webService->server->hasArg("httpsKey") && api.webService->server->arg("httpsKey") != "") {
-    if (iotsaConfig.inConfigurationMode(true)) {
+    if (iotsaController.inConfigurationMode(true)) {
       if (needsAuthentication("config")) return;
       String b64String(api.webService->server->arg("httpsKey"));
       if (b64String.startsWith("-----BEGIN RSA PRIVATE KEY-----")) {
@@ -145,7 +114,7 @@ IotsaConfigMod::webHandler() {
     }
   }
   if (api.webService->server->hasArg("httpsCertificate") && api.webService->server->arg("httpsCertificate") != "") {
-    if (iotsaConfig.inConfigurationMode(true)) {
+    if (iotsaController.inConfigurationMode(true)) {
       if (needsAuthentication("config")) return;
       String b64String(api.webService->server->arg("httpsCertificate"));
       if (b64String.startsWith("-----BEGIN CERTIFICATE-----")) {
@@ -193,15 +162,14 @@ IotsaConfigMod::webHandler() {
 #endif // IOTSA_WITH_HTTPS
   if( api.webService->server->hasArg("factoryreset") && api.webService->server->hasArg("iamsure")) {
     if (api.webService->server->arg("factoryreset") == "1" && api.webService->server->arg("iamsure") == "1") {
-      iotsaConfig.nextConfigurationMode = IOTSA_MODE_FACTORY_RESET;
-      iotsaConfig.nextConfigurationModeEndTime = millis() + iotsaConfig.configurationModeTimeout*1000;
+      iotsaController.requestMode(IOTSA_MODE_FACTORY_RESET);
       anyChanged = true;
     }
   }
  if( api.webService->server->hasArg("wifiDisabledOnBoot")) {
     int newValue = api.webService->server->arg("wifiDisabledOnBoot").toInt();
     if ((bool)newValue != iotsaConfig.wifiDisabledOnBoot) {
-      if (iotsaConfig.inConfigurationMode(true)) {
+      if (iotsaController.inConfigurationMode(true)) {
         if (needsAuthentication("config")) return;
         iotsaConfig.wifiDisabledOnBoot = (bool)newValue;
         anyChanged = true;
@@ -214,7 +182,7 @@ IotsaConfigMod::webHandler() {
  if( api.webService->server->hasArg("bleDisabledOnBoot")) {
     int newValue = api.webService->server->arg("bleDisabledOnBoot").toInt();
     if ((bool)newValue != iotsaConfig.bleDisabledOnBoot) {
-      if (iotsaConfig.inConfigurationMode(true)) {
+      if (iotsaController.inConfigurationMode(true)) {
         if (needsAuthentication("config")) return;
         iotsaConfig.bleDisabledOnBoot = (bool)newValue;
         anyChanged = true;
@@ -234,20 +202,20 @@ IotsaConfigMod::webHandler() {
     if (hostnameChanged) {
       message += "<p><em>Rebooting device to change hostname</em>.</p>";
     }
-    if (iotsaConfig.nextConfigurationMode) {
+    if (iotsaController.requestedMode()) {
       message += "<p><em>Special mode ";
-      message += iotsaConfig.modeName(iotsaConfig.nextConfigurationMode);
+      message += iotsaController.modeName(iotsaController.requestedMode());
       message += " has been requested. Enable within ";
-      message += String((iotsaConfig.nextConfigurationModeEndTime - millis())/1000);
+      message += String((iotsaController.requestedModeEndTime() - millis())/1000);
       message += " seconds by power cycling";
-      if (iotsaConfig.rcmInteractionDescription) {
+      if (iotsaController.rcmInteractionDescription) {
         message += " or ";
-        message += iotsaConfig.rcmInteractionDescription;
+        message += iotsaController.rcmInteractionDescription;
       }
       message += ".</em></p>";
     }
   }
-  if (!iotsaConfig.inConfigurationMode()) {
+  if (!iotsaController.inConfigurationMode()) {
     message += "<p>Hostname: ";
     message += htmlEncode(iotsaConfig.hostName);
     message += " (goto configuration mode to change)<br>Configuration mode timeout: ";
@@ -281,7 +249,7 @@ IotsaConfigMod::webHandler() {
     message += htmlEncode(iotsaConfig.hostName);
     message += "'><br>";
   }
-  if (iotsaConfig.inConfigurationMode()) {
+  if (iotsaController.inConfigurationMode()) {
     message += "Configuration mode timeout: <input name='rebootTimeout' value='";
     message += String(iotsaConfig.configurationModeTimeout);
     message += "'><br>";
@@ -314,23 +282,23 @@ IotsaConfigMod::webHandler() {
 
 String IotsaConfigMod::info() {
   String message;
-  if (iotsaConfig.configurationMode) {
+  if (iotsaController.currentMode()) {
   	message += "<p>In configuration mode ";
-    message += iotsaConfig.modeName(iotsaConfig.configurationMode);
-    message += ", will timeout in " + String((iotsaConfig.configurationModeEndTime-millis())/1000) + " seconds.</p>";
-  } else if (iotsaConfig.nextConfigurationMode) {
+    message += iotsaController.modeName(iotsaController.currentMode());
+    message += ", will timeout in " + String((iotsaController.currentModeEndTime()-millis())/1000) + " seconds.</p>";
+  } else if (iotsaController.requestedMode()) {
     message += "<p>Special mode ";
-    message += iotsaConfig.modeName(iotsaConfig.nextConfigurationMode);
+    message += iotsaController.modeName(iotsaController.requestedMode());
     message += " has been requested. Enable within ";
-    message += String((iotsaConfig.nextConfigurationModeEndTime - millis())/1000);
+    message += String((iotsaController.requestedModeEndTime() - millis())/1000);
     message += " seconds by power cycling";
-    if (iotsaConfig.rcmInteractionDescription) {
+    if (iotsaController.rcmInteractionDescription) {
       message += " or ";
-      message += iotsaConfig.rcmInteractionDescription;
+      message += iotsaController.rcmInteractionDescription;
     }
     message += ".</p>";
-  } else if (iotsaConfig.configurationModeEndTime) {
-  	message += "<p>Strange, no configuration mode but timeout is " + String(iotsaConfig.configurationModeEndTime-millis()) + "ms.</p>";
+  } else if (iotsaController.currentModeEndTime()) {
+  	message += "<p>Strange, no configuration mode but timeout is " + String(iotsaController.currentModeEndTime()-millis()) + "ms.</p>";
   }
   message += "<p>" + app.title + " is based on iotsa " + IOTSA_FULL_VERSION + ". See <a href=\"/config\">/config</a> to change configuration.<br>";
   message += "Last boot " + String((int)millis()/1000) + " seconds ago, reason ";
@@ -362,15 +330,15 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   }
   reply["hostName"] = iotsaConfig.hostName;
   reply["modeTimeout"] = iotsaConfig.configurationModeTimeout;
-  reply["currentMode"] = int(iotsaConfig.configurationMode);
-  if (iotsaConfig.configurationMode) {
-    reply["currentModeTimeout"] = (iotsaConfig.configurationModeEndTime - millis())/1000;
+  reply["currentMode"] = int(iotsaController.currentMode());
+  if (iotsaController.currentMode()) {
+    reply["currentModeTimeout"] = (iotsaController.currentModeEndTime() - millis())/1000;
   }
   reply["privateWifi"] = iotsaConfig.wifiMode == IOTSA_WIFI_FACTORY || iotsaConfig.wifiMode == IOTSA_WIFI_NOTFOUND;
   reply["mdnsEnabled"] = iotsaStatus.mdnsEnabled;
-  reply["requestedMode"] = int(iotsaConfig.nextConfigurationMode);
-  if (iotsaConfig.nextConfigurationMode) {
-    reply["requestedModeTimeout"] = (iotsaConfig.nextConfigurationModeEndTime - millis())/1000;
+  reply["requestedMode"] = int(iotsaController.requestedMode());
+  if (iotsaController.requestedMode()) {
+    reply["requestedModeTimeout"] = (iotsaController.requestedModeEndTime() - millis())/1000;
   }
   reply["wifiDisabled"] = iotsaConfig.wifiMode == iotsa_wifi_mode::IOTSA_WIFI_DISABLED;
   reply["wifiDisabledOnBoot"] = iotsaConfig.wifiDisabledOnBoot;
@@ -451,16 +419,14 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
 #endif
   int reqModeInt;
   if (getFromRequest<int>(reqObj, "requestedMode", reqModeInt)) {
-    iotsaConfig.nextConfigurationMode = iotsa_mode(reqModeInt);
-    anyChanged = iotsaConfig.nextConfigurationMode != iotsa_mode(0);
+    // requestMode() writes the pending-mode mailbox itself (cwi-dis/iotsa#106), so no
+    // configSave() is needed here even though the early return below skips it.
+    iotsaController.requestMode(iotsa_mode(reqModeInt));
+    anyChanged = iotsaController.requestedMode() != iotsa_mode(0);
     if (anyChanged) {
-      iotsaConfig.nextConfigurationModeEndTime = millis() + iotsaConfig.configurationModeTimeout*1000;
-      reply["requestedMode"] = int(iotsaConfig.nextConfigurationMode);
-      reply["requestedModeTimeout"] = (iotsaConfig.nextConfigurationModeEndTime - millis())/1000;
+      reply["requestedMode"] = int(iotsaController.requestedMode());
+      reply["requestedModeTimeout"] = (iotsaController.requestedModeEndTime() - millis())/1000;
       reply["needsReboot"] = true;
-      // Save immediately: the early return below skips the configSave() at the end of
-      // this function, so a mode request from normal mode would not survive a reboot.
-      configSave();
     }
   }
   if (!iotsaConfig.inConfigurationOrFactoryMode()) {
@@ -655,10 +621,5 @@ void IotsaConfigMod::configSave() {
 }
 
 void IotsaConfigMod::loop() {
-  if (iotsaConfig.configurationModeEndTime && millis() > iotsaConfig.configurationModeEndTime) {
-    iotsaConfig.endConfigurationMode();
-  }
-  if (iotsaConfig.nextConfigurationModeEndTime && millis() > iotsaConfig.nextConfigurationModeEndTime) {
-    iotsaConfig.endConfigurationMode();
-  }
+  // Mode auto-expiry moved to IotsaController::tick() (cwi-dis/iotsa#106).
 }

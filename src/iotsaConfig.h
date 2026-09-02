@@ -32,19 +32,14 @@ private:
   iotsa_ble_mode bleMode = IOTSA_BLE_DISABLED;
   uint32_t wantBleModeSwitchAtMillis = 0;
 #endif
-  iotsa_mode configurationMode = IOTSA_MODE_NORMAL;
-  unsigned long configurationModeEndTime = 0;
-  iotsa_mode nextConfigurationMode = IOTSA_MODE_NORMAL;
-  unsigned long nextConfigurationModeEndTime = 0;
-  int configurationModeTimeout = 0;
+  // The iotsa_mode state machine moved to IotsaController (cwi-dis/iotsa#106).
   uint32_t postponeSleepMillis = 0;
   uint32_t activityExtraWakeDuration = 0;
   int pauseSleepCount = 0;
-  extensionCallback extendCurrentModeCallback;
-  void beginConfigurationMode();
-  void endConfigurationMode();
-  void factoryReset();
 public:
+  // Mode-machine setting: still persisted in config.cfg (rebootTimeout key) and
+  // edited via /config; IotsaController reads it. cwi-dis/iotsa#106 will move it.
+  int configurationModeTimeout = 0;
   // wifiEnabled / wifiStationConnected / wifiApActive / mdnsEnabled moved to
   // IotsaStatus (cwi-dis/iotsa#106). Use iotsaStatus.* instead.
   String hostName = "";
@@ -54,7 +49,6 @@ public:
   const uint8_t* httpsKey;
   size_t httpsKeyLength;
 #endif // IOTSA_WITH_HTTPS
-  const char* rcmInteractionDescription = NULL;
 
 public:
   void configLoad();
@@ -62,27 +56,39 @@ public:
   void ensureConfigLoaded();
   [[deprecated("moved to iotsaStatus.getBootReason()")]]
   const char* getBootReason();
-  const char *modeName(iotsa_mode mode);
   void setDefaultHostName();
   void setDefaultCertificate();
   bool usingDefaultCertificate();
-  bool inConfigurationMode(bool extend=false);
-  bool inConfigurationOrFactoryMode();
-  void extendCurrentMode();
-  void allowRequestedConfigurationMode();
-  void allowRCMDescription(const char *_rcmInteractionDescription);
   uint32_t getStatusColor();
   void pauseSleep();
   void resumeSleep();
   uint32_t postponeSleep(uint32_t ms);
   bool canSleep();
+
+  // ---- moved to IotsaController (cwi-dis/iotsa#106); deprecated forwarders ----
   [[deprecated("moved to iotsaController.requestReboot()")]]
   void requestReboot(uint32_t ms);
+  [[deprecated("moved to iotsaController.modeName()")]]
+  const char *modeName(iotsa_mode mode);
+  [[deprecated("moved to iotsaController.inConfigurationMode()")]]
+  bool inConfigurationMode(bool extend=false);
+  // Not deprecated yet: still the last reader of IOTSA_WIFI_FACTORY; a later
+  // cwi-dis/iotsa#106 commit dissolves it into iotsaController.inConfigurationMode().
+  bool inConfigurationOrFactoryMode();
+  [[deprecated("moved to iotsaController.extendCurrentMode()")]]
+  void extendCurrentMode();
+  [[deprecated("moved to iotsaController.allowRequestedConfigurationMode()")]]
+  void allowRequestedConfigurationMode();
+  [[deprecated("moved to iotsaController.allowRCMDescription()")]]
+  void allowRCMDescription(const char *_rcmInteractionDescription);
+  [[deprecated("moved to iotsaController.setExtensionCallback()")]]
+  void setExtensionCallback(extensionCallback ecmcb);
+
+  // ---- moved to IotsaStatus (cwi-dis/iotsa#106); deprecated forwarders ----
   [[deprecated("moved to iotsaStatus.printHeapSpace()")]]
   void printHeapSpace();
   [[deprecated("moved to iotsaStatus.networkIsUp()")]]
   bool networkIsUp();
-  void setExtensionCallback(extensionCallback ecmcb);
 };
 
 extern IotsaConfig iotsaConfig;

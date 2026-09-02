@@ -113,7 +113,7 @@ IotsaBatteryMod::webHandler() {
   }
 #endif
   if (anyChanged) {
-    iotsaConfig.extendCurrentMode();
+    iotsaController.extendCurrentMode();
     configSave();
   }
 
@@ -203,12 +203,12 @@ void IotsaBatteryMod::setup() {
     IFDEBUG IotsaSerial.printf("Watchdog: %d ms\n", watchdogDuration);
   }
 #endif
-  iotsaConfig.setExtensionCallback(std::bind(&IotsaBatteryMod::extendCurrentMode, this));
+  iotsaController.setExtensionCallback(std::bind(&IotsaBatteryMod::extendCurrentMode, this));
 }
 
 void IotsaBatteryMod::allowBLEConfigModeSwitch() {
   bleConfigModeSwitchAllowed = true;
-  iotsaConfig.allowRCMDescription("use BLE to set 'reboot with WiFi' to 2");
+  iotsaController.allowRCMDescription("use BLE to set 'reboot with WiFi' to 2");
 }
 
 bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
@@ -438,7 +438,7 @@ void IotsaBatteryMod::loop() {
     if (doSoftReboot == 2) {
       if (bleConfigModeSwitchAllowed) {
         IFDEBUG IotsaSerial.println("Allow configmode change from BLE");
-        iotsaConfig.allowRequestedConfigurationMode();
+        iotsaController.allowRequestedConfigurationMode();
       } else {
         IFDEBUG IotsaSerial.println("Configmode change from BLE requested but not allowed");
       }
@@ -482,7 +482,7 @@ void IotsaBatteryMod::loop() {
     }
   }
   // Another reason is that we are in configuration mode
-  if (iotsaConfig.inConfigurationMode()) {
+  if (iotsaController.inConfigurationMode()) {
       SLEEP_DEBUG IotsaSerial.printf("iotsaBattery: no sleep, in configuration mode\n");
       shouldSleep = false;
   }

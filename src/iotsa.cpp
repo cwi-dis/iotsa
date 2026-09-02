@@ -78,6 +78,9 @@ IotsaApplication::setup() {
     IFDEBUG IotsaSerial.println(IOTSA_FS_NAME " mounted");
   }
   iotsaConfig.ensureConfigLoaded();
+  // Consume the pending-mode mailbox and run the boot anti-tamper gate before any
+  // module's setup() sees the mode (cwi-dis/iotsa#106). Was in IotsaConfigMod::setup().
+  iotsaController.begin();
 
   // IotsaConfigMod (hostname, TLS certs, configuration-mode handling) is core
   // infrastructure, independent of WiFi. It used to be created only as a member of

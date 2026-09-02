@@ -308,7 +308,7 @@ void IotsaWifiMod::configSave() {
 }
 
 void IotsaWifiMod::loop() {
-  _controller.setConfigModeActive(iotsaConfig.inConfigurationMode());
+  _controller.setConfigModeActive(iotsaController.inConfigurationMode());
   _controller.tick();
   _publishControllerState();
 #ifndef ESP32

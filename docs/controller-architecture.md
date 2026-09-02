@@ -154,6 +154,21 @@ sweep the ~20 downstream repos to the new names and drop the forwarders.
   from `IotsaApplication::loop()`. So far it owns only the deferred-reboot timer, moved
   from `IotsaConfig::loop()` (now deleted). `iotsaConfig.requestReboot()` is a
   `[[deprecated]]` forwarder -- it has many downstream callers (6 in lissabon alone).
+- The `iotsa_mode` state machine moved into `IotsaController`: `currentMode()` /
+  `requestedMode()` / `requestMode()` / `allowRequestedConfigurationMode()` /
+  `beginConfigurationMode()` / `endConfigurationMode()` / `extendCurrentMode()` /
+  `inConfigurationMode()` / `modeName()` / `factoryReset()`, plus `begin()` (the boot
+  anti-tamper gate, out of `IotsaConfigMod::setup()`) and auto-expiry in `tick()` (out
+  of `IotsaConfigMod::loop()`). Persistence is now a one-shot mailbox file
+  `/config/pendingmode.cfg` written only by `requestMode()` and consumed+deleted by
+  `begin()` -- no mode transition calls `configSave()` any more, and `config.cfg` lost
+  its `mode` key. Bench-verified on lolin32: config-mode entry via `configMode` + RESET,
+  rejection via `configMode` + software reboot (request consumed either way).
+  `IotsaConfigMod` keeps the whole REST/web surface, retargeted at `iotsaController.*`;
+  `iotsaConfig.*` has `[[deprecated]]` forwarders. `configurationModeTimeout` (the
+  `rebootTimeout` setting) stays in `config.cfg` / `iotsaConfig` for now.
+  `inConfigurationOrFactoryMode()` is not moved yet -- it is the last reader of
+  `IOTSA_WIFI_FACTORY` and the next commit dissolves it.
 
 ## Deferred (was "slice 4"; folds into this work)
 
