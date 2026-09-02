@@ -121,9 +121,16 @@ controller.
   keeps the `currentMode`/`requestedMode` API surface.
 - **`IotsaRunmodeMod`** (new) -- the *external control surface* onto `IotsaController`:
   reboot, reboot-into-OTA, enable/disable WiFi at runtime, mode transitions. Thin glue.
-  Later gains the BLE "this is an iotsa device" service (discovery + the reboot/mode
-  control characteristics on one service -- a BLE client that finds the device also
-  wants to steer it). Tracked in a separate issue.
+  **Core-tier: always present, unconditionally `ensure()`d like `IotsaConfigMod`** (the
+  #195 / #85 mechanism), never an optional add. It carries **both** a REST/web surface
+  and a **BLE service** with the reboot + mode-transition control characteristics -- a
+  BLE client that finds the device also wants to steer it. Because RunmodeMod is now
+  never-omittable, that BLE service is present on every BLE-enabled iotsa device, which
+  is what makes it a viable home for the control characteristics (see
+  [#233](https://github.com/cwi-dis/iotsa/issues/233) -- filed before the core-tier
+  decision, which weakens its "RunmodeMod might be skipped" objection). The bare
+  "this is an iotsa device" *identification* UUID (for the Python CLI's BLE discovery
+  heuristic) is a separate sub-decision -- see Open questions.
 - **`IotsaBatteryMod`** -- shrinks to battery *hardware*: voltage sensing, the pins,
   its own config. Feeds settings into `IotsaController`; no longer hosts the sleep
   state machine or the `extendCurrentModeCallback`.
@@ -189,6 +196,48 @@ sweep the ~20 downstream repos to the new names and drop the forwarders.
   `wifiApActive && !wifiStationConnected`; `IotsaWifiMod::info()` shows
   `staState()`/`apState()` instead. No downstream users of the enum.
 
+## Remaining work (ordered)
+
+The `IotsaConfig` identity/status/controller split (above) is done and bench-proven.
+What is left is moving the two policy tenants (radio, sleep) into `IotsaController` and
+building the module layer on top. Ordering matters: the control-surface module is pulled
+*ahead* of the two policy moves so they land their external knobs in their final home
+instead of parking them in `IotsaConfigMod` / `IotsaBatteryMod` and moving them later.
+
+1. **`IotsaRunmodeMod` -- control surface (REST + BLE).** Thin glue over what
+   `IotsaController` already exposes (`requestReboot()`, `requestMode()`,
+   `setWifiRadioEnabled()`), plus the core-tier unconditional-`ensure()` wiring. The BLE
+   service and its reboot / mode-transition characteristics land here now (folds in the
+   control-characteristic half of [#233](https://github.com/cwi-dis/iotsa/issues/233)).
+   **Depends on nothing in steps 2-3** -- the reboot path is fully wired already. Done
+   first precisely so steps 2 and 3 have a real home for their toggles.
+2. **Radio-enablement policy into `IotsaController`.** The `_radioPolicy` sub-policy:
+   boot flags (`wifiDisabledOnBoot`, `bleDisabledOnBoot`), runtime toggles, "current
+   mode forces radios up", BLE-server enable. The `wifiDisabled` PUT (parked in
+   `IotsaConfigMod` by the landed radio-enable rewire) moves to `IotsaRunmodeMod`.
+3. **Sleep/wake policy into `IotsaController`.** The `_sleepPolicy` sub-policy: the
+   sleep decision, `pauseSleep()` / `postponeSleep()` / `canSleep()`, the WiFi<->sleep
+   coupling (`disableSleepOnWiFi`, `disableWiFiOnSleep`), wake-window timing,
+   `activityExtraWakeDuration`. Deletes the `extendCurrentModeCallback` hop into
+   `IotsaBatteryMod`. Sleep knobs move to `IotsaRunmodeMod`'s UI.
+4. **`IotsaBatteryMod` shrink.** Falls out of steps 2-3: battery module drops to
+   voltage / USB ADC sensing + its own config, feeding settings into `IotsaController`.
+   Depends on 2 and 3.
+5. **Persisted-settings tidy + land on develop.** Move `configurationModeTimeout`
+   (`rebootTimeout`) off `iotsaConfig` per its final owner; CHANGELOG line; merge.
+
+Separable follow-ons (own issues, not gating the merge):
+
+- BLE server driver/controller split -- the near-trivial 2-state case that should fall
+  out of the WiFi driver/controller pattern.
+- Mode-declaration / reject-unregistered-mode -- the
+  [#174](https://github.com/cwi-dis/iotsa/issues/174) gap: modules declare which
+  `iotsa_mode` they implement; reject a request nobody registered for.
+- Sleep-inhibit publish/subscribe -- subsystems register inhibit signals,
+  `IotsaController` aggregates; ties to
+  [#105](https://github.com/cwi-dis/iotsa/issues/105).
+- Identification-UUID home for BLE discovery -- the rest of [#233].
+
 ## Deferred (was "slice 4"; folds into this work)
 
 - `getStatusColor()` LED-semantics rework (flash for hunting, etc.) -- [#176].
@@ -207,3 +256,13 @@ sweep the ~20 downstream repos to the new names and drop the forwarders.
   change later.
 - Where `config.cfg` persistence lands once `hostName` is nearly its only remaining
   key: one file written cooperatively, or per-owner files.
+- Home for the bare "this is an iotsa device" BLE *identification* service UUID (what
+  the Python CLI's discovery heuristic should match instead of the standard
+  Battery-Service coincidence). [#233](https://github.com/cwi-dis/iotsa/issues/233) as
+  filed says `IotsaBLEServerMod`, on the grounds that any optional module (RunmodeMod
+  included) could be skipped. The core-tier decision for `IotsaRunmodeMod` undercuts
+  that for BLE-enabled devices -- so the choice is now "identity is a BLE-server
+  concern, keep it there" vs. "fewer services, put it on RunmodeMod's control service
+  which is present anyway". The reboot/mode *control* characteristics are settled
+  (RunmodeMod, step 1); only the identification UUID is open. Blocks nothing in
+  steps 1-5.
