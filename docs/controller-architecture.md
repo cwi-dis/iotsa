@@ -167,13 +167,19 @@ sweep the ~20 downstream repos to the new names and drop the forwarders.
   `IotsaConfigMod` keeps the whole REST/web surface, retargeted at `iotsaController.*`;
   `iotsaConfig.*` has `[[deprecated]]` forwarders. `configurationModeTimeout` (the
   `rebootTimeout` setting) stays in `config.cfg` / `iotsaConfig` for now.
-  `inConfigurationOrFactoryMode()` is not moved yet -- it is the last reader of
-  `IOTSA_WIFI_FACTORY` and the next commit dissolves it.
+- `inConfigurationOrFactoryMode()` dissolved: `IotsaWifiMod` now publishes
+  `iotsaStatus.wifiConfigured` (an SSID is set), and the 9 call sites (6 in
+  `iotsaWifi.cpp`, 3 in `iotsaConfigMod.cpp`) use the shared `iotsaConfigSettingsWritable()`
+  helper in `iotsaController.h`: `inConfigurationMode() || (!wifiConfigured && wifiApActive)`.
+  The `IOTSA_WIFI_FACTORY` enum value is now read only by `getStatusColor()` (its
+  removal is part of the `iotsa_wifi_mode` deletion below). No downstream callers, so
+  the method was deleted outright, no forwarder.
 
 ## Deferred (was "slice 4"; folds into this work)
 
 - Delete the `iotsa_wifi_mode` enum + `wifiMode` field; its status values are already
-  superseded by `IotsaWifiController` + the `iotsaStatus` fields.
+  superseded by `IotsaWifiController` + the `iotsaStatus` fields. Last readers:
+  `getStatusColor()` and the `privateWifi` reply field.
 - Rewire runtime radio enable/disable (`wifiDisabled` REST toggle, battery
   sleep-wifi-off, BLE enable-wifi) -- currently a **latent regression**: earlier #106
   slices stopped `IotsaWifiMod` polling `wantWifiModeSwitchAtMillis`, so these paths no

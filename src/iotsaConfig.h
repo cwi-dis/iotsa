@@ -72,9 +72,6 @@ public:
   const char *modeName(iotsa_mode mode);
   [[deprecated("moved to iotsaController.inConfigurationMode()")]]
   bool inConfigurationMode(bool extend=false);
-  // Not deprecated yet: still the last reader of IOTSA_WIFI_FACTORY; a later
-  // cwi-dis/iotsa#106 commit dissolves it into iotsaController.inConfigurationMode().
-  bool inConfigurationOrFactoryMode();
   [[deprecated("moved to iotsaController.extendCurrentMode()")]]
   void extendCurrentMode();
   [[deprecated("moved to iotsaController.allowRequestedConfigurationMode()")]]

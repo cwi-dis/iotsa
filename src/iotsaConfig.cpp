@@ -64,12 +64,8 @@ void IotsaConfig::extendCurrentMode() { iotsaController.extendCurrentMode(); }
 void IotsaConfig::setExtensionCallback(extensionCallback ecmcb) { iotsaController.setExtensionCallback(ecmcb); }
 void IotsaConfig::allowRequestedConfigurationMode() { iotsaController.allowRequestedConfigurationMode(); }
 void IotsaConfig::allowRCMDescription(const char *desc) { iotsaController.allowRCMDescription(desc); }
-
-bool IotsaConfig::inConfigurationOrFactoryMode() {
-  // cwi-dis/iotsa#106: the "factory" half is the last reader of IOTSA_WIFI_FACTORY;
-  // a later commit dissolves this into iotsaController.inConfigurationMode().
-  return iotsaController.inConfigurationMode() || wifiMode == IOTSA_WIFI_FACTORY;
-}
+// inConfigurationOrFactoryMode() removed (cwi-dis/iotsa#106): callers now use
+// iotsaConfigSettingsWritable() (iotsaController.h).
 
 uint32_t IotsaConfig::getStatusColor() {
   iotsa_mode configurationMode = iotsaController.currentMode();  // cwi-dis/iotsa#106

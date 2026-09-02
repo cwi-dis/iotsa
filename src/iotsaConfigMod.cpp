@@ -38,7 +38,7 @@ IotsaConfigMod::webHandler() {
   if( api.webService->server->hasArg("hostName")) {
     String argValue = api.webService->server->arg("hostName");
     if (argValue != iotsaConfig.hostName) {
-      if (iotsaConfig.inConfigurationOrFactoryMode()) {
+      if (iotsaConfigSettingsWritable()) {
         if (needsAuthentication("config")) return;
         iotsaConfig.hostName = argValue;
         anyChanged = true;
@@ -244,7 +244,7 @@ IotsaConfigMod::webHandler() {
 #endif // IOTSA_WITH_HTTPS
   }
   message += "<form method='post'>";
-  if (iotsaConfig.inConfigurationOrFactoryMode()) {
+  if (iotsaConfigSettingsWritable()) {
     message += "Hostname: <input name='hostName' value='";
     message += htmlEncode(iotsaConfig.hostName);
     message += "'><br>";
@@ -429,7 +429,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
       reply["needsReboot"] = true;
     }
   }
-  if (!iotsaConfig.inConfigurationOrFactoryMode()) {
+  if (!iotsaConfigSettingsWritable()) {
     if (checkUnhandled(reqObj)) {
       IotsaSerial.println("Unhandled IotsaApi parameters, not in config mode");
     }

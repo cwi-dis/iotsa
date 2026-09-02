@@ -2,6 +2,7 @@
 #define _IOTSACONTROLLER_H_
 #include <stdint.h>
 #include "iotsaConfig.h"   // iotsa_mode, extensionCallback
+#include "iotsaStatus.h"   // iotsaConfigSettingsWritable() reads iotsaStatus
 
 // Intended to be included from iotsa.h
 
@@ -72,4 +73,13 @@ private:
 };
 
 extern IotsaController iotsaController;
+
+// cwi-dis/iotsa#106 transitional: settings (WiFi credentials, hostname, ...) are
+// writable in configuration mode, or on a not-yet-configured device serving its
+// own AP. Replaces IotsaConfig::inConfigurationOrFactoryMode(); collapses to
+// iotsaController.inConfigurationMode() once "no SSID => config mode" lands.
+inline bool iotsaConfigSettingsWritable() {
+  return iotsaController.inConfigurationMode()
+      || (!iotsaStatus.wifiConfigured && iotsaStatus.wifiApActive);
+}
 #endif

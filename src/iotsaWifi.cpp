@@ -59,8 +59,8 @@ void IotsaWifiMod::_publishControllerState() {
   iotsaStatus.wifiApActive = apAct;
   iotsaStatus.wifiEnabled = !iotsaConfig.wifiDisabledOnBoot;  // "radio not disabled", not "connected"
 
-  // Vestigial wifiMode -- kept written until slice 4 removes the enum and updates
-  // getStatusColor() / privateWifi / networkIsUp() / inConfigurationOrFactoryMode().
+  // Vestigial wifiMode -- kept written until the iotsa_wifi_mode enum removal
+  // (cwi-dis/iotsa#106) updates getStatusColor() and the privateWifi reply field.
   iotsa_wifi_mode m;
   if (staConn) m = IOTSA_WIFI_NORMAL;
   else if (_controller.staState() == IotsaWifiStaState::Connecting) m = IOTSA_WIFI_SEARCHING;
@@ -136,7 +136,7 @@ IotsaWifiMod::webHandler() {
   if (needsAuthentication("config")) return;
   bool anyChanged = false;
   if( api.webService->server->hasArg("ssid")) {
-    if (iotsaConfig.inConfigurationOrFactoryMode()) {
+    if (iotsaConfigSettingsWritable()) {
       ssid = api.webService->server->arg("ssid");
       anyChanged = true;
     } else {
@@ -144,7 +144,7 @@ IotsaWifiMod::webHandler() {
     }
   }
   if( api.webService->server->hasArg("ssidPassword")) {
-    if (iotsaConfig.inConfigurationOrFactoryMode()) {
+    if (iotsaConfigSettingsWritable()) {
       ssidPassword = api.webService->server->arg("ssidPassword");
       anyChanged = true;
     } else {
@@ -154,7 +154,7 @@ IotsaWifiMod::webHandler() {
   if (api.webService->server->hasArg("wifiPowerReduction")) {
     int val = api.webService->server->arg("wifiPowerReduction").toInt();
     if ((bool) val != wifiPowerReduction) {
-      if (iotsaConfig.inConfigurationOrFactoryMode()) {
+      if (iotsaConfigSettingsWritable()) {
         wifiPowerReduction = (bool)val;
         anyChanged = true;
       } else {
@@ -173,7 +173,7 @@ IotsaWifiMod::webHandler() {
 #endif
   if (wrongMode) {
     message += "<p><em>Error:</em> must be in configuration mode to change WiFi settings. See <a href='/config'>/config</a> to enable.</p>";
-  } else if(!iotsaConfig.inConfigurationOrFactoryMode()) {
+  } else if(!iotsaConfigSettingsWritable()) {
     message += "<p><i>(Note: you must be in configuration mode to change WiFi settings)</i></p>";
   }
   message += "<p>Hostname: ";
@@ -187,7 +187,7 @@ IotsaWifiMod::webHandler() {
   message += "><br> (work around issue on some esp32c3 boards)<br>";
   message += "<br><input type='submit'>";
   message += "</form>";
-  if (iotsaConfig.inConfigurationOrFactoryMode()) {
+  if (iotsaConfigSettingsWritable()) {
 #ifdef ESP32
     uint8_t baseMac[6];
     char baseMacStr[32];
@@ -251,7 +251,7 @@ bool IotsaWifiMod::getHandler(const char *path, JsonObject& reply) {
 
 bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
-  if (!iotsaConfig.inConfigurationOrFactoryMode()) {
+  if (!iotsaConfigSettingsWritable()) {
     IFDEBUG IotsaSerial.println("wificonfig: Not in config mode");
     return false;
   }
@@ -282,6 +282,7 @@ void IotsaWifiMod::configLoad() {
   IotsaConfigFileLoad cf("/config/wifi.cfg");
   cf.get("ssid", ssid, "");
   cf.get("ssidPassword", ssidPassword, "");
+  iotsaStatus.wifiConfigured = ssid.length() > 0;
   cf.get("wifiPowerReduction", wifiPowerReduction,
 #ifdef ESP32C3
     true
@@ -298,6 +299,7 @@ void IotsaWifiMod::configSave() {
   cf.put("ssid", ssid);
   cf.put("ssidPassword", ssidPassword);
   cf.put("wifiPowerReduction", wifiPowerReduction);
+  iotsaStatus.wifiConfigured = ssid.length() > 0;
   IFDEBUG IotsaSerial.println("Saved wifi.cfg");
   // Persist only. The old factory->beginConfigurationMode() side effect and the
   // wantWifiModeSwitchAtMillis poke are gone (cwi-dis/iotsa#106): the request

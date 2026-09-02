@@ -21,6 +21,7 @@ public:
   bool wifiEnabled = false;           // WiFi radio is not disabled (NOT "connected" -- see networkIsUp())
   bool wifiStationConnected = false;  // STA has an IP
   bool wifiApActive = false;          // softAP is up, for any reason
+  bool wifiConfigured = false;        // an SSID is configured (published by IotsaWifiMod)
   bool mdnsEnabled = false;           // mDNS responder is running
 
   bool networkIsUp();                 // reachable over the configured WiFi network (STA has an IP)
