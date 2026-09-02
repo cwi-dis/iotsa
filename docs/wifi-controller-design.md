@@ -448,4 +448,5 @@ claim to verify, not assume.
 4. Apply the same driver/controller pattern to the BLE server (a near-trivial 2-state
    case by comparison).
 5. **Only then** finalise the `IotsaRunmodeMod` / `IotsaConfigMod` split (#106), with
-   the controller's real shape known.
+   the controller's real shape known -- see
+   [`controller-architecture.md`](controller-architecture.md).
