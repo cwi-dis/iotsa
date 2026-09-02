@@ -57,7 +57,7 @@ IotsaBLEServerMod::webHandler() {
     bool newIsEnabled = (bool)strtol(api.webService->server->arg("isEnabled").c_str(), 0, 10);
     if (newIsEnabled != isEnabled) {
       isEnabled = newIsEnabled;
-      iotsaConfig.requestReboot(4000);
+      iotsaController.requestReboot(4000);
       anyChanged = true;
     }
   }
@@ -261,7 +261,7 @@ bool IotsaBLEServerMod::putHandler(const char *path, const JsonVariant& request,
   if (getFromRequest<int>(reqObj, "isEnabled", newEnabled) && newEnabled != isEnabled) {
     anyChanged = true;
     isEnabled = request["isEnabled"];
-    iotsaConfig.requestReboot(4000);
+    iotsaController.requestReboot(4000);
   }
   if (getFromRequest<int>(reqObj, "adv_min", adv_min)) anyChanged = true;
   if (getFromRequest<int>(reqObj, "adv_max", adv_max)) anyChanged = true;

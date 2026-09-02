@@ -150,6 +150,10 @@ sweep the ~20 downstream repos to the new names and drop the forwarders.
   reads `wifiStationConnected` directly (was `wifiMode == IOTSA_WIFI_NORMAL`).
   `getStatusColor()` stays in `iotsaConfig` until its precedence rework (still reads
   `wifiMode` + `configurationMode`).
+- `IotsaController` skeleton (`src/iotsaController.{h,cpp}`): a framework global, ticked
+  from `IotsaApplication::loop()`. So far it owns only the deferred-reboot timer, moved
+  from `IotsaConfig::loop()` (now deleted). `iotsaConfig.requestReboot()` is a
+  `[[deprecated]]` forwarder -- it has many downstream callers (6 in lissabon alone).
 
 ## Deferred (was "slice 4"; folds into this work)
 

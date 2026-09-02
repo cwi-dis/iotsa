@@ -215,7 +215,7 @@ IotsaWifiMod::webHandler() {
   // Reboot is no longer needed, config change handled by changing wifi on the fly
   if (anyChanged) {
     if (app.status) app.status->showStatus();
-    iotsaConfig.requestReboot(2000);
+    iotsaController.requestReboot(2000);
   }
 #endif
 }
@@ -267,7 +267,7 @@ bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, Json
   }
   if (anyChanged) configSave();
   if (reqObj["reboot"]) {
-    iotsaConfig.requestReboot(2000);
+    iotsaController.requestReboot(2000);
   }
   checkUnhandled(reqObj);
   return anyChanged;

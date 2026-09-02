@@ -308,7 +308,7 @@ IotsaConfigMod::webHandler() {
   message += "</body></html>";
   api.webService->server->send(200, "text/html", message);
   if (hostnameChanged) {
-    iotsaConfig.requestReboot(2000);
+    iotsaController.requestReboot(2000);
   }
 }
 
@@ -468,7 +468,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
       IotsaSerial.println("Unhandled IotsaApi parameters, not in config mode");
     }
     if (reqObj["reboot"]) {
-      iotsaConfig.requestReboot(2000);
+      iotsaController.requestReboot(2000);
       anyChanged = true;
     }
     return anyChanged||radioModeChanged;
@@ -562,7 +562,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
 #endif // IOTSA_WITH_HTTPS
   if (anyChanged) configSave();
   if (reqObj["reboot"]) {
-    iotsaConfig.requestReboot(2000);
+    iotsaController.requestReboot(2000);
     anyChanged = true;
   }
   if (checkUnhandled(reqObj)) {

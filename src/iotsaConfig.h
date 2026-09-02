@@ -40,7 +40,6 @@ private:
   uint32_t postponeSleepMillis = 0;
   uint32_t activityExtraWakeDuration = 0;
   int pauseSleepCount = 0;
-  uint32_t rebootAtMillis = 0;
   extensionCallback extendCurrentModeCallback;
   void beginConfigurationMode();
   void endConfigurationMode();
@@ -58,7 +57,6 @@ public:
   const char* rcmInteractionDescription = NULL;
 
 public:
-  void loop();
   void configLoad();
   void configSave();
   void ensureConfigLoaded();
@@ -78,6 +76,7 @@ public:
   void resumeSleep();
   uint32_t postponeSleep(uint32_t ms);
   bool canSleep();
+  [[deprecated("moved to iotsaController.requestReboot()")]]
   void requestReboot(uint32_t ms);
   [[deprecated("moved to iotsaStatus.printHeapSpace()")]]
   void printHeapSpace();

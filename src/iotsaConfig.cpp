@@ -17,13 +17,8 @@ IotsaConfig iotsaConfig;
 #include "iotsaConfigDefaultCert.h"
 #endif
 
-void IotsaConfig::loop() {
-  if (rebootAtMillis && millis() > rebootAtMillis) {
-    IFDEBUG IotsaSerial.println("Software requested reboot.");
-    ESP.restart();
-  }
-
-}
+// IotsaConfig::loop() and the deferred-reboot timer moved to IotsaController
+// (cwi-dis/iotsa#106). requestReboot() below is a deprecated forwarder.
 
 void IotsaConfig::setDefaultHostName() {
   hostName = "iotsa";
@@ -232,8 +227,8 @@ void IotsaConfig::ensureConfigLoaded() {
 };
 
 void IotsaConfig::requestReboot(uint32_t ms) {
-  IFDEBUG IotsaSerial.println("Restart requested");
-  rebootAtMillis = millis() + ms;
+  // Moved to IotsaController (cwi-dis/iotsa#106). Deprecated forwarder for one release.
+  iotsaController.requestReboot(ms);
 }
 
 void IotsaConfig::printHeapSpace() {

@@ -142,7 +142,7 @@ IotsaApplication::lateSetup() {
 
 void
 IotsaApplication::loop() {
-  iotsaConfig.loop();
+  iotsaController.tick();
   IotsaBaseModule *m;
   for (m=firstEarlyModule; m; m=m->nextModule) {
   	m->loop();

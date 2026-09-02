@@ -454,7 +454,7 @@ void IotsaBatteryMod::loop() {
       // stack time to flush the write response back to the client first
       // (see #130), matching the doSoftReboot==3 branch's 1000ms deferral above.
       IFDEBUG IotsaSerial.println("Reboot from BLE");
-      iotsaConfig.requestReboot(1000);
+      iotsaController.requestReboot(1000);
     }
     doSoftReboot = 0;
   }
