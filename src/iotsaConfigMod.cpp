@@ -94,7 +94,7 @@ IotsaConfigMod::webHandler() {
     String argValue = api.webService->server->arg("mode");
     if (argValue != "0") {
       if (needsAuthentication("config")) return;
-      iotsaConfig.nextConfigurationMode = config_mode(atoi(argValue.c_str()));
+      iotsaConfig.nextConfigurationMode = iotsa_mode(atoi(argValue.c_str()));
       iotsaConfig.nextConfigurationModeEndTime = millis() + iotsaConfig.configurationModeTimeout*1000;
       anyChanged = true;
     }
@@ -451,8 +451,8 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
 #endif
   int reqModeInt;
   if (getFromRequest<int>(reqObj, "requestedMode", reqModeInt)) {
-    iotsaConfig.nextConfigurationMode = config_mode(reqModeInt);
-    anyChanged = iotsaConfig.nextConfigurationMode != config_mode(0);
+    iotsaConfig.nextConfigurationMode = iotsa_mode(reqModeInt);
+    anyChanged = iotsaConfig.nextConfigurationMode != iotsa_mode(0);
     if (anyChanged) {
       iotsaConfig.nextConfigurationModeEndTime = millis() + iotsaConfig.configurationModeTimeout*1000;
       reply["requestedMode"] = int(iotsaConfig.nextConfigurationMode);

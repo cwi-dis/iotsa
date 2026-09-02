@@ -127,7 +127,7 @@ const char* IotsaConfig::getBootReason() {
   return reason;
 }
 
-const char *IotsaConfig::modeName(config_mode mode) {
+const char *IotsaConfig::modeName(iotsa_mode mode) {
 #ifdef IOTSA_WITH_WEB
   if (mode == IOTSA_MODE_NORMAL)
     return "normal";
@@ -260,7 +260,7 @@ void IotsaConfig::configLoad() {
   iotsaConfig.configWasLoaded = true;
   int tcm;
   cf.get("mode", tcm, IOTSA_MODE_NORMAL);
-  iotsaConfig.configurationMode = (config_mode)tcm;
+  iotsaConfig.configurationMode = (iotsa_mode)tcm;
   cf.get("hostName", iotsaConfig.hostName, "");
   if (iotsaConfig.hostName == "") iotsaConfig.setDefaultHostName();
   cf.get("rebootTimeout", iotsaConfig.configurationModeTimeout, CONFIGURATION_MODE_TIMEOUT);

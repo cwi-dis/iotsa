@@ -330,7 +330,7 @@ machinery:
 - `getStatusColor()` needs its own rethink -- it currently switches on `wifiMode` *and*
   `configurationMode` with an "extra white tint" hack. New inputs: `configurationMode`
   (`CONFIG` / `OTA` / `FACTORY_RESET` -- the last being the wipe-and-reboot mode, a
-  `config_mode` enum value unrelated to the now-deleted `IOTSA_WIFI_FACTORY`),
+  `iotsa_mode` enum value unrelated to `IOTSA_WIFI_FACTORY`),
   `sta.connected`, `ap.up`, radio-disabled. Whether `STA_HUNTING` ("SEARCHING")
   deserves its own colour is a call for the status-LED work
   ([#176](https://github.com/cwi-dis/iotsa/issues/176)); record the inputs here, design

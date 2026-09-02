@@ -7,7 +7,11 @@ typedef std::function<void(void)> extensionCallback;
 
 // Intended to be included from iotsa.h
 
-typedef enum { IOTSA_MODE_NORMAL, IOTSA_MODE_CONFIG, IOTSA_MODE_OTA, IOTSA_MODE_FACTORY_RESET } config_mode;
+// The device mode: normally NORMAL (running the application). The other values
+// are transient, deliberately-entered, auto-expiring windows in which normal
+// operation is suspended so the device can be worked on. Distinct from the
+// "runmode" concept (sleep/wake and radio rhythm) -- see cwi-dis/iotsa#106.
+typedef enum { IOTSA_MODE_NORMAL, IOTSA_MODE_CONFIG, IOTSA_MODE_OTA, IOTSA_MODE_FACTORY_RESET } iotsa_mode;
 typedef enum { IOTSA_WIFI_DISABLED, IOTSA_WIFI_FACTORY, IOTSA_WIFI_NORMAL, IOTSA_WIFI_SEARCHING, IOTSA_WIFI_NOTFOUND} iotsa_wifi_mode;
 typedef enum { IOTSA_BLE_DISABLED, IOTSA_BLE_ENABLED } iotsa_ble_mode;
 
@@ -28,9 +32,9 @@ private:
   iotsa_ble_mode bleMode = IOTSA_BLE_DISABLED;
   uint32_t wantBleModeSwitchAtMillis = 0;
 #endif
-  config_mode configurationMode = IOTSA_MODE_NORMAL;
+  iotsa_mode configurationMode = IOTSA_MODE_NORMAL;
   unsigned long configurationModeEndTime = 0;
-  config_mode nextConfigurationMode = IOTSA_MODE_NORMAL;
+  iotsa_mode nextConfigurationMode = IOTSA_MODE_NORMAL;
   unsigned long nextConfigurationModeEndTime = 0;
   int configurationModeTimeout = 0;
   uint32_t postponeSleepMillis = 0;
@@ -64,7 +68,7 @@ public:
   void configSave();
   void ensureConfigLoaded();
   const char* getBootReason();
-  const char *modeName(config_mode mode);
+  const char *modeName(iotsa_mode mode);
   void setDefaultHostName();
   void setDefaultCertificate();
   bool usingDefaultCertificate();
