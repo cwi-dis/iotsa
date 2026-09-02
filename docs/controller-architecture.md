@@ -195,6 +195,20 @@ sweep the ~20 downstream repos to the new names and drop the forwarders.
   [#176](https://github.com/cwi-dis/iotsa/issues/176)); the `privateWifi` reply is
   `wifiApActive && !wifiStationConnected`; `IotsaWifiMod::info()` shows
   `staState()`/`apState()` instead. No downstream users of the enum.
+- `IotsaRunmodeMod` (`src/iotsaRunmode.{h,cpp}`) -- step 1 of "Remaining work"
+  below. Core-tier, `ensure()`d unconditionally by `IotsaApplication::setup()` right
+  after `IotsaConfigMod`. `/api/runmode` (GET+PUT) + the `/runmode` page: mode
+  requests, reboot, runtime WiFi/BLE radio toggles, factory-reset -- all thin glue
+  over `iotsaController.*`. A BLE control service (UUID `6E5D0001-...`) with
+  `currentMode` (READ) / `requestedMode` (WRITE) / `reboot` (WRITE), writes acted on
+  from `loop()` -- folds in the reboot-over-BLE half of
+  [#233](https://github.com/cwi-dis/iotsa/issues/233). `IotsaConfigMod` lost the mode
+  radios / factory-reset from its `/config` page and the mode blurb from its `info()`;
+  `/api/config` keeps `currentMode` / `requestedMode` / their timeouts / `wifiDisabled`
+  / `reboot` as `[[deprecated]]` forwarders for one release (Python CLI still targets
+  `/api/config`). Reuses the `config` auth right, not a new `runmode` one. The
+  unauthenticated REST reboot/mode PUT was carried over verbatim -- to be fixed with
+  the permission-model work.
 
 ## Remaining work (ordered)
 
@@ -204,13 +218,10 @@ building the module layer on top. Ordering matters: the control-surface module i
 *ahead* of the two policy moves so they land their external knobs in their final home
 instead of parking them in `IotsaConfigMod` / `IotsaBatteryMod` and moving them later.
 
-1. **`IotsaRunmodeMod` -- control surface (REST + BLE).** Thin glue over what
-   `IotsaController` already exposes (`requestReboot()`, `requestMode()`,
-   `setWifiRadioEnabled()`), plus the core-tier unconditional-`ensure()` wiring. The BLE
-   service and its reboot / mode-transition characteristics land here now (folds in the
-   control-characteristic half of [#233](https://github.com/cwi-dis/iotsa/issues/233)).
-   **Depends on nothing in steps 2-3** -- the reboot path is fully wired already. Done
-   first precisely so steps 2 and 3 have a real home for their toggles.
+1. **`IotsaRunmodeMod` -- control surface (REST + BLE).** *Done* (see "Landed so
+   far" above): `0bef36b` (REST + web), `5690097` (BLE control service). Thin glue over
+   `iotsaController.*`, core-tier `ensure()`d, done first so steps 2-3 have a real home
+   for their toggles.
 2. **Radio-enablement policy into `IotsaController`.** The `_radioPolicy` sub-policy:
    boot flags (`wifiDisabledOnBoot`, `bleDisabledOnBoot`), runtime toggles, "current
    mode forces radios up", BLE-server enable. The `wifiDisabled` PUT (parked in
