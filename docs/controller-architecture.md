@@ -166,6 +166,24 @@ when #106 hits `develop`, then delete every C++ forwarder the release after.** N
 from here on (the step-3 sleep primitives) skip the forwarder entirely: rename the
 in-tree callers in the same commit, let the downstream sweep pick up the rest.
 
+### REST-key relocations and `iotsa backup` / `restore`
+
+Several REST keys moved *between modules* (not just renamed), so the Python CLI's
+per-module backup/restore (one JSON per module) does not carry them across a
+firmware upgrade:
+
+| key(s) | was on | now on |
+|---|---|---|
+| `sleepMode` / `sleepDuration` / `wakeDuration` / `bootExtraWakeDuration` / `activityExtraWakeDuration` / `disableSleepOnWiFi` / `disableWiFiOnSleep` / `disableSleepOnUSBPower` / `cpuFrequencyBoot` / `cpuFrequencySleep` | `/api/battery` | `/api/runmode` |
+| `watchdogDuration` | `/api/battery` | `/api/config` |
+| `bootCause` / `uptime` / `fsTotalBytes` / `fsUsedBytes` / `privateWifi` / `mdnsEnabled` | `/api/config` | `/api/status` (kept on `/api/config` one release) |
+
+**Accepted for now (option A):** after OTA'ing a device that uses sleep, re-set its
+sleep config once via `/runmode` and re-take the backup. A restore of a
+pre-upgrade `battery.json` silently drops the sleep keys (POSTed to `/api/battery`,
+which no longer has them) -- the CLI should at least *warn* about relocated keys;
+see [#242](https://github.com/cwi-dis/iotsa/issues/242).
+
 ## Landed so far
 
 - `9d8a93d` -- `config_mode` typedef renamed to `iotsa_mode` (values unchanged; REST API
