@@ -449,7 +449,8 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   // work more often due to memory constraints and the size of keys and certificates.
   b64Value = nullptr;
   if (getFromRequest<const char *>(reqObj, "httpsCertificate", b64Value) && b64Value) {
-    const char *b64Value = reqObj["httpsCertificate"];
+    // (was a redundant inner `const char *b64Value = reqObj["httpsCertificate"];`
+    // shadowing the just-fetched one -- the httpsKey branch above doesn't do that)
     static const char *head = "-----BEGIN CERTIFICATE-----";
     static const char *tail = "-----END CERTIFICATE-----";
     char *headPos = strstr(b64Value, head);
