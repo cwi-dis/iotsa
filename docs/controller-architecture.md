@@ -131,19 +131,30 @@ controller.
   decision, which weakens its "RunmodeMod might be skipped" objection). The bare
   "this is an iotsa device" *identification* UUID (for the Python CLI's BLE discovery
   heuristic) is a separate sub-decision -- see Open questions.
-- **`IotsaBatteryMod`** -- shrinks to battery *hardware*: voltage sensing, the pins,
-  its own config. Feeds settings into `IotsaController`; no longer hosts the sleep
-  state machine or the `extendCurrentModeCallback`.
+- **`IotsaBatteryMod`** -- shrinks to battery *hardware*: voltage/USB ADC sensing, the
+  pins, `correctionVBat`, the `180F` BLE service. Exposes `onUSBPower()` for the sleep
+  policy to read; no longer hosts the sleep state machine, the sleep config, the
+  watchdog, or the `extendCurrentModeCallback`. The sleep-adjacent BLE gesture
+  (`doSoftReboot` / `allowBLEConfigModeSwitch`) moves to `IotsaRunmodeMod`. See step 3
+  of "Remaining work".
 - **`IotsaWifiMod`** -- unchanged from the `wifi-controller-design.md` outcome: thin
   glue over `IotsaWifiDriver` + `IotsaWifiController`.
 
 ## Transition strategy
 
-`iotsaConfig` stays a **compatibility facade for one release**: members that move to
-`iotsaStatus` / `iotsaController` / `iotsaRunmode` remain callable as
-`iotsaConfig.networkIsUp()` / `iotsaConfig.postponeSleep()` etc. via thin `[[deprecated]]`
-forwarders, so nothing downstream breaks the day the split lands. The release after,
-sweep the ~20 downstream repos to the new names and drop the forwarders.
+Cross-version compatibility is worth carrying **only for the REST `/api/config` mode
+keys** -- `currentMode` / `requestedMode` / `modeTimeout` / `reboot` -- so a newer
+Python CLI can drive an older device and vice versa. `IotsaConfigMod` keeps those as
+`[[deprecated]]` forwarders onto `/api/runmode` indefinitely (until the CLI itself moves).
+
+The **C++ `iotsaConfig.*` forwarders** (`networkIsUp()`, `requestReboot()`,
+`inConfigurationMode()`, `extendCurrentMode()`, …) are pure transitional cruft --
+downstream is compiled against a fixed iotsa version, so there is no cross-version
+story. They exist so the ~20 downstream repos keep building across the one release
+where #106 lands. **Sweep them onto the new names (`iotsaController.*` / `iotsaStatus.*`)
+when #106 hits `develop`, then delete every C++ forwarder the release after.** New moves
+from here on (the step-3 sleep primitives) skip the forwarder entirely: rename the
+in-tree callers in the same commit, let the downstream sweep pick up the rest.
 
 ## Landed so far
 
@@ -209,6 +220,20 @@ sweep the ~20 downstream repos to the new names and drop the forwarders.
   `/api/config`). Reuses the `config` auth right, not a new `runmode` one. The
   unauthenticated REST reboot/mode PUT was carried over verbatim -- to be fixed with
   the permission-model work.
+- Radio-enablement policy moved into `IotsaController` -- step 2 of "Remaining work"
+  below (`8d717ca` WiFi, `820a98e` BLE). `wifiRadioWanted()` / `bleRadioWanted()`
+  compose a boot seed (`begin()` reads `!wifiDisabledOnBoot` / `!bleDisabledOnBoot`),
+  a runtime flag moved by `setWifiRadioEnabled()` / `setBleRadioEnabled()` (REST/web
+  toggles, battery sleep, the BLE "enable WiFi" command), and mode forcing on top
+  (CONFIG+OTA force WiFi on; CONFIG forces BLE on, OTA does not). `IotsaWifiMod`
+  feeds `wifiRadioWanted()` to `IotsaWifiController` every tick; `IotsaBLEServerMod`
+  change-detects `bleRadioWanted()` in `loop()` (replacing the
+  `wantBleModeSwitchAtMillis` armed timer). Deleted along the way:
+  `IotsaWifiMod::_wifiRadioWanted()`, `iotsaConfig.bleMode`, `wantBleModeSwitchAtMillis`,
+  the `iotsa_ble_mode` enum. Fixed a latent regression: on a `wifiDisabledOnBoot`
+  device the old `&&` short-circuited away any runtime `setWifiRadioEnabled(true)`.
+  Builds green across the WiFi+BLE / WiFi-only / BLE-only / neither flag matrix; not
+  bench-tested.
 
 ## Remaining work (ordered)
 
@@ -222,20 +247,59 @@ instead of parking them in `IotsaConfigMod` / `IotsaBatteryMod` and moving them 
    far" above): `0bef36b` (REST + web), `5690097` (BLE control service). Thin glue over
    `iotsaController.*`, core-tier `ensure()`d, done first so steps 2-3 have a real home
    for their toggles.
-2. **Radio-enablement policy into `IotsaController`.** The `_radioPolicy` sub-policy:
-   boot flags (`wifiDisabledOnBoot`, `bleDisabledOnBoot`), runtime toggles, "current
-   mode forces radios up", BLE-server enable. The `wifiDisabled` PUT (parked in
-   `IotsaConfigMod` by the landed radio-enable rewire) moves to `IotsaRunmodeMod`.
-3. **Sleep/wake policy into `IotsaController`.** The `_sleepPolicy` sub-policy: the
-   sleep decision, `pauseSleep()` / `postponeSleep()` / `canSleep()`, the WiFi<->sleep
-   coupling (`disableSleepOnWiFi`, `disableWiFiOnSleep`), wake-window timing,
-   `activityExtraWakeDuration`. Deletes the `extendCurrentModeCallback` hop into
-   `IotsaBatteryMod`. Sleep knobs move to `IotsaRunmodeMod`'s UI.
-4. **`IotsaBatteryMod` shrink.** Falls out of steps 2-3: battery module drops to
-   voltage / USB ADC sensing + its own config, feeding settings into `IotsaController`.
-   Depends on 2 and 3.
-5. **Persisted-settings tidy + land on develop.** Move `configurationModeTimeout`
-   (`rebootTimeout`) off `iotsaConfig` per its final owner; CHANGELOG line; merge.
+2. **Radio-enablement policy into `IotsaController`.** *Done* (see "Landed so far"):
+   `8d717ca` (WiFi), `820a98e` (BLE). The `wifiDisabled` PUT stays parked in
+   `IotsaConfigMod` as a forwarder; canonical form is in `IotsaRunmodeMod`
+   (`/api/runmode`) already.
+3. **Sleep/wake out of `IotsaBatteryMod` (folds in the old step 4).** Two parts:
+   - **`IotsaSleepPolicy`** -- a dedicated policy object (`src/iotsaSleepPolicy.{h,cpp}`,
+     class held by value as `IotsaController::_sleep`), pure logic, no platform headers,
+     always compiled. Owns the inhibit primitives moved from `IotsaConfig`
+     (`pauseSleep()` / `resumeSleep()` / `postponeSleep(ms)` / `canSleep()`,
+     `pauseSleepCount`, `postponeSleepMillis`, `activityExtraWakeDuration`), the sleep
+     config moved from `IotsaBatteryMod` (`sleepMode`, `sleepDuration`, `wakeDuration`,
+     `bootExtraWakeDuration`, `disableSleepOnWiFi`, `disableWiFiOnSleep`,
+     `disableSleepOnUSBPower`), the wake-window state (`millisAtWakeup`,
+     `didWakeFromSleep`), and the decision: `decide(bool onUsbPower)` ->
+     `{IotsaSleepMode mode, uint32_t durationMs}` or `NONE`, folding in the
+     mode / WiFi-coupling / inhibit / wake-window-timing checks that were scattered
+     through `IotsaBatteryMod::loop()`. `canSleep()` also returns false in CONFIG/OTA
+     mode (was a separate check). No C++ forwarders on `iotsaConfig` -- the in-tree
+     callers (`iotsaApiRest`, `iotsaHttpServer`, `iotsaInput`, `iotsaBLEClient`,
+     `iotsaBLEServer`) are renamed to `iotsaController.*` in the same commit; downstream
+     is swept when #106 hits `develop`.
+   - **`extendCurrentModeCallback` deleted.** `IotsaController::extendCurrentMode()`
+     calls `_sleep.postponeSleep(0)` (activity => bump the wake window by
+     `activityExtraWakeDuration`) instead of `_extendCb()`. That single mechanism
+     replaces `IotsaBatteryMod`'s `millisAtWakeup = millis()` bump.
+     `setExtensionCallback()` / `_extendCb` gone (only battery used it; the watchdog
+     re-arm it also did is redundant -- `loop()` feeds the watchdog every iteration).
+   - **Platform execution folds into `IotsaRunmodeMod`** (no new module -- "runmode" *is*
+     the sleep/wake rhythm, and RunmodeMod is always `ensure()`d so downstream needs no
+     new instantiation). Guarded by `#ifdef IOTSA_HAS_SLEEP`: the `_notifySleepWakeup()`
+     module walk, the watchdog timer + ISR, the CPU-frequency knobs, `pinDisableSleep`,
+     and the `esp_light_sleep_start` / `esp_deep_sleep_start` / RTC-domain / radio-off /
+     BLE pause-resume machinery. RunmodeMod's `loop()` calls
+     `iotsaController.sleep().decide(batteryMod.onUSBPower())` and executes the result;
+     it gains the sleep knobs in `/api/runmode` + the `/runmode` page. `IOTSA_HAS_SLEEP`
+     is a stage-5 derived flag in `iotsaBuildOptions.h`:
+     `defined(IOTSA_WITH_SLEEP) || (defined(IOTSA_WITH_BLE) && !defined(IOTSA_WITHOUT_SLEEP))`
+     -- BLE is today's proxy for "off-grid / battery device"; retune later if an
+     `IOTSA_WITH_BATTERY` flag ever lands. `IOTSA_WITH_SLEEP` / `IOTSA_WITHOUT_SLEEP`
+     documented in stage 3, neither `#define`d there.
+   - **`IotsaBatteryMod` shrinks to ADC**: `pinVBat` / `pinVUSB` / ranges /
+     `correctionVBat` / `_readVoltages()` / levels + `/battery` + `/api/battery` + the
+     `180F` BLE service. Exposes `bool onUSBPower()` for RunmodeMod to read. The
+     `doSoftReboot` / `allowBLEConfigModeSwitch` gesture cluster (`E4D90003` "Reboot
+     with WiFi", the prove-physical-presence path) folds into RunmodeMod's existing BLE
+     control service -- `doSoftReboot==2` "promote pending mode" becomes one added
+     characteristic there. `IotsaBatteryMod::setPinDisableSleep()` /
+     `allowBLEConfigModeSwitch()` are renamed to `IotsaRunmodeMod` methods; the
+     downstream callers (lissabon ×4/×4, iotsaRGBWSensor) are swept with #106.
+4. **Persisted-settings tidy + land on develop.** Move `configurationModeTimeout`
+   (`rebootTimeout`) off `iotsaConfig` per its final owner; decide where the sleep
+   config persists (`/config/sleep.cfg` migrated from `battery.cfg`, loaded by
+   RunmodeMod, pushed into `_sleep`); CHANGELOG line; merge.
 
 Separable follow-ons (own issues, not gating the merge):
 
