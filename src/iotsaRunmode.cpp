@@ -23,34 +23,16 @@
 // (persisted to sleep.cfg); IotsaSleepPolicy::decide() borrows it (cwi-dis/iotsa#106).
 
 #define SLEEP_DEBUG if(0)
-#if defined(IOTSA_HAS_SLEEP) && defined(ESP32)
-// The watchdog timer, for rebooting on hangs (was IotsaBatteryMod).
-static hw_timer_t *watchdogTimer = NULL;
-static void IRAM_ATTR watchdogTimerTriggered() {
-  ets_printf("iotsa watchdog reboot");
-  esp_restart();
-}
-#endif
+// The hardware watchdog moved to IotsaController (cwi-dis/iotsa#106 step 5d) --
+// it's a device-lifecycle concern, not sleep-coupled. _sleepTick() just brackets
+// the sleep with iotsaController.pause/resumeWatchdog().
 
 void IotsaRunmodeMod::setup() {
 #ifdef IOTSA_HAS_SLEEP
   configLoad();
 #ifdef ESP32
   iotsaController.sleep().didWakeFromSleep = (esp_sleep_get_wakeup_cause() != 0);
-  if (_watchdogDuration) {
-#if ESP_ARDUINO_VERSION_MAJOR <= 2
-    watchdogTimer = timerBegin(0, 80, true);
-    timerAttachInterrupt(watchdogTimer, &watchdogTimerTriggered, true);
-    timerAlarmWrite(watchdogTimer, _watchdogDuration*1000, false);
-    timerAlarmEnable(watchdogTimer);
-#else
-    watchdogTimer = timerBegin(1000000);
-    timerAttachInterrupt(watchdogTimer, &watchdogTimerTriggered);
-    timerAlarm(watchdogTimer, _watchdogDuration*1000, true, 0);
 #endif
-    IFDEBUG IotsaSerial.printf("Watchdog: %d ms\n", (int)_watchdogDuration);
-  }
-#endif // ESP32
 #endif // IOTSA_HAS_SLEEP
 }
 
@@ -183,7 +165,6 @@ void IotsaRunmodeMod::webHandler() {
       if (srv->hasArg("disableWiFiOnSleep")) _sleepConfig.disableWiFiOnSleep = srv->arg("disableWiFiOnSleep").toInt();
       if (srv->hasArg("disableSleepOnUSBPower")) _sleepConfig.disableSleepOnUSBPower = srv->arg("disableSleepOnUSBPower").toInt();
 #ifdef ESP32
-      if (srv->hasArg("watchdogDuration")) _watchdogDuration = srv->arg("watchdogDuration").toInt();
       if (srv->hasArg("cpuFrequencyBoot")) _cpuFrequencyBoot = srv->arg("cpuFrequencyBoot").toInt();
       if (srv->hasArg("cpuFrequencySleep")) _cpuFrequencySleep = srv->arg("cpuFrequencySleep").toInt();
       if (srv->hasArg("cpuFrequency") && srv->arg("cpuFrequency").toInt() != 0) {
@@ -257,7 +238,6 @@ void IotsaRunmodeMod::webHandler() {
     message += "<input type='radio' name='disableSleepOnUSBPower' value='0'" + String(_sleepConfig.disableSleepOnUSBPower ? "" : " checked") + ">Sleep on USB or battery ";
     message += "<input type='radio' name='disableSleepOnUSBPower' value='1'" + String(_sleepConfig.disableSleepOnUSBPower ? " checked" : "") + ">Don't sleep on USB power<br>";
 #ifdef ESP32
-    message += "Watchdog timer duration (ms): <input name='watchdogDuration' value='" + String(_watchdogDuration) + "'><br>";
     message += "CPU frequency on boot (MHz): <input name='cpuFrequencyBoot' value='" + String(_cpuFrequencyBoot) + "'><br>";
     message += "CPU frequency on first sleep (MHz): <input name='cpuFrequencySleep' value='" + String(_cpuFrequencySleep) + "'><br>";
     message += "Current CPU frequency (MHz): <input name='cpuFrequency' value='" + String(getCpuFrequencyMhz()) + "'><br>";
@@ -328,7 +308,6 @@ bool IotsaRunmodeMod::getHandler(const char *path, JsonObject& reply) {
   reply["disableWiFiOnSleep"] = _sleepConfig.disableWiFiOnSleep;
   reply["disableSleepOnUSBPower"] = _sleepConfig.disableSleepOnUSBPower;
 #ifdef ESP32
-  reply["watchdogDuration"] = _watchdogDuration;
   reply["cpuFrequency"] = getCpuFrequencyMhz();
   reply["cpuFrequencyBoot"] = _cpuFrequencyBoot;
   reply["cpuFrequencySleep"] = _cpuFrequencySleep;
@@ -389,7 +368,6 @@ bool IotsaRunmodeMod::putHandler(const char *path, const JsonVariant& request, J
   if (getFromRequest<bool>(reqObj, "disableWiFiOnSleep", _sleepConfig.disableWiFiOnSleep)) { sleepChanged = true; }
   if (getFromRequest<bool>(reqObj, "disableSleepOnUSBPower", _sleepConfig.disableSleepOnUSBPower)) { sleepChanged = true; }
 #ifdef ESP32
-  if (getFromRequest<int>(reqObj, "watchdogDuration", _watchdogDuration)) { sleepChanged = true; }
   if (getFromRequest<int>(reqObj, "cpuFrequencyBoot", _cpuFrequencyBoot)) { sleepChanged = true; }
   if (getFromRequest<int>(reqObj, "cpuFrequencySleep", _cpuFrequencySleep)) { sleepChanged = true; }
   if (getFromRequest<int>(reqObj, "cpuFrequency", intValue)) {
@@ -484,7 +462,6 @@ void IotsaRunmodeMod::configLoad() {
   cf.get("disableWiFiOnSleep", _sleepConfig.disableWiFiOnSleep, 0);
   cf.get("disableSleepOnUSBPower", _sleepConfig.disableSleepOnUSBPower, 0);
 #ifdef ESP32
-  cf.get("watchdogDuration", _watchdogDuration, 0);
   cf.get("cpuFrequencyBoot", _cpuFrequencyBoot, 0);
   cf.get("cpuFrequencySleep", _cpuFrequencySleep, 0);
   if (_cpuFrequencyBoot > 0) {
@@ -508,7 +485,6 @@ void IotsaRunmodeMod::configSave() {
   cf.put("disableWiFiOnSleep", _sleepConfig.disableWiFiOnSleep);
   cf.put("disableSleepOnUSBPower", _sleepConfig.disableSleepOnUSBPower);
 #ifdef ESP32
-  cf.put("watchdogDuration", _watchdogDuration);
   cf.put("cpuFrequencyBoot", _cpuFrequencyBoot);
   cf.put("cpuFrequencySleep", _cpuFrequencySleep);
 #endif
@@ -522,9 +498,6 @@ void IotsaRunmodeMod::_notifySleepWakeup(bool sleep) {
 
 void IotsaRunmodeMod::_sleepTick() {
   IotsaSleepPolicy& sp = iotsaController.sleep();
-#if defined(ESP32)
-  if (watchdogTimer) timerWrite(watchdogTimer, 0);
-#endif
   if (sp.millisAtWakeup == 0) {
     sp.noteAwake();
     IFDEBUG IotsaSerial.printf("runmode: wakeup at %u", (unsigned)sp.millisAtWakeup);
@@ -547,13 +520,7 @@ void IotsaRunmodeMod::_sleepTick() {
 
   // Committed to sleeping in some form.
 #ifdef ESP32
-  if (watchdogTimer) {
-#if ESP_ARDUINO_VERSION_MAJOR <= 2
-    timerAlarmDisable(watchdogTimer);
-#else
-    timerDetachInterrupt(watchdogTimer);
-#endif
-  }
+  iotsaController.pauseWatchdog();
 #endif
   if (_sleepConfig.disableWiFiOnSleep && iotsaStatus.wifiEnabled) {
     static bool haveDisabledWiFi = false;
@@ -583,15 +550,8 @@ void IotsaRunmodeMod::_sleepTick() {
     delay(d.durationMs);
     sp.didWakeFromSleep = true;
     sp.millisAtWakeup = 0;   // re-arm the wake window next tick
-#if defined(ESP32)
-    if (watchdogTimer) {
-#if ESP_ARDUINO_VERSION_MAJOR <= 2
-      timerWrite(watchdogTimer, 0);
-      timerAlarmEnable(watchdogTimer);
-#else
-      timerAlarm(watchdogTimer, _watchdogDuration*1000, true, 0);
-#endif
-    }
+#ifdef ESP32
+    iotsaController.resumeWatchdog();
 #endif
     _notifySleepWakeup(false);
     return;
@@ -612,15 +572,7 @@ void IotsaRunmodeMod::_sleepTick() {
 #ifdef IOTSA_WITH_BLE
     if (btActive) IotsaBLEServerMod::resumeServer(_sleepConfig.wakeDuration);
 #endif
-    if (watchdogTimer) {
-#if ESP_ARDUINO_VERSION_MAJOR <= 2
-      timerWrite(watchdogTimer, 0);
-      timerAlarmEnable(watchdogTimer);
-#else
-      timerWrite(watchdogTimer, 0);
-      timerAlarm(watchdogTimer, _watchdogDuration*1000, false, 0);
-#endif
-    }
+    iotsaController.resumeWatchdog();
     _notifySleepWakeup(false);
     return;
   }

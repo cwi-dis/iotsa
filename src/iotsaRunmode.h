@@ -22,10 +22,11 @@
 // working until they move to /api/runmode (see the "Transition strategy"
 // section of docs/controller-architecture.md).
 //
-// Under IOTSA_HAS_SLEEP it also carries the sleep/wake executor: the config +
-// decision live in IotsaController's IotsaSleepPolicy, this module owns the
-// esp_*_sleep_start() machinery, the watchdog timer, the CPU-frequency knobs and
-// the /config/sleep.cfg persistence. Was IotsaBatteryMod (cwi-dis/iotsa#106).
+// Under IOTSA_HAS_SLEEP it also carries the sleep/wake executor: this module owns
+// _sleepConfig (persisted to /config/sleep.cfg) + the CPU-frequency knobs + the
+// esp_*_sleep_start() machinery; IotsaSleepPolicy::decide() borrows the config.
+// The hardware watchdog moved to IotsaController (step 5d). Was IotsaBatteryMod
+// (cwi-dis/iotsa#106).
 //
 class IotsaRunmodeMod : public IotsaModule, public IotsaSingletonModule<IotsaRunmodeMod> {
 public:
@@ -116,7 +117,6 @@ private:
   IotsaSleepConfig _sleepConfig;
   int _pinDisableSleep = -1;
 #ifdef ESP32
-  uint32_t _watchdogDuration = 0;
   int _cpuFrequencyBoot = 0;
   int _cpuFrequencySleep = 0;
 #endif

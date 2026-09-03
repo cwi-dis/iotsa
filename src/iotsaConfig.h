@@ -37,6 +37,11 @@ public:
   // 5262d1c's relocation). config.cfg "rebootTimeout" key; IotsaModeMachine reads
   // it; iotsaController.modeTimeout() / setModeTimeout() are forwarders.
   int configurationModeTimeout = 0;
+#ifdef ESP32
+  // Hardware-watchdog timeout in ms, 0 = off. Persisted knob (config.cfg), edited
+  // via /config; IotsaController owns the timer (cwi-dis/iotsa#106 step 5d).
+  uint32_t watchdogDuration = 0;
+#endif
   // wifiEnabled / wifiStationConnected / wifiApActive / mdnsEnabled moved to
   // IotsaStatus (cwi-dis/iotsa#106). Use iotsaStatus.* instead.
   String hostName = "";

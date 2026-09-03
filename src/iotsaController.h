@@ -30,6 +30,16 @@ public:
   static constexpr uint32_t REBOOT_DELAY_HTTP_MS = 2000;  // after an HTTP/web response
   static constexpr uint32_t REBOOT_DELAY_BLE_MS  = 1000;  // after a BLE write-ack (cwi-dis/iotsa#130)
 
+#ifdef ESP32
+  // Configurable hardware watchdog (reboot on hang). Duration is the persisted
+  // iotsaConfig.watchdogDuration knob (config.cfg, edited via /config). begin()
+  // arms it, tick() feeds it. pause/resume bracket a sleep. Decoupled from
+  // IOTSA_HAS_SLEEP (cwi-dis/iotsa#106 step 5d; was IotsaRunmodeMod / IotsaBatteryMod).
+  void rearmWatchdog();    // (re)configure from iotsaConfig.watchdogDuration; safe any time
+  void pauseWatchdog();    // stop feeding + disable -- before sleeping
+  void resumeWatchdog();   // re-enable after a pause
+#endif
+
   // ---- radio-enablement policy (_radio) ----
   void setWifiRadioEnabled(bool on) { _radio.setWifiEnabled(on); }
   bool wifiRadioWanted() const { return _radio.wifiWanted(_modes.forcesWifiOn()); }
@@ -81,6 +91,9 @@ public:
   IotsaRadioPolicy& radio() { return _radio; }
 
 private:
+#ifdef ESP32
+  void _feedWatchdog();
+#endif
   uint32_t _rebootAtMillis = 0;
   IotsaModeMachine _modes;
   IotsaRadioPolicy _radio;
