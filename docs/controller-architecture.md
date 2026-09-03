@@ -322,8 +322,14 @@ so far"). What remains is step 4: the persisted-settings tidy and the merge to
 
 Separable follow-ons (own issues, not gating the merge):
 
-- BLE server driver/controller split -- the near-trivial 2-state case that should fall
-  out of the WiFi driver/controller pattern.
+- BLE server advertising-state coordination -- folded into
+  [#208](https://github.com/cwi-dis/iotsa/issues/208) Part A (the client/server
+  scan-vs-advertise coordination object): `isEnabled` (stack up?) vs
+  `bleRadioWanted()` (advertise?) as clean layers, and a single funnel for the ~3
+  uncoordinated advertising pokers (`_bleGotoMode`, `pauseServer`/`resumeServer`,
+  the retry machinery). Internal only -- no module or API change. The full
+  WiFi-style `IotsaBLEDriver`/`IotsaBLEController` split stays a separate
+  "someday, if the 2-state case ever justifies it" note.
 - Mode-declaration / reject-unregistered-mode -- the
   [#174](https://github.com/cwi-dis/iotsa/issues/174) gap: modules declare which
   `iotsa_mode` they implement; reject a request nobody registered for.
