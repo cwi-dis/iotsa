@@ -89,6 +89,12 @@
 // BLE support is NOT enabled by default (ESP32-only). Opt in with -DIOTSA_WITH_BLE.
 // #define IOTSA_WITH_BLE
 
+// Sleep/wake support (the esp_*_sleep_start() machinery in IotsaRunmodeMod, driven
+// by IotsaController's IotsaSleepPolicy). Not set here: opt in with
+// -DIOTSA_WITH_SLEEP, opt out with -DIOTSA_WITHOUT_SLEEP. When neither is given it
+// defaults on for BLE builds -- see IOTSA_HAS_SLEEP in stage 5. cwi-dis/iotsa#106.
+// #define IOTSA_WITH_SLEEP
+
 // Gives a module a lenient, no-op placeholder implementation instead of omitting it
 // entirely when its real dependency (e.g. IOTSA_WITH_WEB) is off -- see
 // IotsaFilesUploadMod/IotsaFilesBackupMod/IotsaFilesMod/IotsaWifiMod's own headers.
@@ -140,6 +146,13 @@
 // enabled, we have an HPS service.
 #if defined(IOTSA_WITH_BLE) && !defined(IOTSA_WITHOUT_HPS) && defined(IOTSA_WITH_API)
 #define IOTSA_HAS_HPSSERVER
+#endif
+
+// Sleep/wake: explicit opt-in, or on-by-default for BLE builds (today's best
+// proxy for an off-grid / battery device), unless explicitly opted out. Retune
+// the derivation here if an IOTSA_WITH_BATTERY flag ever lands. cwi-dis/iotsa#106.
+#if defined(IOTSA_WITH_SLEEP) || (defined(IOTSA_WITH_BLE) && !defined(IOTSA_WITHOUT_SLEEP))
+#define IOTSA_HAS_SLEEP
 #endif
 
 // ---- Stage 6: sanity checks on derived values ----

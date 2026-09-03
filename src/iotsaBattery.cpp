@@ -2,134 +2,33 @@
 #include "iotsaBattery.h"
 #include "iotsaConfigFile.h"
 #include "iotsaBLEServer.h"
-#ifdef ESP32
-#include <esp_wifi.h>
-#include <esp_bt.h>
-#if ESP_ARDUINO_VERSION_MAJOR > 2
-#include "esp_system.h"
-#include "rom/ets_sys.h"
-#endif
+#include "iotsaRunmode.h"   // setPinDisableSleep() / allowBLEConfigModeSwitch() forward here (cwi-dis/iotsa#106)
 
-// ESP32-S3 and -C3 don't have separate RTC slow/fast memory power domains to turn
-// off (confirmed via each chip's soc_caps.h: neither defines
-// SOC_PM_SUPPORT_RTC_SLOW_MEM_PD/RTC_FAST_MEM_PD, so esp_sleep.h doesn't even
-// declare the ESP_PD_DOMAIN_RTC_SLOW_MEM/RTC_FAST_MEM enum values on those chips) --
-// gate on the chip target directly rather than on the capability macros themselves,
-// since the SDK version PlatformIO's espressif32 platform currently bundles
-// predates that capability-macro convention entirely (doesn't define it for ANY
-// chip) and would otherwise make a presence/absence check ambiguous. Module-scoped
-// IOTSA_BATTERY_CAN_xxx, not a top-level IOTSA_HAS_xxx -- see cwi-dis/iotsa#205.
-#if !defined(CONFIG_IDF_TARGET_ESP32S3) && !defined(CONFIG_IDF_TARGET_ESP32C3)
-#define IOTSA_BATTERY_CAN_RTC_MEM_POWER_DOMAINS 1
-#endif
-#endif
+// IotsaBatteryMod is battery *hardware* only now: VBat / VUSB ADC sensing and the
+// 180F BLE service. Sleep/wake moved to IotsaSleepPolicy + IotsaRunmodeMod
+// (cwi-dis/iotsa#106). The doSoftReboot BLE gesture still lives here.
 
-#define SLEEP_DEBUG if(0)
-#ifdef ESP32
-// the watchdog timer, for rebooting on hangs
-hw_timer_t *watchdogTimer = NULL;
-
-void IRAM_ATTR watchdogTimerTriggered() {
-  ets_printf("iotsa watchdog reboot");
-  esp_restart();
-}
-#endif
+// How often loop() re-samples the ADCs so iotsaStatus.onUsbPower (read by the
+// sleep policy) doesn't go stale between REST/BLE queries.
+static const uint32_t VOLTAGE_READ_INTERVAL_MS = 5000;
 
 #ifdef IOTSA_WITH_WEB
 void
 IotsaBatteryMod::webHandler() {
   bool anyChanged = false;
-  if( api.webService->server->hasArg("sleepDuration")) {
-    if (needsAuthentication()) return;
-    sleepDuration = api.webService->server->arg("sleepDuration").toInt();
-    anyChanged = true;
-  }
-  if( api.webService->server->hasArg("sleepMode")) {
-    if (needsAuthentication()) return;
-    sleepMode = (IotsaSleepMode)api.webService->server->arg("sleepMode").toInt();
-    anyChanged = true;
-  }
-  if( api.webService->server->hasArg("wakeDuration")) {
-    if (needsAuthentication()) return;
-    wakeDuration = api.webService->server->arg("wakeDuration").toInt();
-    anyChanged = true;
-  }
-  
-#ifdef ESP32
-  if( api.webService->server->hasArg("watchdogDuration")) {
-    if (needsAuthentication()) return;
-    watchdogDuration = api.webService->server->arg("watchdogDuration").toInt();
-    anyChanged = true;
-  }
-#endif
-  if( api.webService->server->hasArg("bootExtraWakeDuration")) {
-    if (needsAuthentication()) return;
-    bootExtraWakeDuration = api.webService->server->arg("bootExtraWakeDuration").toInt();
-    anyChanged = true;
-  }
-  if( api.webService->server->hasArg("activityExtraWakeDuration")) {
-    if (needsAuthentication()) return;
-    iotsaConfig.activityExtraWakeDuration = api.webService->server->arg("activityExtraWakeDuration").toInt();
-    anyChanged = true;
-  }
-  if( api.webService->server->hasArg("disableSleepOnUSBPower")) {
-    if (needsAuthentication()) return;
-    disableSleepOnUSBPower = api.webService->server->arg("disableSleepOnUSBPower").toInt();
-    anyChanged = true;
-  }
-  if( api.webService->server->hasArg("disableSleepOnWiFi")) {
-    if (needsAuthentication()) return;
-    disableSleepOnWiFi = api.webService->server->arg("disableSleepOnWiFi").toInt();
-    anyChanged = true;
-  }
-  if (api.webService->server->hasArg("disableWiFiOnSleep")) {
-    if (needsAuthentication()) return;
-    disableWiFiOnSleep = api.webService->server->arg("disableWiFiOnSleep").toInt();
-    anyChanged = true;
-  } 
-  if( api.webService->server->hasArg("correctionVBat")) {
+  if (api.webService->server->hasArg("correctionVBat")) {
     if (needsAuthentication()) return;
     correctionVBat = api.webService->server->arg("correctionVBat").toFloat();
     anyChanged = true;
   }
-#ifdef ESP32
-  if( api.webService->server->hasArg("cpuFrequencyBoot")) {
-    if (needsAuthentication()) return;
-    cpuFrequencyBoot = api.webService->server->arg("cpuFrequencyBoot").toInt();
-    anyChanged = true;
-  }
-  if( api.webService->server->hasArg("cpuFrequencySleep")) {
-    if (needsAuthentication()) return;
-    cpuFrequencySleep = api.webService->server->arg("cpuFrequencySleep").toInt();
-    anyChanged = true;
-  }
-  if (api.webService->server->hasArg("cpuFrequency")) {
-    int freq = api.webService->server->arg("cpuFrequency").toInt();
-    if (freq != 0) {
-      setCpuFrequencyMhz(freq);
-      IFDEBUG IotsaSerial.printf("Set CPU frequency to %d MHz\n", freq);
-    }
-    anyChanged = true;
-  }
-#endif
   if (anyChanged) {
-    iotsaConfig.extendCurrentMode();
+    iotsaController.extendCurrentMode();
     configSave();
   }
 
-  String message = "<html><head><title>Battery power saving module</title></head><body><h1>Battery power saving module</h1>";
+  String message = "<html><head><title>Battery module</title></head><body><h1>Battery module</h1>";
   _readVoltages();
-  message += "<p>Wakeup time: " + String(millisAtWakeup) + "ms<br>";
-#ifdef ESP32
-  message += "Wakeup reason: " + String(esp_sleep_get_wakeup_cause()) + "<br>";
-#endif
-  message += "Awake for: " + String((millis() - millisAtWakeup)/1000.0) + "s<br>";
-  if (sleepMode && wakeDuration) {
-    uint32_t nextSleepTime = millisAtWakeup + wakeDuration;
-    if (!didWakeFromSleep) nextSleepTime += bootExtraWakeDuration;
-    long remainAwakeMillis =  nextSleepTime - millis();
-    message += "Remaining awake for: " + String(remainAwakeMillis/1000.0) + "s<br>";
-  }
+  message += "<p>";
   if (pinVBat >= 0) {
     message += "Battery level: " + String(levelVBat) + "%<br>";
   }
@@ -138,41 +37,18 @@ IotsaBatteryMod::webHandler() {
   }
   message += "</p>";
   message += "<form method='post'>";
-  message += "Sleep mode: <select name='sleepMode' value='" + String(sleepMode) + 
-    "'><option value='0'" + String(sleepMode==IOTSA_SLEEP_NONE?" selected":"") + 
-    ">None</option><option value='1'" + String(sleepMode==IOTSA_SLEEP_DELAY?" selected":"") + 
-    ">Delay</option><option value='2'" + String(sleepMode==IOTSA_SLEEP_LIGHT?" selected":"") + 
-    ">Light sleep</option><option value='3'" + String(sleepMode==IOTSA_SLEEP_DEEP?" selected":"") + 
-    ">Deep sleep</option><option value='4'" + String(sleepMode==IOTSA_SLEEP_HIBERNATE?" selected":"") + 
-    ">Hibernate</option></select><br>";
-  message += "Sleep duration (ms): <input name='sleepDuration' value='" + String(sleepDuration) + "'><br>";
-  message += "Wake duration (ms): <input name='wakeDuration' value='" + String(wakeDuration) + "'><br>";
-  message += "Extra wake duration after activity (ms): <input name='activityExtraWakeDuration' value='" + String(iotsaConfig.activityExtraWakeDuration) + "'><br>";
-  message += "Extra wake duration after poweron/reset (ms): <input name='bootExtraWakeDuration' value='" + String(bootExtraWakeDuration) + "'><br>";
-  if (pinVUSB >= 0) {
-    message += "<input type='radio' name='disableSleepOnUSBPower' value='0'" + String(disableSleepOnUSBPower?"":" checked") + ">Sleep on both USB or battery power<br>";
-    message += "<input type='radio' name='disableSleepOnUSBPower' value='1'" + String(disableSleepOnUSBPower?" checked":"") + ">Disable sleep on USB power<br>";
-  }
-  message += "<input type='radio' name='disableSleepOnWiFi' value='0'" + String(disableSleepOnWiFi?"":" checked") + ">Sleep independent of WiFi<br>";
-  message += "<input type='radio' name='disableSleepOnWiFi' value='1'" + String(disableSleepOnWiFi?" checked":"") + ">Disable sleep if WiFi is active<br>";
-  message += "<input type='radio' name='disableWiFiOnSleep' value='0'" + String(disableWiFiOnSleep?"":" checked") + ">Keep WiFi state on sleep<br>";
-  message += "<input type='radio' name='disableWiFiOnSleep' value='1'" + String(disableWiFiOnSleep?" checked":"") + ">Disable WiFi on sleep<br>";
   if (pinVBat >= 0) {
     message += "Battery voltage correction factor: <input name='correctionVBat' value='" + String(correctionVBat) + "'><br>";
   }
-#ifdef ESP32
-  message += "Watchdog timer duration (ms): <input name='watchdogDuration' value='" + String(watchdogDuration) + "'><br>";
-  message += "CPU frequency on boot (MHz): <input name='cpuFrequencyBoot' value='" + String(cpuFrequencyBoot) + "'><br>";
-  message += "CPU frequency on first sleep (MHz): <input name='cpuFrequencySleep' value='" + String(cpuFrequencySleep) + "'><br>";
-  int freq = getCpuFrequencyMhz();
-  message += "Current CPU frequency (MHz): <input name='cpuFrequency' value='" + String(freq) + "'><br>";
-  #endif
   message += "<input type='submit'></form>";
+#ifdef IOTSA_HAS_SLEEP
+  message += "<p>Sleep/wake settings moved to <a href=\"/runmode\">/runmode</a>.</p>";
+#endif
   api.webService->server->send(200, "text/html", message);
 }
 
 String IotsaBatteryMod::info() {
-  String message = "<p>Built with battery module. See <a href=\"/battery\">/battery</a> to change the battery power saving options.";
+  String message = "<p>Built with battery module. See <a href=\"/battery\">/battery</a>.";
 #ifdef IOTSA_WITH_API
   message += " Or access the REST interface at <a href='/api/battery'>/api/battery</a>.";
 #endif
@@ -186,44 +62,26 @@ String IotsaBatteryMod::info() {
 
 void IotsaBatteryMod::setup() {
   configLoad();
-#ifdef ESP32
-  didWakeFromSleep = (esp_sleep_get_wakeup_cause() != 0);
-  
-  if (watchdogDuration) {
-#if ESP_ARDUINO_VERSION_MAJOR <= 2
-    watchdogTimer = timerBegin(0, 80, true);
-    timerAttachInterrupt(watchdogTimer, &watchdogTimerTriggered, true);
-    timerAlarmWrite(watchdogTimer, watchdogDuration*1000, false);
-    timerAlarmEnable(watchdogTimer);
+}
+
+void IotsaBatteryMod::setPinDisableSleep(int pin) {
+#ifdef IOTSA_HAS_SLEEP
+  if (IotsaRunmodeMod::instance()) IotsaRunmodeMod::instance()->setPinDisableSleep(pin);
 #else
-    watchdogTimer = timerBegin(1000000);
-    timerAttachInterrupt(watchdogTimer, &watchdogTimerTriggered);
-    timerAlarm(watchdogTimer, watchdogDuration*1000, true, 0);
+  (void)pin;
+  IFDEBUG IotsaSerial.println("iotsaBattery: setPinDisableSleep ignored, built without IOTSA_HAS_SLEEP");
 #endif
-    IFDEBUG IotsaSerial.printf("Watchdog: %d ms\n", watchdogDuration);
-  }
-#endif
-  iotsaConfig.setExtensionCallback(std::bind(&IotsaBatteryMod::extendCurrentMode, this));
 }
 
 void IotsaBatteryMod::allowBLEConfigModeSwitch() {
-  bleConfigModeSwitchAllowed = true;
-  iotsaConfig.allowRCMDescription("use BLE to set 'reboot with WiFi' to 2");
+  // The BLE mode-promote gesture moved to IotsaRunmodeMod's control service
+  // (cwi-dis/iotsa#106). Transitional forwarder for the ~4 downstream callers.
+#ifdef IOTSA_WITH_BLE
+  if (IotsaRunmodeMod::instance()) IotsaRunmodeMod::instance()->allowBLEModeSwitch();
+#endif
 }
 
 bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
-  reply["sleepMode"] = (int)sleepMode;
-  reply["sleepDuration"] = sleepDuration;
-  reply["wakeDuration"] = wakeDuration;
-  reply["bootExtraWakeDuration"] = bootExtraWakeDuration;
-  reply["activityExtraWakeDuration"] = iotsaConfig.activityExtraWakeDuration;
-  reply["postponeSleep"] = iotsaConfig.postponeSleep(0);
-#ifdef ESP32
-  reply["watchdogDuration"] = watchdogDuration;
-  reply["cpuFrequency"] = getCpuFrequencyMhz();
-  reply["cpuFrequencyBoot"] = cpuFrequencyBoot;
-  reply["cpuFrequencySleep"] = cpuFrequencySleep;
-#endif
   _readVoltages();
   if (pinVBat >= 0) {
     reply["levelVBat"] = levelVBat;
@@ -231,73 +89,16 @@ bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
   }
   if (pinVUSB >= 0) {
     reply["levelVUSB"] = levelVUSB;
-    reply["disableSleepOnUSBPower"] = disableSleepOnUSBPower;
+    reply["onUsbPower"] = iotsaStatus.onUsbPower;
   }
-  reply["disableSleepOnWiFi"] = disableSleepOnWiFi;
-  reply["disableWiFiOnSleep"] = disableWiFiOnSleep;
   return true;
 }
 
 bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
-  if (reqObj["postponeSleep"].is<int>()) {
-    iotsaConfig.postponeSleep(reqObj["postponeSleep"].as<int>());
-  }
-  if (reqObj["sleepMode"].is<int>()) {
-    sleepMode = (IotsaSleepMode)reqObj["sleepMode"].as<int>();
-    anyChanged = true;
-  }
-  if (reqObj["sleepDuration"].is<int>()) {
-    sleepDuration = reqObj["sleepDuration"];
-    anyChanged = true;
-  }
-  if (reqObj["wakeDuration"].is<int>()) {
-    wakeDuration = reqObj["wakeDuration"];
-    anyChanged = true;
-  }
-  if (reqObj["bootExtraWakeDuration"].is<int>()) {
-    bootExtraWakeDuration = reqObj["bootExtraWakeDuration"];
-    anyChanged = true;
-  }
-  if (reqObj["activityExtraWakeDuration"].is<int>()) {
-    iotsaConfig.activityExtraWakeDuration = reqObj["activityExtraWakeDuration"];
-    anyChanged = true;
-  }
-#ifdef ESP32
-  if (reqObj["watchdogDuration"].is<int>()) {
-    watchdogDuration = reqObj["watchdogDuration"];
-    anyChanged = true;
-  }
-  if (reqObj["cpuFrequencyBoot"].is<int>()) {
-    cpuFrequencyBoot = reqObj["cpuFrequencyBoot"];
-    anyChanged = true;
-  }
-  if (reqObj["cpuFrequencySleep"].is<int>()) {
-    cpuFrequencySleep = reqObj["cpuFrequencySleep"];
-    anyChanged = true;
-  }
-  if (reqObj["cpuFrequency"].is<int>()) {
-    int freq = reqObj["cpuFrequency"];
-    setCpuFrequencyMhz(freq);
-    IFDEBUG IotsaSerial.printf("Set CPU frequency to %d MHz\n", freq);
-    anyChanged = true;
-  }
-#endif
   if (pinVBat >= 0 && reqObj["correctionVBat"].is<float>()) {
     correctionVBat = reqObj["correctionVBat"];
-    anyChanged = true;
-  }
-  if (pinVUSB >= 0 && reqObj["disableSleepOnUSBPower"].is<bool>()) {
-    disableSleepOnUSBPower = reqObj["disableSleepOnUSBPower"];
-    anyChanged = true;
-  }
-  if (reqObj["disableSleepOnWiFi"].is<bool>()) {
-    disableSleepOnWiFi = reqObj["disableSleepOnWiFi"];
-    anyChanged = true;
-  }
-  if (reqObj["disableWiFiOnSleep"].is<bool>()) {
-    disableWiFiOnSleep = reqObj["disableWiFiOnSleep"];
     anyChanged = true;
   }
   if (anyChanged) configSave();
@@ -305,16 +106,6 @@ bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, J
 }
 
 #ifdef IOTSA_WITH_BLE
-bool IotsaBatteryMod::blePutHandler(UUIDstring charUUID) {
-  if (charUUID == doSoftRebootUUID) {
-      doSoftReboot = bleApi.getAsInt(doSoftRebootUUID);
-      IFDEBUG IotsaSerial.printf("request reboot mode %d\n", doSoftReboot);
-      IFDEBUG IotsaSerial.println(doSoftReboot);
-      return true;
-  }
-  return false;
-}
-
 bool IotsaBatteryMod::bleGetHandler(UUIDstring charUUID) {
   _readVoltages();
   if (charUUID == levelVBatUUID) {
@@ -330,15 +121,10 @@ bool IotsaBatteryMod::bleGetHandler(UUIDstring charUUID) {
 #endif // IOTSA_WITH_BLE
 
 void IotsaBatteryMod::lateSetup() {
-  // BLE characteristic registration used to happen in setup() rather than here,
-  // out of step with REST/CoAP/Web -- moved once the reason for that split (a WiFi
-  // gate that no longer exists, and BLE advertising ordering, now handled by
-  // lateSetupDone()) turned out to no longer apply, see cwi-dis/iotsa#210.
 #ifdef IOTSA_WITH_BLE
   bleApi.setup(serviceUUID, this);
   bleApi.addCharacteristic(levelVBatUUID, bleApi.BLE_READ, NimBLE2904::FORMAT_UINT8, 0x27AD, "Battery Level");
   bleApi.addCharacteristic(levelVUSBUUID, bleApi.BLE_READ, NimBLE2904::FORMAT_UINT8, 0x27AD, "USB Voltage Level");
-  bleApi.addCharacteristic(doSoftRebootUUID, bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "Reboot with WiFi");
 #endif
   api.setup("battery", true, true);
   name = "battery";
@@ -346,266 +132,21 @@ void IotsaBatteryMod::lateSetup() {
 
 void IotsaBatteryMod::configLoad() {
   IotsaConfigFileLoad cf("/config/battery.cfg");
-  int value;
-  cf.get("sleepMode", value, 0);
-  if (value > _IOTSA_SLEEP_MAX) value = IOTSA_SLEEP_NONE;
-  sleepMode = (IotsaSleepMode)value;
-  cf.get("wakeDuration", wakeDuration, 0);
-  cf.get("bootExtraWakeDuration", bootExtraWakeDuration, 0);
-  cf.get("activityExtraWakeDuration", iotsaConfig.activityExtraWakeDuration, 0);
-  cf.get("sleepDuration", sleepDuration, 0);
-#ifdef ESP32
-  cf.get("watchdogDuration", watchdogDuration, 0);
-  cf.get("cpuFrequencyBoot", cpuFrequencyBoot, 0);
-  cf.get("cpuFrequencySleep", cpuFrequencySleep, 0);
-  if (cpuFrequencyBoot > 0) {
-    setCpuFrequencyMhz(cpuFrequencyBoot);
-    IFDEBUG IotsaSerial.printf("Set CPU frequency to %d MHz on boot\n", cpuFrequencyBoot);
-  }
-#endif
   cf.get("correctionVBat", correctionVBat, 1.0);
-  cf.get("disableSleepOnUSBPower", disableSleepOnUSBPower, 0);
-  cf.get("disableSleepOnWiFi", disableSleepOnWiFi, 0);
-  cf.get("disableWiFiOnSleep", disableWiFiOnSleep, 0);
-  millisAtWakeup = 0;
 }
 
 void IotsaBatteryMod::configSave() {
   IotsaConfigFileSave cf("/config/battery.cfg");
-  cf.put("sleepMode", sleepMode);
-  cf.put("wakeDuration", wakeDuration);
-  cf.put("bootExtraWakeDuration", bootExtraWakeDuration);
-  cf.put("activityExtraWakeDuration", iotsaConfig.activityExtraWakeDuration);
-  cf.put("sleepDuration", sleepDuration);
-#ifdef ESP32
-  cf.put("watchdogDuration", watchdogDuration);
-  cf.put("cpuFrequencyBoot", cpuFrequencyBoot);
-  cf.put("cpuFrequencySleep", cpuFrequencySleep);
-#endif
   if (pinVBat >= 0) {
     cf.put("correctionVBat", correctionVBat);
   }
-  if (pinVUSB >= 0) {
-    cf.put("disableSleepOnUSBPower", disableSleepOnUSBPower);
-  }
-  cf.put("disableSleepOnWiFi", disableSleepOnWiFi);
-  cf.put("disableWiFiOnSleep", disableWiFiOnSleep);
-  millisAtWakeup = 0;
-}
-
-void IotsaBatteryMod::extendCurrentMode() {
-#ifdef ESP32
-  if (watchdogTimer) {
-#if ESP_ARDUINO_VERSION_MAJOR <= 2
-    timerWrite(watchdogTimer, 0);
-#else
-    timerAlarm(watchdogTimer, watchdogDuration*1000, false, 0);
-#endif
-  }
-#endif
-  millisAtWakeup = millis();
-  SLEEP_DEBUG IotsaSerial.println("Battery: extend mode");
-}
-
-void IotsaBatteryMod::_notifySleepWakeup(bool sleep) {
-  for(IotsaBaseModule* m=app.firstEarlyModule; m != nullptr; m=m->nextModule) {
-    m->sleepWakeupNotification(sleep);
-  }
-  for(IotsaBaseModule* m=app.firstModule; m != nullptr; m=m->nextModule) {
-    m->sleepWakeupNotification(sleep);
-  }
-
 }
 
 void IotsaBatteryMod::loop() {
-#ifdef ESP32
-  if (watchdogTimer) {
-    timerWrite(watchdogTimer, 0);
-  }
-#endif
-  if (millisAtWakeup == 0) {
-    millisAtWakeup = millis();
-    IFDEBUG IotsaSerial.print("wakeup at ");
-    IFDEBUG IotsaSerial.print(millisAtWakeup);
-#ifdef ESP32
-    IFDEBUG IotsaSerial.print(" reason ");
-    IFDEBUG IotsaSerial.println(esp_sleep_get_wakeup_cause());
-#endif
+  if (_lastVoltageReadMillis == 0 || millis() - _lastVoltageReadMillis >= VOLTAGE_READ_INTERVAL_MS) {
+    _lastVoltageReadMillis = millis();
     _readVoltages();
   }
-  // If a reboot or configuration mode change has been requested (probably over BLE) we do so now.
-  if (doSoftReboot) {
-    if (doSoftReboot == 2) {
-      if (bleConfigModeSwitchAllowed) {
-        IFDEBUG IotsaSerial.println("Allow configmode change from BLE");
-        iotsaConfig.allowRequestedConfigurationMode();
-      } else {
-        IFDEBUG IotsaSerial.println("Configmode change from BLE requested but not allowed");
-      }
-    } else if (doSoftReboot == 3) {
-      // Enable WiFi
-      iotsa_wifi_mode newMode = iotsa_wifi_mode::IOTSA_WIFI_NORMAL;
-      iotsaConfig.wifiMode = newMode;
-      iotsaConfig.wantWifiModeSwitchAtMillis = millis()+1000;
-      IFDEBUG IotsaSerial.println("Enable WiFi from BLE");
-   
-    } else {
-      // doSoftReboot is probably 1. Reboot, but not immediately: give the BLE
-      // stack time to flush the write response back to the client first
-      // (see #130), matching the doSoftReboot==3 branch's 1000ms deferral above.
-      IFDEBUG IotsaSerial.println("Reboot from BLE");
-      iotsaConfig.requestReboot(1000);
-    }
-    doSoftReboot = 0;
-  }
-  // Return quickly if no sleep or wifi sleep is required.
-  if (sleepMode == IOTSA_SLEEP_NONE) return;
-  // Check whether we should disable Wifi or sleep
-  int curWakeDuration = wakeDuration;
-  if (!didWakeFromSleep) curWakeDuration += bootExtraWakeDuration;
-  bool shouldSleep = sleepMode && curWakeDuration > 0 && millis() > millisAtWakeup + curWakeDuration;
-  // Again, return quickly if no sleep or wifi sleep is required.
-  if (!shouldSleep) return;
-  // Now check for other reasons NOT to go to sleep or disable wifi
-  if (disableSleepOnWiFi && iotsaConfig.wifiMode != iotsa_wifi_mode::IOTSA_WIFI_DISABLED) {
-    return;
-  }
-  if (pinDisableSleep >= 0 && digitalRead(pinDisableSleep) == LOW) {
-    shouldSleep = false;
-    SLEEP_DEBUG IotsaSerial.printf("iotsaBattery: no sleep, pinDisableSleep=%d level LOW\n", pinDisableSleep);
-  }
-  // Another reason is if we're running on USB power and we only sleep on battery power
-  if (disableSleepOnUSBPower && pinVUSB >= 0) {
-    if (levelVUSB > 80) {
-      shouldSleep = false;
-      SLEEP_DEBUG IotsaSerial.printf("iotsaBattery: no sleep, USB power\n");
-    }
-  }
-  // Another reason is that we are in configuration mode
-  if (iotsaConfig.inConfigurationMode()) {
-      SLEEP_DEBUG IotsaSerial.printf("iotsaBattery: no sleep, in configuration mode\n");
-      shouldSleep = false;
-  }
-  // A final reason is if some other module is asking for an extension of the waking period.
-  // This does not extend wifi duration, though.
-  if (!iotsaConfig.canSleep()) {
-      shouldSleep = false;
-      SLEEP_DEBUG IotsaSerial.printf("iotsaBattery: no sleep, canSleep() return false\n");
-  }
-  
-  if (!shouldSleep) return;
-#ifdef ESP32
-  if (watchdogTimer) {
-#if ESP_ARDUINO_VERSION_MAJOR <= 2
-    timerAlarmDisable(watchdogTimer);
-#else
-    timerDetachInterrupt(watchdogTimer);
-#endif
-  }
-#endif
-  if (disableWiFiOnSleep && iotsaConfig.wifiEnabled) {
-    static bool haveDisabledWiFi = false;
-    if (!haveDisabledWiFi) {
-      IFDEBUG IotsaSerial.println("Will disable WiFi for sleep");
-      haveDisabledWiFi = true;
-      iotsaConfig.wifiMode = iotsa_wifi_mode::IOTSA_WIFI_DISABLED;
-      iotsaConfig.wantWifiModeSwitchAtMillis = millis() + 1000;
-      iotsaConfig.postponeSleep(2000); // give time to disable wifi
-      return;
-    }
-  }
-  // We go to sleep, in some form.
-  IFDEBUG IotsaSerial.print("Going to sleep at ");
-  IFDEBUG IotsaSerial.print(millis());
-  IFDEBUG IotsaSerial.print(" for ");
-  IFDEBUG IotsaSerial.print(sleepDuration);
-  IFDEBUG IotsaSerial.print(" mode ");
-  IFDEBUG IotsaSerial.println(sleepMode);
-  _notifySleepWakeup(true);
-#ifdef ESP32
-  if (cpuFrequencySleep != 0) {
-    static bool haveSetSleepFreq = false;
-    if (!haveSetSleepFreq) {
-      IFDEBUG IotsaSerial.printf("Setting CPU frequency to %d MHz for sleep\n", cpuFrequencySleep);
-      haveSetSleepFreq = true;
-      setCpuFrequencyMhz(cpuFrequencySleep);
-    }
-  }
-#endif
-  if(sleepMode == IOTSA_SLEEP_DELAY) {
-    // This isn't really sleeping, it's just a delay. Not sure it is actually useful.
-    delay(sleepDuration);
-    millisAtWakeup = 0;
-    didWakeFromSleep = true;
-#ifdef ESP32
-    if (watchdogTimer) {
-#if ESP_ARDUINO_VERSION_MAJOR <= 2
-      timerWrite(watchdogTimer, 0);
-      timerAlarmEnable(watchdogTimer);
-#else
-      timerAlarm(watchdogTimer, watchdogDuration*1000, true, 0);
-#endif
-    }
-#endif
-    _notifySleepWakeup(false);
-    return;
-  }
-#ifdef ESP32
-  // We are going to sleep. First set the reasons for wakeup, such as a timer.
-  IFDEBUG delay(5); // Flush serial buffer
-  if (sleepDuration) {
-    esp_sleep_enable_timer_wakeup(sleepDuration*1000LL);
-  } else {
-    // xxxjack configure other wakeup sources...
-  }
-  if (sleepMode == IOTSA_SLEEP_LIGHT) {
-    // Light sleep is easiest: everything remains powered just running slowly.
-    // We return here after the sleep.
-#ifdef IOTSA_WITH_BLE
-    bool btActive = IotsaBLEServerMod::pauseServer();
-#endif
-    esp_light_sleep_start();
-    IFDEBUG IotsaSerial.print("light sleep wakup at ");
-    millisAtWakeup = millis();
-    didWakeFromSleep = true;
-    IFDEBUG IotsaSerial.println(millisAtWakeup);
-#ifdef IOTSA_WITH_BLE
-    if (btActive) {
-      IFDEBUG IotsaSerial.println("Re-activate ble");
-      IotsaBLEServerMod::resumeServer(wakeDuration);
-    }
-#endif
-    if (watchdogTimer) {
-#if ESP_ARDUINO_VERSION_MAJOR <= 2
-      timerWrite(watchdogTimer, 0);
-      timerAlarmEnable(watchdogTimer);
-#else
-      timerWrite(watchdogTimer, 0);
-      timerAlarm(watchdogTimer, watchdogDuration*1000, false, 0);
-#endif
-    }
-    _notifySleepWakeup(false);
-    return;
-  }
-  // Before sleeping we turn off the radios.
-  if (iotsaConfig.wifiEnabled) esp_wifi_stop();
-  esp_bt_controller_disable();
-  // For hibernation we also turn off various peripherals.
-  if (sleepMode == IOTSA_SLEEP_HIBERNATE) {
-#ifdef IOTSA_BATTERY_CAN_RTC_MEM_POWER_DOMAINS
-    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_OFF);
-    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_OFF);
-#endif
-    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
-  }
-  // Time to go to sleep.
-  esp_deep_sleep_start();
-  // We should not return here, but get a reboot later.
-  IotsaSerial.println("esp_deep_sleep_start() failed?");
-#else
-  // For esp8266 only deep-sleep is implemented.
-  ESP.deepSleep(sleepDuration*1000LL);
-#endif
 }
 
 void IotsaBatteryMod::_readVoltages() {
@@ -616,13 +157,14 @@ void IotsaBatteryMod::_readVoltages() {
     float lvbFloat = (level * correctionVBat * 3.9)/ 4096.0;
     float charge = (lvbFloat - rangeVBatMin) / (rangeVBat - rangeVBatMin);
     levelVBat = charge <= 0 ? 0 : int(100*charge);
-    //IFDEBUG IotsaSerial.printf("analog level=%d float level=%f range=%f..%f charge=%f levelVBat=%d\n", level, lvbFloat, rangeVBatMin, rangeVBat, charge, levelVBat);
     IFDEBUG IotsaSerial.print("VBat=");
     IFDEBUG IotsaSerial.println(levelVBat);
   }
   if (pinVUSB >= 0) {
     int level = analogRead(pinVUSB);
     levelVUSB = int(100*3.9*level/(rangeVUSB*4096));
-//    IFDEBUG IotsaSerial.printf("analog level=%d levelVUSB=%d\n", level, levelVUSB);
   }
+  // Publish "on USB power" for IotsaSleepPolicy (cwi-dis/iotsa#106). No VUSB
+  // sense => assume battery, so sleep is not USB-gated.
+  iotsaStatus.onUsbPower = (pinVUSB >= 0 && levelVUSB > 80);
 }

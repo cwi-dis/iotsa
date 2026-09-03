@@ -87,7 +87,10 @@ public:
   // always happens from loop().
   static void _noteAdvertisingStartResult(bool ok, uint32_t duration);
 protected:
-  bool isEnabled;
+  bool isEnabled = true;   // config.cfg overrides in configLoad()
+  // Last iotsaController.bleRadioWanted() applied by loop(), so a policy change
+  // is acted on once (cwi-dis/iotsa#106). Starts true; _startServer() resyncs it.
+  bool _lastBleRadioWanted = true;
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
   void configLoad() override;

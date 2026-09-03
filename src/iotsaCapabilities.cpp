@@ -89,11 +89,14 @@ IotsaCapabilityMod::webHandler() {
   String _trustedIssuer = api.webService->server->arg("trustedIssuer");
   String _issuerKey = api.webService->server->arg("issuerKey");
   if (_trustedIssuer != "" || _issuerKey != "") {
-    if (!iotsaConfig.inConfigurationMode(true)) {
+    // Trust anchors: strictly configuration mode (not the broader
+    // iotsaConfigSettingsWritable() factory-AP case), cwi-dis/iotsa#106 step 5c.
+    if (!iotsaController.inConfigurationMode()) {
       api.webService->server->send(403, "text/plain", "403 Forbidden, not in configuration mode");
       return;
     }
     if (needsAuthentication("capabilities")) return;
+    iotsaController.extendCurrentMode();   // an edit -> keep the window open
     if (_trustedIssuer != "") trustedIssuer = _trustedIssuer;
     if (_issuerKey != "") issuerKey = _issuerKey;
     configSave();
@@ -101,7 +104,7 @@ IotsaCapabilityMod::webHandler() {
     return;
   }
   String message = "<html><head><title>Capability Authority</title></head><body><h1>Capability Authority</h1>";
-  if (!iotsaConfig.inConfigurationMode())
+  if (!iotsaController.inConfigurationMode())
     message += "<p><em>Note:</em> You must be in configuration mode to be able to change issuer or key.</p>";
   message += "<form method='get'>Issuer: <input name='trustedIssuer' value='";
   message += htmlEncode(trustedIssuer);
@@ -129,7 +132,7 @@ bool IotsaCapabilityMod::getHandler(const char *path, JsonObject& reply) {
 
 bool IotsaCapabilityMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   if (strcmp(path, "/api/capabilities") != 0) return false;
-  if (!iotsaConfig.inConfigurationMode()) return false;
+  if (!iotsaController.inConfigurationMode()) return false;
   bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
   if (getFromRequest<const char *>(reqObj, "trustedIssuer", trustedIssuer)) {

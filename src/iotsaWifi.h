@@ -3,6 +3,7 @@
 #include "iotsa.h"
 #include "iotsaApi.h"
 #include "iotsaConfigMod.h"
+#include "iotsaWifiController.h"  // policy layer + the shared driver<->controller types
 
 #ifdef IOTSA_WITH_WIFI
 class IotsaWifiMod : public IotsaModule {
@@ -23,19 +24,22 @@ private:
 #ifdef IOTSA_WITH_WEB
   void webHandler() override;
 #endif
-  void _wifiGotoMode();
-  bool _wifiStartStation();
-  void _wifiStopStation();
-  void _wifiStartStationSucceeded();
-  void _wifiStartStationFailed();
-  bool _wifiStartAP(iotsa_wifi_mode mode);
-  void _wifiStopAP(iotsa_wifi_mode mode);
   bool _wifiStartMDNS();
-  void _wifiOff();
+  // Copy IotsaWifiController's published state into the iotsaConfig fields other
+  // modules read; start/stop mDNS and poke the status LED on the edges.
+  void _publishControllerState();
+
+  // The mechanism/policy pair (cwi-dis/iotsa#106). IotsaWifiMod owns both, wires
+  // them together, and keeps only the standard-module concerns for itself:
+  // config load/save, the /api/wificonfig + web interface, info(), lifecycle.
+  IotsaWifiDriver _driver;
+  IotsaWifiController _controller{_driver};
+  bool _lastStaConnected = false;
+  bool _lastApActive = false;
+
   String ssid;
   String ssidPassword;
   bool wifiPowerReduction;
-  unsigned long searchTimeoutMillis;
 };
 #elif IOTSA_WITH_PLACEHOLDERS
 class IotsaWifiMod : public IotsaBaseModule {

@@ -1,0 +1,34 @@
+{
+  "defaults": {
+    "build_flags": [
+      "-DIOTSA_WITH_BLE",
+      "-DIOTSA_WITH_HTTPS",
+      "-DIOTSA_WIFI_DEBUG"
+    ],
+    "partitions": "min_spiffs.csv",
+    "ci": {
+      "platformio": true,
+      "arduino": false
+    }
+  },
+  "variants": [
+    {
+      "board": "vanilla_esp8266",
+      "_note": "BLE is ESP32-only (NimBLE isn't available for esp8266) -- omit IOTSA_WITH_BLE here.",
+      "build_flags": [
+        "-DIOTSA_WITH_HTTPS",
+        "-DIOTSA_WIFI_DEBUG"
+      ]
+    },
+    {
+      "board": "vanilla_esp32"
+    },
+    {
+      "board": "vanilla_esp32c3"
+    },
+    {
+      "board": "lolin32",
+      "_note": "Jack's bench device for the #106 WiFi-controller work."
+    }
+  ]
+}

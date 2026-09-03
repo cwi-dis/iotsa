@@ -4,7 +4,15 @@ _uuid_to_name: dict[str, str] = {
     "0000180f-0000-1000-8000-00805f9b34fb": "battery",
     "00002a19-0000-1000-8000-00805f9b34fb": "levelBattery",
     "e4d90002-250f-46e6-90a4-ab98f01a0587": "levelVUSB",
-    "e4d90003-250f-46e6-90a4-ab98f01a0587": "rebootWifi",
+
+    # The iotsa runmode control service (cwi-dis/iotsa#106). Replaces the old
+    # "reboot with WiFi" characteristic that lived on the battery service.
+    "6e5d0001-f2a7-4e7a-9b1c-2d3e4f5a6b7c": "runmode",
+    "6e5d0002-f2a7-4e7a-9b1c-2d3e4f5a6b7c": "currentMode",
+    "6e5d0003-f2a7-4e7a-9b1c-2d3e4f5a6b7c": "requestedMode",
+    "6e5d0004-f2a7-4e7a-9b1c-2d3e4f5a6b7c": "reboot",
+    "6e5d0005-f2a7-4e7a-9b1c-2d3e4f5a6b7c": "promoteMode",
+    "6e5d0006-f2a7-4e7a-9b1c-2d3e4f5a6b7c": "wifiDisabled",
 
     "3b000001-1226-4a53-9d24-afa50c0163a3": "led",
     "3b000002-1226-4a53-9d24-afa50c0163a3": "rgb",

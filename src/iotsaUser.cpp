@@ -109,7 +109,7 @@ bool IotsaUserMod::postHandler(const char *path, const JsonVariant& request, Jso
 
 bool IotsaUserMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   if (strcmp(path, "/api/users/0") != 0) return false;
-  if (!iotsaConfig.inConfigurationMode()) return false;
+  if (!iotsaController.inConfigurationMode()) return false;
   bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
   // Check old password, if a password has been set.

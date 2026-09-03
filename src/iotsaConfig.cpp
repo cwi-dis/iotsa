@@ -1,6 +1,8 @@
 #include "iotsa.h"
 #include "iotsaConfigFile.h"
 #include "iotsaFS.h"
+#include "iotsaStatus.h"      // cwi-dis/iotsa#106: getBootReason/printHeapSpace/networkIsUp moved there
+#include "iotsaController.h"  // cwi-dis/iotsa#106: the iotsa_mode state machine moved there
 #ifdef ESP32
 #include <esp_log.h>
 #include <rom/rtc.h>
@@ -16,13 +18,8 @@ IotsaConfig iotsaConfig;
 #include "iotsaConfigDefaultCert.h"
 #endif
 
-void IotsaConfig::loop() {
-  if (rebootAtMillis && millis() > rebootAtMillis) {
-    IFDEBUG IotsaSerial.println("Software requested reboot.");
-    ESP.restart();
-  }
-
-}
+// IotsaConfig::loop() and the deferred-reboot timer moved to IotsaController
+// (cwi-dis/iotsa#106). requestReboot() below is a deprecated forwarder.
 
 void IotsaConfig::setDefaultHostName() {
   hostName = "iotsa";
@@ -55,215 +52,60 @@ bool IotsaConfig::usingDefaultCertificate() {
 }
 
 const char* IotsaConfig::getBootReason() {
-  static const char *reason = NULL;
-  if (reason == NULL) {
-    reason = "unknown";
-#ifndef ESP32
-    rst_info *rip = ESP.getResetInfoPtr();
-    static const char *reasons[] = {
-      "power",
-      "hardwareWatchdog",
-      "exception",
-      "softwareWatchdog",
-      "softwareReboot",
-      "deepSleepAwake",
-      "externalReset"
-    };
-    if (rip->reason < sizeof(reasons)/sizeof(reasons[0])) {
-      reason = reasons[(int)rip->reason];
-    }
-#else
-#if 1
-    esp_reset_reason_t r = esp_reset_reason();
-    switch(r) {
-      case ESP_RST_UNKNOWN: reason = "unknown"; break;
-      case ESP_RST_POWERON: reason = "power"; break;
-      case ESP_RST_EXT: reason = "externalReset"; break;
-      case ESP_RST_SW: reason = "softwareReboot"; break;
-      case ESP_RST_PANIC: reason = "panic"; break;
-      case ESP_RST_INT_WDT: reason = "interruptWatchdog"; break;
-      case ESP_RST_TASK_WDT: reason = "taskWatchdog"; break;
-      case ESP_RST_WDT: reason = "hardwareWatchdog"; break;
-      case ESP_RST_DEEPSLEEP: reason = "deepSleepAwake"; break;
-      case ESP_RST_BROWNOUT: reason = "brownout"; break;
-      case ESP_RST_SDIO: reason = "sdioReset"; break;
-      default: reason = "other"; break;
-    }
-#else
-  RESET_REASON r1 = rtc_get_reset_reason(0);
-  RESET_REASON r2 = rtc_get_reset_reason(1);
-  static char reasonBuffer[64];
-  // Determine best reset reason
-  static const char *reasons[] = {
-    "0",
-    "power",
-    "2",
-    "softwareReboot",
-    "legacyWatchdog",
-    "deepSleepAwake",
-    "sdio",
-    "tg0Watchdog",
-    "tg1Watchdog",
-    "rtcWatchdog",
-    "intrusion",
-    "tgWatchdogCpu",
-    "softwareRebootCpu",
-    "rtcWatchdogCpu",
-    "externalReset",
-    "brownout",
-    "rtcWatchdogRtc"
-  };
-  if ((int)r1 < sizeof(reasons)/sizeof(reasons[0])) {
-    strcpy(reasonBuffer, reasons[(int)r1]);
-  }
-  strcpy(reasonBuffer + strlen(reasonBuffer), "/");
-  if ((int)r2 < sizeof(reasons)/sizeof(reasons[0])) {
-    strcat(reasonBuffer, reasons[(int)r2]);
-  }
-  reason = reasonBuffer;
-#endif
-#endif
-  }
-  return reason;
+  // Moved to IotsaStatus (cwi-dis/iotsa#106). Deprecated forwarder for one release.
+  return iotsaStatus.getBootReason();
 }
 
-const char *IotsaConfig::modeName(config_mode mode) {
-#ifdef IOTSA_WITH_WEB
-  if (mode == IOTSA_MODE_NORMAL)
-    return "normal";
-  if (mode == IOTSA_MODE_CONFIG)
-    return "configuration";
-  if (mode == IOTSA_MODE_OTA)
-    return "OTA";
-  if (mode == IOTSA_MODE_FACTORY_RESET)
-    return "factory-reset";
-#endif // IOTSA_WITH_WEB
-  return "unknown";
+// The iotsa_mode state machine now lives in IotsaController (cwi-dis/iotsa#106).
+// These are deprecated forwarders, kept for one release for downstream code.
+const char *IotsaConfig::modeName(iotsa_mode mode) { return iotsaController.modeName(mode); }
+bool IotsaConfig::inConfigurationMode(bool extend) {
+  // The `extend` side effect was split out of iotsaController.inConfigurationMode()
+  // in step 5c; this deprecated forwarder keeps the old shape for downstream.
+  if (extend && iotsaController.inConfigurationMode()) iotsaController.extendCurrentMode();
+  return iotsaController.inConfigurationMode();
 }
-
-bool IotsaConfig::inConfigurationMode(bool extend) { 
-  bool ok = configurationMode == IOTSA_MODE_CONFIG;
-  if (ok && extend) extendCurrentMode();
-  return ok;
-}
-
-bool IotsaConfig::inConfigurationOrFactoryMode() { 
-  if (configurationMode == IOTSA_MODE_CONFIG) return true;
-  if (wifiMode == IOTSA_WIFI_FACTORY) return true;
-  return false;
-}
-
-void IotsaConfig::extendCurrentMode() {
-  IFDEBUG IotsaSerial.println("Configuration mode extended");
-  configurationModeEndTime = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
-  // Allow interested module (probably IotsaBattery) to extend all sorts of timeers
-  if (extendCurrentModeCallback) extendCurrentModeCallback();
-#ifndef ESP32
-  ESP.wdtFeed();
-#endif
-
-}
-
-void IotsaConfig::setExtensionCallback(extensionCallback ecmcb) {
-  extendCurrentModeCallback = ecmcb;
-}
-
-void IotsaConfig::endConfigurationMode() {
-  IFDEBUG IotsaSerial.println("Configuration mode ended");
-  configurationMode = IOTSA_MODE_NORMAL;
-  configurationModeEndTime = 0;
-  nextConfigurationMode = IOTSA_MODE_NORMAL;
-  nextConfigurationModeEndTime = 0;
-  configSave();
-  wantWifiModeSwitchAtMillis = millis(); // need to tell wifi
-}
-
-void IotsaConfig::beginConfigurationMode() {
-  IFDEBUG IotsaSerial.println("Configuration mode entered");
-  configurationMode = IOTSA_MODE_CONFIG;
-  configurationModeEndTime = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
-  // No need to tell wifi (or save config): this call is done only by the
-  // WiFi module when switching from factory mode to having a WiFi.
-}
-
-void IotsaConfig::factoryReset() {
-    IFDEBUG IotsaSerial.println("configurationMode: Factory-reset");
-  	delay(1000);
-  	IFDEBUG IotsaSerial.println("Formatting LittleFS...");
-  	IOTSA_FS.format();
-  	IFDEBUG IotsaSerial.println("Format done, rebooting.");
-  	delay(2000);
-  	ESP.restart();
-}
-
-void IotsaConfig::allowRequestedConfigurationMode() {
-  if (nextConfigurationMode == configurationMode) return;
-  IFDEBUG IotsaSerial.print("Switching configurationMode to ");
-  IFDEBUG IotsaSerial.println(nextConfigurationMode);
-  configurationMode = nextConfigurationMode;
-  configurationModeEndTime = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
-  nextConfigurationMode = IOTSA_MODE_NORMAL;
-  nextConfigurationModeEndTime = 0;
-  if (configurationMode == IOTSA_MODE_FACTORY_RESET) factoryReset();
-  wantWifiModeSwitchAtMillis = millis(); // need to tell wifi
-}
-
-void IotsaConfig::allowRCMDescription(const char *_rcmInteractionDescription) {
-  rcmInteractionDescription = _rcmInteractionDescription;
-}
+void IotsaConfig::extendCurrentMode() { iotsaController.extendCurrentMode(); }
+void IotsaConfig::allowRequestedConfigurationMode() { iotsaController.allowRequestedConfigurationMode(); }
+void IotsaConfig::allowRCMDescription(const char *desc) { iotsaController.allowRCMDescription(desc); }
+// inConfigurationOrFactoryMode() removed (cwi-dis/iotsa#106): callers now use
+// iotsaConfigSettingsWritable() (iotsaController.h).
 
 uint32_t IotsaConfig::getStatusColor() {
-  if (configurationMode == IOTSA_MODE_FACTORY_RESET) return 0x3f0000; // Red: Factory reset mode
+  // Faithful translation of the old wifiMode switch onto the iotsaStatus bus
+  // (cwi-dis/iotsa#106). The real LED-semantics rework (flash patterns, etc.) is
+  // cwi-dis/iotsa#176.
+  iotsa_mode mode = iotsaController.currentMode();
+  if (mode == IOTSA_MODE_FACTORY_RESET) return 0x3f0000;   // Red: factory-reset mode
+  if (!iotsaStatus.wifiEnabled) return 0;                   // radio disabled: LED off
+
   uint32_t extraColor = 0;
-  switch(wifiMode) {
-  case IOTSA_WIFI_DISABLED:
-    return 0;
-  case IOTSA_WIFI_SEARCHING:
-    return 0x3f1f00;  // Orange: searching for WiFi
-  case IOTSA_WIFI_FACTORY:
-  case IOTSA_WIFI_NOTFOUND:
-    extraColor = 0x1f1f1f;  // Add a bit of white to the configuration mode color
-    // Pass through
-  default:
-    // Pass through
-    ;
+  if (!iotsaStatus.wifiStationConnected) {
+    if (iotsaStatus.wifiApActive) {
+      extraColor = 0x1f1f1f;      // white tint: serving our own AP (fallback / unconfigured)
+    } else {
+      return 0x3f1f00;           // Orange: hunting for WiFi
+    }
   }
-  if (configurationMode == IOTSA_MODE_CONFIG) return extraColor | 0x3f003f;	// Magenta: user-requested configuration mode
-  if (configurationMode == IOTSA_MODE_OTA) return extraColor | 0x003f3f;	// Cyan: OTA mode
-  return extraColor; // Off: all ok, whiteish: factory reset network
+  if (mode == IOTSA_MODE_CONFIG) return extraColor | 0x3f003f;  // Magenta: configuration mode
+  if (mode == IOTSA_MODE_OTA)    return extraColor | 0x003f3f;  // Cyan: OTA mode
+  return extraColor; // Off when connected+normal; whiteish on the fallback AP
 }
 
-void IotsaConfig::pauseSleep() { 
-  pauseSleepCount++; 
-}
-
-void IotsaConfig::resumeSleep() { 
-  pauseSleepCount--; 
-}
-
-uint32_t IotsaConfig::postponeSleep(uint32_t ms) {
-  uint32_t noSleepBefore = millis() + ms + activityExtraWakeDuration;
-  if (noSleepBefore > postponeSleepMillis) postponeSleepMillis = noSleepBefore;
-  int32_t rv = postponeSleepMillis - millis();
-  if (rv < 2) rv = 0;
-  return rv;
-}
-
-bool IotsaConfig::canSleep() {
-  if (pauseSleepCount > 0) return false;
-  if (millis() > postponeSleepMillis) postponeSleepMillis = 0;
-  return postponeSleepMillis == 0;
-}
+// pauseSleep() / resumeSleep() / postponeSleep() / canSleep() moved to
+// IotsaSleepPolicy (cwi-dis/iotsa#106); no forwarder, callers renamed to
+// iotsaController.*.
 
 void IotsaConfig::configLoad() {
   IotsaConfigFileLoad cf("/config/config.cfg");
   iotsaConfig.configWasLoaded = true;
-  int tcm;
-  cf.get("mode", tcm, IOTSA_MODE_NORMAL);
-  iotsaConfig.configurationMode = (config_mode)tcm;
+  // The "mode" key moved to IotsaController's pendingmode.cfg mailbox (cwi-dis/iotsa#106).
   cf.get("hostName", iotsaConfig.hostName, "");
   if (iotsaConfig.hostName == "") iotsaConfig.setDefaultHostName();
   cf.get("rebootTimeout", iotsaConfig.configurationModeTimeout, CONFIGURATION_MODE_TIMEOUT);
+#ifdef ESP32
+  cf.get("watchdogDuration", iotsaConfig.watchdogDuration, 0);
+#endif
   cf.get("wifiDisabledOnBoot", iotsaConfig.wifiDisabledOnBoot, false);
 #ifdef IOTSA_WITH_BLE
   cf.get("bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot, false);
@@ -284,9 +126,12 @@ void IotsaConfig::configLoad() {
 
 void IotsaConfig::configSave() {
   IotsaConfigFileSave cf("/config/config.cfg");
-  cf.put("mode", nextConfigurationMode); // Note: nextConfigurationMode, which will be read as configurationMode
+  // The "mode" key moved to IotsaController's pendingmode.cfg mailbox (cwi-dis/iotsa#106).
   cf.put("hostName", hostName);
   cf.put("rebootTimeout", configurationModeTimeout);
+#ifdef ESP32
+  cf.put("watchdogDuration", watchdogDuration);
+#endif
   cf.put("wifiDisabledOnBoot", iotsaConfig.wifiDisabledOnBoot);
 #ifdef IOTSA_WITH_BLE
   cf.put("bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot);
@@ -299,19 +144,16 @@ void IotsaConfig::ensureConfigLoaded() {
 };
 
 void IotsaConfig::requestReboot(uint32_t ms) {
-  IFDEBUG IotsaSerial.println("Restart requested");
-  rebootAtMillis = millis() + ms;
+  // Moved to IotsaController (cwi-dis/iotsa#106). Deprecated forwarder for one release.
+  iotsaController.requestReboot(ms);
 }
 
 void IotsaConfig::printHeapSpace() {
-  // Difficult to print on esp8266. Debugging only, so just don't print anything.
-#ifdef ESP32
-  size_t memAvail = heap_caps_get_free_size(MALLOC_CAP_8BIT);
-  size_t largestBlock = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
-  IFDEBUG IotsaSerial.printf("Time since boot: %lld ms. Available heap space: %u bytes, largest block: %u bytes\n", (int64_t)millis(), memAvail, largestBlock);
-#endif
+  // Moved to IotsaStatus (cwi-dis/iotsa#106). Deprecated forwarder for one release.
+  iotsaStatus.printHeapSpace();
 }
 
 bool IotsaConfig::networkIsUp() {
-  return wifiMode == IOTSA_WIFI_NORMAL;
+  // Moved to IotsaStatus (cwi-dis/iotsa#106). Deprecated forwarder for one release.
+  return iotsaStatus.networkIsUp();
 }

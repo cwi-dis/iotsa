@@ -146,7 +146,7 @@ bool IotsaBLEClientMod::putHandler(const char *path, const JsonVariant& request,
 void IotsaBLEClientMod::startScanUnknown() {
   findUnknownDevices(true);
   scanUnknownUntilMillis = millis() + scanUnknownDurationMillis;
-  iotsaConfig.postponeSleep(scanUnknownDurationMillis+1000);
+  iotsaController.postponeSleep(scanUnknownDurationMillis + IotsaSleepPolicy::SCAN_COMPLETION_MARGIN_MS);
 }
 
 void IotsaBLEClientMod::findUnknownDevices(bool on) {
@@ -249,10 +249,6 @@ void IotsaBLEClientMod::startScanning() {
     return;
   }
   scanningChanged();
-#if 0
-  // Do not sleep until scan is done
-  iotsaConfig.pauseSleep();
-#endif
 }
 
 void IotsaBLEClientMod::stopScanning() {
@@ -269,12 +265,6 @@ void IotsaBLEClientMod::stopScanning() {
       IotsaBLEServerMod::resumeServer();
       advertisingWasPausedByScan = false;
     }
-    // We can sleep again, but give a bit of time to cient-connection objects to
-    // react to scan results.
-  #if 0
-    iotsaConfig.resumeSleep();
-    iotsaConfig.postponeSleep(100);
-  #endif
     scanningChanged();
   }
   // Next time through loop, check whether we should scan again.
@@ -358,7 +348,6 @@ void IotsaBLEClientMod::loop() {
   scanStopRequested = false;
   if (scanHasEnded) {
     scanHasEnded = false;
-    iotsaConfig.resumeSleep();
     wantStop = true;
   } else if (scanner != nullptr && !scanner->isScanning()) {
     // Fallback in case onScanEnd() is ever missed.

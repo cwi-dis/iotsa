@@ -10,14 +10,19 @@
 #define IFBLEDEBUG if(0)
 #endif
 
+// Reboot delay after an isEnabled toggle: longer than the plain HTTP-response
+// delay because this reboot exists to re-init (or tear down) the whole NimBLE
+// stack. 4s is historical/precautionary, not measured.
+static const uint32_t REBOOT_DELAY_BLE_REINIT_MS = 4000;
+
 class IotsaBLEServerCallbacks : public NimBLEServerCallbacks {
 	void onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) override {
     IFBLEDEBUG IotsaSerial.printf("BLE connect\n");
-    iotsaConfig.pauseSleep();
+    iotsaController.pauseSleep();
   }
 	void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override {
     IFBLEDEBUG IotsaSerial.printf("BLE Disconnect reason %d, restart advertising\n", reason);
-    iotsaConfig.resumeSleep();
+    iotsaController.resumeSleep();
     bool ok = pServer->startAdvertising();
     IotsaBLEServerMod::_noteAdvertisingStartResult(ok, 0);
   }
@@ -32,16 +37,16 @@ public:
 
 	void onRead(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override {
     IFBLEDEBUG IotsaSerial.printf("BLE char onRead %s\n", pCharacteristic->getUUID().toString().c_str());
-    iotsaConfig.postponeSleep(0);
+    iotsaController.noteActivity();
     api->bleGetHandler(charUUID);
   }
 	void onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override {
     IFBLEDEBUG IotsaSerial.printf("BLE char onWrite %s\n", pCharacteristic->getUUID().toString().c_str());
-    iotsaConfig.postponeSleep(0);
+    iotsaController.noteActivity();
     api->blePutHandler(charUUID);
   }
 	void onStatus(NimBLECharacteristic* pCharacteristic, uint32_t code) {
-    iotsaConfig.postponeSleep(0);
+    iotsaController.noteActivity();
     IFBLEDEBUG IotsaSerial.printf("BLE char onStatus\n");
   }
 private:
@@ -57,7 +62,7 @@ IotsaBLEServerMod::webHandler() {
     bool newIsEnabled = (bool)strtol(api.webService->server->arg("isEnabled").c_str(), 0, 10);
     if (newIsEnabled != isEnabled) {
       isEnabled = newIsEnabled;
-      iotsaConfig.requestReboot(4000);
+      iotsaController.requestReboot(REBOOT_DELAY_BLE_REINIT_MS);
       anyChanged = true;
     }
   }
@@ -149,12 +154,10 @@ void IotsaBLEServerMod::_startServer() {
   // Note: services no longer need starting explicitly here -- NimBLEService::start()
   // is now a deprecated no-op; NimBLEAdvertising::start() (called via _bleGotoMode()
   // below) starts the GATT server itself before advertising begins.
-  if (iotsaConfig.bleDisabledOnBoot) {
-    iotsaConfig.bleMode = iotsa_ble_mode::IOTSA_BLE_DISABLED;
-  } else {
-    iotsaConfig.bleMode = iotsa_ble_mode::IOTSA_BLE_ENABLED;
-  }
+  // The boot enable/disable decision is IotsaController policy now
+  // (cwi-dis/iotsa#106): begin() seeded it from !bleDisabledOnBoot.
   _bleGotoMode();
+  _lastBleRadioWanted = iotsaController.bleRadioWanted();
 }
 
 void IotsaBLEServerMod::_bleGotoMode() {
@@ -162,7 +165,7 @@ void IotsaBLEServerMod::_bleGotoMode() {
   NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
   if (pAdvertising == nullptr) return;
   bool wasActive = pAdvertising->isAdvertising();
-  bool isActive = iotsaConfig.bleMode == iotsa_ble_mode::IOTSA_BLE_ENABLED;
+  bool isActive = iotsaController.bleRadioWanted();
   if (wasActive == isActive) {
     IFBLEDEBUG IotsaSerial.printf("BLE advertising is already %s\n", isActive ? "active" : "inactive");
     return;
@@ -234,9 +237,8 @@ void IotsaBLEServerMod::resumeServer(int duration) {
 }
 
 void IotsaBLEServerMod::setup() {
-  isEnabled = true;
   createServer();
-  configLoad();
+  configLoad();   // sets isEnabled from bleserver.cfg (default true)
   if (!isEnabled) {
     IFBLEDEBUG IotsaSerial.println("BLE deinit, not isEnabled");
     NimBLEDevice::deinit(false);
@@ -261,7 +263,7 @@ bool IotsaBLEServerMod::putHandler(const char *path, const JsonVariant& request,
   if (getFromRequest<int>(reqObj, "isEnabled", newEnabled) && newEnabled != isEnabled) {
     anyChanged = true;
     isEnabled = request["isEnabled"];
-    iotsaConfig.requestReboot(4000);
+    iotsaController.requestReboot(REBOOT_DELAY_BLE_REINIT_MS);
   }
   if (getFromRequest<int>(reqObj, "adv_min", adv_min)) anyChanged = true;
   if (getFromRequest<int>(reqObj, "adv_max", adv_max)) anyChanged = true;
@@ -316,12 +318,14 @@ void IotsaBLEServerMod::configSave() {
 }
 
 void IotsaBLEServerMod::loop() {
-  if (iotsaConfig.wantBleModeSwitchAtMillis > 0 && iotsaConfig.wantBleModeSwitchAtMillis < millis()) {
-      IFBLEDEBUG IotsaSerial.println("BLE mode switch requested");
-    //
-    // Either setup() or saveConfig() or configuration mode change asked to change the BLE mode. Do so.
-    //
-    iotsaConfig.wantBleModeSwitchAtMillis = 0;
+  // Reconcile advertising with IotsaController's BLE radio-enablement policy
+  // (cwi-dis/iotsa#106). Poll for a change rather than an armed timer -- and only
+  // on an actual change, so pauseServer()/resumeServer() (light sleep) aren't
+  // fought by a same-tick restart.
+  bool bleWanted = iotsaController.bleRadioWanted();
+  if (bleWanted != _lastBleRadioWanted) {
+    IFBLEDEBUG IotsaSerial.printf("BLE radio %s by policy\n", bleWanted ? "wanted" : "not wanted");
+    _lastBleRadioWanted = bleWanted;
     _bleGotoMode();
   }
   if (advertisingRetryAtMillis != 0 && millis() >= advertisingRetryAtMillis) {
@@ -338,7 +342,10 @@ void IotsaBLEServerMod::loop() {
 }
 
 void IotsaBleApiService::setup(const char* serviceUUID, IotsaBLEProvider *_apiProvider) {
-  bool isAdvertising = IotsaBLEServerMod::pauseServer();
+  // Stop advertising while the GATT table is being built (return value ignored --
+  // advertising is (re)started later by IotsaBLEServerMod::lateSetupDone() ->
+  // _startServer()). xxxjack: resuming it right here instead has proved wrong.
+  IotsaBLEServerMod::pauseServer();
   IotsaBLEServerMod::createServer();
   next = IotsaBLEServerMod::s_services;
   IotsaBLEServerMod::s_services = this;
@@ -348,7 +355,6 @@ void IotsaBleApiService::setup(const char* serviceUUID, IotsaBLEProvider *_apiPr
 
   NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(serviceUUID);
-  // xxxjack wrong: if (isAdvertising) IotsaBLEServerMod::resumeServer();
 }
 
 void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask, uint8_t d2904format, uint16_t d2904unit, const char *d2901descr) {

@@ -17,7 +17,7 @@ void otaOnProgress(unsigned int progress, unsigned int total) {
   IFDEBUG IotsaSerial.print("ota: got data ");
   IFDEBUG IotsaSerial.print(progress*100/total);
   IFDEBUG IotsaSerial.println("%");
-  iotsaConfig.extendCurrentMode();
+  iotsaController.extendCurrentMode();
   optFeedWatchdog();
 }
 
@@ -32,8 +32,9 @@ void otaOnError(int error) {
 }
 
 void IotsaOtaMod::setup() {
-  iotsaConfig.otaEnabled = true;
-  if (iotsaConfig.configurationMode == IOTSA_MODE_OTA) {
+  // "OTA is available" is now derived by introspection -- IotsaRunmodeMod checks
+  // for a module named "ota" (cwi-dis/iotsa#106); no iotsaConfig.otaEnabled flag.
+  if (iotsaController.currentMode() == IOTSA_MODE_OTA) {
     _start();
   }
 }
@@ -55,7 +56,7 @@ void IotsaOtaMod::lateSetup() {
 }
 
 void IotsaOtaMod::loop() {
-  if (iotsaConfig.configurationMode == IOTSA_MODE_OTA) {
+  if (iotsaController.currentMode() == IOTSA_MODE_OTA) {
     if (!started) _start();
     ArduinoOTA.handle();
   }
@@ -64,13 +65,13 @@ void IotsaOtaMod::loop() {
 #ifdef IOTSA_WITH_WEB
 String IotsaOtaMod::info() {
   String rv;
-  if (iotsaConfig.configurationMode == IOTSA_MODE_OTA) {
-    rv = "<p>Over the air (OTA) programming is enabled, will timeout in " + String((iotsaConfig.configurationModeEndTime - millis())/1000) + " seconds.</p>";
-  } else if (iotsaConfig.nextConfigurationMode == IOTSA_MODE_OTA) {
-  	rv = "<p>Over the air (OTA) programming has been requested. Enable within " + String((iotsaConfig.nextConfigurationModeEndTime - millis())/1000) + " seconds by power cycling";
-    if (iotsaConfig.rcmInteractionDescription) {
+  if (iotsaController.currentMode() == IOTSA_MODE_OTA) {
+    rv = "<p>Over the air (OTA) programming is enabled, will timeout in " + String((iotsaController.currentModeEndTime() - millis())/1000) + " seconds.</p>";
+  } else if (iotsaController.requestedMode() == IOTSA_MODE_OTA) {
+  	rv = "<p>Over the air (OTA) programming has been requested. Enable within " + String((iotsaController.requestedModeEndTime() - millis())/1000) + " seconds by power cycling";
+    if (iotsaController.rcmInteractionDescription()) {
       rv += " or ";
-      rv += iotsaConfig.rcmInteractionDescription;
+      rv += iotsaController.rcmInteractionDescription();
     }
     rv += ".</p>";
   } else {

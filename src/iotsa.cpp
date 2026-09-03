@@ -2,6 +2,7 @@
 #include "iotsa.h"
 #include "iotsaHttpServer.h"
 #include "iotsaConfigMod.h"
+#include "iotsaRunmode.h"
 #include "iotsaFS.h"
 #if defined(IOTSA_HAS_COAPSERVER) || defined(IOTSA_HAS_HPSSERVER)
 #include "iotsaApi.h"
@@ -78,6 +79,9 @@ IotsaApplication::setup() {
     IFDEBUG IotsaSerial.println(IOTSA_FS_NAME " mounted");
   }
   iotsaConfig.ensureConfigLoaded();
+  // Consume the pending-mode mailbox and run the boot anti-tamper gate before any
+  // module's setup() sees the mode (cwi-dis/iotsa#106). Was in IotsaConfigMod::setup().
+  iotsaController.begin();
 
   // IotsaConfigMod (hostname, TLS certs, configuration-mode handling) is core
   // infrastructure, independent of WiFi. It used to be created only as a member of
@@ -85,6 +89,11 @@ IotsaApplication::setup() {
   // Ensure it here; an explicit declaration or IotsaWifiMod (which forwards its auth
   // provider) still wins via the singleton.
   IotsaConfigMod::ensure(*this);
+
+  // IotsaRunmodeMod (the control surface onto IotsaController: mode requests,
+  // reboot, runtime radio toggles) is core-tier too, same treatment as
+  // IotsaConfigMod -- see docs/controller-architecture.md (cwi-dis/iotsa#106).
+  IotsaRunmodeMod::ensure(*this);
 
   // Ensure the CoAP/HPS companion modules exist before any module's setup() runs,
   // rather than being lazily created as a side effect of whichever module happens to
@@ -121,7 +130,6 @@ IotsaApplication::setup() {
 
 void
 IotsaApplication::lateSetup() {
-  // xxxjack this is wrong: if (!iotsaConfig.wifiEnabled) return;
   IotsaBaseModule *m;
 
   for (m=firstEarlyModule; m; m=m->nextModule) {
@@ -142,7 +150,7 @@ IotsaApplication::lateSetup() {
 
 void
 IotsaApplication::loop() {
-  iotsaConfig.loop();
+  iotsaController.tick();
   IotsaBaseModule *m;
   for (m=firstEarlyModule; m; m=m->nextModule) {
   	m->loop();
@@ -155,7 +163,7 @@ IotsaApplication::loop() {
     // Print available free heap space first time we have gone through all loop() calls.
     static bool once = false;
     if (!once) {
-      iotsaConfig.printHeapSpace();
+      iotsaStatus.printHeapSpace();
       once = true;
     }
   }
