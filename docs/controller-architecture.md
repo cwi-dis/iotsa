@@ -363,20 +363,22 @@ has rough edges. Group A finishes that. **`IotsaRunmodeMod` stays mandatory**
 (core-tier, auto-`ensure()`d) -- the step-1 reasons (no forgettable declaration
 per #195, a guaranteed BLE control service, a home for #233's UUID) still hold.
 
-The organising rule, applied throughout: **a persisted, user-edited knob is an
-`iotsaConfig` field; runtime/derived state is a sub-policy object that seeds
-itself from `iotsaConfig` at `begin()`.** No object reaches into another to
+The organising rule, applied throughout: **a persisted, user-edited value belongs
+to whatever persists it (`iotsaConfig` for core knobs, the owning module for
+module-scoped ones); a sub-policy object holds only runtime / derived state and
+seeds from the persisted value at `begin()`.** No object reaches into another to
 persist; `iotsaConfig.config{Load,Save}` stays the single writer of `config.cfg`.
 Per-owner config files stay as they are (`config.cfg` / `wifi.cfg` / `sleep.cfg`
-/ `bleserver.cfg` / `battery.cfg`).
+/ `bleserver.cfg` / `battery.cfg`). Where we've already broken this rule -> 5b.
 
 ### 5a. Extract `IotsaModeMachine` and `IotsaRadioPolicy` (smell 6)
 
 `IotsaController` becomes a thin coordinator holding three sub-policy objects by
 value -- `IotsaModeMachine _modes`, `IotsaRadioPolicy _radio`, `IotsaSleepPolicy
-_sleep` (exists). `begin()` / `tick()` / `requestReboot()` + the reboot timer stay
-on `IotsaController` itself; `tick()` just runs `_modes.tick()` (auto-expiry) and
-the reboot check.
+_sleep` (exists; 5b shrinks it to runtime-only -- inhibit counters + wake-window --
+with the sleep *config* moving to `IotsaRunmodeMod`). `begin()` / `tick()` /
+`requestReboot()` + the reboot timer stay on `IotsaController` itself; `tick()`
+just runs `_modes.tick()` (auto-expiry) and the reboot check.
 
 - **`IotsaModeMachine`** (`src/iotsaModeMachine.{h,cpp}`) -- `_mode` / `_nextMode`
   / the two end-times / `_rcmDescription`, the `/config/pendingmode.cfg` mailbox,
@@ -399,16 +401,43 @@ the reboot check.
   `_modes.extendWindow()` -- the two concerns stay visibly separate (smell 11 /
   the downstream sweep then splits app calls to whichever they actually meant).
 
-### 5b. Boot-policy-knob pattern (smell 5)
+### 5b. The persisted-vs-runtime rule, and where we've broken it (smell 5)
 
-Currently inconsistent: `modeTimeout`'s *value* lives on `IotsaController`
-(`5262d1c`), but `wifiDisabledOnBoot` / `bleDisabledOnBoot` values live on
-`iotsaConfig`. Apply the organising rule -> **all three are plain `iotsaConfig`
-fields** (`configurationModeTimeout` moves back), persisted by
-`iotsaConfig.config{Load,Save}` in `config.cfg`, read at the point of use (or
-seeded into a sub-policy at `begin()`). `IotsaController` loses `_modeTimeout` /
-`setModeTimeout()`; callers read `iotsaConfig.configurationModeTimeout`. This
-un-does `5262d1c`'s *relocation* while keeping its cobweb fixes.
+**Rule.** A persisted, user-edited *value* belongs to the object that persists it
+-- `iotsaConfig` (in `config.cfg`) for the core knobs, the owning module (in its
+own `*.cfg`) for module-scoped knobs. A sub-policy object (`IotsaModeMachine` /
+`IotsaRadioPolicy` / `IotsaSleepPolicy`) holds only *runtime / derived* state and
+seeds itself from the persisted value at `begin()`. No object reaches into another
+to persist.
+
+Fixed already this session: `iotsaConfig.otaEnabled` -> introspection (`3d8127c`);
+the sleep-inhibit runtime state `postponeSleepMillis` / `pauseSleepCount` off
+`iotsaConfig` (`b78d57a`); the volatile `wifi*` fields -> `iotsaStatus` (`131162d`).
+
+**Still to fix:**
+
+1. **`configurationModeTimeout` on `IotsaController`** (`5262d1c` relocated it) --
+   a persisted knob on a runtime object. Move it back to a plain `iotsaConfig`
+   field, `config.cfg` `rebootTimeout` key, read at the point of use.
+   `IotsaController` loses `_modeTimeout` / `setModeTimeout()`. Un-does `5262d1c`'s
+   *relocation* only; its cobweb fixes stay. `wifiDisabledOnBoot` /
+   `bleDisabledOnBoot` are already correct (`iotsaConfig` fields, seeded into
+   `IotsaRadioPolicy` at `begin()`).
+2. **The sleep knobs on `IotsaSleepPolicy`** -- `sleepMode`, `sleepDuration`,
+   `wakeDuration`, `bootExtraWakeDuration`, `activityExtraWakeDuration`,
+   `disableSleepOnWiFi` / `disableWiFiOnSleep` / `disableSleepOnUSBPower`. Persisted
+   (`sleep.cfg`) and user-edited (`/runmode`), but sitting on the runtime policy
+   object (put there in `64a2238` so `decide()` was self-contained). Move them to
+   their persisting owner, `IotsaRunmodeMod`, as a `SleepConfig` struct; `decide()`
+   takes it as a parameter (`decide(const SleepConfig&, bool onUsbPower)`).
+   `IotsaSleepPolicy` shrinks to runtime-only -- the inhibit counters + wake-window
+   state. This is smell 12 resolved as a real split. (`watchdogDuration` /
+   `cpuFrequency*` are already module-held on `IotsaRunmodeMod`, so already
+   compliant; `watchdogDuration` moves further, to `iotsaConfig` -- see 5d.)
+3. **`getStatusColor()` on `iotsaConfig`** -- runtime-derived (reads
+   `currentMode()` + `iotsaStatus.wifi*`). Known; parked on
+   [#176](https://github.com/cwi-dis/iotsa/issues/176). It belongs on the status
+   side; note it here so #176 picks it up.
 
 ### 5c. One settings-writable predicate (smell 7)
 
@@ -441,17 +470,29 @@ under `IOTSA_HAS_SLEEP` -- those *are* sleep-coupled. Open sub-decision: the
 field + re-arms), or move it to `/config` next to `rebootTimeout` (makes it
 config-mode-only to edit -- a behaviour change).
 
-### 5e. `/api/status` (smell 15) -- separable, lower priority
+### 5e. `/api/status` (smell 15) -- separable
 
-`IotsaConfigMod::getHandler` does quadruple duty on `/api/config`: identity +
-boot knobs + read-only runtime observations (`bootCause`, `uptime`, `fs*Bytes`,
-`privateWifi`, `mdnsEnabled`) + compiled/loaded inventory (`modules`, `features`).
-Split the last two groups onto a `/api/status` path -- dispatched inside
-`IotsaConfigMod::getHandler` by a path check exactly like `/api/version` already
-is, `api.setup("status", true)`, no new module. `/api/config` keeps the moved
-fields as forwarders for one release (the Python CLI parses them). This touches
-none of the controller/mode/radio/sleep restructuring -- it can be its own PR
-after the merge if Group A is running long.
+`IotsaConfigMod::getHandler` does quadruple duty on `/api/config`: identity + boot
+knobs + every-tick runtime observations (`bootCause`, `uptime`, `fs*Bytes`,
+`privateWifi`, `mdnsEnabled`) + compiled/loaded inventory (`modules`, `features`,
+and the `/api/version` sub-path).
+
+The clean cut is the `iotsaConfig` / `iotsaStatus` axis itself -- **immutable
+after boot vs every tick** -- not "both are read-only info endpoints":
+
+- **`/api/status`** = the every-tick block only (`bootCause`, `uptime`, `fs*Bytes`,
+  `privateWifi`, `mdnsEnabled`, the `iotsaStatus.wifi*` booleans, live
+  `currentMode`). The handler code moves out of `IotsaConfigMod::getHandler` to
+  sit next to `iotsaStatus` -- as a guest handler on `IotsaRunmodeMod` (the
+  runtime surface), or a minimal `iotsaStatus`-owned one. `/api/config` keeps the
+  moved keys as forwarders for one release (the Python CLI parses them there).
+- **`/api/version` + `modules` + `features`** stay put. They are immutable after
+  boot -- "what build, what's compiled, what's loaded" -- i.e. identity, which is
+  `IotsaConfigMod`'s job. `/api/version` is already its own path; leave it.
+
+So `/api/config` sheds only the every-tick block. This touches none of the
+controller/mode/radio/sleep restructuring and can be its own PR after the merge if
+Group A runs long.
 
 ### Order
 
