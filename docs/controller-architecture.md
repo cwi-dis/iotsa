@@ -310,15 +310,21 @@ so far"). What remains is step 4: the persisted-settings tidy and the merge to
    `IOTSA_HAS_SLEEP`) owns the executor + watchdog + CPU-freq knobs + `pinDisableSleep`
    + `/config/sleep.cfg`; `IotsaBatteryMod` is pure ADC publishing
    `iotsaStatus.onUsbPower`. `extendCurrentModeCallback` gone. Not bench-tested.
-4. **Persisted-settings tidy + land on develop.**
-   - *Done* (`5262d1c`): `configurationModeTimeout` moved off `iotsaConfig` onto
-     `IotsaController` (`modeTimeout()` / `setModeTimeout()`); `IotsaConfigMod` keeps
-     persisting it in `config.cfg` (`rebootTimeout`) and editing it. Same commit did
-     the `iotsa_mode`-machine cobweb pass: unified the five timeout uses (three had
-     hardcoded `CONFIGURATION_MODE_TIMEOUT`), fixed a `/config/pendingmode.cfg` leak
-     on pending-mode expiry (`_clearPendingMode()` helper), made `extendCurrentMode()`
-     a no-op on the mode window in NORMAL mode, removed dead `beginConfigurationMode()`.
-   - Remaining: CHANGELOG line; hardware bench pass; merge to `develop`.
+4. **Persisted-settings tidy.** *Partly done* (`5262d1c`): the `iotsa_mode`-machine
+   cobweb pass -- unified the five timeout uses (three had hardcoded
+   `CONFIGURATION_MODE_TIMEOUT`), fixed a `/config/pendingmode.cfg` leak on
+   pending-mode expiry (`_clearPendingMode()`), made `extendCurrentMode()` a no-op
+   on the mode window in NORMAL mode, removed dead `beginConfigurationMode()`. It
+   *also* relocated `configurationModeTimeout` onto `IotsaController` -- **step 5
+   below revisits that** (a persisted user-edited knob is a legitimate `iotsaConfig`
+   field, not god-object cruft).
+5. **Module-layer tidy (Group A).** The controller/policy moves (steps 1-3) left
+   `IotsaController` as "the mode machine + a radio shim + a shell over `_sleep`",
+   and `IotsaConfigMod` / `IotsaRunmodeMod` with a few rough edges. See
+   "Group A -- module-layer tidy" below. Lands on this branch (RunmodeMod stays
+   mandatory -- no optionality).
+6. **Land on develop.** CHANGELOG line; hardware bench pass over the whole thing;
+   `git merge --no-ff` so the restructuring reads as one unit in history.
 
 Separable follow-ons (own issues, not gating the merge):
 
@@ -346,7 +352,111 @@ Separable follow-ons (own issues, not gating the merge):
   LED" when no handler is registered, and the lissabon migration above.
 - `extendCurrentMode()` / `_modeEndTime` / `configurationModeTimeout` want the same
   call-site cobweb pass the sleep-delay machinery just got (conflated intents, dead
-  code, un-named durations) -- pairs with step 4.
+  code, un-named durations) -- folded into Group A step 5a.
+
+## Group A -- module-layer tidy
+
+Steps 1-3 pushed the interlocking policies into `IotsaController`, but only
+`_sleep` became a real object; the mode machine and radio policy are still inline
+methods, and the split of concerns between `IotsaConfigMod` and `IotsaRunmodeMod`
+has rough edges. Group A finishes that. **`IotsaRunmodeMod` stays mandatory**
+(core-tier, auto-`ensure()`d) -- the step-1 reasons (no forgettable declaration
+per #195, a guaranteed BLE control service, a home for #233's UUID) still hold.
+
+The organising rule, applied throughout: **a persisted, user-edited knob is an
+`iotsaConfig` field; runtime/derived state is a sub-policy object that seeds
+itself from `iotsaConfig` at `begin()`.** No object reaches into another to
+persist; `iotsaConfig.config{Load,Save}` stays the single writer of `config.cfg`.
+Per-owner config files stay as they are (`config.cfg` / `wifi.cfg` / `sleep.cfg`
+/ `bleserver.cfg` / `battery.cfg`).
+
+### 5a. Extract `IotsaModeMachine` and `IotsaRadioPolicy` (smell 6)
+
+`IotsaController` becomes a thin coordinator holding three sub-policy objects by
+value -- `IotsaModeMachine _modes`, `IotsaRadioPolicy _radio`, `IotsaSleepPolicy
+_sleep` (exists). `begin()` / `tick()` / `requestReboot()` + the reboot timer stay
+on `IotsaController` itself; `tick()` just runs `_modes.tick()` (auto-expiry) and
+the reboot check.
+
+- **`IotsaModeMachine`** (`src/iotsaModeMachine.{h,cpp}`) -- `_mode` / `_nextMode`
+  / the two end-times / `_rcmDescription`, the `/config/pendingmode.cfg` mailbox,
+  `requestMode()` / `allowRequestedConfigurationMode()` / `endConfigurationMode()`
+  / the mode-window half of `extendCurrentMode()` / `modeName()` / `factoryReset()`
+  / the getters. `begin()` takes a `bool hardwareReset` (the anti-tamper gate) --
+  the reset-reason decoding it needs is *already* in `IotsaStatus::getBootReason()`;
+  add `iotsaStatus.wasHardwareReset()` and consult it, removing the duplicate
+  reset-reason logic in `iotsaController.cpp::begin()`.
+- **`IotsaRadioPolicy`** (`src/iotsaRadioPolicy.h`, likely header-only) --
+  `_wifiEnabled` / `_bleEnabled` runtime flags, `setWifiEnabled()` /
+  `setBleEnabled()`, and `wifiWanted(...)` / `bleWanted(...)` that take the
+  *mode-effect* booleans as parameters rather than reaching into a sibling.
+- **Mode effects in one place.** The scattered `if (_mode == CONFIG || _mode ==
+  OTA)` checks in `wifiRadioWanted()` / `bleRadioWanted()` / `canSleep()` (smell
+  E3) collapse: `IotsaModeMachine` exposes `forcesWifiOn()` / `forcesBleOn()` /
+  `forbidsSleep()` computed from `_mode` once, and `IotsaController` forwards the
+  relevant bit into each sub-policy. Single source of truth for "what CONFIG means".
+- `IotsaController::extendCurrentMode()` calls `_sleep.noteActivity()` *and*
+  `_modes.extendWindow()` -- the two concerns stay visibly separate (smell 11 /
+  the downstream sweep then splits app calls to whichever they actually meant).
+
+### 5b. Boot-policy-knob pattern (smell 5)
+
+Currently inconsistent: `modeTimeout`'s *value* lives on `IotsaController`
+(`5262d1c`), but `wifiDisabledOnBoot` / `bleDisabledOnBoot` values live on
+`iotsaConfig`. Apply the organising rule -> **all three are plain `iotsaConfig`
+fields** (`configurationModeTimeout` moves back), persisted by
+`iotsaConfig.config{Load,Save}` in `config.cfg`, read at the point of use (or
+seeded into a sub-policy at `begin()`). `IotsaController` loses `_modeTimeout` /
+`setModeTimeout()`; callers read `iotsaConfig.configurationModeTimeout`. This
+un-does `5262d1c`'s *relocation* while keeping its cobweb fixes.
+
+### 5c. One settings-writable predicate (smell 7)
+
+- **Kill the `extend` parameter** on `inConfigurationMode()` -- it is a pure
+  predicate. The ~7 `inConfigurationMode(true)` call sites in `iotsaConfigMod.cpp`
+  become `if (inConfigurationMode()) { ...edit...; iotsaController.extendCurrentMode(); }`
+  -- the window-extend is an explicit consequence of an edit, not a side effect
+  hidden in a check.
+- **`iotsaConfigSettingsWritable()` is the only "can settings change now?"
+  predicate.** `IotsaConfigMod::webHandler` currently uses it for `hostName` but
+  `inConfigurationMode(true)` for `rebootTimeout` / HTTPS / `wifiDisabledOnBoot`
+  -- no reason for the asymmetry. All settings edits gate on
+  `iotsaConfigSettingsWritable()`. Bare `inConfigurationMode()` is then only for
+  the non-settings "are we in a maintenance window" checks (`getStatusColor`, OTA,
+  battery). The helper still collapses to `inConfigurationMode()` once
+  "no SSID => config mode" lands (already in Deferred).
+
+### 5d. Watchdog home (smell 10, was Group C)
+
+The ESP32 configurable watchdog is coupled to `IOTSA_HAS_SLEEP` only by
+`IotsaBatteryMod` history. With 5b done, `watchdogDuration` becomes a plain
+`iotsaConfig` field in `config.cfg` (loaded before `begin()`), and the *mechanism*
+(`hw_timer_t` + ISR + arm/feed/pause) moves to `IotsaController` under `#ifdef
+ESP32`: `begin()` arms it from `iotsaConfig.watchdogDuration`, `tick()` feeds it,
+`pauseWatchdog()` / `resumeWatchdog()` for the sleep executor to call (replacing
+the ~4 inline `timerDetach`/`timerAlarm` blocks in `_sleepTick()`). Fully
+decoupled from `IOTSA_HAS_SLEEP`. CPU-frequency knobs stay in `IotsaRunmodeMod`
+under `IOTSA_HAS_SLEEP` -- those *are* sleep-coupled. Open sub-decision: the
+`watchdogDuration` edit UI -- keep it on `/runmode` (writes the `iotsaConfig`
+field + re-arms), or move it to `/config` next to `rebootTimeout` (makes it
+config-mode-only to edit -- a behaviour change).
+
+### 5e. `/api/status` (smell 15) -- separable, lower priority
+
+`IotsaConfigMod::getHandler` does quadruple duty on `/api/config`: identity +
+boot knobs + read-only runtime observations (`bootCause`, `uptime`, `fs*Bytes`,
+`privateWifi`, `mdnsEnabled`) + compiled/loaded inventory (`modules`, `features`).
+Split the last two groups onto a `/api/status` path -- dispatched inside
+`IotsaConfigMod::getHandler` by a path check exactly like `/api/version` already
+is, `api.setup("status", true)`, no new module. `/api/config` keeps the moved
+fields as forwarders for one release (the Python CLI parses them). This touches
+none of the controller/mode/radio/sleep restructuring -- it can be its own PR
+after the merge if Group A is running long.
+
+### Order
+
+5a (the extraction -- everything else reads cleaner against it) -> 5b -> 5c ->
+5d -> 5e (or defer 5e). Then step 6.
 
 ## Deferred (was "slice 4"; folds into this work)
 
@@ -364,8 +474,10 @@ Separable follow-ons (own issues, not gating the merge):
   granted-permission set with a shared expiry rather than one-of-N enum values (so a
   device can hold both at once). Deferred -- low harm in keeping them separate, easy to
   change later.
-- Where `config.cfg` persistence lands once `hostName` is nearly its only remaining
-  key: one file written cooperatively, or per-owner files.
+- ~~Where `config.cfg` persistence lands once `hostName` is nearly its only remaining
+  key~~ -- settled by Group A's organising rule: per-owner files stay, and `config.cfg`
+  keeps (regains) the persisted user-edited boot knobs, since those are legitimate
+  `iotsaConfig` fields, not god-object cruft.
 - Home for the bare "this is an iotsa device" BLE *identification* service UUID (what
   the Python CLI's discovery heuristic should match instead of the standard
   Battery-Service coincidence). [#233](https://github.com/cwi-dis/iotsa/issues/233) as
