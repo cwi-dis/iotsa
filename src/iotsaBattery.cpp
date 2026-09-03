@@ -216,7 +216,7 @@ bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
   reply["wakeDuration"] = wakeDuration;
   reply["bootExtraWakeDuration"] = bootExtraWakeDuration;
   reply["activityExtraWakeDuration"] = iotsaController.sleep().activityExtraWakeDuration;
-  reply["postponeSleep"] = iotsaController.postponeSleep(0);
+  reply["postponeSleep"] = iotsaController.sleep().millisUntilSleepAllowed();
 #ifdef ESP32
   reply["watchdogDuration"] = watchdogDuration;
   reply["cpuFrequency"] = getCpuFrequencyMhz();
@@ -394,7 +394,7 @@ void IotsaBatteryMod::configSave() {
 
 // IotsaBatteryMod::extendCurrentMode() (the setExtensionCallback target) removed
 // (cwi-dis/iotsa#106): loop() feeds the watchdog every iteration anyway, and the
-// millisAtWakeup bump is now iotsaController.extendCurrentMode() -> postponeSleep(0).
+// millisAtWakeup bump is now iotsaController.extendCurrentMode() -> noteActivity().
 
 void IotsaBatteryMod::_notifySleepWakeup(bool sleep) {
   for(IotsaBaseModule* m=app.firstEarlyModule; m != nullptr; m=m->nextModule) {
@@ -495,7 +495,7 @@ void IotsaBatteryMod::loop() {
       IFDEBUG IotsaSerial.println("Will disable WiFi for sleep");
       haveDisabledWiFi = true;
       iotsaController.setWifiRadioEnabled(false);  // cwi-dis/iotsa#106
-      iotsaController.postponeSleep(2000); // give time to disable wifi
+      iotsaController.postponeSleep(IotsaSleepPolicy::WIFI_SHUTDOWN_GRACE_MS); // give time to disable wifi
       return;
     }
   }

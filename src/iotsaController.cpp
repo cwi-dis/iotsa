@@ -125,8 +125,8 @@ void IotsaController::extendCurrentMode() {
   // Activity happened, so push the sleep wake-window out too. Was a callback
   // (setExtensionCallback) into IotsaBatteryMod that bumped millisAtWakeup and
   // re-armed the watchdog; the watchdog is fed every loop() anyway, and the
-  // wake-window bump is exactly postponeSleep(0) (cwi-dis/iotsa#106).
-  _sleep.postponeSleep(0);
+  // wake-window bump is exactly noteActivity() (cwi-dis/iotsa#106).
+  _sleep.noteActivity();
 #ifndef ESP32
   ESP.wdtFeed();
 #endif

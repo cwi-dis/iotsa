@@ -146,7 +146,7 @@ bool IotsaBLEClientMod::putHandler(const char *path, const JsonVariant& request,
 void IotsaBLEClientMod::startScanUnknown() {
   findUnknownDevices(true);
   scanUnknownUntilMillis = millis() + scanUnknownDurationMillis;
-  iotsaController.postponeSleep(scanUnknownDurationMillis+1000);
+  iotsaController.postponeSleep(scanUnknownDurationMillis + IotsaSleepPolicy::SCAN_COMPLETION_MARGIN_MS);
 }
 
 void IotsaBLEClientMod::findUnknownDevices(bool on) {

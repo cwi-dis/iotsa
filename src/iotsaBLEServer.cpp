@@ -32,16 +32,16 @@ public:
 
 	void onRead(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override {
     IFBLEDEBUG IotsaSerial.printf("BLE char onRead %s\n", pCharacteristic->getUUID().toString().c_str());
-    iotsaController.postponeSleep(0);
+    iotsaController.noteActivity();
     api->bleGetHandler(charUUID);
   }
 	void onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override {
     IFBLEDEBUG IotsaSerial.printf("BLE char onWrite %s\n", pCharacteristic->getUUID().toString().c_str());
-    iotsaController.postponeSleep(0);
+    iotsaController.noteActivity();
     api->blePutHandler(charUUID);
   }
 	void onStatus(NimBLECharacteristic* pCharacteristic, uint32_t code) {
-    iotsaController.postponeSleep(0);
+    iotsaController.noteActivity();
     IFBLEDEBUG IotsaSerial.printf("BLE char onStatus\n");
   }
 private:

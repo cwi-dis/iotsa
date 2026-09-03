@@ -71,9 +71,10 @@ public:
   // Sleep-inhibit surface, moved off IotsaConfig. Thin delegates to _sleep;
   // canSleep() additionally forces "no" while a maintenance mode is active (was
   // a separate inConfigurationMode() check in IotsaBatteryMod::loop()).
+  void noteActivity() { _sleep.noteActivity(); }
   void pauseSleep()  { _sleep.pauseSleep(); }
   void resumeSleep() { _sleep.resumeSleep(); }
-  uint32_t postponeSleep(uint32_t ms) { return _sleep.postponeSleep(ms); }
+  void postponeSleep(uint32_t ms) { _sleep.postponeSleep(ms); }
   bool canSleep() {
     if (_mode == IOTSA_MODE_CONFIG || _mode == IOTSA_MODE_OTA) return false;
     return _sleep.canSleep();

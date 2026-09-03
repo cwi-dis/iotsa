@@ -136,7 +136,7 @@ void Button::loop() {
   }
   debounceState = state;
   if (millis() > debounceTime + DEBOUNCE_DELAY && state != pressed) {
-    iotsaController.postponeSleep(0);
+    iotsaController.noteActivity();
     // The touchpad or button has been in the new state for long enough for us to trust it.
     pressed = state;
     if (pressed) repeatCount = 0;
@@ -173,7 +173,7 @@ void Button::loop() {
   }
   // See if we need to do any repeating
   if (nextRepeat && millis() > nextRepeat) {
-    iotsaController.postponeSleep(0);
+    iotsaController.noteActivity();
     if (curRepeat > minRepeat) {
       curRepeat = curRepeat - minRepeat;
       if (curRepeat < minRepeat) curRepeat = minRepeat;
@@ -324,7 +324,7 @@ void RotaryEncoder::loop() {
 #ifdef IOTSA_INPUT_CAN_ENCODER_LIB
   int64_t newCount = _encoder->getCount();
   if (newCount != oldCount) {
-    iotsaController.postponeSleep(0);
+    iotsaController.noteActivity();
     IotsaSerial.printf("RotaryEncoder %lld->%lld\n", oldCount, newCount);
     int delta = (newCount-oldCount);
     oldCount = newCount;
@@ -337,7 +337,7 @@ void RotaryEncoder::loop() {
   bool pinAnewState = digitalRead(pinA) == LOW;
 
   if (pinAnewState != pinAstate) {
-    iotsaController.postponeSleep(0);
+    iotsaController.noteActivity();
     if (lastChangeMillis) {
       duration = millis() - lastChangeMillis;
     }
