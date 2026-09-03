@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The `IotsaConfig` god-object is split into three framework globals: `iotsaConfig` (persisted identity + knobs), `iotsaStatus` (runtime observations), and `iotsaController` (the mode/radio/sleep policy coordinator, composed of `IotsaModeMachine` + `IotsaRadioPolicy` + `IotsaSleepPolicy`). New core-tier `IotsaRunmodeMod` owns the mode-request / reboot / runtime-radio-toggle / sleep / identify control surface -- `/api/runmode`, a `/runmode` page, and a `6E5D…` BLE control service. `IotsaBatteryMod` shrinks to voltage/USB ADC. New read-only `/api/status`. Sleep/wake execution is gated by a new derived `IOTSA_HAS_SLEEP` flag (default on for BLE builds). `/api/config` keeps the mode/reboot/radio/status keys as forwarders for one release; downstream repos and the Python CLI keep working, sweep is the release after. Sleep config, `watchdogDuration` and the every-tick status keys moved between REST modules -- `iotsa restore` of a pre-upgrade backup drops the relocated keys (#242) (#106)
 - Infrastructural single-instance modules now share one `IotsaSingletonModule<>` get-or-create mechanism, replacing three hand-rolled copies (HTTP/CoAP/HPS transports migrated; #85)
 
 ## [3.0a2] - 2026-08-31
