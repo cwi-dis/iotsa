@@ -310,10 +310,15 @@ so far"). What remains is step 4: the persisted-settings tidy and the merge to
    `IOTSA_HAS_SLEEP`) owns the executor + watchdog + CPU-freq knobs + `pinDisableSleep`
    + `/config/sleep.cfg`; `IotsaBatteryMod` is pure ADC publishing
    `iotsaStatus.onUsbPower`. `extendCurrentModeCallback` gone. Not bench-tested.
-4. **Persisted-settings tidy + land on develop.** Move `configurationModeTimeout`
-   (`rebootTimeout`) off `iotsaConfig` per its final owner (sleep config already
-   landed its own `/config/sleep.cfg` in `IotsaRunmodeMod`, step 3); CHANGELOG line;
-   bench pass; merge.
+4. **Persisted-settings tidy + land on develop.**
+   - *Done* (`5262d1c`): `configurationModeTimeout` moved off `iotsaConfig` onto
+     `IotsaController` (`modeTimeout()` / `setModeTimeout()`); `IotsaConfigMod` keeps
+     persisting it in `config.cfg` (`rebootTimeout`) and editing it. Same commit did
+     the `iotsa_mode`-machine cobweb pass: unified the five timeout uses (three had
+     hardcoded `CONFIGURATION_MODE_TIMEOUT`), fixed a `/config/pendingmode.cfg` leak
+     on pending-mode expiry (`_clearPendingMode()` helper), made `extendCurrentMode()`
+     a no-op on the mode window in NORMAL mode, removed dead `beginConfigurationMode()`.
+   - Remaining: CHANGELOG line; hardware bench pass; merge to `develop`.
 
 Separable follow-ons (own issues, not gating the merge):
 
