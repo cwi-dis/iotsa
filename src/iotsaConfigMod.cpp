@@ -330,6 +330,8 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   reply["has_httpsKey"] = IOTSA_FS.exists("/config/httpsKey.der");
   reply["has_httpsCert"] = IOTSA_FS.exists("/config/httpsCert.der");
 #endif
+  // Every-tick runtime observations -- canonical on /api/status now
+  // (cwi-dis/iotsa#106 step 5e); kept here one release for the Python CLI.
   reply["bootCause"] = iotsaStatus.getBootReason();
   reply["uptime"] = millis() / 1000;
   reply["fsTotalBytes"] = iotsaFSTotalBytes();

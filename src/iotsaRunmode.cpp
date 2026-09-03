@@ -1,5 +1,6 @@
 #include "iotsa.h"
 #include "iotsaRunmode.h"   // pulls in iotsaBLEServer.h too
+#include "iotsaFS.h"        // iotsaFS{Total,Used}Bytes() for /api/status
 #ifdef IOTSA_HAS_SLEEP
 #include "iotsaConfigFile.h"
 #ifdef ESP32
@@ -47,6 +48,7 @@ void IotsaRunmodeMod::lateSetup() {
   bleApi.addCharacteristic(identifyUUID, bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "Identify");
 #endif
   api.setup("runmode", true, true);
+  api.setup("status", true, false, false, false);   // GET only, no web page (cwi-dis/iotsa#106 5e)
   name = "runmode";
 }
 
@@ -282,6 +284,24 @@ String IotsaRunmodeMod::info() {
 #endif // IOTSA_WITH_WEB
 
 bool IotsaRunmodeMod::getHandler(const char *path, JsonObject& reply) {
+  if (strcmp(path, "/api/status") == 0) {
+    // Every-tick runtime observations -- the volatile counterpart of /api/config's
+    // identity + persisted knobs (cwi-dis/iotsa#106 step 5e). Hosted here because
+    // this is the runtime-control module and iotsaStatus has no module of its own.
+    reply["currentMode"] = int(iotsaController.currentMode());
+    reply["bootCause"] = iotsaStatus.getBootReason();
+    reply["uptime"] = millis() / 1000;
+    reply["networkIsUp"] = iotsaStatus.networkIsUp();
+    reply["wifiEnabled"] = iotsaStatus.wifiEnabled;
+    reply["wifiStationConnected"] = iotsaStatus.wifiStationConnected;
+    reply["wifiApActive"] = iotsaStatus.wifiApActive;
+    reply["wifiConfigured"] = iotsaStatus.wifiConfigured;
+    reply["privateWifi"] = iotsaStatus.wifiApActive && !iotsaStatus.wifiStationConnected;
+    reply["mdnsEnabled"] = iotsaStatus.mdnsEnabled;
+    reply["fsTotalBytes"] = iotsaFSTotalBytes();
+    reply["fsUsedBytes"] = iotsaFSUsedBytes();
+    return true;
+  }
   reply["currentMode"] = int(iotsaController.currentMode());
   if (iotsaController.currentMode()) {
     reply["currentModeTimeout"] = (iotsaController.currentModeEndTime() - millis())/1000;
