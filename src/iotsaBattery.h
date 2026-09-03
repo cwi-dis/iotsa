@@ -4,14 +4,12 @@
 #include "iotsaApi.h"
 #include "iotsaBLEServer.h"
 
-enum IotsaSleepMode : uint8_t {
-  IOTSA_SLEEP_NONE,
-  IOTSA_SLEEP_DELAY,
-  IOTSA_SLEEP_LIGHT,
-  IOTSA_SLEEP_DEEP,
-  IOTSA_SLEEP_HIBERNATE,
-  _IOTSA_SLEEP_MAX
-};
+// IotsaBatteryMod shrank to battery *hardware* -- VBat/VUSB ADC sensing + the
+// 180F BLE battery service (cwi-dis/iotsa#106). The sleep/wake config + decision
+// moved to IotsaController's IotsaSleepPolicy and the executor to IotsaRunmodeMod
+// (which owns IOTSA_HAS_SLEEP). This module publishes iotsaStatus.onUsbPower for
+// the sleep policy to read. The doSoftReboot / allowBLEConfigModeSwitch BLE
+// gesture still lives here for now.
 
 class IotsaBatteryMod : public IotsaModule {
 public:
@@ -25,10 +23,11 @@ public:
 #endif
   void setPinVUSB(int pin, float range=2.5) { pinVUSB = pin; rangeVUSB = range; }
   void setPinVBat(int pin, float range=3.6, float minRange=0) { pinVBat = pin; rangeVBat = range; rangeVBatMin = minRange; }
-  void setPinDisableSleep(int pin) { pinDisableSleep = pin; }
+  // Transitional: pinDisableSleep is now IotsaRunmodeMod's (cwi-dis/iotsa#106).
+  // Kept so the ~4 downstream callers keep compiling until the #106 sweep.
+  void setPinDisableSleep(int pin);
   void allowBLEConfigModeSwitch();
 protected:
-  void _notifySleepWakeup(bool sleep);
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
   void configLoad() override;
@@ -36,20 +35,8 @@ protected:
 #ifdef IOTSA_WITH_WEB
   void webHandler() override;
 #endif
-  String argument;
-  enum IotsaSleepMode sleepMode;
-  bool didWakeFromSleep = false;
   int doSoftReboot = 0;
   bool bleConfigModeSwitchAllowed = false;
-  uint32_t millisAtWakeup = 0;
-  uint32_t wakeDuration = 0;
-  uint32_t bootExtraWakeDuration = 0;
-  // uint32_t activityExtraWakeDuration = 0;
-  uint32_t sleepDuration = 0;
-  uint32_t watchdogDuration = 0;
-  bool disableSleepOnUSBPower = 0;
-  bool disableSleepOnWiFi = 0;
-  bool disableWiFiOnSleep = false;
   void _readVoltages();
   int pinVBat = -1;
   int pinVUSB = -1;
@@ -57,9 +44,6 @@ protected:
   float rangeVBatMin = 0;
   float correctionVBat = 1.0;
   float rangeVUSB = 1.8;
-  int pinDisableSleep = -1;
-  int cpuFrequencyBoot = 0;
-  int cpuFrequencySleep = 0;
   uint8_t levelVBat;
   uint8_t levelVUSB;
 #ifdef IOTSA_WITH_BLE

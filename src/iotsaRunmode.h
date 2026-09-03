@@ -10,15 +10,20 @@
 //
 // Core-tier: unconditionally ensure()d by IotsaApplication::setup(), the same
 // treatment as IotsaConfigMod -- never an optional add. It is the one place,
-// across every transport (REST/web now, BLE next), that a client steers the
-// device's *operating state*: request a maintenance mode for the next boot,
-// reboot, toggle the WiFi / BLE radios at runtime.
+// across every transport (REST/web/BLE), that a client steers the device's
+// *operating state*: request a maintenance mode for the next boot, reboot,
+// toggle the WiFi / BLE radios at runtime.
 //
 // Every handler here is thin glue: a call into iotsaController. The mode /
 // reboot / radio keys also still appear in /api/config as [[deprecated]]
 // forwarders for one release, so existing scripts and the Python CLI keep
 // working until they move to /api/runmode (see the "Transition strategy"
 // section of docs/controller-architecture.md).
+//
+// Under IOTSA_HAS_SLEEP it also carries the sleep/wake executor: the config +
+// decision live in IotsaController's IotsaSleepPolicy, this module owns the
+// esp_*_sleep_start() machinery, the watchdog timer, the CPU-frequency knobs and
+// the /config/sleep.cfg persistence. Was IotsaBatteryMod (cwi-dis/iotsa#106).
 //
 class IotsaRunmodeMod : public IotsaModule, public IotsaSingletonModule<IotsaRunmodeMod> {
 public:
@@ -33,11 +38,19 @@ public:
 #ifdef IOTSA_WITH_WEB
   String info() override;
 #endif
+#ifdef IOTSA_HAS_SLEEP
+  // A pin that, held LOW, blocks sleep (was IotsaBatteryMod::setPinDisableSleep).
+  void setPinDisableSleep(int pin) { _pinDisableSleep = pin; }
+#endif
 protected:
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
 #ifdef IOTSA_WITH_WEB
   void webHandler() override;
+#endif
+#ifdef IOTSA_HAS_SLEEP
+  void configLoad() override;
+  void configSave() override;
 #endif
 #ifdef IOTSA_WITH_BLE
   // The BLE control service: read the current mode, request a mode for the next
@@ -56,6 +69,19 @@ protected:
   static constexpr UUIDstring requestedModeUUID = "6E5D0003-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
   static constexpr UUIDstring rebootUUID        = "6E5D0004-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
 #endif // IOTSA_WITH_BLE
+#ifdef IOTSA_HAS_SLEEP
+private:
+  // The sleep executor, called every loop(). Reads IotsaSleepPolicy for the
+  // config + decision, performs the actual sleep. cwi-dis/iotsa#106.
+  void _sleepTick();
+  void _notifySleepWakeup(bool sleep);
+  int _pinDisableSleep = -1;
+#ifdef ESP32
+  uint32_t _watchdogDuration = 0;
+  int _cpuFrequencyBoot = 0;
+  int _cpuFrequencySleep = 0;
+#endif
+#endif // IOTSA_HAS_SLEEP
 };
 
 #endif

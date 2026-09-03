@@ -67,7 +67,7 @@ class IotsaApplication {
   friend class IotsaConfigMod;
   friend class IotsaWifiMod;
   friend class IotsaHttpServiceMod;
-  friend class IotsaBatteryMod;
+  friend class IotsaRunmodeMod;
 public:
   IotsaApplication(const char *_title);
   // Explicitly disable copy constructor and assignment
@@ -214,7 +214,7 @@ class IotsaBaseModule : public IotsaApiProvider, public IotsaBLEProvider {
   friend class IotsaConfigMod;
   friend class IotsaWifiMod;
   friend class IotsaHttpServiceMod;
-  friend class IotsaBatteryMod;
+  friend class IotsaRunmodeMod;
 public:
   IotsaBaseModule(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
   : app(_app),

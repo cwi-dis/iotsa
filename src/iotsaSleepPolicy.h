@@ -5,21 +5,33 @@
 // Intended to be included from iotsaController.h
 
 //
-// IotsaSleepPolicy -- the sleep/wake decision, being extracted from IotsaConfig
-// and IotsaBatteryMod (cwi-dis/iotsa#106).
+// IotsaSleepPolicy -- the sleep/wake decision, extracted from IotsaConfig and
+// IotsaBatteryMod (cwi-dis/iotsa#106).
 //
-// Pure logic, no platform headers: this decides *whether* and *how* the device
-// should sleep; IotsaRunmodeMod holds the actual esp_*_sleep_start() machinery
-// (under IOTSA_HAS_SLEEP) and calls it from its loop(). Held by value as
-// IotsaController::_sleep and reached through iotsaController.sleep() plus the
-// iotsaController.noteActivity() / {pause,resume,postpone}Sleep() / canSleep()
-// wrappers -- those have callers all over the framework (iotsaInput, iotsaApiRest,
-// iotsaBLEClient, ...) so the sleep-inhibit surface is always compiled even when
-// nothing sleeps.
+// Pure logic, no platform headers: this owns the sleep config + inhibit
+// bookkeeping + wake-window state, and decide() answers "should the device sleep
+// this tick, and how". It never sleeps itself -- IotsaRunmodeMod holds the
+// esp_*_sleep_start() machinery (under IOTSA_HAS_SLEEP) and executes decide()'s
+// result. Held by value as IotsaController::_sleep, reached through
+// iotsaController.sleep() plus the iotsaController.noteActivity() /
+// {pause,resume,postpone}Sleep() / canSleep() wrappers -- those have callers all
+// over the framework (iotsaInput, iotsaApiRest, iotsaBLEClient, ...) so the
+// inhibit surface is always compiled even when nothing sleeps.
 //
-// So far this holds only the sleep-inhibit bookkeeping moved off IotsaConfig; the
-// sleep config + wake-window state + decide() follow in later #106 commits.
-//
+
+enum IotsaSleepMode : uint8_t {
+  IOTSA_SLEEP_NONE,
+  IOTSA_SLEEP_DELAY,
+  IOTSA_SLEEP_LIGHT,
+  IOTSA_SLEEP_DEEP,
+  IOTSA_SLEEP_HIBERNATE,
+  _IOTSA_SLEEP_MAX
+};
+
+struct IotsaSleepDecision {
+  IotsaSleepMode mode = IOTSA_SLEEP_NONE;   // IOTSA_SLEEP_NONE => stay awake
+  uint32_t durationMs = 0;                  // timer-wakeup duration (0 => none set)
+};
 
 class IotsaSleepPolicy {
   friend class IotsaController;
@@ -33,17 +45,16 @@ public:
   // Margin added to a BLE scan's own duration before sleep is allowed again.
   static constexpr uint32_t SCAN_COMPLETION_MARGIN_MS = 1000;
 
+  // ---- sleep-inhibit bookkeeping ----
+
   // "Someone just interacted with us" (a REST/web/BLE request, a button press,
   // config mode extended, ...). Holds sleep off for
   // max(activityExtraWakeDuration, ACTIVITY_FLOOR_MS). Replaces the old
   // postponeSleep(0) idiom.
   void noteActivity();
-
   void pauseSleep()  { _pauseSleepCount++; }
   void resumeSleep() { _pauseSleepCount--; }
   // A known-duration hold: no sleep before now + ms + activityExtraWakeDuration.
-  // For "activity just happened" use noteActivity(); for "how long until sleep is
-  // allowed" use millisUntilSleepAllowed().
   void postponeSleep(uint32_t ms);
   // Millis until sleep is allowed again (0 if it already is). Read-only bar the
   // lazy self-clear.
@@ -54,6 +65,28 @@ public:
 
   // Extra time to stay awake after any activity, on top of ACTIVITY_FLOOR_MS.
   uint32_t activityExtraWakeDuration = 0;
+
+  // ---- sleep config (persisted by IotsaRunmodeMod; was IotsaBatteryMod) ----
+  IotsaSleepMode sleepMode = IOTSA_SLEEP_NONE;
+  uint32_t sleepDuration = 0;         // sleep length (ms); 0 => no timer wakeup
+  uint32_t wakeDuration = 0;          // stay awake this long after each wake (ms)
+  uint32_t bootExtraWakeDuration = 0; // extra, only on a power-on/reset wake
+  bool disableSleepOnWiFi = false;    // don't sleep while the WiFi radio is up
+  bool disableWiFiOnSleep = false;    // power WiFi down before sleeping
+  bool disableSleepOnUSBPower = false;// don't sleep while on USB power
+
+  // ---- wake-window state ----
+  uint32_t millisAtWakeup = 0;        // millis() of the last (re)start of the wake window; 0 = not started
+  bool didWakeFromSleep = false;      // false only on the power-on/reset boot
+
+  // Should the device sleep this tick? onUsbPower is IotsaBatteryMod's reading
+  // (iotsaStatus.onUsbPower); IOTSA_HAS_SLEEP builds with no battery pass false.
+  // The caller has already checked pinDisableSleep and iotsaController.canSleep().
+  IotsaSleepDecision decide(bool onUsbPower);
+  // (Re)start the wake-window clock -- once when the executor first runs, and
+  // after every wake.
+  void noteAwake();
+  void noteWokeFromSleep();
 
 private:
   int _pauseSleepCount = 0;

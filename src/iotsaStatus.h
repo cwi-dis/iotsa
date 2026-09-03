@@ -23,6 +23,7 @@ public:
   bool wifiApActive = false;          // softAP is up, for any reason
   bool wifiConfigured = false;        // an SSID is configured (published by IotsaWifiMod)
   bool mdnsEnabled = false;           // mDNS responder is running
+  bool onUsbPower = false;            // running on USB power (published by IotsaBatteryMod; false if no VUSB sense)
 
   bool networkIsUp();                 // reachable over the configured WiFi network (STA has an IP)
   const char *getBootReason();        // human-readable reset cause (computed once, then cached)
