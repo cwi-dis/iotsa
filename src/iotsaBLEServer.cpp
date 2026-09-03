@@ -343,7 +343,10 @@ void IotsaBLEServerMod::loop() {
 }
 
 void IotsaBleApiService::setup(const char* serviceUUID, IotsaBLEProvider *_apiProvider) {
-  bool isAdvertising = IotsaBLEServerMod::pauseServer();
+  // Stop advertising while the GATT table is being built (return value ignored --
+  // advertising is (re)started later by IotsaBLEServerMod::lateSetupDone() ->
+  // _startServer()). xxxjack: resuming it right here instead has proved wrong.
+  IotsaBLEServerMod::pauseServer();
   IotsaBLEServerMod::createServer();
   next = IotsaBLEServerMod::s_services;
   IotsaBLEServerMod::s_services = this;
@@ -353,7 +356,6 @@ void IotsaBleApiService::setup(const char* serviceUUID, IotsaBLEProvider *_apiPr
 
   NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(serviceUUID);
-  // xxxjack wrong: if (isAdvertising) IotsaBLEServerMod::resumeServer();
 }
 
 void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask, uint8_t d2904format, uint16_t d2904unit, const char *d2901descr) {

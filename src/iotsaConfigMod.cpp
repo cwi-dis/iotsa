@@ -1,12 +1,7 @@
 #include <Esp.h>
-#ifdef ESP32
-#include <ESPmDNS.h>
-#include <esp_log.h>
-#include <rom/rtc.h>
-#else
-#include <ESP8266mDNS.h>
-#include <user_interface.h>
-#endif
+// mDNS and the reset-reason / anti-tamper platform headers used to be needed
+// here; mDNS is IotsaWifiMod's, and the reset-reason handling moved to
+// IotsaController::begin() / IotsaStatus::getBootReason() (cwi-dis/iotsa#106).
 
 #include "iotsa.h"
 #include "iotsaConfigFile.h"

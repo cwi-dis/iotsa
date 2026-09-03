@@ -1,7 +1,7 @@
 #ifndef _IOTSACONTROLLER_H_
 #define _IOTSACONTROLLER_H_
 #include <stdint.h>
-#include "iotsaConfig.h"       // iotsa_mode, extensionCallback
+#include "iotsaConfig.h"       // iotsa_mode
 #include "iotsaStatus.h"       // iotsaConfigSettingsWritable() reads iotsaStatus
 #include "iotsaSleepPolicy.h"  // IotsaController::_sleep
 
@@ -16,21 +16,18 @@
 // IotsaWifiController and the BLE server as subordinates. See
 // docs/controller-architecture.md.
 //
-// Owns so far:
+// Owns:
 //   - the deferred-reboot timer (moved from IotsaConfig::loop())
 //   - the iotsa_mode state machine: current/requested mode, the auto-expiry
-//     timeout, the boot-time anti-tamper gate, and the one-shot "pending mode"
-//     mailbox that carries a request across a reboot.
+//     timeout (_modeTimeout), the boot-time anti-tamper gate, and the one-shot
+//     "pending mode" mailbox that carries a request across a reboot.
 //   - WiFi + BLE radio-enablement policy: the boot defaults (wifiDisabledOnBoot,
 //     bleDisabledOnBoot), the runtime enable/disable requests, and the mode
 //     forcing (CONFIG/OTA -> WiFi on; CONFIG -> BLE on).
-//   - sleep-inhibit bookkeeping (_sleep, an IotsaSleepPolicy): pauseSleep() /
-//     postponeSleep() / canSleep(), moved off IotsaConfig.
-//
-// Still to move here (cwi-dis/iotsa#106 step 3): the rest of the sleep/wake
-// policy -- sleep config, wake-window timing, the decide() function -- out of
-// IotsaBatteryMod into _sleep, with the esp_*_sleep_start() machinery landing in
-// IotsaRunmodeMod under IOTSA_HAS_SLEEP.
+//   - the sleep/wake policy (_sleep, an IotsaSleepPolicy): the inhibit
+//     bookkeeping (pauseSleep/postponeSleep/canSleep, framework-wide callers),
+//     the sleep config + wake-window state, and decide(). The esp_*_sleep_start()
+//     executor lives in IotsaRunmodeMod (IOTSA_HAS_SLEEP).
 //
 
 class IotsaController {
