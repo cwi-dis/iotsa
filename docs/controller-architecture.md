@@ -290,9 +290,9 @@ in-tree callers in the same commit, let the downstream sweep pick up the rest.
 ## Remaining work (ordered)
 
 The `IotsaConfig` identity/status/controller split, the control-surface module, and
-both policy tenants (radio, sleep) are done -- steps 1-3 below all landed (see "Landed
-so far"). What remains is step 4: the persisted-settings tidy and the merge to
-`develop`, gated on a hardware bench pass.
+both policy tenants (radio, sleep) are done, and so is the module-layer tidy
+(Group A, step 5). All that remains is step 6: CHANGELOG + a hardware bench pass +
+the `--no-ff` merge to `develop`.
 
 1. **`IotsaRunmodeMod` -- control surface (REST + BLE).** *Done* (see "Landed so
    far" above): `0bef36b` (REST + web), `5690097` (BLE control service). Thin glue over
@@ -318,11 +318,16 @@ so far"). What remains is step 4: the persisted-settings tidy and the merge to
    *also* relocated `configurationModeTimeout` onto `IotsaController` -- **step 5
    below revisits that** (a persisted user-edited knob is a legitimate `iotsaConfig`
    field, not god-object cruft).
-5. **Module-layer tidy (Group A).** The controller/policy moves (steps 1-3) left
-   `IotsaController` as "the mode machine + a radio shim + a shell over `_sleep`",
-   and `IotsaConfigMod` / `IotsaRunmodeMod` with a few rough edges. See
-   "Group A -- module-layer tidy" below. Lands on this branch (RunmodeMod stays
-   mandatory -- no optionality).
+5. **Module-layer tidy (Group A).** *Done*: `9da935b` (5a -- extract
+   `IotsaModeMachine` + `IotsaRadioPolicy`, mode-effects in one place,
+   `iotsaStatus.wasHardwareReset()`, `configurationModeTimeout` back to
+   `iotsaConfig`), `b5e8300` (5b -- sleep knobs -> `IotsaSleepConfig` on
+   `IotsaRunmodeMod`, `IotsaSleepPolicy` runtime-only), `0e295c4` (5c -- one
+   settings-writable predicate, `inConfigurationMode()` has no `extend` param),
+   `1dcd9af` (5d -- watchdog -> `IotsaController`, `watchdogDuration` an
+   `iotsaConfig` field on `/config`, decoupled from `IOTSA_HAS_SLEEP`), `adb73f3`
+   (5e -- `/api/status` split off `/api/config`). RunmodeMod stayed mandatory.
+   Not bench-tested.
 6. **Land on develop.** CHANGELOG line; hardware bench pass over the whole thing;
    `git merge --no-ff` so the restructuring reads as one unit in history.
 
@@ -355,6 +360,9 @@ Separable follow-ons (own issues, not gating the merge):
   code, un-named durations) -- folded into Group A step 5a.
 
 ## Group A -- module-layer tidy
+
+**Landed** as `9da935b` (5a) / `b5e8300` (5b) / `0e295c4` (5c) / `1dcd9af` (5d) /
+`adb73f3` (5e). The rest of this section is the record of the design.
 
 Steps 1-3 pushed the interlocking policies into `IotsaController`, but only
 `_sleep` became a real object; the mode machine and radio policy are still inline
