@@ -110,7 +110,7 @@ IotsaHttpServiceMod::loop() {
 
 void
 IotsaHttpServiceMod::webServerNotFoundHandler() {
-  iotsaConfig.postponeSleep(0);
+  iotsaController.postponeSleep(0);
   String message = "File Not Found\n\n";
   message += "URI: ";
   message += server->uri();
@@ -132,7 +132,7 @@ void IotsaHttpServiceMod::loop() {}
 #ifdef IOTSA_WITH_WEB
 void
 IotsaHttpServiceMod::webServerRootHandler() {
-  iotsaConfig.postponeSleep(0);
+  iotsaController.postponeSleep(0);
   String message = "<html><head><title>" + app.title + "</title></head><body><h1>" + app.title + "</h1>";
   IotsaBaseModule *m;
   for (m=app.firstModule; m; m=m->nextModule) {

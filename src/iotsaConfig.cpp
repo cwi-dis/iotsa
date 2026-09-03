@@ -88,27 +88,9 @@ uint32_t IotsaConfig::getStatusColor() {
   return extraColor; // Off when connected+normal; whiteish on the fallback AP
 }
 
-void IotsaConfig::pauseSleep() { 
-  pauseSleepCount++; 
-}
-
-void IotsaConfig::resumeSleep() { 
-  pauseSleepCount--; 
-}
-
-uint32_t IotsaConfig::postponeSleep(uint32_t ms) {
-  uint32_t noSleepBefore = millis() + ms + activityExtraWakeDuration;
-  if (noSleepBefore > postponeSleepMillis) postponeSleepMillis = noSleepBefore;
-  int32_t rv = postponeSleepMillis - millis();
-  if (rv < 2) rv = 0;
-  return rv;
-}
-
-bool IotsaConfig::canSleep() {
-  if (pauseSleepCount > 0) return false;
-  if (millis() > postponeSleepMillis) postponeSleepMillis = 0;
-  return postponeSleepMillis == 0;
-}
+// pauseSleep() / resumeSleep() / postponeSleep() / canSleep() moved to
+// IotsaSleepPolicy (cwi-dis/iotsa#106); no forwarder, callers renamed to
+// iotsaController.*.
 
 void IotsaConfig::configLoad() {
   IotsaConfigFileLoad cf("/config/config.cfg");

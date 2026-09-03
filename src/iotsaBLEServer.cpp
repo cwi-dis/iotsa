@@ -13,11 +13,11 @@
 class IotsaBLEServerCallbacks : public NimBLEServerCallbacks {
 	void onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) override {
     IFBLEDEBUG IotsaSerial.printf("BLE connect\n");
-    iotsaConfig.pauseSleep();
+    iotsaController.pauseSleep();
   }
 	void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override {
     IFBLEDEBUG IotsaSerial.printf("BLE Disconnect reason %d, restart advertising\n", reason);
-    iotsaConfig.resumeSleep();
+    iotsaController.resumeSleep();
     bool ok = pServer->startAdvertising();
     IotsaBLEServerMod::_noteAdvertisingStartResult(ok, 0);
   }
@@ -32,16 +32,16 @@ public:
 
 	void onRead(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override {
     IFBLEDEBUG IotsaSerial.printf("BLE char onRead %s\n", pCharacteristic->getUUID().toString().c_str());
-    iotsaConfig.postponeSleep(0);
+    iotsaController.postponeSleep(0);
     api->bleGetHandler(charUUID);
   }
 	void onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override {
     IFBLEDEBUG IotsaSerial.printf("BLE char onWrite %s\n", pCharacteristic->getUUID().toString().c_str());
-    iotsaConfig.postponeSleep(0);
+    iotsaController.postponeSleep(0);
     api->blePutHandler(charUUID);
   }
 	void onStatus(NimBLECharacteristic* pCharacteristic, uint32_t code) {
-    iotsaConfig.postponeSleep(0);
+    iotsaController.postponeSleep(0);
     IFBLEDEBUG IotsaSerial.printf("BLE char onStatus\n");
   }
 private:

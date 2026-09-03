@@ -20,7 +20,7 @@ void IotsaApiServiceRest::_getHandlerWrapper(const char *path) {
     if (auth && !auth->allows(path, IOTSA_API_GET)) return;
     IFDEBUG IotsaSerial.print("GET api ");
     IFDEBUG IotsaSerial.println(path);
-    iotsaConfig.postponeSleep(0);
+    iotsaController.postponeSleep(0);
     JsonDocument replyDocument;
     JsonObject reply = replyDocument.to<JsonObject>();
     bool ok = provider->getHandler(path, reply);
@@ -44,7 +44,7 @@ void IotsaApiServiceRest::_putHandlerWrapper(const char *path) {
     if (auth && !auth->allows(path, IOTSA_API_PUT)) return;
     IFDEBUG IotsaSerial.print("PUT api ");
     IFDEBUG IotsaSerial.println(path);
-    iotsaConfig.postponeSleep(0);
+    iotsaController.postponeSleep(0);
     JsonDocument replyDocument;
     JsonObject reply = replyDocument.to<JsonObject>();
     JsonDocument requestDocument;
@@ -76,7 +76,7 @@ void IotsaApiServiceRest::_postHandlerWrapper(const char *path) {
     if (auth && !auth->allows(path, IOTSA_API_POST)) return;
     IFDEBUG IotsaSerial.print("POST api ");
     IFDEBUG IotsaSerial.println(path);
-    iotsaConfig.postponeSleep(0);
+    iotsaController.postponeSleep(0);
     JsonDocument replyDocument;
     JsonObject reply = replyDocument.to<JsonObject>();
     JsonDocument requestDocument;

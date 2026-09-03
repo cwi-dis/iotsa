@@ -69,7 +69,7 @@ IotsaBatteryMod::webHandler() {
   }
   if( api.webService->server->hasArg("activityExtraWakeDuration")) {
     if (needsAuthentication()) return;
-    iotsaConfig.activityExtraWakeDuration = api.webService->server->arg("activityExtraWakeDuration").toInt();
+    iotsaController.sleep().activityExtraWakeDuration = api.webService->server->arg("activityExtraWakeDuration").toInt();
     anyChanged = true;
   }
   if( api.webService->server->hasArg("disableSleepOnUSBPower")) {
@@ -147,7 +147,7 @@ IotsaBatteryMod::webHandler() {
     ">Hibernate</option></select><br>";
   message += "Sleep duration (ms): <input name='sleepDuration' value='" + String(sleepDuration) + "'><br>";
   message += "Wake duration (ms): <input name='wakeDuration' value='" + String(wakeDuration) + "'><br>";
-  message += "Extra wake duration after activity (ms): <input name='activityExtraWakeDuration' value='" + String(iotsaConfig.activityExtraWakeDuration) + "'><br>";
+  message += "Extra wake duration after activity (ms): <input name='activityExtraWakeDuration' value='" + String(iotsaController.sleep().activityExtraWakeDuration) + "'><br>";
   message += "Extra wake duration after poweron/reset (ms): <input name='bootExtraWakeDuration' value='" + String(bootExtraWakeDuration) + "'><br>";
   if (pinVUSB >= 0) {
     message += "<input type='radio' name='disableSleepOnUSBPower' value='0'" + String(disableSleepOnUSBPower?"":" checked") + ">Sleep on both USB or battery power<br>";
@@ -216,8 +216,8 @@ bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
   reply["sleepDuration"] = sleepDuration;
   reply["wakeDuration"] = wakeDuration;
   reply["bootExtraWakeDuration"] = bootExtraWakeDuration;
-  reply["activityExtraWakeDuration"] = iotsaConfig.activityExtraWakeDuration;
-  reply["postponeSleep"] = iotsaConfig.postponeSleep(0);
+  reply["activityExtraWakeDuration"] = iotsaController.sleep().activityExtraWakeDuration;
+  reply["postponeSleep"] = iotsaController.postponeSleep(0);
 #ifdef ESP32
   reply["watchdogDuration"] = watchdogDuration;
   reply["cpuFrequency"] = getCpuFrequencyMhz();
@@ -242,7 +242,7 @@ bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, J
   bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
   if (reqObj["postponeSleep"].is<int>()) {
-    iotsaConfig.postponeSleep(reqObj["postponeSleep"].as<int>());
+    iotsaController.postponeSleep(reqObj["postponeSleep"].as<int>());
   }
   if (reqObj["sleepMode"].is<int>()) {
     sleepMode = (IotsaSleepMode)reqObj["sleepMode"].as<int>();
@@ -261,7 +261,7 @@ bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, J
     anyChanged = true;
   }
   if (reqObj["activityExtraWakeDuration"].is<int>()) {
-    iotsaConfig.activityExtraWakeDuration = reqObj["activityExtraWakeDuration"];
+    iotsaController.sleep().activityExtraWakeDuration = reqObj["activityExtraWakeDuration"];
     anyChanged = true;
   }
 #ifdef ESP32
@@ -352,7 +352,7 @@ void IotsaBatteryMod::configLoad() {
   sleepMode = (IotsaSleepMode)value;
   cf.get("wakeDuration", wakeDuration, 0);
   cf.get("bootExtraWakeDuration", bootExtraWakeDuration, 0);
-  cf.get("activityExtraWakeDuration", iotsaConfig.activityExtraWakeDuration, 0);
+  cf.get("activityExtraWakeDuration", iotsaController.sleep().activityExtraWakeDuration, 0);
   cf.get("sleepDuration", sleepDuration, 0);
 #ifdef ESP32
   cf.get("watchdogDuration", watchdogDuration, 0);
@@ -375,7 +375,7 @@ void IotsaBatteryMod::configSave() {
   cf.put("sleepMode", sleepMode);
   cf.put("wakeDuration", wakeDuration);
   cf.put("bootExtraWakeDuration", bootExtraWakeDuration);
-  cf.put("activityExtraWakeDuration", iotsaConfig.activityExtraWakeDuration);
+  cf.put("activityExtraWakeDuration", iotsaController.sleep().activityExtraWakeDuration);
   cf.put("sleepDuration", sleepDuration);
 #ifdef ESP32
   cf.put("watchdogDuration", watchdogDuration);
@@ -485,7 +485,7 @@ void IotsaBatteryMod::loop() {
   }
   // A final reason is if some other module is asking for an extension of the waking period.
   // This does not extend wifi duration, though.
-  if (!iotsaConfig.canSleep()) {
+  if (!iotsaController.canSleep()) {
       shouldSleep = false;
       SLEEP_DEBUG IotsaSerial.printf("iotsaBattery: no sleep, canSleep() return false\n");
   }
@@ -506,7 +506,7 @@ void IotsaBatteryMod::loop() {
       IFDEBUG IotsaSerial.println("Will disable WiFi for sleep");
       haveDisabledWiFi = true;
       iotsaController.setWifiRadioEnabled(false);  // cwi-dis/iotsa#106
-      iotsaConfig.postponeSleep(2000); // give time to disable wifi
+      iotsaController.postponeSleep(2000); // give time to disable wifi
       return;
     }
   }

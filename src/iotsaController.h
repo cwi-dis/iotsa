@@ -1,8 +1,9 @@
 #ifndef _IOTSACONTROLLER_H_
 #define _IOTSACONTROLLER_H_
 #include <stdint.h>
-#include "iotsaConfig.h"   // iotsa_mode, extensionCallback
-#include "iotsaStatus.h"   // iotsaConfigSettingsWritable() reads iotsaStatus
+#include "iotsaConfig.h"       // iotsa_mode, extensionCallback
+#include "iotsaStatus.h"       // iotsaConfigSettingsWritable() reads iotsaStatus
+#include "iotsaSleepPolicy.h"  // IotsaController::_sleep
 
 // Intended to be included from iotsa.h
 
@@ -20,10 +21,16 @@
 //   - the iotsa_mode state machine: current/requested mode, the auto-expiry
 //     timeout, the boot-time anti-tamper gate, and the one-shot "pending mode"
 //     mailbox that carries a request across a reboot.
-//   - WiFi radio-enablement policy: the boot default (wifiDisabledOnBoot), the
-//     runtime enable/disable requests, and "CONFIG/OTA mode forces the radio on".
+//   - WiFi + BLE radio-enablement policy: the boot defaults (wifiDisabledOnBoot,
+//     bleDisabledOnBoot), the runtime enable/disable requests, and the mode
+//     forcing (CONFIG/OTA -> WiFi on; CONFIG -> BLE on).
+//   - sleep-inhibit bookkeeping (_sleep, an IotsaSleepPolicy): pauseSleep() /
+//     postponeSleep() / canSleep(), moved off IotsaConfig.
 //
-// Still to move here: BLE radio-enablement and sleep/wake policy.
+// Still to move here (cwi-dis/iotsa#106 step 3): the rest of the sleep/wake
+// policy -- sleep config, wake-window timing, the decide() function -- out of
+// IotsaBatteryMod into _sleep, with the esp_*_sleep_start() machinery landing in
+// IotsaRunmodeMod under IOTSA_HAS_SLEEP.
 //
 
 class IotsaController {
@@ -59,6 +66,19 @@ public:
     return _bleRadioEnabled;
   }
 #endif
+
+  // ---- sleep/wake policy (cwi-dis/iotsa#106) ----
+  // Sleep-inhibit surface, moved off IotsaConfig. Thin delegates to _sleep;
+  // canSleep() additionally forces "no" while a maintenance mode is active (was
+  // a separate inConfigurationMode() check in IotsaBatteryMod::loop()).
+  void pauseSleep()  { _sleep.pauseSleep(); }
+  void resumeSleep() { _sleep.resumeSleep(); }
+  uint32_t postponeSleep(uint32_t ms) { return _sleep.postponeSleep(ms); }
+  bool canSleep() {
+    if (_mode == IOTSA_MODE_CONFIG || _mode == IOTSA_MODE_OTA) return false;
+    return _sleep.canSleep();
+  }
+  IotsaSleepPolicy& sleep() { return _sleep; }
 
   // ---- iotsa_mode state machine ----
 
@@ -103,6 +123,7 @@ private:
   uint32_t _modeEndTime = 0;
   uint32_t _nextModeEndTime = 0;
   extensionCallback _extendCb;
+  IotsaSleepPolicy _sleep;
 };
 
 extern IotsaController iotsaController;

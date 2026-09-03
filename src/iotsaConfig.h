@@ -31,10 +31,10 @@ private:
 #ifdef IOTSA_WITH_BLE
   bool bleDisabledOnBoot = false;   // boot policy; IotsaController seeds _bleRadioEnabled from it
 #endif
-  // The iotsa_mode state machine moved to IotsaController (cwi-dis/iotsa#106).
-  uint32_t postponeSleepMillis = 0;
-  uint32_t activityExtraWakeDuration = 0;
-  int pauseSleepCount = 0;
+  // The iotsa_mode state machine, and the sleep-inhibit bookkeeping
+  // (postponeSleepMillis / activityExtraWakeDuration / pauseSleepCount plus
+  // pauseSleep()/postponeSleep()/canSleep()), moved to IotsaController
+  // (cwi-dis/iotsa#106). Use iotsaController.postponeSleep() etc.
 public:
   // Mode-machine setting: still persisted in config.cfg (rebootTimeout key) and
   // edited via /config; IotsaController reads it. cwi-dis/iotsa#106 will move it.
@@ -59,10 +59,6 @@ public:
   void setDefaultCertificate();
   bool usingDefaultCertificate();
   uint32_t getStatusColor();
-  void pauseSleep();
-  void resumeSleep();
-  uint32_t postponeSleep(uint32_t ms);
-  bool canSleep();
 
   // ---- moved to IotsaController (cwi-dis/iotsa#106); deprecated forwarders ----
   [[deprecated("moved to iotsaController.requestReboot()")]]
