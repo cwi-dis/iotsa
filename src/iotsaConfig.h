@@ -1,9 +1,7 @@
 #ifndef _IOTSACONFIG_H_
 #define _IOTSACONFIG_H_
 
-#include <functional>
-
-typedef std::function<void(void)> extensionCallback;
+#include <stdint.h>   // uint32_t / uint8_t (was pulled in transitively via <functional>)
 
 // Intended to be included from iotsa.h
 
@@ -73,8 +71,8 @@ public:
   void allowRequestedConfigurationMode();
   [[deprecated("moved to iotsaController.allowRCMDescription()")]]
   void allowRCMDescription(const char *_rcmInteractionDescription);
-  [[deprecated("moved to iotsaController.setExtensionCallback()")]]
-  void setExtensionCallback(extensionCallback ecmcb);
+  // setExtensionCallback() deleted, not forwarded (cwi-dis/iotsa#106): the
+  // extendCurrentMode callback mechanism is gone, and it had no downstream users.
 
   // ---- moved to IotsaStatus (cwi-dis/iotsa#106); deprecated forwarders ----
   [[deprecated("moved to iotsaStatus.printHeapSpace()")]]

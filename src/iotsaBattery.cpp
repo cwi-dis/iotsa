@@ -203,7 +203,6 @@ void IotsaBatteryMod::setup() {
     IFDEBUG IotsaSerial.printf("Watchdog: %d ms\n", watchdogDuration);
   }
 #endif
-  iotsaController.setExtensionCallback(std::bind(&IotsaBatteryMod::extendCurrentMode, this));
 }
 
 void IotsaBatteryMod::allowBLEConfigModeSwitch() {
@@ -393,19 +392,9 @@ void IotsaBatteryMod::configSave() {
   millisAtWakeup = 0;
 }
 
-void IotsaBatteryMod::extendCurrentMode() {
-#ifdef ESP32
-  if (watchdogTimer) {
-#if ESP_ARDUINO_VERSION_MAJOR <= 2
-    timerWrite(watchdogTimer, 0);
-#else
-    timerAlarm(watchdogTimer, watchdogDuration*1000, false, 0);
-#endif
-  }
-#endif
-  millisAtWakeup = millis();
-  SLEEP_DEBUG IotsaSerial.println("Battery: extend mode");
-}
+// IotsaBatteryMod::extendCurrentMode() (the setExtensionCallback target) removed
+// (cwi-dis/iotsa#106): loop() feeds the watchdog every iteration anyway, and the
+// millisAtWakeup bump is now iotsaController.extendCurrentMode() -> postponeSleep(0).
 
 void IotsaBatteryMod::_notifySleepWakeup(bool sleep) {
   for(IotsaBaseModule* m=app.firstEarlyModule; m != nullptr; m=m->nextModule) {

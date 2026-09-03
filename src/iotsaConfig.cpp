@@ -61,7 +61,6 @@ const char* IotsaConfig::getBootReason() {
 const char *IotsaConfig::modeName(iotsa_mode mode) { return iotsaController.modeName(mode); }
 bool IotsaConfig::inConfigurationMode(bool extend) { return iotsaController.inConfigurationMode(extend); }
 void IotsaConfig::extendCurrentMode() { iotsaController.extendCurrentMode(); }
-void IotsaConfig::setExtensionCallback(extensionCallback ecmcb) { iotsaController.setExtensionCallback(ecmcb); }
 void IotsaConfig::allowRequestedConfigurationMode() { iotsaController.allowRequestedConfigurationMode(); }
 void IotsaConfig::allowRCMDescription(const char *desc) { iotsaController.allowRCMDescription(desc); }
 // inConfigurationOrFactoryMode() removed (cwi-dis/iotsa#106): callers now use

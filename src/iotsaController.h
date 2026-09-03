@@ -92,9 +92,9 @@ public:
   void beginConfigurationMode();
   // Back to IOTSA_MODE_NORMAL. In-RAM only; the mailbox is never touched here.
   void endConfigurationMode();
-  // Push the auto-expiry of the current mode forward, and poke the extension callback.
+  // Push the auto-expiry of the current mode forward; also counts as activity for
+  // the sleep wake-window (cwi-dis/iotsa#106).
   void extendCurrentMode();
-  void setExtensionCallback(extensionCallback cb);
   void allowRCMDescription(const char *desc) { rcmInteractionDescription = desc; }
   void factoryReset();   // format the FS and reboot
 
@@ -122,7 +122,6 @@ private:
   iotsa_mode _nextMode = IOTSA_MODE_NORMAL;
   uint32_t _modeEndTime = 0;
   uint32_t _nextModeEndTime = 0;
-  extensionCallback _extendCb;
   IotsaSleepPolicy _sleep;
 };
 

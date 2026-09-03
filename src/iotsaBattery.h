@@ -29,7 +29,6 @@ public:
   void allowBLEConfigModeSwitch();
 protected:
   void _notifySleepWakeup(bool sleep);
-  void extendCurrentMode();
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
   void configLoad() override;
