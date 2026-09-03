@@ -1,8 +1,7 @@
 #include "iotsa.h"
-#include "iotsaRunmode.h"
+#include "iotsaRunmode.h"   // pulls in iotsaBLEServer.h too
 #ifdef IOTSA_HAS_SLEEP
 #include "iotsaConfigFile.h"
-#include "iotsaBLEServer.h"
 #ifdef ESP32
 #include <esp_wifi.h>
 #include <esp_bt.h>
@@ -148,9 +147,9 @@ void IotsaRunmodeMod::webHandler() {
         message += " has been requested. Enable within ";
         message += String((iotsaController.requestedModeEndTime() - millis())/1000);
         message += " seconds by power cycling";
-        if (iotsaController.rcmInteractionDescription) {
+        if (iotsaController.rcmInteractionDescription()) {
           message += " or ";
-          message += iotsaController.rcmInteractionDescription;
+          message += iotsaController.rcmInteractionDescription();
         }
         message += ".</em></p>";
       }
@@ -285,9 +284,9 @@ String IotsaRunmodeMod::info() {
     message += " has been requested. Enable within ";
     message += String((iotsaController.requestedModeEndTime() - millis())/1000);
     message += " seconds by power cycling";
-    if (iotsaController.rcmInteractionDescription) {
+    if (iotsaController.rcmInteractionDescription()) {
       message += " or ";
-      message += iotsaController.rcmInteractionDescription;
+      message += iotsaController.rcmInteractionDescription();
     }
     message += ".</p>";
   } else if (iotsaController.currentModeEndTime()) {
@@ -493,7 +492,8 @@ void IotsaRunmodeMod::configLoad() {
     IFDEBUG IotsaSerial.printf("Set CPU frequency to %d MHz on boot\n", _cpuFrequencyBoot);
   }
 #endif
-  sp.millisAtWakeup = 0;
+  // (millisAtWakeup is left alone -- _sleepTick() seeds it on its first run via
+  // noteAwake(). configLoad() runs once at setup() when it's already 0.)
 }
 
 void IotsaRunmodeMod::configSave() {

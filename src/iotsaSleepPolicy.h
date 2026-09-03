@@ -45,7 +45,8 @@ public:
   // Margin added to a BLE scan's own duration before sleep is allowed again.
   static constexpr uint32_t SCAN_COMPLETION_MARGIN_MS = 1000;
 
-  // ---- sleep-inhibit bookkeeping ----
+  // ---- sleep-inhibit bookkeeping (always compiled; callers all over the
+  //      framework -- iotsaInput, iotsaApiRest, iotsaBLEClient, iotsaBLEServer) ----
 
   // "Someone just interacted with us" (a REST/web/BLE request, a button press,
   // config mode extended, ...). Holds sleep off for
@@ -66,7 +67,8 @@ public:
   // Extra time to stay awake after any activity, on top of ACTIVITY_FLOOR_MS.
   uint32_t activityExtraWakeDuration = 0;
 
-  // ---- sleep config (persisted by IotsaRunmodeMod; was IotsaBatteryMod) ----
+  // ---- sleep config + wake-window + decide() -- only meaningful under
+  //      IOTSA_HAS_SLEEP, where IotsaRunmodeMod is the executor + persists it ----
   IotsaSleepMode sleepMode = IOTSA_SLEEP_NONE;
   uint32_t sleepDuration = 0;         // sleep length (ms); 0 => no timer wakeup
   uint32_t wakeDuration = 0;          // stay awake this long after each wake (ms)

@@ -32,7 +32,7 @@
 
 class IotsaController {
 public:
-  void begin();  // from IotsaApplication::setup(), right after configLoad()
+  void begin();  // from IotsaApplication::setup(), right after iotsaConfig.ensureConfigLoaded()
   void tick();   // from IotsaApplication::loop()
 
   // Deferred reboot: ESP.restart() after `ms`, long enough for the reply that
@@ -97,7 +97,11 @@ public:
   // the sleep wake-window (cwi-dis/iotsa#106). A no-op on the mode window when not
   // in a maintenance mode (the activity note still happens).
   void extendCurrentMode();
-  void allowRCMDescription(const char *desc) { rcmInteractionDescription = desc; }
+  // Human-readable hint for how to enter the requested mode on this device
+  // ("press button 4 times", ...). Set by the app (allowRCMDescription()), read
+  // by the mode-status blurbs in IotsaRunmodeMod / IotsaOtaMod.
+  void allowRCMDescription(const char *desc) { _rcmInteractionDescription = desc; }
+  const char *rcmInteractionDescription() const { return _rcmInteractionDescription; }
   void factoryReset();   // format the FS and reboot
 
   bool inConfigurationMode(bool extend = false);
@@ -114,13 +118,10 @@ public:
   uint32_t modeTimeout() const { return _modeTimeout; }
   void setModeTimeout(uint32_t seconds) { _modeTimeout = seconds; }
 
-  // Human-readable hint for how to enter the requested mode on this device
-  // ("press button 4 times", ...). Set by the app via allowRCMDescription().
-  const char *rcmInteractionDescription = nullptr;
-
 private:
   void _clearPendingMode();   // drop a pending request: RAM state + the mailbox file
 
+  const char *_rcmInteractionDescription = nullptr;
   uint32_t _rebootAtMillis = 0;
   uint32_t _modeTimeout = CONFIGURATION_MODE_TIMEOUT;
   bool _wifiRadioEnabled = true;   // runtime desired state; begin() seeds it from !wifiDisabledOnBoot

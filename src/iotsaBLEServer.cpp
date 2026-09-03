@@ -237,9 +237,8 @@ void IotsaBLEServerMod::resumeServer(int duration) {
 }
 
 void IotsaBLEServerMod::setup() {
-  isEnabled = true;
   createServer();
-  configLoad();
+  configLoad();   // sets isEnabled from bleserver.cfg (default true)
   if (!isEnabled) {
     IFBLEDEBUG IotsaSerial.println("BLE deinit, not isEnabled");
     NimBLEDevice::deinit(false);
