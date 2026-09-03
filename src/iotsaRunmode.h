@@ -107,10 +107,13 @@ protected:
 #endif // IOTSA_WITH_BLE
 #ifdef IOTSA_HAS_SLEEP
 private:
-  // The sleep executor, called every loop(). Reads IotsaSleepPolicy for the
-  // config + decision, performs the actual sleep. cwi-dis/iotsa#106.
+  // The sleep executor, called every loop(). Feeds _sleepConfig to
+  // iotsaController.sleep().decide() and performs the actual sleep. cwi-dis/iotsa#106.
   void _sleepTick();
   void _notifySleepWakeup(bool sleep);
+  // The persisted sleep config -- this module owns it and persists it (sleep.cfg);
+  // IotsaSleepPolicy only borrows it via decide() (cwi-dis/iotsa#106 step 5b).
+  IotsaSleepConfig _sleepConfig;
   int _pinDisableSleep = -1;
 #ifdef ESP32
   uint32_t _watchdogDuration = 0;

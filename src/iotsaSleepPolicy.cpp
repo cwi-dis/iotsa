@@ -43,19 +43,19 @@ void IotsaSleepPolicy::noteWokeFromSleep() {
   didWakeFromSleep = true;
 }
 
-IotsaSleepDecision IotsaSleepPolicy::decide(bool onUsbPower) {
+IotsaSleepDecision IotsaSleepPolicy::decide(const IotsaSleepConfig& cfg, bool onUsbPower) {
   IotsaSleepDecision d;
-  if (sleepMode == IOTSA_SLEEP_NONE) return d;
-  uint32_t curWakeDuration = wakeDuration;
-  if (!didWakeFromSleep) curWakeDuration += bootExtraWakeDuration;
+  if (cfg.mode == IOTSA_SLEEP_NONE) return d;
+  uint32_t curWakeDuration = cfg.wakeDuration;
+  if (!didWakeFromSleep) curWakeDuration += cfg.bootExtraWakeDuration;
   if (curWakeDuration == 0) return d;
   if (millis() <= millisAtWakeup + curWakeDuration) return d;
   // Reasons not to sleep even though the wake window has elapsed. The caller has
   // already checked pinDisableSleep (hardware) and iotsaController.canSleep()
   // (inhibits + maintenance mode).
-  if (disableSleepOnWiFi && iotsaStatus.wifiEnabled) return d;
-  if (disableSleepOnUSBPower && onUsbPower) return d;
-  d.mode = sleepMode;
-  d.durationMs = sleepDuration;
+  if (cfg.disableSleepOnWiFi && iotsaStatus.wifiEnabled) return d;
+  if (cfg.disableSleepOnUSBPower && onUsbPower) return d;
+  d.mode = cfg.mode;
+  d.durationMs = cfg.sleepDuration;
   return d;
 }

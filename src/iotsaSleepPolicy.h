@@ -5,18 +5,20 @@
 // Intended to be included from iotsaController.h
 
 //
-// IotsaSleepPolicy -- the sleep/wake decision, extracted from IotsaConfig and
-// IotsaBatteryMod (cwi-dis/iotsa#106).
+// IotsaSleepPolicy -- the sleep/wake *runtime* state and decision (cwi-dis/iotsa#106).
 //
-// Pure logic, no platform headers: this owns the sleep config + inhibit
-// bookkeeping + wake-window state, and decide() answers "should the device sleep
-// this tick, and how". It never sleeps itself -- IotsaRunmodeMod holds the
-// esp_*_sleep_start() machinery (under IOTSA_HAS_SLEEP) and executes decide()'s
-// result. Held by value as IotsaController::_sleep, reached through
-// iotsaController.sleep() plus the iotsaController.noteActivity() /
-// {pause,resume,postpone}Sleep() / canSleep() wrappers -- those have callers all
-// over the framework (iotsaInput, iotsaApiRest, iotsaBLEClient, ...) so the
-// inhibit surface is always compiled even when nothing sleeps.
+// Pure logic, no platform headers. Holds the sleep-inhibit bookkeeping (always
+// compiled -- callers all over the framework) + the wake-window clock, and
+// decide() answers "should the device sleep this tick, and how". It never sleeps
+// itself: IotsaRunmodeMod holds the esp_*_sleep_start() machinery (under
+// IOTSA_HAS_SLEEP) and executes decide()'s result. Held by value as
+// IotsaController::_sleep.
+//
+// The persisted sleep *config* is NOT here -- it belongs to IotsaRunmodeMod,
+// which persists it (sleep.cfg) and passes it to decide() as a SleepConfig
+// (cwi-dis/iotsa#106 step 5b). The one exception is activityExtraWakeDuration:
+// it tunes the always-compiled inhibit path (noteActivity / postponeSleep), so
+// it lives here and IotsaRunmodeMod seeds it at configLoad().
 //
 
 enum IotsaSleepMode : uint8_t {
@@ -31,6 +33,19 @@ enum IotsaSleepMode : uint8_t {
 struct IotsaSleepDecision {
   IotsaSleepMode mode = IOTSA_SLEEP_NONE;   // IOTSA_SLEEP_NONE => stay awake
   uint32_t durationMs = 0;                  // timer-wakeup duration (0 => none set)
+};
+
+// The persisted sleep config -- owned and persisted by IotsaRunmodeMod, read by
+// IotsaSleepPolicy::decide(). Not the watchdog / CPU-frequency knobs (still
+// IotsaRunmodeMod members) nor activityExtraWakeDuration (on IotsaSleepPolicy).
+struct IotsaSleepConfig {
+  IotsaSleepMode mode = IOTSA_SLEEP_NONE;
+  uint32_t sleepDuration = 0;          // sleep length (ms); 0 => no timer wakeup
+  uint32_t wakeDuration = 0;           // stay awake this long after each wake (ms)
+  uint32_t bootExtraWakeDuration = 0;  // extra, only on a power-on/reset wake
+  bool disableSleepOnWiFi = false;     // don't sleep while the WiFi radio is up
+  bool disableWiFiOnSleep = false;     // power WiFi down before sleeping
+  bool disableSleepOnUSBPower = false; // don't sleep while on USB power
 };
 
 class IotsaSleepPolicy {
@@ -65,26 +80,18 @@ public:
   bool canSleep();
 
   // Extra time to stay awake after any activity, on top of ACTIVITY_FLOOR_MS.
+  // Persisted knob, seeded here by IotsaRunmodeMod::configLoad() -- it's consumed
+  // by the inhibit path above, not by decide().
   uint32_t activityExtraWakeDuration = 0;
-
-  // ---- sleep config + wake-window + decide() -- only meaningful under
-  //      IOTSA_HAS_SLEEP, where IotsaRunmodeMod is the executor + persists it ----
-  IotsaSleepMode sleepMode = IOTSA_SLEEP_NONE;
-  uint32_t sleepDuration = 0;         // sleep length (ms); 0 => no timer wakeup
-  uint32_t wakeDuration = 0;          // stay awake this long after each wake (ms)
-  uint32_t bootExtraWakeDuration = 0; // extra, only on a power-on/reset wake
-  bool disableSleepOnWiFi = false;    // don't sleep while the WiFi radio is up
-  bool disableWiFiOnSleep = false;    // power WiFi down before sleeping
-  bool disableSleepOnUSBPower = false;// don't sleep while on USB power
 
   // ---- wake-window state ----
   uint32_t millisAtWakeup = 0;        // millis() of the last (re)start of the wake window; 0 = not started
   bool didWakeFromSleep = false;      // false only on the power-on/reset boot
 
-  // Should the device sleep this tick? onUsbPower is IotsaBatteryMod's reading
-  // (iotsaStatus.onUsbPower); IOTSA_HAS_SLEEP builds with no battery pass false.
+  // Should the device sleep this tick? cfg is IotsaRunmodeMod's SleepConfig;
+  // onUsbPower is iotsaStatus.onUsbPower (false when there's no battery module).
   // The caller has already checked pinDisableSleep and iotsaController.canSleep().
-  IotsaSleepDecision decide(bool onUsbPower);
+  IotsaSleepDecision decide(const IotsaSleepConfig& cfg, bool onUsbPower);
   // (Re)start the wake-window clock -- once when the executor first runs, and
   // after every wake.
   void noteAwake();
