@@ -2,9 +2,7 @@
 #include "iotsaBattery.h"
 #include "iotsaConfigFile.h"
 #include "iotsaBLEServer.h"
-#ifdef IOTSA_HAS_SLEEP
-#include "iotsaRunmode.h"   // setPinDisableSleep() forwards here (cwi-dis/iotsa#106)
-#endif
+#include "iotsaRunmode.h"   // setPinDisableSleep() / allowBLEConfigModeSwitch() forward here (cwi-dis/iotsa#106)
 
 // IotsaBatteryMod is battery *hardware* only now: VBat / VUSB ADC sensing and the
 // 180F BLE service. Sleep/wake moved to IotsaSleepPolicy + IotsaRunmodeMod
@@ -72,8 +70,11 @@ void IotsaBatteryMod::setPinDisableSleep(int pin) {
 }
 
 void IotsaBatteryMod::allowBLEConfigModeSwitch() {
-  bleConfigModeSwitchAllowed = true;
-  iotsaController.allowRCMDescription("use BLE to set 'reboot with WiFi' to 2");
+  // The BLE mode-promote gesture moved to IotsaRunmodeMod's control service
+  // (cwi-dis/iotsa#106). Transitional forwarder for the ~4 downstream callers.
+#ifdef IOTSA_WITH_BLE
+  if (IotsaRunmodeMod::instance()) IotsaRunmodeMod::instance()->allowBLEModeSwitch();
+#endif
 }
 
 bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
@@ -101,15 +102,6 @@ bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, J
 }
 
 #ifdef IOTSA_WITH_BLE
-bool IotsaBatteryMod::blePutHandler(UUIDstring charUUID) {
-  if (charUUID == doSoftRebootUUID) {
-      doSoftReboot = bleApi.getAsInt(doSoftRebootUUID);
-      IFDEBUG IotsaSerial.printf("request reboot mode %d\n", doSoftReboot);
-      return true;
-  }
-  return false;
-}
-
 bool IotsaBatteryMod::bleGetHandler(UUIDstring charUUID) {
   _readVoltages();
   if (charUUID == levelVBatUUID) {
@@ -129,7 +121,6 @@ void IotsaBatteryMod::lateSetup() {
   bleApi.setup(serviceUUID, this);
   bleApi.addCharacteristic(levelVBatUUID, bleApi.BLE_READ, NimBLE2904::FORMAT_UINT8, 0x27AD, "Battery Level");
   bleApi.addCharacteristic(levelVUSBUUID, bleApi.BLE_READ, NimBLE2904::FORMAT_UINT8, 0x27AD, "USB Voltage Level");
-  bleApi.addCharacteristic(doSoftRebootUUID, bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "Reboot with WiFi");
 #endif
   api.setup("battery", true, true);
   name = "battery";
@@ -152,25 +143,6 @@ void IotsaBatteryMod::loop() {
   if (firstLoop) {
     firstLoop = false;
     _readVoltages();
-  }
-  // A reboot / config-mode change requested over BLE (doSoftRebootUUID).
-  if (doSoftReboot) {
-    if (doSoftReboot == 2) {
-      if (bleConfigModeSwitchAllowed) {
-        IFDEBUG IotsaSerial.println("Allow configmode change from BLE");
-        iotsaController.allowRequestedConfigurationMode();
-      } else {
-        IFDEBUG IotsaSerial.println("Configmode change from BLE requested but not allowed");
-      }
-    } else if (doSoftReboot == 3) {
-      iotsaController.setWifiRadioEnabled(true);   // cwi-dis/iotsa#106
-      IFDEBUG IotsaSerial.println("Enable WiFi from BLE");
-    } else {
-      // Probably 1: reboot, deferred so the BLE stack can flush the write ack (see #130).
-      IFDEBUG IotsaSerial.println("Reboot from BLE");
-      iotsaController.requestReboot(1000);
-    }
-    doSoftReboot = 0;
   }
 }
 

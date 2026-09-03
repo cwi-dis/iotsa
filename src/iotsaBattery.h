@@ -23,8 +23,9 @@ public:
 #endif
   void setPinVUSB(int pin, float range=2.5) { pinVUSB = pin; rangeVUSB = range; }
   void setPinVBat(int pin, float range=3.6, float minRange=0) { pinVBat = pin; rangeVBat = range; rangeVBatMin = minRange; }
-  // Transitional: pinDisableSleep is now IotsaRunmodeMod's (cwi-dis/iotsa#106).
-  // Kept so the ~4 downstream callers keep compiling until the #106 sweep.
+  // Transitional forwarders to IotsaRunmodeMod, now the home for pinDisableSleep
+  // and the BLE mode-promote gesture (cwi-dis/iotsa#106). Kept so the handful of
+  // downstream callers keep compiling until the #106 sweep.
   void setPinDisableSleep(int pin);
   void allowBLEConfigModeSwitch();
 protected:
@@ -35,8 +36,6 @@ protected:
 #ifdef IOTSA_WITH_WEB
   void webHandler() override;
 #endif
-  int doSoftReboot = 0;
-  bool bleConfigModeSwitchAllowed = false;
   void _readVoltages();
   int pinVBat = -1;
   int pinVUSB = -1;
@@ -48,12 +47,10 @@ protected:
   uint8_t levelVUSB;
 #ifdef IOTSA_WITH_BLE
   IotsaBleApiService bleApi;
-  bool blePutHandler(UUIDstring charUUID) override;
   bool bleGetHandler(UUIDstring charUUID) override;
   static constexpr UUIDstring serviceUUID = "180F";
   static constexpr UUIDstring levelVBatUUID = "2A19";
   static constexpr UUIDstring levelVUSBUUID = "E4D90002-250F-46E6-90A4-AB98F01A0587";
-  static constexpr UUIDstring doSoftRebootUUID = "E4D90003-250F-46E6-90A4-AB98F01A0587";
 #endif // IOTSA_WITH_BLE
 };
 

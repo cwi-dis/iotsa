@@ -42,6 +42,13 @@ public:
   // A pin that, held LOW, blocks sleep (was IotsaBatteryMod::setPinDisableSleep).
   void setPinDisableSleep(int pin) { _pinDisableSleep = pin; }
 #endif
+#ifdef IOTSA_WITH_BLE
+  // Opt in to letting a BLE client promote the pending requested mode to active
+  // *now* (via the promoteMode characteristic) -- a BLE connection is taken as
+  // proof of physical presence. Was IotsaBatteryMod::allowBLEConfigModeSwitch()
+  // (cwi-dis/iotsa#106); the "is BLE presence enough" call is left to #107.
+  void allowBLEModeSwitch();
+#endif
 protected:
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
@@ -60,14 +67,19 @@ protected:
   bool blePutHandler(UUIDstring charUUID) override;
   bool bleGetHandler(UUIDstring charUUID) override;
   IotsaBleApiService bleApi;
-  int _pendingBleMode = -1;       // -1: nothing pending; else an iotsa_mode value
+  int _pendingBleMode = -1;         // -1: nothing pending; else an iotsa_mode value
   bool _pendingBleReboot = false;
+  bool _pendingBlePromoteMode = false;
+  int _pendingBleWifiDisabled = -1; // -1: nothing pending; 0: enable radio; 1: disable
+  bool _bleAllowModeSwitch = false; // set by allowBLEModeSwitch()
   // Minted for iotsa#106 -- the iotsa runmode control service. xxxx0001 is the
   // service, xxxx0002+ the characteristics (same convention as elsewhere).
   static constexpr UUIDstring serviceUUID       = "6E5D0001-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
   static constexpr UUIDstring currentModeUUID   = "6E5D0002-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
   static constexpr UUIDstring requestedModeUUID = "6E5D0003-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
   static constexpr UUIDstring rebootUUID        = "6E5D0004-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
+  static constexpr UUIDstring promoteModeUUID   = "6E5D0005-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
+  static constexpr UUIDstring wifiDisabledUUID  = "6E5D0006-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
 #endif // IOTSA_WITH_BLE
 #ifdef IOTSA_HAS_SLEEP
 private:

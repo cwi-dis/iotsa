@@ -61,6 +61,8 @@ void IotsaRunmodeMod::lateSetup() {
   bleApi.addCharacteristic(currentModeUUID, bleApi.BLE_READ, NimBLE2904::FORMAT_UINT8, 0x2700, "Current mode");
   bleApi.addCharacteristic(requestedModeUUID, bleApi.BLE_READ|bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "Request mode for next boot");
   bleApi.addCharacteristic(rebootUUID, bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "Reboot");
+  bleApi.addCharacteristic(promoteModeUUID, bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "Promote requested mode now");
+  bleApi.addCharacteristic(wifiDisabledUUID, bleApi.BLE_READ|bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "WiFi radio disabled");
 #endif
   api.setup("runmode", true, true);
   name = "runmode";
@@ -76,6 +78,14 @@ void IotsaRunmodeMod::loop() {
   if (_pendingBleReboot) {
     _pendingBleReboot = false;
     iotsaController.requestReboot(1000);   // let the BLE stack finish the write ack (see #130)
+  }
+  if (_pendingBlePromoteMode) {
+    _pendingBlePromoteMode = false;
+    iotsaController.allowRequestedConfigurationMode();
+  }
+  if (_pendingBleWifiDisabled >= 0) {
+    iotsaController.setWifiRadioEnabled(_pendingBleWifiDisabled == 0);
+    _pendingBleWifiDisabled = -1;
   }
 #endif
 #ifdef IOTSA_HAS_SLEEP
@@ -364,6 +374,11 @@ bool IotsaRunmodeMod::putHandler(const char *path, const JsonVariant& request, J
 }
 
 #ifdef IOTSA_WITH_BLE
+void IotsaRunmodeMod::allowBLEModeSwitch() {
+  _bleAllowModeSwitch = true;
+  iotsaController.allowRCMDescription("write promoteMode on the BLE runmode service");
+}
+
 bool IotsaRunmodeMod::blePutHandler(UUIDstring charUUID) {
   if (charUUID == requestedModeUUID) {
     _pendingBleMode = bleApi.getAsInt(requestedModeUUID);
@@ -373,6 +388,22 @@ bool IotsaRunmodeMod::blePutHandler(UUIDstring charUUID) {
   if (charUUID == rebootUUID) {
     if (bleApi.getAsInt(rebootUUID)) _pendingBleReboot = true;
     IFDEBUG IotsaSerial.println("runmode: BLE reboot requested");
+    return true;
+  }
+  if (charUUID == promoteModeUUID) {
+    if (bleApi.getAsInt(promoteModeUUID)) {
+      if (_bleAllowModeSwitch) {
+        _pendingBlePromoteMode = true;
+        IFDEBUG IotsaSerial.println("runmode: BLE promote-mode requested");
+      } else {
+        IFDEBUG IotsaSerial.println("runmode: BLE promote-mode requested but not allowed");
+      }
+    }
+    return true;
+  }
+  if (charUUID == wifiDisabledUUID) {
+    _pendingBleWifiDisabled = bleApi.getAsInt(wifiDisabledUUID) ? 1 : 0;
+    IFDEBUG IotsaSerial.printf("runmode: BLE wifiDisabled=%d\n", _pendingBleWifiDisabled);
     return true;
   }
   return false;
@@ -385,6 +416,10 @@ bool IotsaRunmodeMod::bleGetHandler(UUIDstring charUUID) {
   }
   if (charUUID == requestedModeUUID) {
     bleApi.set(requestedModeUUID, (uint8_t)iotsaController.requestedMode());
+    return true;
+  }
+  if (charUUID == wifiDisabledUUID) {
+    bleApi.set(wifiDisabledUUID, (uint8_t)(iotsaStatus.wifiEnabled ? 0 : 1));
     return true;
   }
   return false;
