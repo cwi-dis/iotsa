@@ -153,18 +153,20 @@ controller.
 ## Transition strategy
 
 Cross-version compatibility is worth carrying **only for the REST `/api/config` mode
-keys** -- `currentMode` / `requestedMode` / `modeTimeout` / `reboot` -- so a newer
-Python CLI can drive an older device and vice versa. `IotsaConfigMod` keeps those as
-`[[deprecated]]` forwarders onto `/api/runmode` indefinitely (until the CLI itself moves).
+keys on PUT** -- `currentMode` / `requestedMode` / `modeTimeout` / `reboot` -- so a
+newer Python CLI can still drive an older device. `IotsaConfigMod::putHandler` keeps
+accepting those and forwarding them onto the controller indefinitely (until the CLI
+itself moves). The matching **GET mirror** (`/api/config` echoing `currentMode` etc.)
+was **dropped in [#243](https://github.com/cwi-dis/iotsa/issues/243) step D** -- see the
+"Post-#106 API surface cleanup" section at the end of this doc.
 
 The **C++ `iotsaConfig.*` forwarders** (`networkIsUp()`, `requestReboot()`,
-`inConfigurationMode()`, `extendCurrentMode()`, …) are pure transitional cruft --
-downstream is compiled against a fixed iotsa version, so there is no cross-version
-story. They exist so the ~20 downstream repos keep building across the one release
-where #106 lands. **Sweep them onto the new names (`iotsaController.*` / `iotsaStatus.*`)
-when #106 hits `develop`, then delete every C++ forwarder the release after.** New moves
-from here on (the step-3 sleep primitives) skip the forwarder entirely: rename the
-in-tree callers in the same commit, let the downstream sweep pick up the rest.
+`inConfigurationMode()`, `extendCurrentMode()`, …) were pure transitional cruft --
+downstream is compiled against a fixed iotsa version, so there was no cross-version
+story. Originally planned as "keep one release, then delete"; **#243 step B removed them
+immediately** (commit on the `243-api-surface` branch) in favour of a single downstream
+C++ sweep pass rather than a staged one. New moves from #106 step 3 on (the sleep
+primitives) already skipped the forwarder entirely.
 
 ### REST-key relocations and `iotsa backup` / `restore`
 
@@ -176,7 +178,8 @@ firmware upgrade:
 |---|---|---|
 | `sleepMode` / `sleepDuration` / `wakeDuration` / `bootExtraWakeDuration` / `activityExtraWakeDuration` / `disableSleepOnWiFi` / `disableWiFiOnSleep` / `disableSleepOnUSBPower` / `cpuFrequencyBoot` / `cpuFrequencySleep` | `/api/battery` | `/api/runmode` |
 | `watchdogDuration` | `/api/battery` | `/api/config` |
-| `bootCause` / `uptime` / `fsTotalBytes` / `fsUsedBytes` / `privateWifi` / `mdnsEnabled` | `/api/config` | `/api/status` (kept on `/api/config` one release) |
+| `bootCause` / `uptime` / `fsTotalBytes` / `fsUsedBytes` / `privateWifi` / `mdnsEnabled` | `/api/config` | `/api/status` (the one-release `/api/config` mirror was dropped in #243 step D) |
+| `currentMode` / `currentModeTimeout` / `requestedMode` / `requestedModeTimeout` / `wifiDisabled` / `bleDisabled` | `/api/config` GET mirror | `/api/runmode` (GET); `/api/config` PUT still forwards them. Mirror dropped in #243 step D |
 
 **Accepted for now (option A):** after OTA'ing a device that uses sleep, re-set its
 sleep config once via `/runmode` and re-take the backup. A restore of a
@@ -555,3 +558,53 @@ Group A runs long.
   which is present anyway". The reboot/mode *control* characteristics are settled
   (RunmodeMod, step 1); only the identification UUID is open. Blocks nothing in
   steps 1-5.
+
+## Post-#106 API surface cleanup (cwi-dis/iotsa#243)
+
+Follow-on to #106, spun out after a bench upgrade of `lcdclock` (iotsaNeoClock
+crowpanel128 / ESP32-C3, OTA'd 2.9.2 -> 3.0a3, clean) surfaced four loose ends.
+Branch `243-api-surface`, ordered **B -> D -> A -> C**, `--no-ff` merge like #106.
+
+### B -- remove the C++ `[[deprecated]]` forwarders now (done)
+
+Deleted the nine `iotsaConfig.*` forwarders outright rather than keeping them a
+release. They only kept an un-swept downstream C++ sketch compiling; they did nothing
+for new-CLI-to-old-board (REST + Python, that's C). One downstream C++ sweep pass
+replaces the staged one. REST `/api/config` PUT mode-key forwarding stays.
+
+### D -- field layout across `/api/config` / `/api/status` / `/api/runmode` (done)
+
+Decisions:
+
+1. **`/api/config` GET sheds its whole runtime-mirror block now** (not a release
+   later) -- `currentMode`, `currentModeTimeout`, `requestedMode`,
+   `requestedModeTimeout`, `wifiDisabled`, `bleDisabled`, `privateWifi`,
+   `mdnsEnabled`, `bootCause`, `uptime`, `fs*Bytes`. `/api/config` GET is
+   persisted identity + knobs only. `/api/config` **PUT** still accepts and
+   forwards the mode keys (the compat surface).
+2. **`currentMode`** canonical on `/api/status`; a copy stays on `/api/runmode`
+   GET as control-context (form shows current value next to the input).
+   `requestedMode` + timeouts live on `/api/runmode` only.
+3. **Polarity:** the *control* surfaces use `wifiDisabled` / `bleDisabled`
+   (matches the persisted `*OnBoot` knobs and the BLE chars; normal value
+   `false`). `/api/status` keeps the positive `wifiEnabled` /
+   `wifiStationConnected` / `wifiApActive` / `wifiConfigured` family.
+4. **`mdnsEnabled`** off `/api/config`; kept on `/api/status` as a genuine runtime
+   observation (the `iotsaStatus.mdnsEnabled` bool is load-bearing --
+   `iotsaWifi.cpp` gates `MDNS.update()` on it). The "is exposing it worth
+   anything" question is [#237](https://github.com/cwi-dis/iotsa/issues/237)'s.
+5. **`modeTimeout` read-only mirror dropped from `/api/runmode`** -- it's a
+   persisted knob, canonical on `/api/config`.
+6. Sleep / CPU-frequency block stays on `/api/runmode` (runmode owns sleep config).
+
+### A -- `/api/status` discoverability (pending)
+
+`/api/status` is a bare `api.setup("status", …)` path, not an `IotsaModule`, so it
+never enters `modules[]` and `iotsa allInfo` skips it. Decide: pseudo-entry in the
+module list, or teach the CLI it's a well-known endpoint like `/api/config`.
+
+### C -- CLI backward-compat with old boards (pending)
+
+Keep the current v2-shaped behaviour under a `--v2` flag (or auto-detect from
+`version.iotsaVersion`), add the v3-shaped behaviour as default. Bench target:
+`iotsaa7c40a24` (running a pre-runmode-module iotsa). Relates to #242, #121, #136.

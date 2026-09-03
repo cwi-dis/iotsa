@@ -299,29 +299,18 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
 #endif
     return true;
   }
+  // Persisted identity + knobs only. Runtime mode state moved to /api/runmode and
+  // /api/status; the one-release GET mirror of currentMode / requestedMode /
+  // wifiDisabled / bleDisabled / privateWifi / mdnsEnabled / bootCause / uptime /
+  // fs*Bytes was dropped in cwi-dis/iotsa#243 step D. PUT still accepts the mode
+  // keys and forwards them (the new-CLI-to-old-board compat surface that stays).
   reply["hostName"] = iotsaConfig.hostName;
   reply["modeTimeout"] = iotsaController.modeTimeout();
 #ifdef ESP32
   reply["watchdogDuration"] = iotsaConfig.watchdogDuration;
 #endif
-  // currentMode / currentModeTimeout / requestedMode / requestedModeTimeout /
-  // wifiDisabled are [[deprecated]] forwarders: canonical in /api/runmode now,
-  // kept here for one release so existing scripts and the Python CLI keep
-  // working (cwi-dis/iotsa#106, docs/controller-architecture.md).
-  reply["currentMode"] = int(iotsaController.currentMode());
-  if (iotsaController.currentMode()) {
-    reply["currentModeTimeout"] = (iotsaController.currentModeEndTime() - millis())/1000;
-  }
-  reply["privateWifi"] = iotsaStatus.wifiApActive && !iotsaStatus.wifiStationConnected;
-  reply["mdnsEnabled"] = iotsaStatus.mdnsEnabled;
-  reply["requestedMode"] = int(iotsaController.requestedMode());
-  if (iotsaController.requestedMode()) {
-    reply["requestedModeTimeout"] = (iotsaController.requestedModeEndTime() - millis())/1000;
-  }
-  reply["wifiDisabled"] = !iotsaStatus.wifiEnabled;
   reply["wifiDisabledOnBoot"] = iotsaConfig.wifiDisabledOnBoot;
 #ifdef IOTSA_WITH_BLE
-  reply["bleDisabled"] = !iotsaController.bleRadioWanted();   // deprecated forwarder, canonical in /api/runmode
   reply["bleDisabledOnBoot"] = iotsaConfig.bleDisabledOnBoot;
 #endif
   reply["program"] = app.title;
@@ -330,12 +319,6 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   reply["has_httpsKey"] = IOTSA_FS.exists("/config/httpsKey.der");
   reply["has_httpsCert"] = IOTSA_FS.exists("/config/httpsCert.der");
 #endif
-  // Every-tick runtime observations -- canonical on /api/status now
-  // (cwi-dis/iotsa#106 step 5e); kept here one release for the Python CLI.
-  reply["bootCause"] = iotsaStatus.getBootReason();
-  reply["uptime"] = millis() / 1000;
-  reply["fsTotalBytes"] = iotsaFSTotalBytes();
-  reply["fsUsedBytes"] = iotsaFSUsedBytes();
   JsonArray modules = reply["modules"].to<JsonArray>();
   JsonArray modulesNoApi = reply["modulesNoApi"].to<JsonArray>();
   modules.add("version");

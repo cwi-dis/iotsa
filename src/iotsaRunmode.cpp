@@ -310,7 +310,6 @@ bool IotsaRunmodeMod::getHandler(const char *path, JsonObject& reply) {
   if (iotsaController.requestedMode()) {
     reply["requestedModeTimeout"] = (iotsaController.requestedModeEndTime() - millis())/1000;
   }
-  reply["modeTimeout"] = iotsaController.modeTimeout();   // read-only mirror; owned by /api/config
   reply["wifiDisabled"] = !iotsaStatus.wifiEnabled;
 #ifdef IOTSA_WITH_BLE
   reply["bleDisabled"] = !iotsaController.bleRadioWanted();
