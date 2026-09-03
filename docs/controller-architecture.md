@@ -120,23 +120,33 @@ controller.
 - **`IotsaConfigMod`** -- identity (`hostName`, cert) + its config UI + persistence;
   keeps the `currentMode`/`requestedMode` API surface.
 - **`IotsaRunmodeMod`** (new) -- the *external control surface* onto `IotsaController`:
-  reboot, reboot-into-OTA, enable/disable WiFi at runtime, mode transitions. Thin glue.
+  reboot, reboot-into-OTA, enable/disable WiFi at runtime, mode transitions, and (under
+  `IOTSA_HAS_SLEEP`) the sleep/wake executor + its `/config/sleep.cfg`. Thin glue.
   **Core-tier: always present, unconditionally `ensure()`d like `IotsaConfigMod`** (the
-  #195 / #85 mechanism), never an optional add. It carries **both** a REST/web surface
-  and a **BLE service** with the reboot + mode-transition control characteristics -- a
-  BLE client that finds the device also wants to steer it. Because RunmodeMod is now
-  never-omittable, that BLE service is present on every BLE-enabled iotsa device, which
-  is what makes it a viable home for the control characteristics (see
-  [#233](https://github.com/cwi-dis/iotsa/issues/233) -- filed before the core-tier
-  decision, which weakens its "RunmodeMod might be skipped" objection). The bare
-  "this is an iotsa device" *identification* UUID (for the Python CLI's BLE discovery
-  heuristic) is a separate sub-decision -- see Open questions.
-- **`IotsaBatteryMod`** -- shrinks to battery *hardware*: voltage/USB ADC sensing, the
-  pins, `correctionVBat`, the `180F` BLE service. Exposes `onUSBPower()` for the sleep
-  policy to read; no longer hosts the sleep state machine, the sleep config, the
-  watchdog, or the `extendCurrentModeCallback`. The sleep-adjacent BLE gesture
-  (`doSoftReboot` / `allowBLEConfigModeSwitch`) moves to `IotsaRunmodeMod`. See step 3
-  of "Remaining work".
+  #195 / #85 mechanism), never an optional add. It carries a REST/web surface and a
+  **BLE control service** `6E5D0001-F2A7-4E7A-9B1C-2D3E4F5A6B7C`:
+
+  | char | props | action |
+  |---|---|---|
+  | `…0002` currentMode | R | — |
+  | `…0003` requestedMode | R/W | stage a mode for the next boot |
+  | `…0004` reboot | W | deferred reboot |
+  | `…0005` promoteMode | W, gated by `allowBLEModeSwitch()` | apply the pending mode now |
+  | `…0006` wifiDisabled | R/W | runtime WiFi radio toggle (mirrors the REST key) |
+  | `…0007` identify | W | run the `addIdentifyCallback()` handlers ([#133](https://github.com/cwi-dis/iotsa/issues/133) scaffolding) |
+
+  Because RunmodeMod is never-omittable, this service is present on every BLE-enabled
+  iotsa device -- which is what makes it a viable home for the control characteristics
+  (see [#233](https://github.com/cwi-dis/iotsa/issues/233), filed before the core-tier
+  decision). The bare "this is an iotsa device" *identification* UUID (for the Python
+  CLI's BLE discovery heuristic, still keyed on the `180F` battery service) is a
+  separate sub-decision -- see Open questions.
+- **`IotsaBatteryMod`** -- pure battery *hardware*: `pinVBat` / `pinVUSB` ADC sensing,
+  `correctionVBat`, the `180F` BLE service. Publishes `iotsaStatus.onUsbPower` for the
+  sleep policy; no longer hosts the sleep state machine, the sleep config, the watchdog,
+  the `doSoftReboot` gesture, or the `extendCurrentModeCallback`.
+  `setPinDisableSleep()` / `allowBLEConfigModeSwitch()` remain as transitional
+  forwarders to `IotsaRunmodeMod` until the #106 downstream sweep.
 - **`IotsaWifiMod`** -- unchanged from the `wifi-controller-design.md` outcome: thin
   glue over `IotsaWifiDriver` + `IotsaWifiController`.
 
@@ -234,14 +244,55 @@ in-tree callers in the same commit, let the downstream sweep pick up the rest.
   device the old `&&` short-circuited away any runtime `setWifiRadioEnabled(true)`.
   Builds green across the WiFi+BLE / WiFi-only / BLE-only / neither flag matrix; not
   bench-tested.
+- Sleep/wake out of `IotsaBatteryMod` -- step 3 of "Remaining work" (folded in the
+  old step 4). Commits:
+  - `b78d57a` -- sleep-inhibit primitives (`pauseSleep` / `resumeSleep` /
+    `postponeSleep` / `canSleep` + counters + `activityExtraWakeDuration`) moved off
+    `IotsaConfig` into a new `IotsaSleepPolicy` (`src/iotsaSleepPolicy.{h,cpp}`), held
+    by value as `IotsaController::_sleep`. No C++ forwarder; the 19 in-tree call sites
+    renamed to `iotsaController.*`. `canSleep()` now also false in CONFIG/OTA mode.
+  - `ad3bf80` -- `extendCurrentModeCallback` deleted. `IotsaController::extendCurrentMode()`
+    calls `_sleep.noteActivity()` instead of `_extendCb()`. Removed `setExtensionCallback` /
+    `_extendCb` / the `extensionCallback` typedef / `IotsaConfig::setExtensionCallback()`
+    (no downstream callers) / `IotsaBatteryMod::extendCurrentMode()`. Behaviour change:
+    with `activityExtraWakeDuration == 0`, activity no longer resets the base wake
+    window (matches that knob's intent).
+  - `79cf23d` -- removed a dead `#if 0` cobweb in `IotsaBLEClientMod`: an orphaned,
+    unpaired `resumeSleep()` on scan-end was driving `_pauseSleepCount` negative.
+    `pauseSleep`/`resumeSleep` now has one caller (BLE-server connection state).
+  - `a0ed1b3` -- `noteActivity()` replaces the 12 `postponeSleep(0)` sites (the
+    "activity beacon" idiom); `ACTIVITY_FLOOR_MS` (250) floors the grace period;
+    `WIFI_SHUTDOWN_GRACE_MS` / `SCAN_COMPLETION_MARGIN_MS` name the remaining magic
+    numbers. `postponeSleep()` is now `void`; battery GET uses `millisUntilSleepAllowed()`.
+  - `64a2238` -- the move. Sleep config + wake-window state + `decide(bool onUsbPower)`
+    onto `IotsaSleepPolicy`; the `esp_*_sleep_start()` executor + watchdog + CPU-freq
+    knobs + `pinDisableSleep` + `_notifySleepWakeup()` + `/config/sleep.cfg` into
+    `IotsaRunmodeMod` under the new derived `IOTSA_HAS_SLEEP`. `IotsaBatteryMod` shrank
+    to ADC + the `180F` service and publishes `iotsaStatus.onUsbPower`. `IotsaApplication`
+    befriends `IotsaRunmodeMod` (the module-list walk moved).
+  - `440fb62` -- the `doSoftReboot` BLE gesture folded into RunmodeMod's `6E5D` service:
+    `==1` was already `rebootUUID`; `==2` -> `promoteMode` (`6E5D0005`, W, gated by
+    `IotsaRunmodeMod::allowBLEModeSwitch()`); `==3` -> `wifiDisabled` (`6E5D0006`, R/W,
+    mirrors the REST key). No `bleDisabled`-over-BLE. `IotsaBatteryMod` is now pure
+    ADC; `setPinDisableSleep()` / `allowBLEConfigModeSwitch()` are transitional
+    forwarders to RunmodeMod. `bleIotsaUUIDs.py` retargeted `rebootWifi` + added the
+    `6E5D` names.
+
+  Built green across the full flag matrix (esp32 ±BLE ±battery, esp8266 sleep-off,
+  esp8266/esp32 `+IOTSA_WITH_SLEEP` no-BLE). Not bench-tested.
+- `2b44689` -- **cwi-dis/iotsa#133 scaffolding** in `IotsaRunmodeMod`: an `identify`
+  command over REST (`/api/runmode` `{"identify":1}`), web (a `/runmode` button) and
+  BLE (`6E5D0007`, W), plus `addIdentifyCallback(std::function<void()>)` (add-only,
+  every handler runs from `loop()`). No auth on identify. `getHandler` reports
+  `identifyAvailable`. lissabon's own `6b2f0003` identify + the `bleIotsaUUIDs.py`
+  name remap + a default "blink the status LED" are #133 proper.
 
 ## Remaining work (ordered)
 
-The `IotsaConfig` identity/status/controller split (above) is done and bench-proven.
-What is left is moving the two policy tenants (radio, sleep) into `IotsaController` and
-building the module layer on top. Ordering matters: the control-surface module is pulled
-*ahead* of the two policy moves so they land their external knobs in their final home
-instead of parking them in `IotsaConfigMod` / `IotsaBatteryMod` and moving them later.
+The `IotsaConfig` identity/status/controller split, the control-surface module, and
+both policy tenants (radio, sleep) are done -- steps 1-3 below all landed (see "Landed
+so far"). What remains is step 4: the persisted-settings tidy and the merge to
+`develop`, gated on a hardware bench pass.
 
 1. **`IotsaRunmodeMod` -- control surface (REST + BLE).** *Done* (see "Landed so
    far" above): `0bef36b` (REST + web), `5690097` (BLE control service). Thin glue over
@@ -251,55 +302,18 @@ instead of parking them in `IotsaConfigMod` / `IotsaBatteryMod` and moving them 
    `8d717ca` (WiFi), `820a98e` (BLE). The `wifiDisabled` PUT stays parked in
    `IotsaConfigMod` as a forwarder; canonical form is in `IotsaRunmodeMod`
    (`/api/runmode`) already.
-3. **Sleep/wake out of `IotsaBatteryMod` (folds in the old step 4).** Two parts:
-   - **`IotsaSleepPolicy`** -- a dedicated policy object (`src/iotsaSleepPolicy.{h,cpp}`,
-     class held by value as `IotsaController::_sleep`), pure logic, no platform headers,
-     always compiled. Owns the inhibit primitives moved from `IotsaConfig`
-     (`pauseSleep()` / `resumeSleep()` / `postponeSleep(ms)` / `canSleep()`,
-     `pauseSleepCount`, `postponeSleepMillis`, `activityExtraWakeDuration`), the sleep
-     config moved from `IotsaBatteryMod` (`sleepMode`, `sleepDuration`, `wakeDuration`,
-     `bootExtraWakeDuration`, `disableSleepOnWiFi`, `disableWiFiOnSleep`,
-     `disableSleepOnUSBPower`), the wake-window state (`millisAtWakeup`,
-     `didWakeFromSleep`), and the decision: `decide(bool onUsbPower)` ->
-     `{IotsaSleepMode mode, uint32_t durationMs}` or `NONE`, folding in the
-     mode / WiFi-coupling / inhibit / wake-window-timing checks that were scattered
-     through `IotsaBatteryMod::loop()`. `canSleep()` also returns false in CONFIG/OTA
-     mode (was a separate check). No C++ forwarders on `iotsaConfig` -- the in-tree
-     callers (`iotsaApiRest`, `iotsaHttpServer`, `iotsaInput`, `iotsaBLEClient`,
-     `iotsaBLEServer`) are renamed to `iotsaController.*` in the same commit; downstream
-     is swept when #106 hits `develop`.
-   - **`extendCurrentModeCallback` deleted.** `IotsaController::extendCurrentMode()`
-     calls `_sleep.postponeSleep(0)` (activity => bump the wake window by
-     `activityExtraWakeDuration`) instead of `_extendCb()`. That single mechanism
-     replaces `IotsaBatteryMod`'s `millisAtWakeup = millis()` bump.
-     `setExtensionCallback()` / `_extendCb` gone (only battery used it; the watchdog
-     re-arm it also did is redundant -- `loop()` feeds the watchdog every iteration).
-   - **Platform execution folds into `IotsaRunmodeMod`** (no new module -- "runmode" *is*
-     the sleep/wake rhythm, and RunmodeMod is always `ensure()`d so downstream needs no
-     new instantiation). Guarded by `#ifdef IOTSA_HAS_SLEEP`: the `_notifySleepWakeup()`
-     module walk, the watchdog timer + ISR, the CPU-frequency knobs, `pinDisableSleep`,
-     and the `esp_light_sleep_start` / `esp_deep_sleep_start` / RTC-domain / radio-off /
-     BLE pause-resume machinery. RunmodeMod's `loop()` calls
-     `iotsaController.sleep().decide(batteryMod.onUSBPower())` and executes the result;
-     it gains the sleep knobs in `/api/runmode` + the `/runmode` page. `IOTSA_HAS_SLEEP`
-     is a stage-5 derived flag in `iotsaBuildOptions.h`:
-     `defined(IOTSA_WITH_SLEEP) || (defined(IOTSA_WITH_BLE) && !defined(IOTSA_WITHOUT_SLEEP))`
-     -- BLE is today's proxy for "off-grid / battery device"; retune later if an
-     `IOTSA_WITH_BATTERY` flag ever lands. `IOTSA_WITH_SLEEP` / `IOTSA_WITHOUT_SLEEP`
-     documented in stage 3, neither `#define`d there.
-   - **`IotsaBatteryMod` shrinks to ADC**: `pinVBat` / `pinVUSB` / ranges /
-     `correctionVBat` / `_readVoltages()` / levels + `/battery` + `/api/battery` + the
-     `180F` BLE service. Exposes `bool onUSBPower()` for RunmodeMod to read. The
-     `doSoftReboot` / `allowBLEConfigModeSwitch` gesture cluster (`E4D90003` "Reboot
-     with WiFi", the prove-physical-presence path) folds into RunmodeMod's existing BLE
-     control service -- `doSoftReboot==2` "promote pending mode" becomes one added
-     characteristic there. `IotsaBatteryMod::setPinDisableSleep()` /
-     `allowBLEConfigModeSwitch()` are renamed to `IotsaRunmodeMod` methods; the
-     downstream callers (lissabon ×4/×4, iotsaRGBWSensor) are swept with #106.
+3. **Sleep/wake out of `IotsaBatteryMod` (folded in the old step 4).** *Done* --
+   see "Landed so far" above (`b78d57a` / `ad3bf80` / `79cf23d` / `a0ed1b3` /
+   `64a2238` / `440fb62`), plus the #133 identify scaffolding (`2b44689`). Outcome:
+   `IotsaSleepPolicy` on `IotsaController` owns the inhibit primitives + sleep config
+   + wake-window + `decide()`; `IotsaRunmodeMod` (under the new derived
+   `IOTSA_HAS_SLEEP`) owns the executor + watchdog + CPU-freq knobs + `pinDisableSleep`
+   + `/config/sleep.cfg`; `IotsaBatteryMod` is pure ADC publishing
+   `iotsaStatus.onUsbPower`. `extendCurrentModeCallback` gone. Not bench-tested.
 4. **Persisted-settings tidy + land on develop.** Move `configurationModeTimeout`
-   (`rebootTimeout`) off `iotsaConfig` per its final owner; decide where the sleep
-   config persists (`/config/sleep.cfg` migrated from `battery.cfg`, loaded by
-   RunmodeMod, pushed into `_sleep`); CHANGELOG line; merge.
+   (`rebootTimeout`) off `iotsaConfig` per its final owner (sleep config already
+   landed its own `/config/sleep.cfg` in `IotsaRunmodeMod`, step 3); CHANGELOG line;
+   bench pass; merge.
 
 Separable follow-ons (own issues, not gating the merge):
 
@@ -311,7 +325,17 @@ Separable follow-ons (own issues, not gating the merge):
 - Sleep-inhibit publish/subscribe -- subsystems register inhibit signals,
   `IotsaController` aggregates; ties to
   [#105](https://github.com/cwi-dis/iotsa/issues/105).
-- Identification-UUID home for BLE discovery -- the rest of [#233].
+- [#233](https://github.com/cwi-dis/iotsa/issues/233) -- the reboot/mode *control*
+  characteristics are done (RunmodeMod's `6E5D` service); what is left is the bare
+  *identification* UUID for BLE discovery (so the Python CLI stops keying on the
+  coincidental `180F` battery service), the `bleIotsaUUIDs.py` `identify` name remap,
+  and migrating lissabon's own `6b2f0003` identify char onto RunmodeMod's `…0007`.
+- [#133](https://github.com/cwi-dis/iotsa/issues/133) proper -- the identify command +
+  registration API landed as scaffolding; still to do: a default "blink the status
+  LED" when no handler is registered, and the lissabon migration above.
+- `extendCurrentMode()` / `_modeEndTime` / `configurationModeTimeout` want the same
+  call-site cobweb pass the sleep-delay machinery just got (conflated intents, dead
+  code, un-named durations) -- pairs with step 4.
 
 ## Deferred (was "slice 4"; folds into this work)
 
