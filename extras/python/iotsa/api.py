@@ -292,12 +292,19 @@ class IotsaDevice:
         return all
 
     def printStatus(self):
-        """Print all config settings and their values"""
+        """Print all config settings and their values
+
+        This is `iotsa info` == readConfig: it reads /api/config only. Runtime
+        observations (uptime, bootCause, currentMode, ...) moved off /api/config
+        in iotsa 3.0 (cwi-dis/iotsa#106/#243) -- use `iotsa xInfo runmode` /
+        `iotsa xInfo status` / `iotsa allInfo` for those. The .pop() defaults
+        below keep this working (with fewer lines) against 3.0+ firmware.
+        """
         status = self.config.getAll()
         print("%s:" % self.ipAddress)
         print("  program:           ", status.pop("program", "unknown"))
         print("  last boot:         ", end=" ")
-        lastboot = status.pop("uptime")
+        lastboot = status.pop("uptime", None)
         if not lastboot:
             print("???", end=" ")
         else:
@@ -314,17 +321,20 @@ class IotsaDevice:
                     else:
                         lastboot /= 24
                         print("%dd" % lastboot, end=" ")
-        lastreason = status.pop("bootCause")
+        lastreason = status.pop("bootCause", None)
         if lastreason:
             print("(%s)" % lastreason, end=" ")
         print()
-        print(
-            "  runmode:           ", self.modeName(status.pop("currentMode", 0)), end=" "
-        )
-        timeout = status.pop("currentModeTimeout", None)
-        if timeout:
-            print("(%d seconds more)" % timeout, end=" ")
-        print()
+        if "currentMode" in status:
+            # <3.0 firmware still mirrors mode state on /api/config; on 3.0+ it's
+            # on /api/runmode (see `iotsa xInfo runmode`), so just omit the line.
+            print(
+                "  runmode:           ", self.modeName(status.pop("currentMode")), end=" "
+            )
+            timeout = status.pop("currentModeTimeout", None)
+            if timeout:
+                print("(%d seconds more)" % timeout, end=" ")
+            print()
         if status.pop("privateWifi", False):
             print("     NOTE:         on private WiFi network")
         reqMode = status.pop("requestedMode", None)
@@ -365,6 +375,20 @@ class IotsaDevice:
         names = ["normal", "config", "ota", "factoryReset"]
         return names.index(name)
 
+    def modeState(self) -> dict[str, Any]:
+        """Runtime mode state (currentMode / requestedMode / *Timeout).
+
+        iotsa >= 3.0 (cwi-dis/iotsa#106) serves this on /api/runmode; older
+        firmware carried it on /api/config. Decide from the advertised module
+        list -- not by probing /api/runmode, because a doomed GET there
+        destabilises iotsa's one-connection-at-a-time HTTPS server (#218) and
+        breaks the /api/config read that follows.
+        """
+        cfg = self.config.getAll()
+        if "runmode" in cfg.get("modules", []):
+            return self.getApi("runmode").getAll()
+        return cfg
+
     def gotoMode(
         self, modeName: str, wait: bool = False, verbose: bool = False
     ) -> None:
@@ -377,7 +401,7 @@ class IotsaDevice:
         :param verbose: print what is happening, and prompt the user if action is required
         """
         mode = self.modeForName(modeName)
-        if self.config.get("currentMode") == mode:
+        if self.modeState().get("currentMode") == mode:
             if verbose:
                 print(
                     "%s: target already in mode %s" % (sys.argv[0], self.modeName(mode))
@@ -397,10 +421,11 @@ class IotsaDevice:
         while True:
             time.sleep(5)
             self.flush()
-            if self.config.get("currentMode") == mode:
+            st = self.modeState()
+            if st.get("currentMode") == mode:
                 break
-            reqMode = self.config.get("requestedMode", 0)
-            if self.config.get("requestedMode") != mode:
+            reqMode = st.get("requestedMode", 0)
+            if reqMode != mode:
                 raise IotsaError(
                     "target now has requestedMode %s in stead of %s?"
                     % (self.modeName(reqMode), self.modeName(mode))
@@ -411,7 +436,7 @@ class IotsaDevice:
                     % (
                         sys.argv[0],
                         self.ipAddress,
-                        self.config.get("requestedModeTimeout", "???"),
+                        st.get("requestedModeTimeout", "???"),
                         self.modeName(reqMode),
                     ),
                     file=sys.stderr,

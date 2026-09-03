@@ -606,8 +606,23 @@ in `modules[]` "the way `version` is". 5e just missed the `modules.add`.
 `IotsaConfigMod::getHandler` now adds `"status"` next to `"version"`. No CLI change,
 no `IotsaStatusMod`.
 
-### C -- CLI backward-compat with old boards (pending)
+### C -- CLI backward-compat with old boards (done)
 
-Keep the current v2-shaped behaviour under a `--v2` flag (or auto-detect from
-`version.iotsaVersion`), add the v3-shaped behaviour as default. Bench target:
-`iotsaa7c40a24` (running a pre-runmode-module iotsa). Relates to #242, #121, #136.
+Scoped down: `iotsa info` / `config` are `readConfig` / `writeConfig` by contract, so
+`info` legitimately reads `/api/config` only and just shows fewer lines against 3.0+
+firmware (`.pop()` defaults, no crash). The one functional path is `gotoMode()` --
+`otaWait` / `configWait` -- which polls `currentMode` / `requestedMode`.
+
+- New `IotsaDevice.modeState()`: `GET /api/runmode`, falling back to `/api/config` on
+  404 (pre-#106 firmware). `gotoMode()` uses it for all three reads.
+- Writes (`requestedMode`, `reboot`) stay on `PUT /api/config` -- forwarded on every
+  firmware, so no new-vs-old branch needed there.
+- No `--v2` flag: the 404 fallback is automatic and `/api/config` is fetched anyway.
+
+Bench: `configWait` (= `gotoMode` + `modeState`) drives `iotsaa7c40a24` (`Infra-sandbox-lolin32`,
+iotsa 3.0a2, pre-runmode-module) through a full mode switch + reboot -- reads mode from
+`/api/config` via the module-list check (no `runmode` module -> zero probe requests),
+PUTs `requestedMode`, polls, succeeds. New-board still to test against a `243-api-surface`
+flash. The first `modeState()` cut *probed* `/api/runmode` and a doomed GET there tipped
+the fully-loaded HTTPS device into #218's TLS-alloc loop -- hence the module-list check.
+Relates to #242 (`iotsa restore` relocated keys), #121, #136, #218.
