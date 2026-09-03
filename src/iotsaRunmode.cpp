@@ -63,6 +63,7 @@ void IotsaRunmodeMod::lateSetup() {
   bleApi.addCharacteristic(rebootUUID, bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "Reboot");
   bleApi.addCharacteristic(promoteModeUUID, bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "Promote requested mode now");
   bleApi.addCharacteristic(wifiDisabledUUID, bleApi.BLE_READ|bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "WiFi radio disabled");
+  bleApi.addCharacteristic(identifyUUID, bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "Identify");
 #endif
   api.setup("runmode", true, true);
   name = "runmode";
@@ -88,9 +89,23 @@ void IotsaRunmodeMod::loop() {
     _pendingBleWifiDisabled = -1;
   }
 #endif
+  if (_pendingIdentify) {
+    _pendingIdentify = false;
+    _doIdentify();
+  }
 #ifdef IOTSA_HAS_SLEEP
   _sleepTick();
 #endif
+}
+
+void IotsaRunmodeMod::_doIdentify() {
+  // cwi-dis/iotsa#133. Run from loop(), so an app handler that uses delay()-based
+  // flashing doesn't block the BLE host task or the HTTP response.
+  if (_identifyCallbacks.empty()) {
+    IFDEBUG IotsaSerial.println("runmode: identify (no handler registered)");
+    return;
+  }
+  for (auto& cb : _identifyCallbacks) cb();
 }
 
 #ifdef IOTSA_WITH_WEB
@@ -101,7 +116,12 @@ void IotsaRunmodeMod::webHandler() {
   }
   String message = "<html><head><title>Iotsa runmode</title></head><body><h1>Iotsa runmode</h1>";
 
-  if (action != "") {
+  if (action == "identify") {
+    // No auth: identify is harmless and is used *before* you authenticate / OTA
+    // (cwi-dis/iotsa#133).
+    _pendingIdentify = true;
+    message += "<p><em>Identifying.</em></p>";
+  } else if (action != "") {
     if (needsAuthentication("config")) return;
     if (action == "setmode") {
       if (api.webService->server->hasArg("mode")) {
@@ -199,6 +219,7 @@ void IotsaRunmodeMod::webHandler() {
 
   // Immediate actions.
   message += "<form method='post'>";
+  message += "<input type='submit' name='action' value='identify'> Identify (blink/flash) this device.<br>";
   message += "<input type='submit' name='action' value='reboot'> Reboot now.<br>";
   message += "<input type='submit' name='action' value='wifi-disable'> ";
   message += "<input type='submit' name='action' value='wifi-enable'> Disable / enable WiFi radio now.<br>";
@@ -287,6 +308,7 @@ bool IotsaRunmodeMod::getHandler(const char *path, JsonObject& reply) {
 #ifdef IOTSA_WITH_BLE
   reply["bleDisabled"] = !iotsaController.bleRadioWanted();
 #endif
+  reply["identifyAvailable"] = !_identifyCallbacks.empty();   // cwi-dis/iotsa#133
 #ifdef IOTSA_HAS_SLEEP
   IotsaSleepPolicy& sp = iotsaController.sleep();
   reply["sleepMode"] = (int)sp.sleepMode;
@@ -337,6 +359,10 @@ bool IotsaRunmodeMod::putHandler(const char *path, const JsonVariant& request, J
   }
   if (reqObj["reboot"]) {
     iotsaController.requestReboot(2000);
+    anyChanged = true;
+  }
+  if (reqObj["identify"]) {
+    _pendingIdentify = true;   // cwi-dis/iotsa#133; acted on in loop(), no auth
     anyChanged = true;
   }
 #ifdef IOTSA_HAS_SLEEP
@@ -404,6 +430,10 @@ bool IotsaRunmodeMod::blePutHandler(UUIDstring charUUID) {
   if (charUUID == wifiDisabledUUID) {
     _pendingBleWifiDisabled = bleApi.getAsInt(wifiDisabledUUID) ? 1 : 0;
     IFDEBUG IotsaSerial.printf("runmode: BLE wifiDisabled=%d\n", _pendingBleWifiDisabled);
+    return true;
+  }
+  if (charUUID == identifyUUID) {
+    if (bleApi.getAsInt(identifyUUID)) _pendingIdentify = true;
     return true;
   }
   return false;

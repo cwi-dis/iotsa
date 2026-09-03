@@ -1,5 +1,7 @@
 #ifndef _IOTSARUNMODE_H_
 #define _IOTSARUNMODE_H_
+#include <functional>
+#include <vector>
 #include "iotsa.h"
 #include "iotsaApi.h"
 #include "iotsaBLEServer.h"
@@ -49,12 +51,28 @@ public:
   // (cwi-dis/iotsa#106); the "is BLE presence enough" call is left to #107.
   void allowBLEModeSwitch();
 #endif
+
+  // "Identify" -- make this device physically announce itself (blink an LED,
+  // beep, flash the output, ...) so a human can pick it out among several
+  // similar devices, before doing something risky like an OTA. Registered by
+  // app/module code; every registered handler is invoked from loop() when an
+  // identify command arrives over REST / web / BLE (so an LED module and a
+  // buzzer module can each register independently). Add-only, like module
+  // registration. No handler => the command is accepted but nothing visible
+  // happens. Scaffolding for cwi-dis/iotsa#133.
+  typedef std::function<void(void)> IdentifyCallback;
+  void addIdentifyCallback(IdentifyCallback cb) { _identifyCallbacks.push_back(cb); }
 protected:
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
 #ifdef IOTSA_WITH_WEB
   void webHandler() override;
 #endif
+  // Identify (cwi-dis/iotsa#133): _pendingIdentify is set by any transport,
+  // _doIdentify() runs the registered handlers from loop().
+  std::vector<IdentifyCallback> _identifyCallbacks;
+  bool _pendingIdentify = false;
+  void _doIdentify();
 #ifdef IOTSA_HAS_SLEEP
   void configLoad() override;
   void configSave() override;
@@ -72,6 +90,7 @@ protected:
   bool _pendingBlePromoteMode = false;
   int _pendingBleWifiDisabled = -1; // -1: nothing pending; 0: enable radio; 1: disable
   bool _bleAllowModeSwitch = false; // set by allowBLEModeSwitch()
+  static constexpr UUIDstring identifyUUID = "6E5D0007-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
   // Minted for iotsa#106 -- the iotsa runmode control service. xxxx0001 is the
   // service, xxxx0002+ the characteristics (same convention as elsewhere).
   static constexpr UUIDstring serviceUUID       = "6E5D0001-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
