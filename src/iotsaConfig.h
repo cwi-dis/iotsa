@@ -56,34 +56,17 @@ public:
   void configLoad();
   void configSave();
   void ensureConfigLoaded();
-  [[deprecated("moved to iotsaStatus.getBootReason()")]]
-  const char* getBootReason();
   void setDefaultHostName();
   void setDefaultCertificate();
   bool usingDefaultCertificate();
   uint32_t getStatusColor();
 
-  // ---- moved to IotsaController (cwi-dis/iotsa#106); deprecated forwarders ----
-  [[deprecated("moved to iotsaController.requestReboot()")]]
-  void requestReboot(uint32_t ms);
-  [[deprecated("moved to iotsaController.modeName()")]]
-  const char *modeName(iotsa_mode mode);
-  [[deprecated("moved to iotsaController.inConfigurationMode()")]]
-  bool inConfigurationMode(bool extend=false);
-  [[deprecated("moved to iotsaController.extendCurrentMode()")]]
-  void extendCurrentMode();
-  [[deprecated("moved to iotsaController.allowRequestedConfigurationMode()")]]
-  void allowRequestedConfigurationMode();
-  [[deprecated("moved to iotsaController.allowRCMDescription()")]]
-  void allowRCMDescription(const char *_rcmInteractionDescription);
-  // setExtensionCallback() deleted, not forwarded (cwi-dis/iotsa#106): the
-  // extendCurrentMode callback mechanism is gone, and it had no downstream users.
-
-  // ---- moved to IotsaStatus (cwi-dis/iotsa#106); deprecated forwarders ----
-  [[deprecated("moved to iotsaStatus.printHeapSpace()")]]
-  void printHeapSpace();
-  [[deprecated("moved to iotsaStatus.networkIsUp()")]]
-  bool networkIsUp();
+  // The iotsa_mode state machine, reboot request, sleep-inhibit bookkeeping and
+  // radio state all moved off IotsaConfig in cwi-dis/iotsa#106 -- use
+  // iotsaController.* (requestReboot / modeName / inConfigurationMode /
+  // extendCurrentMode / allowRequestedConfigurationMode / allowRCMDescription)
+  // and iotsaStatus.* (getBootReason / networkIsUp / printHeapSpace). The
+  // one-release [[deprecated]] forwarders were removed in cwi-dis/iotsa#243.
 };
 
 extern IotsaConfig iotsaConfig;

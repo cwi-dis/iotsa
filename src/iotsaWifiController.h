@@ -31,7 +31,7 @@
 // The two WiFi modes' states, published to iotsaConfig. Each enum just reports
 // its own mode; interesting *combinations* (fallback AP, config-mode AP, "setup
 // succeeded but still in config mode") are derived at the call site by combining
-// these two with iotsaConfig.inConfigurationMode() -- see docs.
+// these two with iotsaController.inConfigurationMode() -- see docs.
 enum class IotsaWifiStaState : uint8_t {
   Off,          // not attempting (no credentials, or wifiDisabledOnBoot)
   Connecting,   // connect issued, nothing wrong yet
@@ -59,7 +59,7 @@ public:
   // ---- desired-state inputs (pushed by IotsaWifiMod) ----
   void setCredentials(const String &ssid, const String &psk);
   void setRadioEnabled(bool on);          // false when wifiDisabledOnBoot
-  void setConfigModeActive(bool active);  // from iotsaConfig.inConfigurationMode(), each tick
+  void setConfigModeActive(bool active);  // from iotsaController.inConfigurationMode(), each tick
   void credentialsChanged();              // putHandler just saved new creds -> reconnect promptly
 
   // ---- published state (read by IotsaWifiMod, copied to iotsaConfig) ----

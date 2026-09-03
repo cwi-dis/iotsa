@@ -51,25 +51,11 @@ bool IotsaConfig::usingDefaultCertificate() {
 #endif
 }
 
-const char* IotsaConfig::getBootReason() {
-  // Moved to IotsaStatus (cwi-dis/iotsa#106). Deprecated forwarder for one release.
-  return iotsaStatus.getBootReason();
-}
-
-// The iotsa_mode state machine now lives in IotsaController (cwi-dis/iotsa#106).
-// These are deprecated forwarders, kept for one release for downstream code.
-const char *IotsaConfig::modeName(iotsa_mode mode) { return iotsaController.modeName(mode); }
-bool IotsaConfig::inConfigurationMode(bool extend) {
-  // The `extend` side effect was split out of iotsaController.inConfigurationMode()
-  // in step 5c; this deprecated forwarder keeps the old shape for downstream.
-  if (extend && iotsaController.inConfigurationMode()) iotsaController.extendCurrentMode();
-  return iotsaController.inConfigurationMode();
-}
-void IotsaConfig::extendCurrentMode() { iotsaController.extendCurrentMode(); }
-void IotsaConfig::allowRequestedConfigurationMode() { iotsaController.allowRequestedConfigurationMode(); }
-void IotsaConfig::allowRCMDescription(const char *desc) { iotsaController.allowRCMDescription(desc); }
-// inConfigurationOrFactoryMode() removed (cwi-dis/iotsa#106): callers now use
-// iotsaConfigSettingsWritable() (iotsaController.h).
+// getBootReason / modeName / inConfigurationMode / extendCurrentMode /
+// allowRequestedConfigurationMode / allowRCMDescription moved to IotsaController /
+// IotsaStatus in cwi-dis/iotsa#106; the one-release [[deprecated]] forwarders were
+// removed in cwi-dis/iotsa#243. inConfigurationOrFactoryMode() is gone too --
+// callers use iotsaConfigSettingsWritable() (iotsaController.h).
 
 uint32_t IotsaConfig::getStatusColor() {
   // Faithful translation of the old wifiMode switch onto the iotsaStatus bus
@@ -143,17 +129,5 @@ void IotsaConfig::ensureConfigLoaded() {
   if (!configWasLoaded) configLoad(); 
 };
 
-void IotsaConfig::requestReboot(uint32_t ms) {
-  // Moved to IotsaController (cwi-dis/iotsa#106). Deprecated forwarder for one release.
-  iotsaController.requestReboot(ms);
-}
-
-void IotsaConfig::printHeapSpace() {
-  // Moved to IotsaStatus (cwi-dis/iotsa#106). Deprecated forwarder for one release.
-  iotsaStatus.printHeapSpace();
-}
-
-bool IotsaConfig::networkIsUp() {
-  // Moved to IotsaStatus (cwi-dis/iotsa#106). Deprecated forwarder for one release.
-  return iotsaStatus.networkIsUp();
-}
+// requestReboot / printHeapSpace / networkIsUp forwarders removed in cwi-dis/iotsa#243
+// (were moved to IotsaController / IotsaStatus in #106).
