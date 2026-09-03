@@ -8,6 +8,10 @@
 // 180F BLE service. Sleep/wake moved to IotsaSleepPolicy + IotsaRunmodeMod
 // (cwi-dis/iotsa#106). The doSoftReboot BLE gesture still lives here.
 
+// How often loop() re-samples the ADCs so iotsaStatus.onUsbPower (read by the
+// sleep policy) doesn't go stale between REST/BLE queries.
+static const uint32_t VOLTAGE_READ_INTERVAL_MS = 5000;
+
 #ifdef IOTSA_WITH_WEB
 void
 IotsaBatteryMod::webHandler() {
@@ -139,9 +143,8 @@ void IotsaBatteryMod::configSave() {
 }
 
 void IotsaBatteryMod::loop() {
-  static bool firstLoop = true;
-  if (firstLoop) {
-    firstLoop = false;
+  if (_lastVoltageReadMillis == 0 || millis() - _lastVoltageReadMillis >= VOLTAGE_READ_INTERVAL_MS) {
+    _lastVoltageReadMillis = millis();
     _readVoltages();
   }
 }

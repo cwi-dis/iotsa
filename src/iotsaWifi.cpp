@@ -266,9 +266,9 @@ bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, Json
     anyChanged = true;
   }
   if (anyChanged) configSave();
-  if (reqObj["reboot"]) {
-    iotsaController.requestReboot(2000);
-  }
+  // No `reboot` key here (cwi-dis/iotsa#106): /api/runmode is the canonical place
+  // to ask for a reboot; /api/config keeps it as a backward-compat forwarder.
+  // A WiFi credential change takes effect live, so nothing here needs a reboot.
   checkUnhandled(reqObj);
   return anyChanged;
 }

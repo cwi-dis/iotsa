@@ -32,7 +32,8 @@ void otaOnError(int error) {
 }
 
 void IotsaOtaMod::setup() {
-  iotsaConfig.otaEnabled = true;
+  // "OTA is available" is now derived by introspection -- IotsaRunmodeMod checks
+  // for a module named "ota" (cwi-dis/iotsa#106); no iotsaConfig.otaEnabled flag.
   if (iotsaController.currentMode() == IOTSA_MODE_OTA) {
     _start();
   }

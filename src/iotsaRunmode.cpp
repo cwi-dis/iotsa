@@ -78,7 +78,7 @@ void IotsaRunmodeMod::loop() {
   }
   if (_pendingBleReboot) {
     _pendingBleReboot = false;
-    iotsaController.requestReboot(1000);   // let the BLE stack finish the write ack (see #130)
+    iotsaController.requestReboot(IotsaController::REBOOT_DELAY_BLE_MS);   // let the BLE stack finish the write ack (see #130)
   }
   if (_pendingBlePromoteMode) {
     _pendingBlePromoteMode = false;
@@ -106,6 +106,14 @@ void IotsaRunmodeMod::_doIdentify() {
     return;
   }
   for (auto& cb : _identifyCallbacks) cb();
+}
+
+bool IotsaRunmodeMod::_otaAvailable() const {
+  for (IotsaBaseModule* m = app.firstEarlyModule; m != nullptr; m = m->nextModule)
+    if (m->name == "ota") return true;
+  for (IotsaBaseModule* m = app.firstModule; m != nullptr; m = m->nextModule)
+    if (m->name == "ota") return true;
+  return false;
 }
 
 #ifdef IOTSA_WITH_WEB
@@ -147,7 +155,7 @@ void IotsaRunmodeMod::webHandler() {
         message += ".</em></p>";
       }
     } else if (action == "reboot") {
-      iotsaController.requestReboot(2000);
+      iotsaController.requestReboot(IotsaController::REBOOT_DELAY_HTTP_MS);
       message += "<p><em>Rebooting in 2 seconds.</em></p>";
     } else if (action == "wifi-disable") {
       iotsaController.setWifiRadioEnabled(false);
@@ -210,7 +218,7 @@ void IotsaRunmodeMod::webHandler() {
   message += "<form method='post'>";
   message += "<input name='mode' type='radio' value='0' checked> Normal mode after next reboot.<br>";
   message += "<input name='mode' type='radio' value='1'> Configuration mode after next reboot.<br>";
-  if (iotsaConfig.otaEnabled) {
+  if (_otaAvailable()) {
     message += "<input name='mode' type='radio' value='2'> Over-the-air update mode after next reboot.<br>";
   }
   message += "<br><input name='factoryreset' type='checkbox' value='1'> Factory-reset and clear all files. ";
@@ -358,7 +366,7 @@ bool IotsaRunmodeMod::putHandler(const char *path, const JsonVariant& request, J
     anyChanged = true;
   }
   if (reqObj["reboot"]) {
-    iotsaController.requestReboot(2000);
+    iotsaController.requestReboot(IotsaController::REBOOT_DELAY_HTTP_MS);
     anyChanged = true;
   }
   if (reqObj["identify"]) {

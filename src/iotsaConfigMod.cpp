@@ -247,7 +247,7 @@ IotsaConfigMod::webHandler() {
   message += "</body></html>";
   api.webService->server->send(200, "text/html", message);
   if (hostnameChanged) {
-    iotsaController.requestReboot(2000);
+    iotsaController.requestReboot(IotsaController::REBOOT_DELAY_HTTP_MS);
   }
 }
 
@@ -392,7 +392,8 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
       IotsaSerial.println("Unhandled IotsaApi parameters, not in config mode");
     }
     if (reqObj["reboot"]) {
-      iotsaController.requestReboot(2000);
+      // Backward-compat forwarder: /api/runmode is canonical (cwi-dis/iotsa#106).
+      iotsaController.requestReboot(IotsaController::REBOOT_DELAY_HTTP_MS);
       anyChanged = true;
     }
     return anyChanged||radioModeChanged;
@@ -484,7 +485,8 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
 #endif // IOTSA_WITH_HTTPS
   if (anyChanged) configSave();
   if (reqObj["reboot"]) {
-    iotsaController.requestReboot(2000);
+    // Backward-compat forwarder: /api/runmode is canonical (cwi-dis/iotsa#106).
+    iotsaController.requestReboot(IotsaController::REBOOT_DELAY_HTTP_MS);
     anyChanged = true;
   }
   if (checkUnhandled(reqObj)) {

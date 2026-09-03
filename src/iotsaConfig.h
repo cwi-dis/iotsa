@@ -18,13 +18,11 @@ class IotsaConfig {
   friend class IotsaConfigMod;
   friend class IotsaRunmodeMod;
   friend class IotsaController;
-  friend class IotsaOtaMod;
   friend class IotsaWifiMod;
   friend class IotsaBLEServerMod;
   friend class IotsaBatteryMod;
 private:
   bool configWasLoaded = false;
-  bool otaEnabled = false;
   bool wifiDisabledOnBoot = false;
 #ifdef IOTSA_WITH_BLE
   bool bleDisabledOnBoot = false;   // boot policy; IotsaController seeds _bleRadioEnabled from it

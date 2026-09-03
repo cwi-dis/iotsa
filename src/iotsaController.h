@@ -38,7 +38,12 @@ public:
   void begin();  // from IotsaApplication::setup(), right after configLoad()
   void tick();   // from IotsaApplication::loop()
 
-  void requestReboot(uint32_t ms);   // ESP.restart() after ms milliseconds
+  // Deferred reboot: ESP.restart() after `ms`, long enough for the reply that
+  // asked for it to flush first. Use the REBOOT_DELAY_* constants below rather
+  // than a bare number.
+  void requestReboot(uint32_t ms);
+  static constexpr uint32_t REBOOT_DELAY_HTTP_MS = 2000;  // after an HTTP/web response
+  static constexpr uint32_t REBOOT_DELAY_BLE_MS  = 1000;  // after a BLE write-ack (cwi-dis/iotsa#130)
 
   // WiFi radio-enablement policy (cwi-dis/iotsa#106). The runtime desired state
   // (_wifiRadioEnabled) is seeded in begin() from !wifiDisabledOnBoot, then moved

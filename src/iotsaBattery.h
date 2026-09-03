@@ -37,6 +37,7 @@ protected:
   void webHandler() override;
 #endif
   void _readVoltages();
+  uint32_t _lastVoltageReadMillis = 0;   // loop() re-reads periodically so iotsaStatus.onUsbPower stays fresh
   int pinVBat = -1;
   int pinVUSB = -1;
   float rangeVBat = 3.3;

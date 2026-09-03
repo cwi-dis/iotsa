@@ -73,6 +73,11 @@ protected:
   std::vector<IdentifyCallback> _identifyCallbacks;
   bool _pendingIdentify = false;
   void _doIdentify();
+
+  // "Is OTA-update mode offerable on this device?" -- true iff an IotsaOtaMod is
+  // in the module list (it names itself "ota"). Was iotsaConfig.otaEnabled,
+  // cwi-dis/iotsa#106.
+  bool _otaAvailable() const;
 #ifdef IOTSA_HAS_SLEEP
   void configLoad() override;
   void configSave() override;

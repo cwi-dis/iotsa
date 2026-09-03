@@ -10,6 +10,11 @@
 #define IFBLEDEBUG if(0)
 #endif
 
+// Reboot delay after an isEnabled toggle: longer than the plain HTTP-response
+// delay because this reboot exists to re-init (or tear down) the whole NimBLE
+// stack. 4s is historical/precautionary, not measured.
+static const uint32_t REBOOT_DELAY_BLE_REINIT_MS = 4000;
+
 class IotsaBLEServerCallbacks : public NimBLEServerCallbacks {
 	void onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) override {
     IFBLEDEBUG IotsaSerial.printf("BLE connect\n");
@@ -57,7 +62,7 @@ IotsaBLEServerMod::webHandler() {
     bool newIsEnabled = (bool)strtol(api.webService->server->arg("isEnabled").c_str(), 0, 10);
     if (newIsEnabled != isEnabled) {
       isEnabled = newIsEnabled;
-      iotsaController.requestReboot(4000);
+      iotsaController.requestReboot(REBOOT_DELAY_BLE_REINIT_MS);
       anyChanged = true;
     }
   }
@@ -259,7 +264,7 @@ bool IotsaBLEServerMod::putHandler(const char *path, const JsonVariant& request,
   if (getFromRequest<int>(reqObj, "isEnabled", newEnabled) && newEnabled != isEnabled) {
     anyChanged = true;
     isEnabled = request["isEnabled"];
-    iotsaController.requestReboot(4000);
+    iotsaController.requestReboot(REBOOT_DELAY_BLE_REINIT_MS);
   }
   if (getFromRequest<int>(reqObj, "adv_min", adv_min)) anyChanged = true;
   if (getFromRequest<int>(reqObj, "adv_max", adv_max)) anyChanged = true;
