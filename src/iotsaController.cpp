@@ -57,7 +57,7 @@ void IotsaController::begin() {
   }
 
   _mode = pending;
-  _modeEndTime = millis() + 1000UL * iotsaConfig.configurationModeTimeout;
+  _modeEndTime = millis() + 1000UL * _modeTimeout;
   IFDEBUG IotsaSerial.printf("iotsaController: entering mode %d, timeout at %u\n", (int)_mode, (unsigned)_modeEndTime);
   if (_mode == IOTSA_MODE_FACTORY_RESET) factoryReset();
 }
@@ -67,9 +67,13 @@ void IotsaController::tick() {
     IFDEBUG IotsaSerial.println("Software requested reboot.");
     ESP.restart();
   }
-  // Auto-expiry of the current / requested mode.
+  // Active mode timed out -> back to normal. Pending request timed out -> just
+  // drop the request (+ its mailbox file); no mode was active to "end".
   if (_modeEndTime && millis() > _modeEndTime) endConfigurationMode();
-  if (_nextModeEndTime && millis() > _nextModeEndTime) endConfigurationMode();
+  if (_nextModeEndTime && millis() > _nextModeEndTime) {
+    IFDEBUG IotsaSerial.println("Pending mode request timed out");
+    _clearPendingMode();
+  }
 }
 
 void IotsaController::requestReboot(uint32_t ms) {
@@ -81,14 +85,19 @@ void IotsaController::requestReboot(uint32_t ms) {
 // iotsa_mode state machine
 // ---------------------------------------------------------------------------
 
+void IotsaController::_clearPendingMode() {
+  _nextMode = IOTSA_MODE_NORMAL;
+  _nextModeEndTime = 0;
+  if (iotsaConfigFileExists(PENDING_MODE_FILE)) IOTSA_FS.remove(PENDING_MODE_FILE);
+}
+
 void IotsaController::requestMode(iotsa_mode mode) {
-  _nextMode = mode;
   if (mode == IOTSA_MODE_NORMAL) {
-    _nextModeEndTime = 0;
-    if (iotsaConfigFileExists(PENDING_MODE_FILE)) IOTSA_FS.remove(PENDING_MODE_FILE);
+    _clearPendingMode();
     return;
   }
-  _nextModeEndTime = millis() + 1000UL * iotsaConfig.configurationModeTimeout;
+  _nextMode = mode;
+  _nextModeEndTime = millis() + 1000UL * _modeTimeout;
   IotsaConfigFileSave cf(PENDING_MODE_FILE);
   cf.put("mode", (int)mode);
 }
@@ -98,38 +107,28 @@ void IotsaController::allowRequestedConfigurationMode() {
   IFDEBUG IotsaSerial.print("Switching configurationMode to ");
   IFDEBUG IotsaSerial.println(_nextMode);
   _mode = _nextMode;
-  _modeEndTime = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
-  _nextMode = IOTSA_MODE_NORMAL;
-  _nextModeEndTime = 0;
-  if (iotsaConfigFileExists(PENDING_MODE_FILE)) IOTSA_FS.remove(PENDING_MODE_FILE);
+  _modeEndTime = millis() + 1000UL * _modeTimeout;
+  _clearPendingMode();
   if (_mode == IOTSA_MODE_FACTORY_RESET) factoryReset();
-}
-
-void IotsaController::beginConfigurationMode() {
-  IFDEBUG IotsaSerial.println("Configuration mode entered");
-  _mode = IOTSA_MODE_CONFIG;
-  _modeEndTime = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
 }
 
 void IotsaController::endConfigurationMode() {
   IFDEBUG IotsaSerial.println("Configuration mode ended");
   _mode = IOTSA_MODE_NORMAL;
   _modeEndTime = 0;
-  _nextMode = IOTSA_MODE_NORMAL;
-  _nextModeEndTime = 0;
+  _clearPendingMode();
 }
 
 void IotsaController::extendCurrentMode() {
-  IFDEBUG IotsaSerial.println("Configuration mode extended");
-  _modeEndTime = millis() + 1000*CONFIGURATION_MODE_TIMEOUT;
-  // Activity happened, so push the sleep wake-window out too. Was a callback
-  // (setExtensionCallback) into IotsaBatteryMod that bumped millisAtWakeup and
-  // re-armed the watchdog; the watchdog is fed every loop() anyway, and the
-  // wake-window bump is exactly noteActivity() (cwi-dis/iotsa#106).
+  // Activity happened, so push the sleep wake-window out (was a callback into
+  // IotsaBatteryMod, cwi-dis/iotsa#106).
   _sleep.noteActivity();
 #ifndef ESP32
   ESP.wdtFeed();
 #endif
+  if (_mode == IOTSA_MODE_NORMAL) return;   // no maintenance-mode window to extend
+  IFDEBUG IotsaSerial.println("Configuration mode extended");
+  _modeEndTime = millis() + 1000UL * _modeTimeout;
 }
 
 bool IotsaController::inConfigurationMode(bool extend) {

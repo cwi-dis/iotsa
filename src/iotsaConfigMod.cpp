@@ -50,10 +50,10 @@ IotsaConfigMod::webHandler() {
   }
   if( api.webService->server->hasArg("rebootTimeout")) {
     int newValue = api.webService->server->arg("rebootTimeout").toInt();
-    if (newValue != iotsaConfig.configurationModeTimeout) {
+    if ((uint32_t)newValue != iotsaController.modeTimeout()) {
       if (iotsaController.inConfigurationMode(true)) {
         if (needsAuthentication("config")) return;
-        iotsaConfig.configurationModeTimeout = newValue;
+        iotsaController.setModeTimeout(newValue);
         anyChanged = true;
       } else {
         wrongMode = true;
@@ -195,7 +195,7 @@ IotsaConfigMod::webHandler() {
     message += "<p>Hostname: ";
     message += htmlEncode(iotsaConfig.hostName);
     message += " (goto configuration mode to change)<br>Configuration mode timeout: ";
-    message += String(iotsaConfig.configurationModeTimeout);
+    message += String(iotsaController.modeTimeout());
     message += " (goto configuration mode to change)";
     if (iotsaConfig.wifiDisabledOnBoot) {
       message += "Wifi disabled on boot.<br>";
@@ -227,7 +227,7 @@ IotsaConfigMod::webHandler() {
   }
   if (iotsaController.inConfigurationMode()) {
     message += "Configuration mode timeout: <input name='rebootTimeout' value='";
-    message += String(iotsaConfig.configurationModeTimeout);
+    message += String(iotsaController.modeTimeout());
     message += "'><br>";
 #ifdef IOTSA_WITH_HTTPS
     message += "HTTPS private key (PEM): <br><textarea name='httpsKey' rows='8' cols='60'></textarea><br>";
@@ -284,7 +284,7 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
     return true;
   }
   reply["hostName"] = iotsaConfig.hostName;
-  reply["modeTimeout"] = iotsaConfig.configurationModeTimeout;
+  reply["modeTimeout"] = iotsaController.modeTimeout();
   // currentMode / currentModeTimeout / requestedMode / requestedModeTimeout /
   // wifiDisabled are [[deprecated]] forwarders: canonical in /api/runmode now,
   // kept here for one release so existing scripts and the Python CLI keep
@@ -409,9 +409,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
     anyChanged = true;
   }
 #endif
-  if (getFromRequest<int>(reqObj, "modeTimeout", iotsaConfig.configurationModeTimeout)) {
-    anyChanged = true;
-  }
+  { int t; if (getFromRequest<int>(reqObj, "modeTimeout", t)) { iotsaController.setModeTimeout(t); anyChanged = true; } }
 
 #ifdef IOTSA_WITH_HTTPS
   // Set parameter defaultCert to true to remove any key/certificate

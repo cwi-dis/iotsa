@@ -89,12 +89,11 @@ public:
   // Promote a pending request to active *now*, no reboot -- a gesture handler has
   // proved local physical presence. (Was IotsaConfig::allowRequestedConfigurationMode.)
   void allowRequestedConfigurationMode();
-  // Enter config mode directly (WiFi module, factory-AP -> having-a-network).
-  void beginConfigurationMode();
-  // Back to IOTSA_MODE_NORMAL. In-RAM only; the mailbox is never touched here.
+  // Back to IOTSA_MODE_NORMAL, and clear any pending request (RAM + mailbox file).
   void endConfigurationMode();
   // Push the auto-expiry of the current mode forward; also counts as activity for
-  // the sleep wake-window (cwi-dis/iotsa#106).
+  // the sleep wake-window (cwi-dis/iotsa#106). A no-op on the mode window when not
+  // in a maintenance mode (the activity note still happens).
   void extendCurrentMode();
   void allowRCMDescription(const char *desc) { rcmInteractionDescription = desc; }
   void factoryReset();   // format the FS and reboot
@@ -107,14 +106,21 @@ public:
   uint32_t currentModeEndTime() const { return _modeEndTime; }
   uint32_t requestedModeEndTime() const { return _nextModeEndTime; }
 
+  // Auto-expiry of a maintenance mode, in seconds. Persisted by IotsaConfigMod
+  // (config.cfg "rebootTimeout" key); was iotsaConfig.configurationModeTimeout
+  // (cwi-dis/iotsa#106). Seeded from CONFIGURATION_MODE_TIMEOUT.
+  uint32_t modeTimeout() const { return _modeTimeout; }
+  void setModeTimeout(uint32_t seconds) { _modeTimeout = seconds; }
+
   // Human-readable hint for how to enter the requested mode on this device
   // ("press button 4 times", ...). Set by the app via allowRCMDescription().
   const char *rcmInteractionDescription = nullptr;
 
 private:
-  void _consumePendingMode();   // read + delete the mailbox file
+  void _clearPendingMode();   // drop a pending request: RAM state + the mailbox file
 
   uint32_t _rebootAtMillis = 0;
+  uint32_t _modeTimeout = CONFIGURATION_MODE_TIMEOUT;
   bool _wifiRadioEnabled = true;   // runtime desired state; begin() seeds it from !wifiDisabledOnBoot
 #ifdef IOTSA_WITH_BLE
   bool _bleRadioEnabled = true;    // ditto, seeded from !bleDisabledOnBoot

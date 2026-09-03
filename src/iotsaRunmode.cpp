@@ -203,7 +203,7 @@ void IotsaRunmodeMod::webHandler() {
   message += "<p>WiFi radio: ";
   message += iotsaStatus.wifiEnabled ? "enabled" : "disabled";
   message += ". Configuration-mode timeout: ";
-  message += String(iotsaConfig.configurationModeTimeout);
+  message += String(iotsaController.modeTimeout());
   message += " seconds.</p>";
 
   // Request a maintenance mode for the next boot.
@@ -303,7 +303,7 @@ bool IotsaRunmodeMod::getHandler(const char *path, JsonObject& reply) {
   if (iotsaController.requestedMode()) {
     reply["requestedModeTimeout"] = (iotsaController.requestedModeEndTime() - millis())/1000;
   }
-  reply["modeTimeout"] = iotsaConfig.configurationModeTimeout;   // read-only mirror; owned by /api/config
+  reply["modeTimeout"] = iotsaController.modeTimeout();   // read-only mirror; owned by /api/config
   reply["wifiDisabled"] = !iotsaStatus.wifiEnabled;
 #ifdef IOTSA_WITH_BLE
   reply["bleDisabled"] = !iotsaController.bleRadioWanted();

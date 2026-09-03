@@ -5,6 +5,12 @@
 #include "iotsaBuildOptions.h"
 #include <Print.h>
 
+// How long a maintenance mode (config / OTA) stays open before auto-expiring, in
+// seconds. Seeds IotsaController::_modeTimeout; config.cfg's "rebootTimeout" key
+// overrides at runtime. Defined here (ahead of the includes below) so
+// iotsaController.h can use it as the member's default.
+#define CONFIGURATION_MODE_TIMEOUT 300
+
 #ifdef ESP32
 #include <WiFi.h>
 #else
@@ -26,8 +32,6 @@
 #else
 #define IFDEBUG if(0)
 #endif
-
-#define CONFIGURATION_MODE_TIMEOUT 300  // How long to go to temp configuration mode at reboot
 
 // Magic to allow logging to be kept in-core, if wanted, by using
 // IotsaSerial in stead of Serial.
