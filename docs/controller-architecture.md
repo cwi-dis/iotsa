@@ -597,11 +597,14 @@ Decisions:
    persisted knob, canonical on `/api/config`.
 6. Sleep / CPU-frequency block stays on `/api/runmode` (runmode owns sleep config).
 
-### A -- `/api/status` discoverability (pending)
+### A -- `/api/status` discoverability (done)
 
 `/api/status` is a bare `api.setup("status", …)` path, not an `IotsaModule`, so it
-never enters `modules[]` and `iotsa allInfo` skips it. Decide: pseudo-entry in the
-module list, or teach the CLI it's a well-known endpoint like `/api/config`.
+never entered `modules[]` and `iotsa allInfo` skipped it. This section of the doc
+(above, under "Target: four framework globals") already specified the fix -- list it
+in `modules[]` "the way `version` is". 5e just missed the `modules.add`.
+`IotsaConfigMod::getHandler` now adds `"status"` next to `"version"`. No CLI change,
+no `IotsaStatusMod`.
 
 ### C -- CLI backward-compat with old boards (pending)
 

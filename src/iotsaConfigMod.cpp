@@ -321,7 +321,12 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
 #endif
   JsonArray modules = reply["modules"].to<JsonArray>();
   JsonArray modulesNoApi = reply["modulesNoApi"].to<JsonArray>();
+  // "version" and "status" are read-only API paths, not IotsaModules -- listed here
+  // so `iotsa allInfo` and anything else walking modules[] can find them. "status"
+  // is served by IotsaRunmodeMod (always present, core-tier); adding it was the bit
+  // #106 step 5e missed (cwi-dis/iotsa#243 step A).
   modules.add("version");
+  modules.add("status");
   for (IotsaBaseModule *m=app.firstEarlyModule; m; m=m->nextModule) {
     if (m->name == "") continue;
     if (m->hasApi()) modules.add(m->name); else modulesNoApi.add(m->name);
