@@ -32,8 +32,11 @@ private:
   // pauseSleep()/postponeSleep()/canSleep()), moved to IotsaController
   // (cwi-dis/iotsa#106). Use iotsaController.postponeSleep() etc.
 public:
-  // configurationModeTimeout moved to iotsaController.modeTimeout() (cwi-dis/iotsa#106);
-  // config.cfg's "rebootTimeout" key still persists it, via IotsaConfig::config{Load,Save}.
+  // Auto-expiry of a maintenance mode, in seconds. A persisted, user-edited knob
+  // -- it belongs here, not on IotsaController (cwi-dis/iotsa#106 step 5b, undoing
+  // 5262d1c's relocation). config.cfg "rebootTimeout" key; IotsaModeMachine reads
+  // it; iotsaController.modeTimeout() / setModeTimeout() are forwarders.
+  int configurationModeTimeout = 0;
   // wifiEnabled / wifiStationConnected / wifiApActive / mdnsEnabled moved to
   // IotsaStatus (cwi-dis/iotsa#106). Use iotsaStatus.* instead.
   String hostName = "";

@@ -97,7 +97,7 @@ void IotsaConfig::configLoad() {
   // The "mode" key moved to IotsaController's pendingmode.cfg mailbox (cwi-dis/iotsa#106).
   cf.get("hostName", iotsaConfig.hostName, "");
   if (iotsaConfig.hostName == "") iotsaConfig.setDefaultHostName();
-  { int t; cf.get("rebootTimeout", t, CONFIGURATION_MODE_TIMEOUT); iotsaController.setModeTimeout(t); }
+  cf.get("rebootTimeout", iotsaConfig.configurationModeTimeout, CONFIGURATION_MODE_TIMEOUT);
   cf.get("wifiDisabledOnBoot", iotsaConfig.wifiDisabledOnBoot, false);
 #ifdef IOTSA_WITH_BLE
   cf.get("bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot, false);
@@ -120,7 +120,7 @@ void IotsaConfig::configSave() {
   IotsaConfigFileSave cf("/config/config.cfg");
   // The "mode" key moved to IotsaController's pendingmode.cfg mailbox (cwi-dis/iotsa#106).
   cf.put("hostName", hostName);
-  cf.put("rebootTimeout", (int)iotsaController.modeTimeout());
+  cf.put("rebootTimeout", configurationModeTimeout);
   cf.put("wifiDisabledOnBoot", iotsaConfig.wifiDisabledOnBoot);
 #ifdef IOTSA_WITH_BLE
   cf.put("bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot);

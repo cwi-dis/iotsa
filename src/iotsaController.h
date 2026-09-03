@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include "iotsaConfig.h"       // iotsa_mode
 #include "iotsaStatus.h"       // iotsaConfigSettingsWritable() reads iotsaStatus
+#include "iotsaModeMachine.h"  // IotsaController::_modes
+#include "iotsaRadioPolicy.h"  // IotsaController::_radio
 #include "iotsaSleepPolicy.h"  // IotsaController::_sleep
 
 // Intended to be included from iotsa.h
@@ -11,127 +13,80 @@
 // IotsaController -- the device policy coordinator (cwi-dis/iotsa#106).
 //
 // A framework global (like iotsaConfig / iotsaStatus), begin()'d and tick()'d by
-// IotsaApplication. It owns the interlocking device-level policies that were
-// scattered across IotsaConfig and IotsaBatteryMod, and will drive
-// IotsaWifiController and the BLE server as subordinates. See
-// docs/controller-architecture.md.
+// IotsaApplication. It is a thin coordinator over three cohesive sub-policy
+// objects held by value -- IotsaModeMachine, IotsaRadioPolicy, IotsaSleepPolicy --
+// plus the deferred-reboot timer. Everything below is a one-line forward into a
+// sub-policy; the public vocabulary (iotsaController.currentMode() etc.) is what
+// the rest of the framework calls. See docs/controller-architecture.md.
 //
-// Owns:
-//   - the deferred-reboot timer (moved from IotsaConfig::loop())
-//   - the iotsa_mode state machine: current/requested mode, the auto-expiry
-//     timeout (_modeTimeout), the boot-time anti-tamper gate, and the one-shot
-//     "pending mode" mailbox that carries a request across a reboot.
-//   - WiFi + BLE radio-enablement policy: the boot defaults (wifiDisabledOnBoot,
-//     bleDisabledOnBoot), the runtime enable/disable requests, and the mode
-//     forcing (CONFIG/OTA -> WiFi on; CONFIG -> BLE on).
-//   - the sleep/wake policy (_sleep, an IotsaSleepPolicy): the inhibit
-//     bookkeeping (pauseSleep/postponeSleep/canSleep, framework-wide callers),
-//     the sleep config + wake-window state, and decide(). The esp_*_sleep_start()
-//     executor lives in IotsaRunmodeMod (IOTSA_HAS_SLEEP).
-//
-
 class IotsaController {
 public:
   void begin();  // from IotsaApplication::setup(), right after iotsaConfig.ensureConfigLoaded()
   void tick();   // from IotsaApplication::loop()
 
   // Deferred reboot: ESP.restart() after `ms`, long enough for the reply that
-  // asked for it to flush first. Use the REBOOT_DELAY_* constants below rather
-  // than a bare number.
+  // asked for it to flush first. Use the REBOOT_DELAY_* constants.
   void requestReboot(uint32_t ms);
   static constexpr uint32_t REBOOT_DELAY_HTTP_MS = 2000;  // after an HTTP/web response
   static constexpr uint32_t REBOOT_DELAY_BLE_MS  = 1000;  // after a BLE write-ack (cwi-dis/iotsa#130)
 
-  // WiFi radio-enablement policy (cwi-dis/iotsa#106). The runtime desired state
-  // (_wifiRadioEnabled) is seeded in begin() from !wifiDisabledOnBoot, then moved
-  // by setWifiRadioEnabled(): the wifiDisabled REST/BLE toggle, iotsaBattery
-  // (sleep), the BLE "enable WiFi" command. wifiRadioWanted() is the answer
-  // IotsaWifiMod feeds to IotsaWifiController every tick -- the runtime state,
-  // except CONFIG / OTA mode always force the radio on so the device stays
-  // reachable while it is being worked on.
-  void setWifiRadioEnabled(bool on) { _wifiRadioEnabled = on; }
-  bool wifiRadioWanted() const {
-    if (_mode == IOTSA_MODE_CONFIG || _mode == IOTSA_MODE_OTA) return true;
-    return _wifiRadioEnabled;
-  }
-
+  // ---- radio-enablement policy (_radio) ----
+  void setWifiRadioEnabled(bool on) { _radio.setWifiEnabled(on); }
+  bool wifiRadioWanted() const { return _radio.wifiWanted(_modes.forcesWifiOn()); }
 #ifdef IOTSA_WITH_BLE
-  // BLE radio-enablement policy, same shape as WiFi above (cwi-dis/iotsa#106).
-  // _bleRadioEnabled is seeded in begin() from !bleDisabledOnBoot, then moved by
-  // setBleRadioEnabled() (the bleDisabled REST/web toggle). bleRadioWanted() is
-  // what IotsaBLEServerMod reconciles its advertising with each tick. CONFIG mode
-  // forces it on (a BLE gesture is how you steer a wifiDisabledOnBoot device into
-  // a mode); OTA does NOT -- OTA is a WiFi path, BLE up would just waste radio.
-  void setBleRadioEnabled(bool on) { _bleRadioEnabled = on; }
-  bool bleRadioWanted() const {
-    if (_mode == IOTSA_MODE_CONFIG) return true;
-    return _bleRadioEnabled;
-  }
+  void setBleRadioEnabled(bool on) { _radio.setBleEnabled(on); }
+  bool bleRadioWanted() const { return _radio.bleWanted(_modes.forcesBleOn()); }
 #endif
 
-  // ---- sleep/wake policy (cwi-dis/iotsa#106) ----
-  // Sleep-inhibit surface, moved off IotsaConfig. Thin delegates to _sleep;
-  // canSleep() additionally forces "no" while a maintenance mode is active (was
-  // a separate inConfigurationMode() check in IotsaBatteryMod::loop()).
+  // ---- sleep/wake policy (_sleep) ----
   void noteActivity() { _sleep.noteActivity(); }
   void pauseSleep()  { _sleep.pauseSleep(); }
   void resumeSleep() { _sleep.resumeSleep(); }
   void postponeSleep(uint32_t ms) { _sleep.postponeSleep(ms); }
-  bool canSleep() {
-    if (_mode == IOTSA_MODE_CONFIG || _mode == IOTSA_MODE_OTA) return false;
-    return _sleep.canSleep();
-  }
+  bool canSleep() { return !_modes.forbidsSleep() && _sleep.canSleep(); }
   IotsaSleepPolicy& sleep() { return _sleep; }
 
-  // ---- iotsa_mode state machine ----
+  // ---- iotsa_mode state machine (_modes) ----
+  void requestMode(iotsa_mode mode) { _modes.requestMode(mode); }
+  void allowRequestedConfigurationMode() { _modes.allowRequestedConfigurationMode(); }
+  void endConfigurationMode() { _modes.endConfigurationMode(); }
+  // Activity happened: bump the sleep wake-window, and (if in a maintenance mode)
+  // push its auto-expiry out. The two concerns are deliberately separate.
+  void extendCurrentMode() {
+    _sleep.noteActivity();
+#ifndef ESP32
+    ESP.wdtFeed();
+#endif
+    _modes.extendWindow();
+  }
+  void allowRCMDescription(const char *desc) { _modes.allowRCMDescription(desc); }
+  const char *rcmInteractionDescription() const { return _modes.rcmInteractionDescription(); }
+  void factoryReset() { _modes.factoryReset(); }
+  // `extend=true` also pushes the window's expiry out -- a predicate with a side
+  // effect, kept for step 5a's call sites; step 5c removes the parameter.
+  bool inConfigurationMode(bool extend = false) {
+    bool ok = _modes.inConfigurationMode();
+    if (ok && extend) extendCurrentMode();
+    return ok;
+  }
+  const char *modeName(iotsa_mode mode) const { return _modes.modeName(mode); }
+  iotsa_mode currentMode() const { return _modes.currentMode(); }
+  iotsa_mode requestedMode() const { return _modes.requestedMode(); }
+  uint32_t currentModeEndTime() const { return _modes.currentModeEndTime(); }
+  uint32_t requestedModeEndTime() const { return _modes.requestedModeEndTime(); }
 
-  // Request a mode for the *next* boot. Writes the mailbox; honoured by begin()
-  // only after a hardware reset. IOTSA_MODE_NORMAL cancels a pending request.
-  void requestMode(iotsa_mode mode);
-  // Promote a pending request to active *now*, no reboot -- a gesture handler has
-  // proved local physical presence. (Was IotsaConfig::allowRequestedConfigurationMode.)
-  void allowRequestedConfigurationMode();
-  // Back to IOTSA_MODE_NORMAL, and clear any pending request (RAM + mailbox file).
-  void endConfigurationMode();
-  // Push the auto-expiry of the current mode forward; also counts as activity for
-  // the sleep wake-window (cwi-dis/iotsa#106). A no-op on the mode window when not
-  // in a maintenance mode (the activity note still happens).
-  void extendCurrentMode();
-  // Human-readable hint for how to enter the requested mode on this device
-  // ("press button 4 times", ...). Set by the app (allowRCMDescription()), read
-  // by the mode-status blurbs in IotsaRunmodeMod / IotsaOtaMod.
-  void allowRCMDescription(const char *desc) { _rcmInteractionDescription = desc; }
-  const char *rcmInteractionDescription() const { return _rcmInteractionDescription; }
-  void factoryReset();   // format the FS and reboot
+  // Auto-expiry duration (seconds). A persisted, user-edited knob -- it lives on
+  // iotsaConfig (config.cfg "rebootTimeout"); these are read/write forwarders.
+  uint32_t modeTimeout() const { return iotsaConfig.configurationModeTimeout; }
+  void setModeTimeout(uint32_t seconds) { iotsaConfig.configurationModeTimeout = seconds; }
 
-  bool inConfigurationMode(bool extend = false);
-  const char *modeName(iotsa_mode mode);
-
-  iotsa_mode currentMode() const { return _mode; }
-  iotsa_mode requestedMode() const { return _nextMode; }
-  uint32_t currentModeEndTime() const { return _modeEndTime; }
-  uint32_t requestedModeEndTime() const { return _nextModeEndTime; }
-
-  // Auto-expiry of a maintenance mode, in seconds. Persisted by IotsaConfigMod
-  // (config.cfg "rebootTimeout" key); was iotsaConfig.configurationModeTimeout
-  // (cwi-dis/iotsa#106). Seeded from CONFIGURATION_MODE_TIMEOUT.
-  uint32_t modeTimeout() const { return _modeTimeout; }
-  void setModeTimeout(uint32_t seconds) { _modeTimeout = seconds; }
+  IotsaModeMachine& modeMachine() { return _modes; }
+  IotsaRadioPolicy& radio() { return _radio; }
 
 private:
-  void _clearPendingMode();   // drop a pending request: RAM state + the mailbox file
-
-  const char *_rcmInteractionDescription = nullptr;
   uint32_t _rebootAtMillis = 0;
-  uint32_t _modeTimeout = CONFIGURATION_MODE_TIMEOUT;
-  bool _wifiRadioEnabled = true;   // runtime desired state; begin() seeds it from !wifiDisabledOnBoot
-#ifdef IOTSA_WITH_BLE
-  bool _bleRadioEnabled = true;    // ditto, seeded from !bleDisabledOnBoot
-#endif
-  iotsa_mode _mode = IOTSA_MODE_NORMAL;
-  iotsa_mode _nextMode = IOTSA_MODE_NORMAL;
-  uint32_t _modeEndTime = 0;
-  uint32_t _nextModeEndTime = 0;
+  IotsaModeMachine _modes;
+  IotsaRadioPolicy _radio;
   IotsaSleepPolicy _sleep;
 };
 

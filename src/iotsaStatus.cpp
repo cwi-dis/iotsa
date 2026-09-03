@@ -87,6 +87,20 @@ const char* IotsaStatus::getBootReason() {
   return reason;
 }
 
+bool IotsaStatus::wasHardwareReset() {
+  // The anti-tamper gate for honouring a pending mode request (cwi-dis/iotsa#106):
+  // only a real power-cycle or reset-button press counts, never a software reboot,
+  // watchdog or crash.
+#ifndef ESP32
+  rst_info *rip = ESP.getResetInfoPtr();
+  return rip->reason == REASON_DEFAULT_RST || rip->reason == REASON_EXT_SYS_RST;
+#else
+  // xxxjack Not sure why I sometimes see the WDT reset on pressing the reset button...
+  RESET_REASON r = rtc_get_reset_reason(0);
+  return r == POWERON_RESET || r == RTCWDT_RTC_RESET;
+#endif
+}
+
 void IotsaStatus::printHeapSpace() {
   // Difficult to print on esp8266. Debugging only, so just don't print anything.
 #ifdef ESP32
