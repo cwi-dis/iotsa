@@ -46,7 +46,7 @@ IotsaConfigMod::webHandler() {
   if( api.webService->server->hasArg("rebootTimeout")) {
     int newValue = api.webService->server->arg("rebootTimeout").toInt();
     if ((uint32_t)newValue != iotsaController.modeTimeout()) {
-      if (iotsaController.inConfigurationMode(true)) {
+      if (iotsaConfigSettingsWritable()) {
         if (needsAuthentication("config")) return;
         iotsaController.setModeTimeout(newValue);
         anyChanged = true;
@@ -59,7 +59,7 @@ IotsaConfigMod::webHandler() {
   // (cwi-dis/iotsa#106).
 #ifdef IOTSA_WITH_HTTPS
   if (api.webService->server->hasArg("httpsKey") && api.webService->server->arg("httpsKey") != "") {
-    if (iotsaController.inConfigurationMode(true)) {
+    if (iotsaConfigSettingsWritable()) {
       if (needsAuthentication("config")) return;
       String b64String(api.webService->server->arg("httpsKey"));
       if (b64String.startsWith("-----BEGIN RSA PRIVATE KEY-----")) {
@@ -103,7 +103,7 @@ IotsaConfigMod::webHandler() {
     }
   }
   if (api.webService->server->hasArg("httpsCertificate") && api.webService->server->arg("httpsCertificate") != "") {
-    if (iotsaController.inConfigurationMode(true)) {
+    if (iotsaConfigSettingsWritable()) {
       if (needsAuthentication("config")) return;
       String b64String(api.webService->server->arg("httpsCertificate"));
       if (b64String.startsWith("-----BEGIN CERTIFICATE-----")) {
@@ -152,7 +152,7 @@ IotsaConfigMod::webHandler() {
  if( api.webService->server->hasArg("wifiDisabledOnBoot")) {
     int newValue = api.webService->server->arg("wifiDisabledOnBoot").toInt();
     if ((bool)newValue != iotsaConfig.wifiDisabledOnBoot) {
-      if (iotsaController.inConfigurationMode(true)) {
+      if (iotsaConfigSettingsWritable()) {
         if (needsAuthentication("config")) return;
         iotsaConfig.wifiDisabledOnBoot = (bool)newValue;
         anyChanged = true;
@@ -165,7 +165,7 @@ IotsaConfigMod::webHandler() {
  if( api.webService->server->hasArg("bleDisabledOnBoot")) {
     int newValue = api.webService->server->arg("bleDisabledOnBoot").toInt();
     if ((bool)newValue != iotsaConfig.bleDisabledOnBoot) {
-      if (iotsaController.inConfigurationMode(true)) {
+      if (iotsaConfigSettingsWritable()) {
         if (needsAuthentication("config")) return;
         iotsaConfig.bleDisabledOnBoot = (bool)newValue;
         anyChanged = true;
@@ -181,6 +181,7 @@ IotsaConfigMod::webHandler() {
   }
   if (anyChanged) {
     configSave();
+    iotsaController.extendCurrentMode();   // an edit happened -> keep the window open (was inConfigurationMode(true), 5c)
     message += "<p>Settings saved to Flash.</p>";
     if (hostnameChanged) {
       message += "<p><em>Rebooting device to change hostname</em>.</p>";
@@ -220,7 +221,7 @@ IotsaConfigMod::webHandler() {
     message += htmlEncode(iotsaConfig.hostName);
     message += "'><br>";
   }
-  if (iotsaController.inConfigurationMode()) {
+  if (iotsaConfigSettingsWritable()) {
     message += "Configuration mode timeout: <input name='rebootTimeout' value='";
     message += String(iotsaController.modeTimeout());
     message += "'><br>";
@@ -479,7 +480,10 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
     }
   }
 #endif // IOTSA_WITH_HTTPS
-  if (anyChanged) configSave();
+  if (anyChanged) {
+    configSave();
+    iotsaController.extendCurrentMode();   // an edit happened -> keep the window open (5c)
+  }
   if (reqObj["reboot"]) {
     // Backward-compat forwarder: /api/runmode is canonical (cwi-dis/iotsa#106).
     iotsaController.requestReboot(IotsaController::REBOOT_DELAY_HTTP_MS);

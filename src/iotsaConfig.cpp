@@ -59,7 +59,12 @@ const char* IotsaConfig::getBootReason() {
 // The iotsa_mode state machine now lives in IotsaController (cwi-dis/iotsa#106).
 // These are deprecated forwarders, kept for one release for downstream code.
 const char *IotsaConfig::modeName(iotsa_mode mode) { return iotsaController.modeName(mode); }
-bool IotsaConfig::inConfigurationMode(bool extend) { return iotsaController.inConfigurationMode(extend); }
+bool IotsaConfig::inConfigurationMode(bool extend) {
+  // The `extend` side effect was split out of iotsaController.inConfigurationMode()
+  // in step 5c; this deprecated forwarder keeps the old shape for downstream.
+  if (extend && iotsaController.inConfigurationMode()) iotsaController.extendCurrentMode();
+  return iotsaController.inConfigurationMode();
+}
 void IotsaConfig::extendCurrentMode() { iotsaController.extendCurrentMode(); }
 void IotsaConfig::allowRequestedConfigurationMode() { iotsaController.allowRequestedConfigurationMode(); }
 void IotsaConfig::allowRCMDescription(const char *desc) { iotsaController.allowRCMDescription(desc); }

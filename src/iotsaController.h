@@ -62,13 +62,10 @@ public:
   void allowRCMDescription(const char *desc) { _modes.allowRCMDescription(desc); }
   const char *rcmInteractionDescription() const { return _modes.rcmInteractionDescription(); }
   void factoryReset() { _modes.factoryReset(); }
-  // `extend=true` also pushes the window's expiry out -- a predicate with a side
-  // effect, kept for step 5a's call sites; step 5c removes the parameter.
-  bool inConfigurationMode(bool extend = false) {
-    bool ok = _modes.inConfigurationMode();
-    if (ok && extend) extendCurrentMode();
-    return ok;
-  }
+  // Pure predicate (cwi-dis/iotsa#106 step 5c -- no more `extend` side effect).
+  // Callers that want "and keep the window open" call extendCurrentMode() after a
+  // successful edit.
+  bool inConfigurationMode() const { return _modes.inConfigurationMode(); }
   const char *modeName(iotsa_mode mode) const { return _modes.modeName(mode); }
   iotsa_mode currentMode() const { return _modes.currentMode(); }
   iotsa_mode requestedMode() const { return _modes.requestedMode(); }

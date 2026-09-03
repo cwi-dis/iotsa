@@ -89,11 +89,14 @@ IotsaCapabilityMod::webHandler() {
   String _trustedIssuer = api.webService->server->arg("trustedIssuer");
   String _issuerKey = api.webService->server->arg("issuerKey");
   if (_trustedIssuer != "" || _issuerKey != "") {
-    if (!iotsaController.inConfigurationMode(true)) {
+    // Trust anchors: strictly configuration mode (not the broader
+    // iotsaConfigSettingsWritable() factory-AP case), cwi-dis/iotsa#106 step 5c.
+    if (!iotsaController.inConfigurationMode()) {
       api.webService->server->send(403, "text/plain", "403 Forbidden, not in configuration mode");
       return;
     }
     if (needsAuthentication("capabilities")) return;
+    iotsaController.extendCurrentMode();   // an edit -> keep the window open
     if (_trustedIssuer != "") trustedIssuer = _trustedIssuer;
     if (_issuerKey != "") issuerKey = _issuerKey;
     configSave();
