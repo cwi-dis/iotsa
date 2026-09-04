@@ -15,12 +15,13 @@ typedef enum { IOTSA_MODE_NORMAL, IOTSA_MODE_CONFIG, IOTSA_MODE_OTA, IOTSA_MODE_
 // booleans; IotsaBLEServerMod reconciles advertising with it.
 
 class IotsaConfig {
+  // Only these two touch the private *DisabledOnBoot / configWasLoaded members:
+  // IotsaConfigMod edits them from /config, IotsaController reads them at begin().
+  // IotsaRunmodeMod / IotsaWifiMod / IotsaBLEServerMod / IotsaBatteryMod were on
+  // this list before cwi-dis/iotsa#106 moved the wifi/ble mode state out; they
+  // only use public members now, so the stale friend grants were dropped (#243).
   friend class IotsaConfigMod;
-  friend class IotsaRunmodeMod;
   friend class IotsaController;
-  friend class IotsaWifiMod;
-  friend class IotsaBLEServerMod;
-  friend class IotsaBatteryMod;
 private:
   bool configWasLoaded = false;
   bool wifiDisabledOnBoot = false;
