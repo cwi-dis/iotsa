@@ -59,7 +59,6 @@ public:
   void setDefaultHostName();
   void setDefaultCertificate();
   bool usingDefaultCertificate();
-  uint32_t getStatusColor();
 
   // The iotsa_mode state machine, reboot request, sleep-inhibit bookkeeping and
   // radio state all moved off IotsaConfig in cwi-dis/iotsa#106 -- use
@@ -67,6 +66,8 @@ public:
   // extendCurrentMode / allowRequestedConfigurationMode / allowRCMDescription)
   // and iotsaStatus.* (getBootReason / networkIsUp / printHeapSpace). The
   // one-release [[deprecated]] forwarders were removed in cwi-dis/iotsa#243.
+  // getStatusColor() also moved in #243 -- it is iotsaStatus.statusColor() now
+  // (a derived view of mode + wifi state, nothing to do with persisted config).
 };
 
 extern IotsaConfig iotsaConfig;

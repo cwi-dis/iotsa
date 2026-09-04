@@ -1,5 +1,6 @@
 #include "iotsa.h"
 #include "iotsaStatus.h"
+#include "iotsaController.h"   // statusColor() reads iotsaController.currentMode()
 #ifdef ESP32
 #include <esp_log.h>
 #include <rom/rtc.h>
@@ -108,4 +109,26 @@ void IotsaStatus::printHeapSpace() {
   size_t largestBlock = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
   IFDEBUG IotsaSerial.printf("Time since boot: %lld ms. Available heap space: %u bytes, largest block: %u bytes\n", (int64_t)millis(), memAvail, largestBlock);
 #endif
+}
+
+uint32_t IotsaStatus::statusColor() {
+  // The old wifiMode switch, translated onto the iotsaStatus bus (cwi-dis/iotsa#106);
+  // lived on IotsaConfig until cwi-dis/iotsa#243. currentMode stays owned by
+  // IotsaController -- we read through to it. The real LED-semantics rework (flash
+  // patterns, etc.) is cwi-dis/iotsa#176.
+  iotsa_mode mode = iotsaController.currentMode();
+  if (mode == IOTSA_MODE_FACTORY_RESET) return 0x3f0000;   // Red: factory-reset mode
+  if (!wifiEnabled) return 0;                               // radio disabled: LED off
+
+  uint32_t extraColor = 0;
+  if (!wifiStationConnected) {
+    if (wifiApActive) {
+      extraColor = 0x1f1f1f;      // white tint: serving our own AP (fallback / unconfigured)
+    } else {
+      return 0x3f1f00;           // Orange: hunting for WiFi
+    }
+  }
+  if (mode == IOTSA_MODE_CONFIG) return extraColor | 0x3f003f;  // Magenta: configuration mode
+  if (mode == IOTSA_MODE_OTA)    return extraColor | 0x003f3f;  // Cyan: OTA mode
+  return extraColor; // Off when connected+normal; whiteish on the fallback AP
 }

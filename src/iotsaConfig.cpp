@@ -1,8 +1,9 @@
 #include "iotsa.h"
 #include "iotsaConfigFile.h"
 #include "iotsaFS.h"
-#include "iotsaStatus.h"      // cwi-dis/iotsa#106: getBootReason/printHeapSpace/networkIsUp moved there
-#include "iotsaController.h"  // cwi-dis/iotsa#106: the iotsa_mode state machine moved there
+// No iotsaStatus.h / iotsaController.h here any more: since getStatusColor() moved
+// out (cwi-dis/iotsa#243) IotsaConfig touches neither the status bus nor the
+// controller. (iotsa.h still pulls both in for other translation units.)
 #ifdef ESP32
 #include <esp_log.h>
 #include <rom/rtc.h>
@@ -55,28 +56,10 @@ bool IotsaConfig::usingDefaultCertificate() {
 // allowRequestedConfigurationMode / allowRCMDescription moved to IotsaController /
 // IotsaStatus in cwi-dis/iotsa#106; the one-release [[deprecated]] forwarders were
 // removed in cwi-dis/iotsa#243. inConfigurationOrFactoryMode() is gone too --
-// callers use iotsaConfigSettingsWritable() (iotsaController.h).
-
-uint32_t IotsaConfig::getStatusColor() {
-  // Faithful translation of the old wifiMode switch onto the iotsaStatus bus
-  // (cwi-dis/iotsa#106). The real LED-semantics rework (flash patterns, etc.) is
-  // cwi-dis/iotsa#176.
-  iotsa_mode mode = iotsaController.currentMode();
-  if (mode == IOTSA_MODE_FACTORY_RESET) return 0x3f0000;   // Red: factory-reset mode
-  if (!iotsaStatus.wifiEnabled) return 0;                   // radio disabled: LED off
-
-  uint32_t extraColor = 0;
-  if (!iotsaStatus.wifiStationConnected) {
-    if (iotsaStatus.wifiApActive) {
-      extraColor = 0x1f1f1f;      // white tint: serving our own AP (fallback / unconfigured)
-    } else {
-      return 0x3f1f00;           // Orange: hunting for WiFi
-    }
-  }
-  if (mode == IOTSA_MODE_CONFIG) return extraColor | 0x3f003f;  // Magenta: configuration mode
-  if (mode == IOTSA_MODE_OTA)    return extraColor | 0x003f3f;  // Cyan: OTA mode
-  return extraColor; // Off when connected+normal; whiteish on the fallback AP
-}
+// callers use iotsaConfigSettingsWritable() (iotsaController.h). getStatusColor()
+// moved to IotsaStatus::statusColor() in #243 -- it is a derived view of mode +
+// wifi state, no IotsaConfig state involved; this class no longer depends on
+// IotsaController at all.
 
 // pauseSleep() / resumeSleep() / postponeSleep() / canSleep() moved to
 // IotsaSleepPolicy (cwi-dis/iotsa#106); no forwarder, callers renamed to

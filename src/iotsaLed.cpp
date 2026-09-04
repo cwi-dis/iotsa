@@ -37,7 +37,7 @@ void IotsaLedMod::loop() {
 	nextChangeTime = millis() + offDuration;
   } else {
   	if (showingStatus) {
-  		rgb = iotsaConfig.getStatusColor();
+  		rgb = iotsaStatus.statusColor();
 	}
   	// Turn it on, set next change time
   	strip.setPixelColor(0, rgb);

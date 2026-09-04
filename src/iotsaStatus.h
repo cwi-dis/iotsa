@@ -1,6 +1,8 @@
 #ifndef _IOTSASTATUS_H_
 #define _IOTSASTATUS_H_
 
+#include <stdint.h>   // uint32_t (statusColor())
+
 // Intended to be included from iotsa.h
 
 //
@@ -29,6 +31,10 @@ public:
   const char *getBootReason();        // human-readable reset cause (computed once, then cached)
   bool wasHardwareReset();            // this boot was a power-cycle / reset-button, not a software reboot / watchdog / crash
   void printHeapSpace();              // debug: free heap + largest block (prints on ESP32 only)
+  uint32_t statusColor();             // device state (currentMode + wifi flags) as an 0xRRGGBB tint,
+                                      // 0 = "indicator off". Consumed by IotsaLedMod and by app
+                                      // displays (e.g. iotsaNeoClock). Moved off IotsaConfig in
+                                      // cwi-dis/iotsa#243; the real LED-semantics rework is #176.
 };
 
 extern IotsaStatus iotsaStatus;

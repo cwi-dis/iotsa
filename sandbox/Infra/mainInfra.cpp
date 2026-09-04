@@ -31,7 +31,7 @@ IotsaLoggerMod loggerMod(application);
 IotsaFilesBackupMod filesBackupMod(application);
 #ifdef IOTSA_PIN_NEOPIXEL
 // Only when the board definition says this board has a NeoPixel -- then the
-// status LED (and getStatusColor()) is exercised too.
+// status LED (and iotsaStatus.statusColor()) is exercised too.
 IotsaLedMod ledMod(application, IOTSA_PIN_NEOPIXEL);
 #endif
 
