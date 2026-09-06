@@ -1,5 +1,7 @@
 requests
 esptool
+pyserial
+littlefs-python
 zeroconf
 debugpy
 CoAPThon3 @ git+https://github.com/rgerganov/CoAPthon3

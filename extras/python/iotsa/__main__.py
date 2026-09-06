@@ -607,6 +607,9 @@ class Main(object):
     _DFU_SUBCOMMANDS = {
         'info':       'Show chip info and partition table',
         'jsoninfo':   'Show chip info and partition table as JSON',
+        'ports':      'List candidate serial ports (USB-attached ones first)',
+        'restart':    'Reset the device and boot from flash, optionally streaming serial output: dfu restart [seconds]',
+        'monitor':    'Stream the device serial output without resetting it (Ctrl-C to stop): dfu monitor [seconds]',
         'backup':     'Read entire flash to file: dfu backup <file>',
         'restore':    'Write file/url to flash at offset 0: dfu restore <file|url>',
         'clear':      'Erase entire flash',
@@ -620,6 +623,7 @@ class Main(object):
         'otaclear':   'Erase otadata so bootloader defaults to factory (or ota_0)',
         'lsfs':       'List files in LittleFS/spiffs partition',
         'extractfs':  'Extract LittleFS/spiffs partition to directory: dfu extractfs <dir>',
+        'installfs':  'Build a LittleFS image from a directory and flash it to spiffs (reverse of extractfs): dfu installfs <dir>',
         'esptool':    'Raw esptool passthrough (v5 hyphen-style commands): dfu esptool <args...>',
         'help':       'Show this help',
     }
@@ -682,6 +686,38 @@ class Main(object):
         if partitions_error is not None:
             result['partitions_error'] = partitions_error
         print(json.dumps(result, indent=2))
+
+    def _dfu_seconds_arg(self, sub: str) -> float:
+        """Parse the optional trailing 'seconds' argument for dfu restart/monitor."""
+        arg = self._getcmd()
+        if arg is None:
+            return 0.0
+        try:
+            return float(arg)
+        except ValueError:
+            print(f"{sys.argv[0]}: dfu {sub}: optional argument is a number of seconds to "
+                  f"stream serial output, got {arg!r}", file=sys.stderr)
+            sys.exit(1)
+
+    def _dfu_ports(self) -> None:
+        assert self.dfu
+        ports = self.dfu.listPorts()
+        if not ports:
+            print("No serial ports found.")
+            return
+        for device, desc, hwid in ports:
+            label = desc if desc and desc != "n/a" else ""
+            if consts.VERBOSE and hwid and hwid != "n/a":
+                label = f"{label}  [{hwid}]" if label else f"[{hwid}]"
+            print(f"{device}  {label}".rstrip())
+
+    def _dfu_restart(self) -> None:
+        assert self.dfu
+        self.dfu.restart(monitor=self._dfu_seconds_arg('restart'))
+
+    def _dfu_monitor(self) -> None:
+        assert self.dfu
+        self.dfu.monitor(seconds=self._dfu_seconds_arg('monitor'))
 
     def _dfu_backup(self) -> None:
         assert self.dfu
@@ -823,6 +859,66 @@ class Main(object):
                         dst.write(content)
                     print(f"Extracted {fs_full} -> {local_full}")
         extract('/', dirname)
+
+    def _dfu_installfs(self) -> None:
+        assert self.dfu
+        dirname = self._getcmd()
+        if not dirname:
+            print(f"{sys.argv[0]}: dfu installfs requires a directory", file=sys.stderr)
+            sys.exit(1)
+        if not os.path.isdir(dirname):
+            print(f"{sys.argv[0]}: dfu installfs: {dirname!r} is not a directory", file=sys.stderr)
+            sys.exit(1)
+        try:
+            import littlefs
+        except ImportError:
+            print(f"{sys.argv[0]}: littlefs-python is required. Install with: pip install littlefs-python", file=sys.stderr)
+            sys.exit(1)
+        # Size the image from the live partition table, never from a local CSV: a
+        # too-big image describes more blocks than the partition has, and the
+        # device silently reformats (wipes) it on the next boot mount failure.
+        p = self.dfu.findPartition('spiffs')
+        block_size = 4096  # standard ESP32 flash sector size
+        block_count = p.size // block_size
+        # Match the on-disk LittleFS version already on the device so its
+        # (possibly older) LittleFS can mount what we write. Fall back to the
+        # library default when the partition holds no valid filesystem yet.
+        mkfs_kwargs = {}
+        try:
+            existing = self.dfu.readPartition('spiffs')
+            assert existing is not None
+            probe = littlefs.LittleFS(block_size=block_size, block_count=block_count, mount=False)
+            probe.context.buffer = bytearray(existing)
+            probe.mount()
+            disk_version = probe.fs_stat().disk_version
+            mkfs_kwargs['disk_version'] = disk_version
+            if consts.VERBOSE:
+                print(f"+ Existing filesystem is LittleFS v{disk_version >> 16}.{disk_version & 0xffff}")
+        except Exception:
+            if consts.VERBOSE:
+                print("+ No existing filesystem found, using default LittleFS version")
+        fs = littlefs.LittleFS(block_size=block_size, block_count=block_count, **mkfs_kwargs)
+        count = 0
+        for root, _dirs, files in os.walk(dirname):
+            rel = os.path.relpath(root, dirname)
+            fs_dir = '/' if rel == '.' else '/' + rel.replace(os.sep, '/')
+            if fs_dir != '/':
+                fs.makedirs(fs_dir, exist_ok=True)
+            for name in sorted(files):
+                local_full = os.path.join(root, name)
+                fs_full = fs_dir.rstrip('/') + '/' + name
+                with open(local_full, 'rb') as src:
+                    content = src.read()
+                with fs.open(fs_full, 'wb') as dst:
+                    dst.write(content)
+                print(f"Added {local_full} -> {fs_full}")
+                count += 1
+        if count == 0:
+            print(f"{sys.argv[0]}: dfu installfs: {dirname!r} contains no files", file=sys.stderr)
+            sys.exit(1)
+        fs.unmount()
+        self.dfu.writePartitionData('spiffs', bytes(fs.context.buffer))
+        print(f"Installed {count} file(s) into the {p.size}-byte spiffs partition")
 
     def _dfu_esptool(self) -> None:
         assert self.dfu

@@ -7,8 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `iotsa dfu installfs <dir>`: build a LittleFS image from a directory (sized from the live partition table) and flash it to the spiffs partition -- the write half of `dfu extractfs` (#191)
+- `iotsa dfu restart [seconds]`: reset the USB-attached device via the DTR/RTS auto-reset lines and boot from flash (no bootloader entry), optionally streaming the boot log
+- `iotsa dfu ports`: list candidate serial ports, USB-attached ones first
+- `iotsa dfu monitor [seconds]`: stream the device serial output without resetting it
+
 ### Fixed
 
+- `iotsa dfu otaset` no longer crashes with `AttributeError` on esptool v5 (raw bytes now passed to `write_flash`, not a bare `BytesIO`)
+- The Python tool now declares its `littlefs-python` (and `pyserial`) dependency, so `dfu lsfs`/`extractfs`/`installfs`/`monitor` work on a fresh install without a manual `pip install`
 - Defining `IOTSA_WITH_BLE` no longer requires also declaring `IotsaBLEServerMod` in the sketch for HPS (or any BLE service) to actually advertise (#84)
 - A WiFi-less build (`IOTSA_WITHOUT_WIFI`, BLE-only devices) keeps `IotsaConfigMod` -- hostname, TLS certs, configuration-mode handling, `/api/config` -- instead of losing it entirely (#195)
 

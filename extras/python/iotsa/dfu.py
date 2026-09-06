@@ -1,6 +1,7 @@
-import io
 import os
 import struct
+import sys
+import time
 import urllib.request
 import zlib
 from typing import Optional, List
@@ -123,6 +124,91 @@ class DFU:
             self._esp = None
         self._partition_table = None
 
+    def listPorts(self) -> List[tuple]:
+        """Return [(device, description, hwid), ...] for all serial ports.
+
+        USB-attached ports (those reporting a USB VID:PID) are listed first --
+        those are the plausible device candidates; entries like /dev/cu.URT0 or
+        Bluetooth ports have no vid and sort last.
+        """
+        import serial.tools.list_ports
+        ports = list(serial.tools.list_ports.comports())
+        ports.sort(key=lambda p: (p.vid is None, p.device))
+        return [(p.device, (p.description or "").strip(), (p.hwid or "").strip())
+                for p in ports]
+
+    def _resolvePort(self) -> str:
+        """Return the serial port to use, without opening an esptool connection."""
+        if self._esp is not None:
+            return self._esp._port.port
+        if self.port:
+            return self.port
+        ports = esptool.get_port_list()
+        if not ports:
+            raise IotsaError(
+                "No serial ports found. Connect device via USB or specify --serial."
+            )
+        if len(ports) > 1 and VERBOSE:
+            print(f"Multiple serial ports: {ports}, using {ports[0]}")
+        return ports[0]
+
+    def _streamSerial(self, s, seconds: float) -> None:
+        """Copy serial input to stdout for `seconds` (or until Ctrl-C if <= 0)."""
+        deadline = None if seconds <= 0 else time.time() + seconds
+        try:
+            while deadline is None or time.time() < deadline:
+                data = s.read(4096)
+                if data:
+                    sys.stdout.write(data.decode("utf-8", "replace"))
+                    sys.stdout.flush()
+        except KeyboardInterrupt:
+            pass
+
+    def restart(self, monitor: float = 0.0) -> None:
+        """Reset the device via the DTR/RTS auto-reset lines and boot from flash.
+
+        Unlike the partition-aware subcommands this does not enter the ROM
+        bootloader (no partition table needed, so it is not ESP32-only), but it
+        does need DTR/RTS wired to EN/strapping -- most ESP32 boards have this,
+        most plain-RX/TX/GND ESP8266 boards do not. Pass monitor>0 to stream the
+        device's serial output (e.g. the boot log) for that many seconds after.
+        """
+        import serial
+        port = self._resolvePort()
+        # Give up our own esptool connection so the port is free for the toggle.
+        self.close()
+        if VERBOSE:
+            print(f"+ Resetting device on {port}")
+        s = serial.Serial(port, self.baud, timeout=0.2)
+        try:
+            s.setDTR(False)   # strapping pin inactive -> normal boot, not download mode
+            s.setRTS(True)    # EN/CHIP_PU low -> hold in reset
+            time.sleep(0.1)
+            s.setRTS(False)   # release -> device reboots from flash
+            if monitor > 0:
+                self._streamSerial(s, monitor)
+        finally:
+            s.close()
+
+    def monitor(self, seconds: float = 0.0) -> None:
+        """Stream the device's serial output without resetting it.
+
+        Runs until `seconds` elapse, or until Ctrl-C when seconds <= 0.
+        """
+        import serial
+        port = self._resolvePort()
+        self.close()
+        if VERBOSE:
+            if seconds > 0:
+                print(f"+ Monitoring {port} for {seconds:g}s")
+            else:
+                print(f"+ Monitoring {port} (Ctrl-C to stop)")
+        s = serial.Serial(port, self.baud, timeout=0.2)
+        try:
+            self._streamSerial(s, seconds)
+        finally:
+            s.close()
+
     def _download(self, filename: str) -> str:
         """Download URL to a temp file if needed; return local path."""
         if not os.path.exists(filename):
@@ -184,7 +270,7 @@ class DFU:
                 "is fixed at link time by the board's .ld script, not discoverable from "
                 "the device). Partition-based dfu commands (partition listing, otainfo, "
                 "otaset, otaclear, flash, flashfs, clearfs, flashpart, backuppart, lsfs, "
-                "extractfs) are ESP32-only. Use dfu backup/restore/clear, or dfu esptool, "
+                "extractfs, installfs) are ESP32-only. Use dfu backup/restore/clear, or dfu esptool, "
                 "for whole-flash operations on this chip."
             )
         data = esptool_cmds.read_flash(esp, PARTITION_TABLE_OFFSET, PARTITION_TABLE_SIZE)
@@ -286,6 +372,21 @@ class DFU:
             print(f"+ Writing to partition {p.name!r} at offset 0x{p.offset:x}")
         self.writeFlash(p.offset, filename)
 
+    def writePartitionData(self, name: str, data: bytes) -> None:
+        """Write raw bytes to named partition (in-memory, no temp file)."""
+        p = self.findPartition(name)
+        if len(data) > p.size:
+            raise IotsaError(
+                f"Image is {len(data)} bytes, does not fit in partition "
+                f"{p.name!r} ({p.size} bytes)"
+            )
+        if VERBOSE:
+            print(f"+ Writing {len(data)} bytes to partition {p.name!r} at offset 0x{p.offset:x}")
+        esp = self._connect()
+        # esptool's get_bytes() takes raw bytes directly; a bare BytesIO trips it
+        # up (it dereferences .name unconditionally for file-like objects).
+        esptool_cmds.write_flash(esp, [(p.offset, data)])
+
     def erasePartition(self, name: str) -> None:
         """Erase named partition."""
         p = self.findPartition(name)
@@ -364,7 +465,9 @@ class DFU:
         self.erasePartition('otadata')
         p = self.findPartition('otadata')
         esp = self._connect()
-        esptool_cmds.write_flash(esp, [(p.offset, io.BytesIO(bytes(entry)))])
+        # Pass raw bytes: esptool's get_bytes() dereferences .name on any
+        # file-like object, so a bare BytesIO raises AttributeError.
+        esptool_cmds.write_flash(esp, [(p.offset, bytes(entry))])
         if VERBOSE:
             print(f"+ otadata set: {slot_name} (ota_seq={ota_seq})")
 
