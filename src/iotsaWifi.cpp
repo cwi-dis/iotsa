@@ -10,6 +10,7 @@
 #include "iotsa.h"
 #include "iotsaConfigFile.h"
 #include "iotsaWifi.h"
+#include "iotsaWifiDebug.h"   // WCLOG/WCDEBUG (cwi-dis/iotsa#176)
 #ifdef ESP32
 #include <esp_wifi.h>
 #endif
@@ -83,21 +84,20 @@ void IotsaWifiMod::_publishControllerState() {
   // the status LED's slow-blink -- log every transition so a "why did the LED
   // just go dark/change rhythm" question can be answered from the console.
   if (staState != _lastStaState) {
-    IFDEBUG IotsaSerial.printf("iotsaWifi: staState %s -> %s (apActive=%d)\n",
-      staStateName(_lastStaState), staStateName(staState), (int)apAct);
+    WCDEBUG("staState %s -> %s (apActive=%d)", staStateName(_lastStaState), staStateName(staState), (int)apAct);
     _lastStaState = staState;
   }
 
   // Edge-triggered: log the transition, (re)start mDNS.
   if (staConn != _lastStaConnected) {
     if (staConn) {
-      IotsaSerial.printf("WiFi connected: %s, IP %s\n", ssid.c_str(), WiFi.localIP().toString().c_str());
+      WCLOG("connected: %s, IP %s", ssid.c_str(), WiFi.localIP().toString().c_str());
     } else {
-      IotsaSerial.println("WiFi connection lost");
+      WCLOG("connection lost");
     }
   }
   if (apAct != _lastApActive && apAct) {
-    IotsaSerial.printf("WiFi AP up: config-%s, IP %s\n", iotsaConfig.hostName.c_str(), WiFi.softAPIP().toString().c_str());
+    WCLOG("AP up: config-%s, IP %s", iotsaConfig.hostName.c_str(), WiFi.softAPIP().toString().c_str());
   }
   if ((staConn && !_lastStaConnected) || (apAct && !_lastApActive)) {
     _wifiStartMDNS();  // each of STA / AP has its own IP
@@ -109,7 +109,7 @@ void IotsaWifiMod::_publishControllerState() {
 bool IotsaWifiMod::_wifiStartMDNS() {
   MDNS.end();
   if (!MDNS.begin(iotsaConfig.hostName.c_str())) {
-    IotsaSerial.println("MDNS.begin(...) failed");
+    WCLOG("MDNS.begin(...) failed");
     return false;
   }
 #if defined(IOTSA_WITH_HTTPS)
@@ -141,7 +141,7 @@ bool IotsaWifiMod::_wifiStartMDNS() {
     m = m->nextModule;
   }
  
-  IFDEBUG IotsaSerial.println("MDNS responder started");
+  WCDEBUG("MDNS responder started");
   iotsaStatus.mdnsEnabled = true;
   return true;
 }
@@ -265,7 +265,7 @@ bool IotsaWifiMod::getHandler(const char *path, JsonObject& reply) {
 bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
   if (!iotsaConfigSettingsWritable()) {
-    IFDEBUG IotsaSerial.println("wificonfig: Not in config mode");
+    WCDEBUG("wifiConfig write rejected, not in config mode");
     return false;
   }
   JsonObject reqObj = request.as<JsonObject>();
@@ -313,7 +313,7 @@ void IotsaWifiMod::configSave() {
   cf.put("ssidPassword", ssidPassword);
   cf.put("wifiPowerReduction", wifiPowerReduction);
   iotsaStatus.wifiConfigured = ssid.length() > 0;
-  IFDEBUG IotsaSerial.println("Saved wifi.cfg");
+  WCDEBUG("saved wifi.cfg");
   // Persist only. The old factory->beginConfigurationMode() side effect and the
   // wantWifiModeSwitchAtMillis poke are gone (cwi-dis/iotsa#106): the request
   // handler tells the controller explicitly via credentialsChanged().

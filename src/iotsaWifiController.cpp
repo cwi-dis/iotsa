@@ -1,5 +1,6 @@
 #include "iotsaWifiController.h"
 #include "iotsa.h"   // for iotsaConfig (hostName)
+#include "iotsaWifiDebug.h"   // WCLOG/WCDEBUG (cwi-dis/iotsa#176)
 
 #ifdef IOTSA_WITH_WIFI
 
@@ -16,12 +17,6 @@ static const uint32_t HUNT_WINDOW_MS   = 10UL * 1000UL;   // one STA hunt window
 static const uint32_t AP_WINDOW_MS     = 30UL * 1000UL;   // one stable-config-AP window
 static const uint32_t AP_CLIENT_HOLD_MS= 60UL * 1000UL;   // no hunt while / just after a client is on the AP
 static const int      NO_PROGRESS_LIMIT= 5;               // hunt windows with no association -> reinitStack()
-
-#ifdef IOTSA_WIFI_DEBUG
-#define WCDEBUG(...) do { IotsaSerial.printf("iotsaWifi: " __VA_ARGS__); IotsaSerial.println(); } while (0)
-#else
-#define WCDEBUG(...) do {} while (0)
-#endif
 
 // ---------------------------------------------------------------------------
 // Lifecycle
@@ -105,7 +100,7 @@ void IotsaWifiController::_startStaAttempt() {
     bssid = _cache.bssid;
   }
   bool issued = _driver.startStation(_ssid, _psk, ch, bssid);
-  WCDEBUG("startStation ssid='%s' targeted=%d issued=%d", _ssid.c_str(), (int)(bssid != nullptr), (int)issued);
+  WCLOG("startStation ssid='%s' targeted=%d issued=%d", _ssid.c_str(), (int)(bssid != nullptr), (int)issued);
   _staState = IotsaWifiStaState::Connecting;
 }
 
