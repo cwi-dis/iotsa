@@ -601,7 +601,7 @@ for callbacks to be made on changes, and (on ESP32) wakeup from sleep. Will be i
 
 Allows showing static colors and repeating patterns on a NeoPixel LED. By default does not provide a web interface, only an API `set(rgb, onDuration, offDuration, count)` for use in your program. But see the _Led_ example for providing a web interface.
 
-The iotsaLed module also implements the `iotsaStatusInterface` protocol, and shows status information during the boot sequence and when the iotsa board is running in a nonstandard mode (configuration mode, OTA mode, etc).
+The iotsaLed module also polls `iotsaStatus.statusColor()` and shows status information (breathing/blinking, per subsystem) whenever no explicit pattern is running, including during the boot sequence and when the iotsa board is running in a nonstandard mode (configuration mode, OTA mode, etc).
 
 The module does not provide a user-visible endpoint or REST api, but can be used as a base class for this. See [examples/Led](examples/Led) for an example.
 

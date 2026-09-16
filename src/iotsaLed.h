@@ -4,7 +4,7 @@
 #include "iotsaApi.h"
 #include <Adafruit_NeoPixel.h>
 
-class IotsaLedMod : public IotsaModule, public IotsaStatusInterface {
+class IotsaLedMod : public IotsaModule {
 public:
   IotsaLedMod(IotsaApplication &_app, int pin, neoPixelType t=NEO_GRB + NEO_KHZ800, IotsaAuthMod *_auth=NULL);
   void setup() override;
@@ -14,16 +14,20 @@ public:
   String info() override;
 #endif
   void set(uint32_t _rgb, int _onDuration, int _offDuration, int _count);
-  void showStatus() override;
+  // Cancel any in-flight set() pattern and resume polling iotsaStatus.statusColor()
+  // immediately. Not part of any interface (cwi-dis/iotsa#176 removed the old
+  // push-based IotsaStatusInterface) -- just a plain convenience method, kept
+  // for callers (e.g. iotsaDoorOpener) that want to force-resume status display.
+  void showStatus();
 protected:
   Adafruit_NeoPixel strip;
   uint32_t rgb;
-  uint32_t nextChangeTime;
+  uint32_t nextChangeTime;  // 0 = no set() pattern in flight -- poll status instead
   int remainingCount;
   int onDuration;
   int offDuration;
   bool isOn;
-  bool showingStatus;
+  uint32_t lastShownColor;  // dedup: only strip.show() when the polled colour changes
 };
 
 #endif

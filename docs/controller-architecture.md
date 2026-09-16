@@ -463,10 +463,12 @@ the sleep-inhibit runtime state `postponeSleepMillis` / `pauseSleepCount` off
    state. This is smell 12 resolved as a real split. (`watchdogDuration` /
    `cpuFrequency*` are already module-held on `IotsaRunmodeMod`, so already
    compliant; `watchdogDuration` moves further, to `iotsaConfig` -- see 5d.)
-3. **`getStatusColor()` on `iotsaConfig`** -- runtime-derived (reads
-   `currentMode()` + `iotsaStatus.wifi*`). Known; parked on
-   [#176](https://github.com/cwi-dis/iotsa/issues/176). It belongs on the status
-   side; note it here so #176 picks it up.
+3. ~~**`getStatusColor()` on `iotsaConfig`**~~ -- done: moved to
+   `IotsaStatus::statusColor()` in
+   [#243](https://github.com/cwi-dis/iotsa/issues/243), then the actual
+   LED-semantics rework (breathe/blink slot cycle, pulse channel, the
+   `IotsaStatusSignal` semantic layer) landed in
+   [#176](https://github.com/cwi-dis/iotsa/issues/176).
 
 ### 5c. One settings-writable predicate (smell 7)
 
@@ -530,7 +532,8 @@ Group A runs long.
 
 ## Deferred (was "slice 4"; folds into this work)
 
-- `getStatusColor()` LED-semantics rework (flash for hunting, etc.) -- [#176].
+- ~~`getStatusColor()` LED-semantics rework (flash for hunting, etc.)~~ -- done,
+  [#176](https://github.com/cwi-dis/iotsa/issues/176).
 - Collapse `iotsaConfigSettingsWritable()` -> `inConfigurationMode()` once "no SSID =>
   config mode" lands.
 - "No SSID configured => enter config mode" so `inConfigurationMode()` alone gates

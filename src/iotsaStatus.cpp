@@ -1,6 +1,7 @@
 #include "iotsa.h"
 #include "iotsaStatus.h"
-#include "iotsaController.h"   // statusColor() reads iotsaController.currentMode()
+#include "iotsaController.h"   // statusColor() reads iotsaController.currentMode()/requestedMode()
+#include <math.h>               // fabsf() (breatheEnvelope())
 #ifdef ESP32
 #include <esp_log.h>
 #include <rom/rtc.h>
@@ -10,6 +11,67 @@
 // Global variable definition
 //
 IotsaStatus iotsaStatus;
+
+static constexpr uint32_t SLOT_MS = 1000;              // one mode/wifi slot
+static constexpr uint32_t GAP_MS = 200;                // dark gap between slots
+static constexpr uint32_t CYCLE_MS = 2 * SLOT_MS + 2 * GAP_MS;
+static constexpr uint32_t SLOW_BLINK_PERIOD_MS = 500;  // 2 Hz
+static constexpr uint32_t FAST_BLINK_PERIOD_MS = 250;  // 4 Hz
+
+// Colour (+ reason, for non-LED renderers) for a *requested* mode -- the
+// modal-override case (cwi-dis/iotsa#176 design comment, section 3).
+static uint32_t colourForRequestedMode(iotsa_mode mode, const char **reasonOut) {
+  switch (mode) {
+    case IOTSA_MODE_CONFIG:
+      *reasonOut = "Configuration requested (press reset)";
+      return IotsaStatus::COLOUR_MAGENTA;
+    case IOTSA_MODE_OTA:
+      *reasonOut = "OTA requested (press reset)";
+      return IotsaStatus::COLOUR_CYAN;
+    case IOTSA_MODE_FACTORY_RESET:
+      *reasonOut = "Factory reset requested (press reset)";
+      return IotsaStatus::COLOUR_WHITE;
+    default:
+      *reasonOut = nullptr;
+      return 0;
+  }
+}
+
+// Rendering primitives -- pure functions of (rhythm-relative time, period).
+// Kept file-local: only statusColor() needs pixel-level envelope math: other
+// renderers consume the semantic IotsaStatusSignal accessors instead.
+static float breatheEnvelope(uint32_t phaseMs, uint32_t periodMs) {
+  if (periodMs == 0) return 1.0f;
+  float x = (float)(phaseMs % periodMs) / (float)periodMs;  // 0..1
+  return 1.0f - fabsf(2.0f * x - 1.0f);                      // triangle: 0..1..0
+}
+
+static bool blinkOn(uint32_t phaseMs, uint32_t periodMs) {
+  if (periodMs == 0) return true;
+  return (phaseMs % periodMs) < (periodMs / 2);
+}
+
+static uint32_t scaleColour(uint32_t colour, float factor) {
+  uint8_t r = (uint8_t)(((colour >> 16) & 0xff) * factor);
+  uint8_t g = (uint8_t)(((colour >> 8) & 0xff) * factor);
+  uint8_t b = (uint8_t)((colour & 0xff) * factor);
+  return ((uint32_t)r << 16) | ((uint32_t)g << 8) | b;
+}
+
+// Renders one semantic signal to a 0xRRGGBB tint at rhythm-relative time t
+// (a slot-local phase for the slot cycle, or plain millis() for a
+// continuous/non-slotted rhythm -- blink/breathe are periodic in t either way).
+static uint32_t renderSignal(const IotsaStatusSignal &sig, uint32_t t) {
+  if (sig.colour == 0) return 0;
+  switch (sig.rhythm) {
+    case IotsaStatusRhythm::Dark:      return 0;
+    case IotsaStatusRhythm::Breathe:   return scaleColour(sig.colour, breatheEnvelope(t, SLOT_MS));
+    case IotsaStatusRhythm::SlowBlink: return blinkOn(t, SLOW_BLINK_PERIOD_MS) ? sig.colour : 0;
+    case IotsaStatusRhythm::FastBlink: return blinkOn(t, FAST_BLINK_PERIOD_MS) ? sig.colour : 0;
+    case IotsaStatusRhythm::Solid:     return sig.colour;
+  }
+  return 0;
+}
 
 bool IotsaStatus::networkIsUp() {
   return wifiStationConnected;
@@ -111,24 +173,94 @@ void IotsaStatus::printHeapSpace() {
 #endif
 }
 
-uint32_t IotsaStatus::statusColor() {
-  // The old wifiMode switch, translated onto the iotsaStatus bus (cwi-dis/iotsa#106);
-  // lived on IotsaConfig until cwi-dis/iotsa#243. currentMode stays owned by
-  // IotsaController -- we read through to it. The real LED-semantics rework (flash
-  // patterns, etc.) is cwi-dis/iotsa#176.
-  iotsa_mode mode = iotsaController.currentMode();
-  if (mode == IOTSA_MODE_FACTORY_RESET) return 0x3f0000;   // Red: factory-reset mode
-  if (!wifiEnabled) return 0;                               // radio disabled: LED off
-
-  uint32_t extraColor = 0;
-  if (!wifiStationConnected) {
-    if (wifiApActive) {
-      extraColor = 0x1f1f1f;      // white tint: serving our own AP (fallback / unconfigured)
-    } else {
-      return 0x3f1f00;           // Orange: hunting for WiFi
-    }
+IotsaStatusSignal IotsaStatus::overrideSignal() const {
+  IotsaStatusSignal sig;
+  if (millis() < _pulseExpiryMs) {
+    sig.colour = _pulseColour;
+    sig.rhythm = (_pulseOffMs == 0) ? IotsaStatusRhythm::Solid : IotsaStatusRhythm::FastBlink;
+    sig.reason = _pulseReason;
+    return sig;
   }
-  if (mode == IOTSA_MODE_CONFIG) return extraColor | 0x3f003f;  // Magenta: configuration mode
-  if (mode == IOTSA_MODE_OTA)    return extraColor | 0x003f3f;  // Cyan: OTA mode
-  return extraColor; // Off when connected+normal; whiteish on the fallback AP
+  iotsa_mode requested = iotsaController.requestedMode();
+  if (requested != IOTSA_MODE_NORMAL) {
+    sig.colour = colourForRequestedMode(requested, &sig.reason);
+    sig.rhythm = IotsaStatusRhythm::FastBlink;
+  }
+  return sig;
+}
+
+IotsaStatusSignal IotsaStatus::modeSignal() const {
+  IotsaStatusSignal sig;
+  iotsa_mode mode = iotsaController.currentMode();
+  // IOTSA_MODE_FACTORY_RESET is never seen here: factoryReset() runs
+  // synchronously on mode entry and reboots before loop() runs again
+  // (cwi-dis/iotsa#176 design comment, section 3).
+  if (mode == IOTSA_MODE_CONFIG) {
+    sig.colour = IotsaStatus::COLOUR_MAGENTA;
+    sig.rhythm = IotsaStatusRhythm::Breathe;
+  } else if (mode == IOTSA_MODE_OTA) {
+    sig.colour = IotsaStatus::COLOUR_CYAN;
+    sig.rhythm = IotsaStatusRhythm::Breathe;
+  }
+  // IOTSA_MODE_NORMAL: dark (default sig).
+  return sig;
+}
+
+IotsaStatusSignal IotsaStatus::wifiSignal() const {
+  IotsaStatusSignal sig;
+  if (!wifiEnabled) return sig;  // radio disabled: dark
+  sig.colour = IotsaStatus::COLOUR_AMBER;
+  // Same two conditions as IotsaWifiController::_wantApUp(): config mode
+  // active, or unconfigured -- the AP is the way in either way, so breathe.
+  if (iotsaController.currentMode() == IOTSA_MODE_CONFIG || !wifiConfigured) {
+    sig.rhythm = IotsaStatusRhythm::Breathe;
+  } else if (wifiHunting) {
+    sig.rhythm = IotsaStatusRhythm::SlowBlink;
+  } else {
+    sig.colour = 0;  // connected, nothing unusual: dark
+  }
+  return sig;
+}
+
+void IotsaStatus::setStatusPulse(uint32_t colour, uint32_t onMs, uint32_t offMs, uint32_t durationMs, const char *reason) {
+  _pulseColour = colour;
+  _pulseOnMs = onMs;
+  _pulseOffMs = offMs;
+  _pulseStartMs = millis();
+  _pulseExpiryMs = _pulseStartMs + durationMs;
+  _pulseReason = reason;
+}
+
+void IotsaStatus::clearStatusPulse() {
+  _pulseExpiryMs = 0;
+}
+
+uint32_t IotsaStatus::statusColor() {
+  // Precedence (cwi-dis/iotsa#176 design comment, section 4): pulse channel >
+  // modal override (a pending mode request) > the two-slot mode/wifi cycle.
+  // Rendered here with exact pulse on/off timing (overrideSignal() buckets
+  // any pulse to Solid/FastBlink for non-LED renderers, which don't need
+  // millisecond-exact timing).
+  uint32_t now = millis();
+  if (now < _pulseExpiryMs) {
+    if (_pulseOffMs == 0) return _pulseColour;  // solid
+    uint32_t t = (now - _pulseStartMs) % (_pulseOnMs + _pulseOffMs);
+    return (t < _pulseOnMs) ? _pulseColour : 0;
+  }
+
+  iotsa_mode requested = iotsaController.requestedMode();
+  if (requested != IOTSA_MODE_NORMAL) {
+    const char *reason;
+    uint32_t colour = colourForRequestedMode(requested, &reason);
+    return blinkOn(now, FAST_BLINK_PERIOD_MS) ? colour : 0;
+  }
+
+  // Two-slot cycle: [mode][gap][wifi][gap], repeating every CYCLE_MS.
+  uint32_t phase = now % CYCLE_MS;
+  if (phase < SLOT_MS) return renderSignal(modeSignal(), phase);
+  phase -= SLOT_MS;
+  if (phase < GAP_MS) return 0;
+  phase -= GAP_MS;
+  if (phase < SLOT_MS) return renderSignal(wifiSignal(), phase);
+  return 0;  // second gap
 }

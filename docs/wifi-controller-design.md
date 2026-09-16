@@ -327,14 +327,11 @@ machinery:
   it just flips the AP-up derivation to false. If STA was connected it stays connected.
 - `configSave()` no longer triggers a mode transition. Persisting a setting persists a
   setting; the request handler that implies a transition triggers it explicitly.
-- `getStatusColor()` needs its own rethink -- it currently switches on `wifiMode` *and*
-  `configurationMode` with an "extra white tint" hack. New inputs: `configurationMode`
-  (`CONFIG` / `OTA` / `FACTORY_RESET` -- the last being the wipe-and-reboot mode, a
-  `iotsa_mode` enum value unrelated to `IOTSA_WIFI_FACTORY`),
-  `sta.connected`, `ap.up`, radio-disabled. Whether `STA_HUNTING` ("SEARCHING")
-  deserves its own colour is a call for the status-LED work
-  ([#176](https://github.com/cwi-dis/iotsa/issues/176)); record the inputs here, design
-  the colours there.
+- ~~`getStatusColor()` needs its own rethink~~ -- done in
+  [#176](https://github.com/cwi-dis/iotsa/issues/176): `IotsaStatus::wifiSignal()`
+  derives amber dark/breathe/slow-blink from `currentMode()==CONFIG || !wifiConfigured`
+  (the same two conditions as `_wantApUp()` below) and the new `wifiHunting` flag
+  (published from `staState()==Hunting`), no "extra white tint" hack needed.
 
 ## Security invariant
 
@@ -382,7 +379,8 @@ Off by default; zero cost in a production build.
 **"Loud status" -- always on, user-facing.** Referred to in "Failure handling" and the
 acceptance tests. It is the persistent, no-tools-needed signal that WiFi is unhealthy:
 
-- an input to the status LED (see `getStatusColor()` above / [#176](https://github.com/cwi-dis/iotsa/issues/176))
+- an input to the status LED (see `IotsaStatus::wifiSignal()`/`statusColor()` above,
+  [#176](https://github.com/cwi-dis/iotsa/issues/176))
 - a "wifi health" summary in the `/api/wificonfig` info output -- current STA state, the
   last failure reason, whether the AP is up and why -- so a glance at `iotsa xInfo`
   tells you what is wrong without a serial cable.

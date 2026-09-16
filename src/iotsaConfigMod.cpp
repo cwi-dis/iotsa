@@ -20,8 +20,8 @@ void IotsaConfigMod::setup() {
   configLoad();
   // The pending-mode mailbox, the boot anti-tamper gate and the factory-reset
   // trigger moved to IotsaController::begin(), which IotsaApplication::setup()
-  // has already run by now (cwi-dis/iotsa#106).
-  if (app.status) app.status->showStatus();
+  // has already run by now (cwi-dis/iotsa#106). IotsaStatus::statusColor() is
+  // now polled continuously by renderers, not nudged here (cwi-dis/iotsa#176).
 }
 
 #ifdef IOTSA_WITH_WEB
@@ -197,6 +197,7 @@ IotsaConfigMod::webHandler() {
   if (anyChanged) {
     configSave();
     iotsaController.extendCurrentMode();   // an edit happened -> keep the window open (was inConfigurationMode(true), 5c)
+    iotsaStatus.setStatusPulse(IotsaStatus::COLOUR_MAGENTA, 0, 0, 2000, "Settings saved");  // cwi-dis/iotsa#176
     message += "<p>Settings saved to Flash.</p>";
     if (hostnameChanged) {
       message += "<p><em>Rebooting device to change hostname</em>.</p>";
@@ -502,6 +503,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   if (anyChanged) {
     configSave();
     iotsaController.extendCurrentMode();   // an edit happened -> keep the window open (5c)
+    iotsaStatus.setStatusPulse(IotsaStatus::COLOUR_MAGENTA, 0, 0, 2000, "Settings saved");  // cwi-dis/iotsa#176
   }
   if (reqObj["reboot"]) {
     // Backward-compat forwarder: /api/runmode is canonical (cwi-dis/iotsa#106).

@@ -13,11 +13,11 @@ void otaOnStart() {
 }
 
 void otaOnProgress(unsigned int progress, unsigned int total) {
-//  if (app.status) app.status->showStatus();
   IFDEBUG IotsaSerial.print("ota: got data ");
   IFDEBUG IotsaSerial.print(progress*100/total);
   IFDEBUG IotsaSerial.println("%");
   iotsaController.extendCurrentMode();
+  iotsaStatus.setStatusPulse(IotsaStatus::COLOUR_CYAN, 0, 0, 2000, "OTA update in progress");  // re-armed per chunk (cwi-dis/iotsa#176)
   optFeedWatchdog();
 }
 

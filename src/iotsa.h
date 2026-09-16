@@ -58,14 +58,6 @@ typedef enum IotsaApiOperation {
   IOTSA_API_DELETE
 } IotsaApiOperation;
 
-//
-// Status indication interface.
-//
-class IotsaStatusInterface {
-public:
-  virtual void showStatus() = 0;
-};
-
 class IotsaApplication {
   friend class IotsaBaseModule;
   friend class IotsaConfigMod;
@@ -83,7 +75,6 @@ public:
   void setup();
   void lateSetup();
   void loop();
-  IotsaStatusInterface *status;
 #ifdef IOTSA_HAS_WEBSERVER
   // Convenience for app-level sketch code (e.g. tests/KitchenSink, examples/Hello,
   // examples/Log) that registers its own raw handler outside of any module method,

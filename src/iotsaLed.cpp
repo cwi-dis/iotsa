@@ -1,52 +1,69 @@
 #include "iotsaLed.h"
+#include "iotsaRunmode.h"   // IotsaRunmodeMod::instance()/addIdentifyCallback() (cwi-dis/iotsa#176)
 
-// Helper function: get color to show current status of module.
+// Single-NeoPixel renderer: an explicit set() pattern (finite on/off/count
+// blink) takes priority while it's running; otherwise this polls
+// iotsaStatus.statusColor() every loop() call (cwi-dis/iotsa#176 -- inverts
+// the old push model, see IotsaStatus's own docs).
 
 IotsaLedMod::IotsaLedMod(IotsaApplication &_app, int pin, neoPixelType t, IotsaAuthMod *_auth)
 :	IotsaModule(_app, _auth, true),
 	strip(1, pin, t),
 	rgb(0),
-	nextChangeTime(0)
+	nextChangeTime(0),
+	remainingCount(0),
+	onDuration(0),
+	offDuration(0),
+	isOn(false),
+	lastShownColor(0xffffffff)  // deliberately not a valid 0xRRGGBB tint, forces the first poll to render
 {
-	app.status = this;
 }
 
 void IotsaLedMod::setup() {
   strip.begin();
   strip.show();
+  // Default identify() handler (cwi-dis/iotsa#176/#133): two full-intensity
+  // flashes then resume. IotsaRunmodeMod is core-tier, ensure()d before any
+  // module's setup() runs (iotsa.cpp), so instance() is never null here.
+  IotsaRunmodeMod *runmode = IotsaRunmodeMod::instance();
+  if (runmode) {
+    runmode->addIdentifyCallback([this]() { set(0xffffff, 300, 300, 2); });
+  }
 }
 
 void IotsaLedMod::loop() {
-  //IotsaSerial.println("led in");
-  if (nextChangeTime == 0 || millis() < nextChangeTime) {
-	//IotsaSerial.println("led early out");
-  	return;
+  if (nextChangeTime != 0) {
+    // A set() pattern is in flight -- finite on/off/count blink, unchanged.
+    if (millis() < nextChangeTime) return;
+    if (isOn) {
+      strip.setPixelColor(0, 0);
+      strip.show();
+      isOn = false;
+      lastShownColor = 0;
+      if (remainingCount <= 0) {
+        nextChangeTime = 0;  // pattern done -- next loop() call resumes status polling
+        return;
+      }
+      nextChangeTime = millis() + offDuration;
+    } else {
+      strip.setPixelColor(0, rgb);
+      strip.show();
+      isOn = true;
+      lastShownColor = rgb;
+      nextChangeTime = millis() + onDuration;
+      remainingCount--;
+    }
+    return;
   }
-  // We need to change the LED.
-  if (isOn) {
-  	// Need to turn it off
-  	strip.setPixelColor(0, 0);
-  	strip.show();
-  	isOn = false;
-  	if (remainingCount <= 0) {
-  		// We are done with the pattern.
-  		nextChangeTime = 0;
-		//IotsaSerial.println("led done");
-  		return;
-	}
-	nextChangeTime = millis() + offDuration;
-  } else {
-  	if (showingStatus) {
-  		rgb = iotsaStatus.statusColor();
-	}
-  	// Turn it on, set next change time
-  	strip.setPixelColor(0, rgb);
-  	strip.show();
-  	isOn = true;
-  	nextChangeTime = millis() + onDuration;
-    if (!showingStatus) remainingCount--;
+  // Idle: poll status continuously. Breathe needs ~20-30fps to read smoothly;
+  // a single-pixel strip.show() is ~30us, so polling every loop() call is free
+  // (design comment, section 5). Only push to the strip when the colour changes.
+  uint32_t colour = iotsaStatus.statusColor();
+  if (colour != lastShownColor) {
+    strip.setPixelColor(0, colour);
+    strip.show();
+    lastShownColor = colour;
   }
-  //IotsaSerial.println("led return");
 }
 
 void IotsaLedMod::lateSetup() {
@@ -60,7 +77,6 @@ String IotsaLedMod::info() {
 #endif
 
 void IotsaLedMod::set(uint32_t _rgb, int _onDuration, int _offDuration, int _count) {
-  showingStatus = false;
   rgb = _rgb;
   onDuration = _onDuration;
   offDuration = _offDuration;
@@ -70,12 +86,7 @@ void IotsaLedMod::set(uint32_t _rgb, int _onDuration, int _offDuration, int _cou
 }
 
 void IotsaLedMod::showStatus() {
-  showingStatus = true;
-  onDuration = 500;
-  offDuration = 500;
+  nextChangeTime = 0;
   isOn = false;
-  remainingCount = 0x7fff;
-  nextChangeTime = millis();
-  // Call loop here to update immedeately
-  loop();
+  loop();  // update immediately rather than waiting for the next loop() call
 }

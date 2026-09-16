@@ -64,8 +64,9 @@ void IotsaWifiMod::_publishControllerState() {
   iotsaStatus.wifiStationConnected = staConn;
   iotsaStatus.wifiApActive = apAct;
   iotsaStatus.wifiEnabled = iotsaController.wifiRadioWanted();  // "radio may be powered", not "connected"
+  iotsaStatus.wifiHunting = (_controller.staState() == IotsaWifiStaState::Hunting);  // cwi-dis/iotsa#176
 
-  // Edge-triggered: log the transition, (re)start mDNS, poke the status LED.
+  // Edge-triggered: log the transition, (re)start mDNS.
   if (staConn != _lastStaConnected) {
     if (staConn) {
       IotsaSerial.printf("WiFi connected: %s, IP %s\n", ssid.c_str(), WiFi.localIP().toString().c_str());
@@ -78,9 +79,6 @@ void IotsaWifiMod::_publishControllerState() {
   }
   if ((staConn && !_lastStaConnected) || (apAct && !_lastApActive)) {
     _wifiStartMDNS();  // each of STA / AP has its own IP
-  }
-  if ((staConn != _lastStaConnected) || (apAct != _lastApActive)) {
-    if (app.status) app.status->showStatus();
   }
   _lastStaConnected = staConn;
   _lastApActive = apAct;
@@ -208,13 +206,6 @@ IotsaWifiMod::webHandler() {
 
   message += "</body></html>";
   api.webService->server->send(200, "text/html", message);
-#if 0
-  // Reboot is no longer needed, config change handled by changing wifi on the fly
-  if (anyChanged) {
-    if (app.status) app.status->showStatus();
-    iotsaController.requestReboot(2000);
-  }
-#endif
 }
 
 String IotsaWifiMod::info() {

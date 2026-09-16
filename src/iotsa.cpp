@@ -20,8 +20,7 @@
 Print *iotsaOverrideSerial = &Serial;
 
 IotsaApplication::IotsaApplication(const char *_title)
-: status(NULL),
-  firstModule(NULL),
+: firstModule(NULL),
   firstEarlyModule(NULL),
   title(_title),
   haveOTA(false)
