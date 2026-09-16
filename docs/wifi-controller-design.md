@@ -329,9 +329,13 @@ machinery:
   setting; the request handler that implies a transition triggers it explicitly.
 - ~~`getStatusColor()` needs its own rethink~~ -- done in
   [#176](https://github.com/cwi-dis/iotsa/issues/176): `IotsaStatus::wifiSignal()`
-  derives amber dark/breathe/slow-blink from `currentMode()==CONFIG || !wifiConfigured`
-  (the same two conditions as `_wantApUp()` below) and the new `wifiHunting` flag
-  (published from `staState()==Hunting`), no "extra white tint" hack needed.
+  derives amber dark/breathe/slow-blink from `wifiApActive` (breathe -- AP
+  reachable right now, whatever raised it) and `wifiHunting` (slow-blink,
+  published from `staState()==Hunting`), no "extra white tint" hack needed.
+  First cut kept it to `_wantApUp()`'s two conditions instead of the flag
+  directly, which missed the manual-hunt duty cycle's own periodic AP window
+  (`_wantApUp()` is explicitly documented as the non-manual-hunt case) --
+  caught on real hardware, fixed to key off `wifiApActive` itself.
 
 ## Security invariant
 

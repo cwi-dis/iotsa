@@ -25,8 +25,8 @@ private:
   void webHandler() override;
 #endif
   bool _wifiStartMDNS();
-  // Copy IotsaWifiController's published state into the iotsaConfig fields other
-  // modules read; start/stop mDNS and poke the status LED on the edges.
+  // Copy IotsaWifiController's published state into the iotsaStatus fields other
+  // modules (and the status LED, via statusColor()) read; start/stop mDNS on the edges.
   void _publishControllerState();
 
   // The mechanism/policy pair (cwi-dis/iotsa#106). IotsaWifiMod owns both, wires
@@ -36,6 +36,7 @@ private:
   IotsaWifiController _controller{_driver};
   bool _lastStaConnected = false;
   bool _lastApActive = false;
+  IotsaWifiStaState _lastStaState = IotsaWifiStaState::Off;  // diagnostic only (cwi-dis/iotsa#176) -- staState() detail behind wifiHunting
 
   String ssid;
   String ssidPassword;

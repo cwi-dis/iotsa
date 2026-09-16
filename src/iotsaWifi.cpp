@@ -16,6 +16,18 @@
 
 #ifdef IOTSA_WITH_WIFI
 
+// Diagnostic only (cwi-dis/iotsa#176): staState() as a string, for the
+// edge-triggered log in _publishControllerState() below.
+static const char *staStateName(IotsaWifiStaState s) {
+  switch (s) {
+    case IotsaWifiStaState::Off:        return "Off";
+    case IotsaWifiStaState::Connecting: return "Connecting";
+    case IotsaWifiStaState::Connected:  return "Connected";
+    case IotsaWifiStaState::Hunting:    return "Hunting";
+  }
+  return "?";
+}
+
 // "Should the WiFi radio be powered right now?" is now IotsaController policy
 // (boot default + runtime toggles + CONFIG/OTA forcing): iotsaController.wifiRadioWanted()
 // (cwi-dis/iotsa#106).
@@ -60,11 +72,21 @@ void IotsaWifiMod::setup() {
 void IotsaWifiMod::_publishControllerState() {
   const bool staConn = _controller.staConnected();
   const bool apAct = _controller.apActive();
+  const IotsaWifiStaState staState = _controller.staState();
 
   iotsaStatus.wifiStationConnected = staConn;
   iotsaStatus.wifiApActive = apAct;
   iotsaStatus.wifiEnabled = iotsaController.wifiRadioWanted();  // "radio may be powered", not "connected"
-  iotsaStatus.wifiHunting = (_controller.staState() == IotsaWifiStaState::Hunting);  // cwi-dis/iotsa#176
+  iotsaStatus.wifiHunting = (staState == IotsaWifiStaState::Hunting);  // cwi-dis/iotsa#176
+
+  // Diagnostic (cwi-dis/iotsa#176): staState() drives wifiHunting, which drives
+  // the status LED's slow-blink -- log every transition so a "why did the LED
+  // just go dark/change rhythm" question can be answered from the console.
+  if (staState != _lastStaState) {
+    IFDEBUG IotsaSerial.printf("iotsaWifi: staState %s -> %s (apActive=%d)\n",
+      staStateName(_lastStaState), staStateName(staState), (int)apAct);
+    _lastStaState = staState;
+  }
 
   // Edge-triggered: log the transition, (re)start mDNS.
   if (staConn != _lastStaConnected) {

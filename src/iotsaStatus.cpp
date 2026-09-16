@@ -210,9 +210,16 @@ IotsaStatusSignal IotsaStatus::wifiSignal() const {
   IotsaStatusSignal sig;
   if (!wifiEnabled) return sig;  // radio disabled: dark
   sig.colour = IotsaStatus::COLOUR_AMBER;
-  // Same two conditions as IotsaWifiController::_wantApUp(): config mode
-  // active, or unconfigured -- the AP is the way in either way, so breathe.
-  if (iotsaController.currentMode() == IOTSA_MODE_CONFIG || !wifiConfigured) {
+  // Breathe whenever the AP is actually reachable right now -- config mode and
+  // "unconfigured" both hold it up persistently via _wantApUp(), but that's
+  // deliberately "the non-manual-hunt case" (its own doc comment): it says
+  // nothing about the manual-hunt duty cycle's periodic AP window, which is
+  // just as much "the way in" while it's open. Keying off wifiApActive itself
+  // covers all three sources in one go instead of re-deriving _wantApUp()'s
+  // (incomplete, for this purpose) two conditions. Confirmed missing on real
+  // hardware (cwi-dis/iotsa#176 hardware pass): the LED stayed slow-blink
+  // through the duty cycle's AP window instead of breathing.
+  if (wifiApActive) {
     sig.rhythm = IotsaStatusRhythm::Breathe;
   } else if (wifiHunting) {
     sig.rhythm = IotsaStatusRhythm::SlowBlink;
