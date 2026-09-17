@@ -55,6 +55,19 @@ IotsaApplication::setup() {
   // But this means the serial port cannot be used for other things.
   Serial.begin(IOTSA_SERIAL_SPEED);
   IFDEBUG IotsaSerial.println("Serial opened");
+  // Always shown, not IFDEBUG-gated: "which firmware is this, exactly" is the first
+  // thing you want on a cold boot, not something to enable after the fact.
+  IotsaSerial.print("iotsa ");
+  IotsaSerial.print(IOTSA_FULL_VERSION);
+#ifdef IOTSA_CONFIG_PROGRAM_NAME
+  IotsaSerial.print(" / ");
+  IotsaSerial.print(IOTSA_CONFIG_PROGRAM_NAME);
+#endif
+#ifdef IOTSA_CONFIG_PROGRAM_VERSION
+  IotsaSerial.print(" ");
+  IotsaSerial.print(IOTSA_CONFIG_PROGRAM_VERSION);
+#endif
+  IotsaSerial.println();
 #ifdef IOTSA_DELAY_ON_BOOT
   IFDEBUG IotsaSerial.printf("Delaying %d seconds on boot...\n", IOTSA_DELAY_ON_BOOT);
   delay(IOTSA_DELAY_ON_BOOT*1000);
