@@ -53,6 +53,7 @@ public:
   bool wifiEnabled = false;           // WiFi radio is not disabled (NOT "connected" -- see networkIsUp())
   bool wifiStationConnected = false;  // STA has an IP
   bool wifiApActive = false;          // softAP is up, for any reason
+  bool wifiApInUse = false;           // ...and a client is actually connected to it (published by IotsaWifiMod)
   bool wifiConfigured = false;        // an SSID is configured (published by IotsaWifiMod)
   bool wifiHunting = false;           // STA connect attempt failed, SDK/duty-cycle retry in progress (published by IotsaWifiMod)
   bool mdnsEnabled = false;           // mDNS responder is running

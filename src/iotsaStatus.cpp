@@ -219,8 +219,14 @@ IotsaStatusSignal IotsaStatus::wifiSignal() const {
   // (incomplete, for this purpose) two conditions. Confirmed missing on real
   // hardware (cwi-dis/iotsa#176 hardware pass): the LED stayed slow-blink
   // through the duty cycle's AP window instead of breathing.
+  //
+  // Within that, a client actually connected to the AP (wifiApInUse) gets
+  // Solid instead of Breathe -- otherwise "someone is on my config AP right
+  // now" is visually identical to "AP is up, nobody's there", which a second
+  // hardware pass showed to be a genuine gap: joining the AP produced no
+  // visible change at all (cwi-dis/iotsa#176).
   if (wifiApActive) {
-    sig.rhythm = IotsaStatusRhythm::Breathe;
+    sig.rhythm = wifiApInUse ? IotsaStatusRhythm::Solid : IotsaStatusRhythm::Breathe;
   } else if (wifiHunting) {
     sig.rhythm = IotsaStatusRhythm::SlowBlink;
   } else {

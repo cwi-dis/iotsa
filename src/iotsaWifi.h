@@ -36,6 +36,7 @@ private:
   IotsaWifiController _controller{_driver};
   bool _lastStaConnected = false;
   bool _lastApActive = false;
+  bool _lastApInUse = false;         // diagnostic only (cwi-dis/iotsa#176) -- apState()==InUse, polled independently of the driver's own client-count event
   IotsaWifiStaState _lastStaState = IotsaWifiStaState::Off;  // diagnostic only (cwi-dis/iotsa#176) -- staState() detail behind wifiHunting
 
   String ssid;

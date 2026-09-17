@@ -72,11 +72,13 @@ void IotsaWifiMod::setup() {
 
 void IotsaWifiMod::_publishControllerState() {
   const bool staConn = _controller.staConnected();
-  const bool apAct = _controller.apActive();
+  const IotsaWifiApState apSt = _controller.apState();
+  const bool apAct = apSt != IotsaWifiApState::Off;
   const IotsaWifiStaState staState = _controller.staState();
 
   iotsaStatus.wifiStationConnected = staConn;
   iotsaStatus.wifiApActive = apAct;
+  iotsaStatus.wifiApInUse = (apSt == IotsaWifiApState::InUse);  // cwi-dis/iotsa#176
   iotsaStatus.wifiEnabled = iotsaController.wifiRadioWanted();  // "radio may be powered", not "connected"
   iotsaStatus.wifiHunting = (staState == IotsaWifiStaState::Hunting);  // cwi-dis/iotsa#176
 
@@ -98,6 +100,14 @@ void IotsaWifiMod::_publishControllerState() {
   }
   if (apAct != _lastApActive && apAct) {
     WCLOG("AP up: config-%s, IP %s", iotsaConfig.hostName.c_str(), WiFi.softAPIP().toString().c_str());
+  }
+  // Polled independently of the driver's apClientCountChanged event (cwi-dis/iotsa#176
+  // diagnostic): if this never prints while a client is actually joined, the event
+  // path isn't the problem -- the live WiFi.softAPgetStationNum() poll itself is.
+  const bool apInUse = (apSt == IotsaWifiApState::InUse);
+  if (apInUse != _lastApInUse) {
+    WCLOG("AP client %s (count=%d)", apInUse ? "joined" : "left/idle", WiFi.softAPgetStationNum());
+    _lastApInUse = apInUse;
   }
   if ((staConn && !_lastStaConnected) || (apAct && !_lastApActive)) {
     _wifiStartMDNS();  // each of STA / AP has its own IP

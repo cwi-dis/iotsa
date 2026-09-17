@@ -164,7 +164,7 @@ void IotsaWifiController::_handleEvents(const IotsaWifiEvents &ev, const IotsaWi
     if (!_manualHunt && !_takeoverDeadline.armed()) _takeoverDeadline.arm(TAKEOVER_MS);
   }
   if (ev.apClientCountChanged) {
-    WCDEBUG("event: AP clients=%d", actual.apClientCount);
+    WCLOG("AP clients=%d", actual.apClientCount);
     if (actual.apClientCount > 0) _apClientHold.arm(AP_CLIENT_HOLD_MS);
   }
 }
