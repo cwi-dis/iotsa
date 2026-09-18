@@ -206,6 +206,44 @@ IotsaStatusSignal IotsaStatus::modeSignal() const {
   return sig;
 }
 
+#ifdef IOTSA_WITH_WEB
+String IotsaStatus::statusText() const {
+  iotsa_mode mode = iotsaController.currentMode();
+  String s = iotsaController.modeName(mode);
+  s += " mode";
+  if (mode != IOTSA_MODE_NORMAL && iotsaController.currentModeEndTime()) {
+    s += " (" + String((iotsaController.currentModeEndTime() - millis()) / 1000) + " s left)";
+  }
+  s += " - ";
+
+  // The station and the access point are independent radios (config mode runs the AP
+  // alongside a working station), so they're two clauses, not one list of states.
+  if (!wifiEnabled) s += "WiFi disabled";
+  else if (!wifiConfigured) s += "WiFi not configured";
+  else if (wifiStationConnected) s += "WiFi connected";
+  else if (wifiHunting) s += "WiFi network not reachable, retrying";
+  else s += "WiFi connecting";
+  if (wifiApActive) {
+    s += wifiApInUse ? "; config network in use" : "; config network available";
+  }
+
+  // A pending request already has its own reason as the notice, so state it once.
+  iotsa_mode requested = iotsaController.requestedMode();
+  if (requested != IOTSA_MODE_NORMAL) {
+    s += " - ";
+    s += iotsaController.modeName(requested);
+    s += " mode requested";
+  } else {
+    const char *notice = overrideSignal().reason;
+    if (notice) {
+      s += " - ";
+      s += notice;
+    }
+  }
+  return s;
+}
+#endif // IOTSA_WITH_WEB
+
 IotsaStatusSignal IotsaStatus::wifiSignal() const {
   IotsaStatusSignal sig;
   if (!wifiEnabled) return sig;  // radio disabled: dark

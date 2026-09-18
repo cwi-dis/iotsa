@@ -70,6 +70,13 @@ public:
   IotsaStatusSignal modeSignal() const;      // currentMode() as a colour+rhythm fact (dark in normal mode)
   IotsaStatusSignal wifiSignal() const;      // wifi state as a colour+rhythm fact (always amber or dark)
 
+  // ---- human-readable summary (cwi-dis/iotsa#176) ----
+  // One line of plain text (no HTML) for the web interface's "Status:" line, built from
+  // the same facts /api/status reports: mode (+ time left), the station and access-point
+  // radios as two independent clauses, a pending mode request, else the current notice.
+  // Only defined in IOTSA_WITH_WEB builds.
+  String statusText() const;
+
   // ---- pulse channel (cwi-dis/iotsa#176) ----
   // Transient "show colour for duration", e.g. an OTA chunk arriving or a
   // config write landing. Last poke wins; falls back to the mode-request /

@@ -88,12 +88,11 @@ void IotsaModeMachine::extendWindow() {
 }
 
 const char *IotsaModeMachine::modeName(iotsa_mode mode) const {
-#ifdef IOTSA_WITH_WEB
+  // Not gated on IOTSA_WITH_WEB: /api/status reports it too (cwi-dis/iotsa#176).
   if (mode == IOTSA_MODE_NORMAL) return "normal";
   if (mode == IOTSA_MODE_CONFIG) return "configuration";
   if (mode == IOTSA_MODE_OTA) return "OTA";
   if (mode == IOTSA_MODE_FACTORY_RESET) return "factory-reset";
-#endif // IOTSA_WITH_WEB
   return "unknown";
 }
 

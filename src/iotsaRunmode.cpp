@@ -255,15 +255,9 @@ void IotsaRunmodeMod::webHandler() {
 
 #ifdef IOTSA_WITH_WEB
 String IotsaRunmodeMod::info() {
-  String message;
-  if (iotsaController.currentMode()) {
-    message += "<p>In configuration mode ";
-    message += iotsaController.modeName(iotsaController.currentMode());
-    message += ", will timeout in " + String((iotsaController.currentModeEndTime()-millis())/1000) + " seconds.</p>";
-  } else if (iotsaController.requestedMode()) {
-    message += "<p>Special mode ";
-    message += iotsaController.modeName(iotsaController.requestedMode());
-    message += " has been requested. Enable within ";
+  String message = "<p><b>Status:</b> " + htmlEncode(iotsaStatus.statusText()) + ".</p>";
+  if (iotsaController.requestedMode()) {
+    message += "<p>Enable within ";
     message += String((iotsaController.requestedModeEndTime() - millis())/1000);
     message += " seconds by power cycling";
     if (iotsaController.rcmInteractionDescription()) {
@@ -271,8 +265,6 @@ String IotsaRunmodeMod::info() {
       message += iotsaController.rcmInteractionDescription();
     }
     message += ".</p>";
-  } else if (iotsaController.currentModeEndTime()) {
-    message += "<p>Strange, no configuration mode but timeout is " + String(iotsaController.currentModeEndTime()-millis()) + "ms.</p>";
   }
   message += "<p>See <a href=\"/runmode\">/runmode</a> to reboot or change mode.";
 #ifdef IOTSA_WITH_BLE

@@ -633,6 +633,10 @@ no `IotsaStatusMod`.
   saved", "OTA update in progress") or of a pending mode request, else `null`. It is the
   one semantic fact with no other source. Pulses last about 2s, so it means "right now",
   not "recently".
+- **The home page's `Status:` line is the same facts as text.** `IotsaStatus::statusText()`
+  builds it (plain text; `IotsaRunmodeMod::info()` wraps it in HTML). The station and the
+  access point are two independent clauses -- config mode runs the AP alongside a working
+  station -- so `WiFi connected; config network in use` is a normal combination.
 - **`networkIsUp` and `mdnsEnabled` are not exposed.** `networkIsUp()` is just
   `wifiStationConnected` (same as `wifi.stationConnected`; the C++ helper stays for NTP
   and the data logger). `mdnsEnabled` is only ever set `true`, never cleared, so it means

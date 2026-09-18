@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Infrastructural single-instance modules now share one `IotsaSingletonModule<>` get-or-create mechanism, replacing three hand-rolled copies (HTTP/CoAP/HPS transports migrated; #85)
 - `IotsaStatus::statusColor()` reworked into a breathe/blink two-slot mode+wifi cycle plus a `setStatusPulse()` transient-pulse channel, on top of a renderer-agnostic `IotsaStatusSignal` semantic layer for future non-LED consumers (#176)
 - `/api/status` is now grouped by subject (`system`, `mode`, `wifi`, `fs`) and gains `wifi.apInUse`, `wifi.hunting`, `system.onUsbPower`, `mode.currentName` and a nullable `notice` (why the status LED is overriding its normal display). Breaking for any reader of the old flat keys; `/api/runmode` is unchanged (#176)
+- Web home page starts with a one-line `Status:` summary (mode and time left, station and config-network state, pending request or current notice); the raw WiFi enum line and the mDNS note are gone from the WiFi module's info (#176)
 
 ### Removed
 

@@ -241,12 +241,8 @@ IotsaWifiMod::webHandler() {
 }
 
 String IotsaWifiMod::info() {
-  IPAddress x;
-  String message = "<p>WiFi mode: " + String((int)WiFi.getMode())
-    + ", STA state: " + String((int)_controller.staState())
-    + ", AP state: " + String((int)_controller.apState())
-    + ", WiFi status: " + String((int)WiFi.status()) + ".</p>";
-  message += "<p>IP address is ";
+  // The state of the radios is in IotsaRunmodeMod::info()'s status line (cwi-dis/iotsa#176).
+  String message = "<p>IP address is ";
   uint32_t ip = WiFi.localIP();
   if (ip == 0) {
   	ip = WiFi.softAPIP();
@@ -255,12 +251,7 @@ String IotsaWifiMod::info() {
   message += ", hostname is ";
   message += htmlEncode(iotsaConfig.hostName);
   message += ".local. ";
-  if (!iotsaStatus.mdnsEnabled) {
-    message += " (but no mDNS on this WiFi network, so using hostname will not work). ";
-  }
   message += "See <a href=\"/wificonfig\">/wificonfig</a> to change network parameters.</p>";
-
-  message += "</p>";
   return message;
 }
 #endif // IOTSA_WITH_WEB
