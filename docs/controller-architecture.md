@@ -596,6 +596,8 @@ Decisions:
    observation (the `iotsaStatus.mdnsEnabled` bool is load-bearing --
    `iotsaWifi.cpp` gates `MDNS.update()` on it). The "is exposing it worth
    anything" question is [#237](https://github.com/cwi-dis/iotsa/issues/237)'s.
+   *(Update, #176: the `/api/status` field was dropped -- see §E. Only the `features`
+   entry on `/api/config` and the C++ member remain.)*
 5. **`modeTimeout` read-only mirror dropped from `/api/runmode`** -- it's a
    persisted knob, canonical on `/api/config`.
 6. Sleep / CPU-frequency block stays on `/api/runmode` (runmode owns sleep config).
@@ -608,6 +610,40 @@ never entered `modules[]` and `iotsa allInfo` skipped it. This section of the do
 in `modules[]` "the way `version` is". 5e just missed the `modules.add`.
 `IotsaConfigMod::getHandler` now adds `"status"` next to `"version"`. No CLI change,
 no `IotsaStatusMod`.
+
+### E -- `/api/status` nested by subject (#176)
+
+`/api/status` was a flat bag of keys with two naming styles (subject-first
+`wifiApActive`, qualifier-first `currentMode`). It is now grouped by subject:
+
+```json
+{
+  "system":  {"uptime": 0, "bootCause": "...", "onUsbPower": false},
+  "mode":    {"current": 0, "currentName": "normal"},
+  "wifi":    {"enabled": true, "configured": true, "stationConnected": true,
+              "apActive": false, "apInUse": false, "hunting": false, "private": false},
+  "fs":      {"totalBytes": 0, "usedBytes": 0},
+  "notice":  null
+}
+```
+
+- **Semantic facts only.** How the status LED paints them (`colour`, `rhythm` of
+  `IotsaStatusSignal`) is presentation and is not exposed.
+- **`notice`** is `overrideSignal().reason`: the text of an active pulse ("Settings
+  saved", "OTA update in progress") or of a pending mode request, else `null`. It is the
+  one semantic fact with no other source. Pulses last about 2s, so it means "right now",
+  not "recently".
+- **`networkIsUp` and `mdnsEnabled` are not exposed.** `networkIsUp()` is just
+  `wifiStationConnected` (same as `wifi.stationConnected`; the C++ helper stays for NTP
+  and the data logger). `mdnsEnabled` is only ever set `true`, never cleared, so it means
+  "WiFi has come up once", and it is [#237](https://github.com/cwi-dis/iotsa/issues/237)'s
+  candidate for deletion; it stays visible in the `features` list on `/api/config`.
+- **Nesting applies to `/api/status` only.** Nothing reads named fields from it (the
+  Python CLI dumps it generically), so regrouping was cheap. `/api/runmode` and the mode
+  keys forwarded through `PUT /api/config` keep their flat names -- they are shared with
+  the CLI's `gotoMode()`, the BLE characteristic table and the restore filter
+  (`_CONFIG_READONLY`), so renaming them would need a compat shim. Per D.2,
+  `requestedMode` and its timeouts stay on `/api/runmode`.
 
 ### C -- CLI backward-compat with old boards (done)
 

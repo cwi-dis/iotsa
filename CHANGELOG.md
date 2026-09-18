@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Post-#106 API-surface cleanup: the C++ `iotsaConfig.*` `[[deprecated]]` forwarders are removed now (clean rename + one downstream C++ sweep, not staged); `/api/config` GET no longer mirrors the runtime mode/status keys (PUT still accepts and forwards them, for old CLIs); `/api/status` is listed in the module list so `iotsa allInfo` finds it; the Python CLI reads mode state from `/api/runmode`, falling back to `/api/config` for pre-3.0 devices; `iotsaConfig.getStatusColor()` moved to `iotsaStatus.statusColor()` (downstream: rename the call) and `IotsaConfig` shed 4 stale `friend` grants, leaving it with no dependency on `IotsaController` (#243)
 - Infrastructural single-instance modules now share one `IotsaSingletonModule<>` get-or-create mechanism, replacing three hand-rolled copies (HTTP/CoAP/HPS transports migrated; #85)
 - `IotsaStatus::statusColor()` reworked into a breathe/blink two-slot mode+wifi cycle plus a `setStatusPulse()` transient-pulse channel, on top of a renderer-agnostic `IotsaStatusSignal` semantic layer for future non-LED consumers (#176)
+- `/api/status` is now grouped by subject (`system`, `mode`, `wifi`, `fs`) and gains `wifi.apInUse`, `wifi.hunting`, `system.onUsbPower`, `mode.currentName` and a nullable `notice` (why the status LED is overriding its normal display). Breaking for any reader of the old flat keys; `/api/runmode` is unchanged (#176)
 
 ### Removed
 

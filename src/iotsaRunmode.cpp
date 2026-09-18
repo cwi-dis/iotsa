@@ -288,18 +288,37 @@ bool IotsaRunmodeMod::getHandler(const char *path, JsonObject& reply) {
     // Every-tick runtime observations -- the volatile counterpart of /api/config's
     // identity + persisted knobs (cwi-dis/iotsa#106 step 5e). Hosted here because
     // this is the runtime-control module and iotsaStatus has no module of its own.
-    reply["currentMode"] = int(iotsaController.currentMode());
-    reply["bootCause"] = iotsaStatus.getBootReason();
-    reply["uptime"] = millis() / 1000;
-    reply["networkIsUp"] = iotsaStatus.networkIsUp();
-    reply["wifiEnabled"] = iotsaStatus.wifiEnabled;
-    reply["wifiStationConnected"] = iotsaStatus.wifiStationConnected;
-    reply["wifiApActive"] = iotsaStatus.wifiApActive;
-    reply["wifiConfigured"] = iotsaStatus.wifiConfigured;
-    reply["privateWifi"] = iotsaStatus.wifiApActive && !iotsaStatus.wifiStationConnected;
-    reply["mdnsEnabled"] = iotsaStatus.mdnsEnabled;
-    reply["fsTotalBytes"] = iotsaFSTotalBytes();
-    reply["fsUsedBytes"] = iotsaFSUsedBytes();
+    //
+    // Grouped by subject (cwi-dis/iotsa#176). Semantic facts only: how the status
+    // LED paints them (colour, rhythm) is presentation and deliberately not here.
+    // (The control surface, /api/runmode, keeps its own flat legacy names.)
+    JsonObject system = reply["system"].to<JsonObject>();
+    system["uptime"] = millis() / 1000;
+    system["bootCause"] = iotsaStatus.getBootReason();
+    system["onUsbPower"] = iotsaStatus.onUsbPower;
+
+    JsonObject mode = reply["mode"].to<JsonObject>();
+    mode["current"] = int(iotsaController.currentMode());
+    mode["currentName"] = iotsaController.modeName(iotsaController.currentMode());
+
+    JsonObject wifi = reply["wifi"].to<JsonObject>();
+    wifi["enabled"] = iotsaStatus.wifiEnabled;
+    wifi["configured"] = iotsaStatus.wifiConfigured;
+    wifi["stationConnected"] = iotsaStatus.wifiStationConnected;
+    wifi["apActive"] = iotsaStatus.wifiApActive;
+    wifi["apInUse"] = iotsaStatus.wifiApInUse;
+    wifi["hunting"] = iotsaStatus.wifiHunting;
+    wifi["private"] = iotsaStatus.wifiApActive && !iotsaStatus.wifiStationConnected;
+
+    JsonObject fs = reply["fs"].to<JsonObject>();
+    fs["totalBytes"] = iotsaFSTotalBytes();
+    fs["usedBytes"] = iotsaFSUsedBytes();
+
+    // Why the status indicator is currently overriding its normal display: an active
+    // pulse ("Settings saved", "OTA update in progress") or a pending mode request.
+    // null when there's nothing to say. Pulses are short (about 2s), so this means
+    // "right now", not "recently". The reason is a static string, no lifetime issue.
+    reply["notice"] = iotsaStatus.overrideSignal().reason;
     return true;
   }
   reply["currentMode"] = int(iotsaController.currentMode());
