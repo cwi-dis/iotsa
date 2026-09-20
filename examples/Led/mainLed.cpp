@@ -89,9 +89,10 @@ void setup(void){
   application.setup();
   application.lateSetup();
 #ifdef IOTSA_STARTUP_BLINK_COUNT
-  // Arm a self-test blink pattern; ledMod.loop() (driven from the main loop() below)
-  // advances it asynchronously from here.
-  ledMod.set(0xffffff, 150, 150, IOTSA_STARTUP_BLINK_COUNT);
+  // Arm a self-test blink pattern via the status-pulse channel (cwi-dis/iotsa#176);
+  // ledMod.loop() (driven from the main loop() below) polls and renders it
+  // asynchronously from here. 150+150 per blink.
+  iotsaStatus.setStatusPulse(0xffffff, 150, 150, IOTSA_STARTUP_BLINK_COUNT * 300, "startup blink");
 #endif
 }
 

@@ -44,7 +44,8 @@ public:
   // cyan=OTA, white=generic/blank-slate. One home so setStatusPulse() callers
   // elsewhere in the framework don't hardcode hex. Levels reuse the existing
   // dim scale (0x3f per channel). Red/green are reserved for the application /
-  // remote-command layer (IotsaLedMod::set()) -- deliberately not listed here.
+  // remote-command layer (setStatusPulse() callers outside this file) --
+  // deliberately not listed here.
   static constexpr uint32_t COLOUR_AMBER   = 0x3f1f00;
   static constexpr uint32_t COLOUR_MAGENTA = 0x3f003f;
   static constexpr uint32_t COLOUR_CYAN    = 0x003f3f;

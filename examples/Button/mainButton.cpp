@@ -7,7 +7,6 @@
 #include "iotsaWifi.h"
 #include "iotsaLed.h"
 #include "iotsaButton.h"
-#include <functional>
 
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 
@@ -34,8 +33,10 @@ Button buttons[] = {
   Button(BUTTON_PIN, true, false)
 };
 const int nButton = sizeof(buttons) / sizeof(buttons[0]);
-callback buttonOk = std::bind(&IotsaLedMod::set, ledMod, 0x002000, 250, 0, 1);
-callback buttonNotOk = std::bind(&IotsaLedMod::set, ledMod, 0x200000, 250, 0, 1);
+// Transient status-LED pulses (cwi-dis/iotsa#176/#256) -- decay back to the
+// normal status display on their own, no restore logic needed.
+callback buttonOk = []() { iotsaStatus.setStatusPulse(0x002000, 0, 0, 250, "button ok"); };
+callback buttonNotOk = []() { iotsaStatus.setStatusPulse(0x200000, 0, 0, 250, "button not ok"); };
 
 IotsaButtonMod buttonMod(application, buttons, nButton, NULL, buttonOk, buttonNotOk);
 

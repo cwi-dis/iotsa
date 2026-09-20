@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - `IotsaStatusInterface` / `IotsaApplication::status` (push-based status notification) -- `IotsaLedMod` now polls `iotsaStatus.statusColor()` every `loop()` instead. Breaking for any other implementor (e.g. iotsaNeoClock) (#176)
+- `IotsaLedMod::set()`/`showStatus()` and its pattern-in-flight state -- an app-level side-channel that predates and bypassed the status-pulse precedence chain. Anything that wants to override the pixel temporarily (the default `identify()` handler, `examples/Led`'s `IotsaLedControlMod`) now calls `iotsaStatus.setStatusPulse()` like any other transient signal. Breaking for any downstream app calling `ledMod.set()`/`showStatus()` directly -- use `iotsaStatus.setStatusPulse(rgb, onDuration, offDuration, durationMs, reason)` instead (#256)
 
 ## [3.0a2] - 2026-08-31
 
