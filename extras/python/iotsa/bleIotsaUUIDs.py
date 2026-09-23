@@ -14,6 +14,13 @@ _uuid_to_name: dict[str, str] = {
     "6e5d0005-f2a7-4e7a-9b1c-2d3e4f5a6b7c": "promoteMode",
     "6e5d0006-f2a7-4e7a-9b1c-2d3e4f5a6b7c": "wifiDisabled",
 
+    # Pre-#106 devices (iotsa < 3.0, e.g. still-undeployed-firmware lissabon
+    # appliances) only have the old single characteristic this replaced: write
+    # 1=reboot, 2=promote pending mode (physical-access confirm), 3=enable
+    # WiFi. Kept under a v2_ prefix so old devices remain reachable by name
+    # instead of a raw UUID while they're upgraded one by one.
+    "e4d90003-250f-46e6-90a4-ab98f01a0587": "v2_rebootWifi",
+
     "3b000001-1226-4a53-9d24-afa50c0163a3": "led",
     "3b000002-1226-4a53-9d24-afa50c0163a3": "rgb",
 
