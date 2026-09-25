@@ -279,6 +279,18 @@ bool IotsaBLEClientMod::canConnect() {
   // has also been observed to fail.
   if (scanner != NULL) return false;
   if (millis() - scanStoppedAtMillis < connectSettleTimeMillis) return false;
+  // EXPERIMENTAL (2026-09-25, cwi-dis/lissabon#30 follow-up): cap outgoing
+  // connect attempts to one at a time, device-wide. Hypothesis: two
+  // concurrent NimBLEClient::connect() calls contend for the same physical
+  // radio at the link layer, corrupting/missing each other's packets, the
+  // same class of problem already confirmed above for scan-vs-connect --
+  // observed live on lissabonController with 5 dimmers: two devices
+  // (striprechts, stripbank) racked up 300+ back-to-back failed attempts
+  // while the others barely got a turn, which a slot-exhaustion or fairness
+  // bug alone doesn't explain. If this measurably improves connect success
+  // rate, make it permanent and revisit true concurrent connects later;
+  // if not, revert this hunk first before looking elsewhere.
+  if (connectingCount > 0) return false;
   // Leave at least one connection slot free for the server (peripheral) role
   // if it's seen recent activity -- NimBLEDevice's client pool and
   // NimBLEServer's peer tracking share one underlying NIMBLE_MAX_CONNECTIONS
