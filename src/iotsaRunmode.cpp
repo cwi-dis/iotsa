@@ -394,9 +394,18 @@ bool IotsaRunmodeMod::putHandler(const char *path, const JsonVariant& request, J
   if (getFromRequest<int>(reqObj, "wakeDuration", _sleepConfig.wakeDuration))    { sleepChanged = true; }
   if (getFromRequest<int>(reqObj, "bootExtraWakeDuration", _sleepConfig.bootExtraWakeDuration)) { sleepChanged = true; }
   if (getFromRequest<int>(reqObj, "activityExtraWakeDuration", sp.activityExtraWakeDuration)) { sleepChanged = true; }
-  if (getFromRequest<bool>(reqObj, "disableSleepOnWiFi", _sleepConfig.disableSleepOnWiFi)) { sleepChanged = true; }
-  if (getFromRequest<bool>(reqObj, "disableWiFiOnSleep", _sleepConfig.disableWiFiOnSleep)) { sleepChanged = true; }
-  if (getFromRequest<bool>(reqObj, "disableSleepOnUSBPower", _sleepConfig.disableSleepOnUSBPower)) { sleepChanged = true; }
+  // getFromRequest<bool> instead of <int> here would go through the
+  // <bool,bool> specialization (iotsaApi.h) that's supposed to also accept a
+  // JSON int for a bool field, but that specialization doesn't actually fire
+  // in practice -- confirmed live, 2026-09-25 (lissabonController): sending
+  // int:1/int:0 for these fields silently landed as "Unhandled IotsaApi
+  // parameter". <int> hits the primary template's is<int>()+as<CT>() path
+  // instead, which does work (same pattern already used above for
+  // wifiDisabled/bleDisabled). See cwi-dis/iotsa#261 for the broader bug and
+  // the other call sites still affected.
+  if (getFromRequest<int>(reqObj, "disableSleepOnWiFi", _sleepConfig.disableSleepOnWiFi)) { sleepChanged = true; }
+  if (getFromRequest<int>(reqObj, "disableWiFiOnSleep", _sleepConfig.disableWiFiOnSleep)) { sleepChanged = true; }
+  if (getFromRequest<int>(reqObj, "disableSleepOnUSBPower", _sleepConfig.disableSleepOnUSBPower)) { sleepChanged = true; }
 #ifdef ESP32
   if (getFromRequest<int>(reqObj, "cpuFrequencyBoot", _cpuFrequencyBoot)) { sleepChanged = true; }
   if (getFromRequest<int>(reqObj, "cpuFrequencySleep", _cpuFrequencySleep)) { sleepChanged = true; }
