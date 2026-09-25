@@ -192,6 +192,18 @@ bool IotsaBLEClientConnection::connect() {
       if (owner) owner->requestScanUpdate();
     }
 #endif
+    // Give the slot back on a failed attempt too, not just after a successful
+    // connect's idle-disconnect (see release()) -- otherwise the first N
+    // dimmers to ever attempt a connect (whether that attempt succeeds or
+    // not) permanently claim all NIMBLE_MAX_CONNECTIONS slots between them,
+    // since a failed connect left pClient non-null and every retry just
+    // reused the same client. Any dimmer that hadn't gotten its first
+    // attempt in yet before that happened could then never get one, ever
+    // (confirmed live on lissabonController, 2026-09-26: stripdeur/stripbank
+    // hit "no free BLE client slot" on literally every subsequent attempt,
+    // for the rest of that boot, while three other dimmers -- including ones
+    // that never actually succeeded -- silently held the only 3 slots).
+    release();
   }
   return rv;
 }
