@@ -17,4 +17,15 @@ void iotsaBLE_notifyAdvertisingStateChanged(bool active) {
 void iotsaBLE_notifyScanningStateChanged(bool active) {
   IotsaSerial.printf("iotsaBLE: scanning %s\n", active ? "started" : "stopped");
 }
+
+static uint32_t s_serverReservedUntilMillis = 0;
+
+void iotsaBLE_reserveConnectionForServer(uint32_t graceMs) {
+  uint32_t until = millis() + graceMs;
+  if (until > s_serverReservedUntilMillis) s_serverReservedUntilMillis = until;
+}
+
+bool iotsaBLE_serverReservationActive() {
+  return millis() < s_serverReservedUntilMillis;
+}
 #endif // IOTSA_WITH_BLE

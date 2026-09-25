@@ -279,6 +279,16 @@ bool IotsaBLEClientMod::canConnect() {
   // has also been observed to fail.
   if (scanner != NULL) return false;
   if (millis() - scanStoppedAtMillis < connectSettleTimeMillis) return false;
+  // Leave at least one connection slot free for the server (peripheral) role
+  // if it's seen recent activity -- NimBLEDevice's client pool and
+  // NimBLEServer's peer tracking share one underlying NIMBLE_MAX_CONNECTIONS
+  // link budget, so unrestrained outgoing connects here can starve out an
+  // incoming maintenance connection (confirmed live on lissabonController,
+  // 2026-09-25, with 5 dimmers competing for 3 total slots). Only refuses a
+  // *new* connect attempt -- never interrupts one already in progress.
+  if (iotsaBLE_serverReservationActive() && NimBLEDevice::getCreatedClientCount() >= (size_t)(NIMBLE_MAX_CONNECTIONS - 1)) {
+    return false;
+  }
   return true;
 }
 
