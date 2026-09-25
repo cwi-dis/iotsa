@@ -3,6 +3,17 @@
 #ifdef IOTSA_WITH_BLE
 #include "iotsaBLEClient.h"
 
+// A failed connect only means the address is genuinely worth reconfirming via a
+// rescan if we haven't actually seen this device's own advertisement in a while --
+// if it's still advertising regularly (this recently), it's reachable at the
+// discovery level and another scan won't help whatever's actually failing the GAP
+// connect procedure itself. Generous enough to span several duty-cycle wake windows
+// of a light-sleep device (see lissabon/CLAUDE.md's 1500ms sleep/300ms wake) without
+// forcing an extra scan on top of the normal periodic one. Confirmed live,
+// 2026-09-26: three lissabonController dimmers failing every connect attempt but
+// still advertising fine were triggering a rescan roughly every 10s regardless.
+static const uint32_t RESCAN_STALENESS_MS = 30000;
+
 IotsaBLEClientConnection::IotsaBLEClientConnection(std::string& _name, std::string _address)
 : IotsaBLEDeviceInfo(_name, _address)
 {
@@ -161,12 +172,17 @@ bool IotsaBLEClientConnection::connect() {
     // Don't clearDevice() here: a failed connect doesn't mean the address is
     // wrong (e.g. a lightSleep device just happened to be asleep mid-attempt)
     // -- just that we're not sure it's still reachable. needsRescan triggers
-    // a rescan to reconfirm, without throwing away a known-good address.
-    needsRescan = true;
-    // Wake the scan scheduler: without this, nothing re-evaluates
-    // needsDiscovery() until some unrelated event happens to touch
-    // shouldUpdateScanAtMillis, so needsRescan could go unnoticed indefinitely.
-    if (owner) owner->requestScanUpdate();
+    // a rescan to reconfirm, without throwing away a known-good address. But
+    // only bother if we haven't actually seen it advertise recently -- if we
+    // have, the failure is at the GAP-connect step itself, not discovery, and
+    // another scan won't fix that (see RESCAN_STALENESS_MS above).
+    if (millis() - getLastSeenAtMillis() > RESCAN_STALENESS_MS) {
+      needsRescan = true;
+      // Wake the scan scheduler: without this, nothing re-evaluates
+      // needsDiscovery() until some unrelated event happens to touch
+      // shouldUpdateScanAtMillis, so needsRescan could go unnoticed indefinitely.
+      if (owner) owner->requestScanUpdate();
+    }
   }
   return rv;
 }
