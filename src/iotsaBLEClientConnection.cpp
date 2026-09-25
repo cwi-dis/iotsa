@@ -176,6 +176,14 @@ bool IotsaBLEClientConnection::connect() {
     // only bother if we haven't actually seen it advertise recently -- if we
     // have, the failure is at the GAP-connect step itself, not discovery, and
     // another scan won't fix that (see RESCAN_STALENESS_MS above).
+    // EXPERIMENTAL (2026-09-26): disabled entirely to test whether the scan
+    // itself is what's actually hurting connect success -- a scan starting
+    // shortly after a failed connect could be disturbing the radio for the
+    // *next* attempt too, beyond just the already-handled immediate
+    // scan-vs-connect exclusion (connectSettleTimeMillis, only 100ms). If
+    // this measurably improves things, work out a real fix (e.g. a longer
+    // settle time) instead of leaving rescan off for good.
+#if 0
     if (millis() - getLastSeenAtMillis() > RESCAN_STALENESS_MS) {
       needsRescan = true;
       // Wake the scan scheduler: without this, nothing re-evaluates
@@ -183,6 +191,7 @@ bool IotsaBLEClientConnection::connect() {
       // shouldUpdateScanAtMillis, so needsRescan could go unnoticed indefinitely.
       if (owner) owner->requestScanUpdate();
     }
+#endif
   }
   return rv;
 }
