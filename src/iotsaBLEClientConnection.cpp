@@ -32,6 +32,19 @@ void IotsaBLEClientConnection::ConnCallbacks::onDisconnect(NimBLEClient* pClient
 }
 
 IotsaBLEClientConnection::~IotsaBLEClientConnection() {
+  release();
+}
+
+void IotsaBLEClientConnection::release() {
+  // Gives the NimBLEClient slot back to the shared pool (NimBLEDevice's own
+  // fixed-size m_pClients array, sized by NIMBLE_MAX_CONNECTIONS) instead of
+  // holding it for the lifetime of this object. Safe to call while still
+  // connected/disconnecting -- NimBLEDevice::deleteClient() defers the actual
+  // delete until any in-flight disconnect completes. Callers that idle out a
+  // connection (see BLEDimmer's disconnectAtMillis handling) should call this
+  // instead of disconnect(), so a device with more IotsaBLEClientConnections
+  // than the platform has slots for can still round-robin through all of them
+  // (cwi-dis/iotsa#106-era gap, found live on lissabonController, 2026-09-25).
   if (pClient) {
     NimBLEDevice::deleteClient(pClient);
     pClient = nullptr;
@@ -91,6 +104,21 @@ bool IotsaBLEClientConnection::connect() {
   numConnectCalls++;
   if (pClient == nullptr) {
     pClient = NimBLEDevice::createClient(addr);
+    if (pClient == nullptr) {
+      // NimBLEDevice::createClient() returns nullptr once NIMBLE_MAX_CONNECTIONS
+      // client slots are all in use -- expected, transient contention when
+      // more IotsaBLEClientConnections exist than the platform has slots for
+      // (each one now releases its slot on idle disconnect, see release()),
+      // not a bug. Fail this attempt gracefully instead of dereferencing a
+      // null pClient below (was a StoreProhibited crash, live on lissabonController
+      // with 5 dimmers and NIMBLE_MAX_CONNECTIONS=3, 2026-09-25).
+      numConnectAttempts++;
+      numConnectFailed++;
+      IotsaSerial.println("IotsaBLEClientConnection::connect: no free BLE client slot, will retry");
+      needsRescan = true;
+      if (owner) owner->requestScanUpdate();
+      return false;
+    }
     // setConnectTimeout() takes milliseconds -- confirmed 2026-07-19 by
     // reading NimBLEClient.cpp's own doc comment ("The number of
     // milliseconds before timeout, default is 30 seconds", default

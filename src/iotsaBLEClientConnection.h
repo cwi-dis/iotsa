@@ -22,6 +22,11 @@ public:
   bool available();
   bool connect();
   void disconnect();
+  // Disconnects (if needed) and returns the NimBLEClient slot to the shared
+  // pool, unlike disconnect() alone which keeps holding it. Call this once a
+  // connection has gone idle; connect() will lazily create a fresh client
+  // next time it's actually needed. Also called from the destructor.
+  void release();
   // True only once the connection is actually usable (pClient reports
   // CONNECTED). False for every other state, including DISCONNECTING --
   // callers that need to distinguish "fully gone, safe to connect() again"
