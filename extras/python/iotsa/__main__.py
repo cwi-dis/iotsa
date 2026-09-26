@@ -58,6 +58,9 @@ class Main(object):
         if self.dfu:
             self.dfu.close()
         self.dfu = None
+        if self.ble:
+            self.ble.close()
+        self.ble = None
 
     def run(self) -> None:
         """Run the main commandline program"""
