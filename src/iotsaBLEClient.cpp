@@ -194,10 +194,10 @@ void IotsaBLEClientMod::updateScanning() {
     return;
   }
   // WiFi-heavy work (OTA especially) asked us to hold off starting anything
-  // new -- see iotsaBLE_holdOffNewWork(), cwi-dis/iotsa#263. Same retry
+  // new -- see IotsaBLERadioArbiter::holdOffNewWork(), cwi-dis/iotsa#263. Same retry
   // pattern as the connectingCount check above: don't start a scan now, but
   // don't forget to look again either.
-  if (iotsaBLE_newWorkHeldOff()) {
+  if (IotsaBLERadioArbiter::newWorkHeldOff()) {
     shouldUpdateScanAtMillis = millis() + SCAN_START_RETRY_MS;
     return;
   }
@@ -288,8 +288,8 @@ bool IotsaBLEClientMod::canConnect() {
   if (scanner != NULL) return false;
   if (millis() - scanStoppedAtMillis < connectSettleTimeMillis) return false;
   // WiFi-heavy work (OTA especially) asked us to hold off starting anything
-  // new -- see iotsaBLE_holdOffNewWork(), cwi-dis/iotsa#263.
-  if (iotsaBLE_newWorkHeldOff()) return false;
+  // new -- see IotsaBLERadioArbiter::holdOffNewWork(), cwi-dis/iotsa#263.
+  if (IotsaBLERadioArbiter::newWorkHeldOff()) return false;
   // EXPERIMENTAL (2026-09-25, cwi-dis/lissabon#30 follow-up): cap outgoing
   // connect attempts to one at a time, device-wide. Hypothesis: two
   // concurrent NimBLEClient::connect() calls contend for the same physical
@@ -317,7 +317,7 @@ bool IotsaBLEClientMod::canConnect() {
   // incoming maintenance connection (confirmed live on lissabonController,
   // 2026-09-25, with 5 dimmers competing for 3 total slots). Only refuses a
   // *new* connect attempt -- never interrupts one already in progress.
-  if (iotsaBLE_serverReservationActive() && NimBLEDevice::getCreatedClientCount() >= (size_t)(NIMBLE_MAX_CONNECTIONS - 1)) {
+  if (IotsaBLERadioArbiter::serverReservationActive() && NimBLEDevice::getCreatedClientCount() >= (size_t)(NIMBLE_MAX_CONNECTIONS - 1)) {
     return false;
   }
   return true;

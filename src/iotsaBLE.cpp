@@ -18,24 +18,23 @@ void iotsaBLE_notifyScanningStateChanged(bool active) {
   IotsaSerial.printf("iotsaBLE: scanning %s\n", active ? "started" : "stopped");
 }
 
-static uint32_t s_serverReservedUntilMillis = 0;
+uint32_t IotsaBLERadioArbiter::s_serverReservedUntilMillis = 0;
+bool IotsaBLERadioArbiter::s_holdOffNewBLEWork = false;
 
-void iotsaBLE_reserveConnectionForServer(uint32_t graceMs) {
+void IotsaBLERadioArbiter::reserveConnectionForServer(uint32_t graceMs) {
   uint32_t until = millis() + graceMs;
   if (until > s_serverReservedUntilMillis) s_serverReservedUntilMillis = until;
 }
 
-bool iotsaBLE_serverReservationActive() {
+bool IotsaBLERadioArbiter::serverReservationActive() {
   return millis() < s_serverReservedUntilMillis;
 }
 
-static bool s_holdOffNewBLEWork = false;
-
-void iotsaBLE_holdOffNewWork(bool hold) {
+void IotsaBLERadioArbiter::holdOffNewWork(bool hold) {
   s_holdOffNewBLEWork = hold;
 }
 
-bool iotsaBLE_newWorkHeldOff() {
+bool IotsaBLERadioArbiter::newWorkHeldOff() {
   return s_holdOffNewBLEWork;
 }
 #endif // IOTSA_WITH_BLE

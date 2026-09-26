@@ -36,38 +36,50 @@ void iotsaBLE_ensureInitialized();
 void iotsaBLE_notifyAdvertisingStateChanged(bool active);
 void iotsaBLE_notifyScanningStateChanged(bool active);
 
-// NimBLEDevice's client pool (m_pClients) and NimBLEServer's connected-peer
-// tracking share one underlying NIMBLE_MAX_CONNECTIONS link budget -- an app
-// with both roles compiled in (e.g. lissabonController) can have its
-// outgoing client connections starve out an incoming maintenance connection
-// on the server role, since neither side knows about the other (confirmed
-// live, 2026-09-25: BLE config commands kept failing while lissabonController
-// was busy chasing 5 dimmers). These two functions let the server role
-// reserve a slot for itself without either module depending on the other:
-// IotsaBLEServerMod calls iotsaBLE_reserveConnectionForServer() on every
-// connect/disconnect (re-arming, never shortening, an existing reservation);
-// IotsaBLEClientMod::canConnect() calls iotsaBLE_serverReservationActive()
-// before starting a *new* outgoing connect, refusing one only once
-// NimBLEDevice::getCreatedClientCount() would leave no slot spare. Existing
-// connections are never interrupted. A no-op (always inactive) in an app
-// with no server role compiled in.
-void iotsaBLE_reserveConnectionForServer(uint32_t graceMs);
-bool iotsaBLE_serverReservationActive();
+// The single coordination point for BLE radio contention (cwi-dis/iotsa#263):
+// scan-vs-connect exclusion lives directly in IotsaBLEClientMod (it's purely
+// internal to that one class), but everything that has to be arbitrated
+// *across* modules -- client vs. server, BLE vs. WiFi -- goes through here.
+// Static methods only, no instance: there is exactly one physical radio per
+// device, so there is never a reason to have more than one of these.
+class IotsaBLERadioArbiter {
+public:
+  // NimBLEDevice's client pool (m_pClients) and NimBLEServer's connected-peer
+  // tracking share one underlying NIMBLE_MAX_CONNECTIONS link budget -- an app
+  // with both roles compiled in (e.g. lissabonController) can have its
+  // outgoing client connections starve out an incoming maintenance connection
+  // on the server role, since neither side knows about the other (confirmed
+  // live, 2026-09-25: BLE config commands kept failing while lissabonController
+  // was busy chasing 5 dimmers). These two methods let the server role
+  // reserve a slot for itself without either module depending on the other:
+  // IotsaBLEServerMod calls reserveConnectionForServer() on every
+  // connect/disconnect (re-arming, never shortening, an existing reservation);
+  // IotsaBLEClientMod::canConnect() calls serverReservationActive()
+  // before starting a *new* outgoing connect, refusing one only once
+  // NimBLEDevice::getCreatedClientCount() would leave no slot spare. Existing
+  // connections are never interrupted. A no-op (always inactive) in an app
+  // with no server role compiled in.
+  static void reserveConnectionForServer(uint32_t graceMs);
+  static bool serverReservationActive();
 
-// Lets WiFi-heavy work that doesn't want BLE radio contention (OTA transfers
-// especially) tell the BLE side to hold off starting anything new for a
-// while. ESP32's WiFi/BT coexistence scheduling already time-slices the two
-// radios at a low level, but that doesn't prevent our own application-level
-// BLE work (a scan, a new outgoing connect) from making a slow OTA transfer
-// slower, or the reverse -- this is a cooperative signal, not a hardware
-// guarantee. Same rule as every other check in this arbiter: only ever
-// blocks *new* scans/connects from starting (IotsaBLEClientMod::canConnect()/
-// updateScanning()); never interrupts one already in progress. Caller (e.g.
-// IotsaOtaMod) is responsible for pairing every true with a matching false --
-// there is no timeout/grace-period auto-clear here, unlike the server
-// reservation above, since OTA already has its own onEnd()/onError() hooks
-// to do that reliably. cwi-dis/iotsa#263.
-void iotsaBLE_holdOffNewWork(bool hold);
-bool iotsaBLE_newWorkHeldOff();
+  // Lets WiFi-heavy work that doesn't want BLE radio contention (OTA transfers
+  // especially) tell the BLE side to hold off starting anything new for a
+  // while. ESP32's WiFi/BT coexistence scheduling already time-slices the two
+  // radios at a low level, but that doesn't prevent our own application-level
+  // BLE work (a scan, a new outgoing connect) from making a slow OTA transfer
+  // slower, or the reverse -- this is a cooperative signal, not a hardware
+  // guarantee. Same rule as every other check in this arbiter: only ever
+  // blocks *new* scans/connects from starting (IotsaBLEClientMod::canConnect()/
+  // updateScanning()); never interrupts one already in progress. Caller (e.g.
+  // IotsaOtaMod) is responsible for pairing every true with a matching false --
+  // there is no timeout/grace-period auto-clear here, unlike the server
+  // reservation above, since OTA already has its own onEnd()/onError() hooks
+  // to do that reliably.
+  static void holdOffNewWork(bool hold);
+  static bool newWorkHeldOff();
+private:
+  static uint32_t s_serverReservedUntilMillis;
+  static bool s_holdOffNewBLEWork;
+};
 #endif // IOTSA_WITH_BLE
 #endif // _IOTSABLE_H

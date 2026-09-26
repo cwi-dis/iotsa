@@ -16,7 +16,7 @@
 static const uint32_t REBOOT_DELAY_BLE_REINIT_MS = 4000;
 
 // How long a client-role connect attempt gets held off (see
-// iotsaBLE_reserveConnectionForServer(), iotsaBLE.h) after we last saw
+// IotsaBLERadioArbiter::reserveConnectionForServer(), iotsaBLE.h) after we last saw
 // activity on the server role -- generous enough to cover a full multi-step
 // maintenance sequence (enable wifi, request a mode, confirm it, set fields),
 // re-armed on every connect/disconnect rather than a single fixed window.
@@ -26,7 +26,7 @@ class IotsaBLEServerCallbacks : public NimBLEServerCallbacks {
 	void onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) override {
     IFBLEDEBUG IotsaSerial.printf("BLE connect\n");
     iotsaController.pauseSleep();
-    iotsaBLE_reserveConnectionForServer(SERVER_CONNECTION_RESERVE_MS);
+    IotsaBLERadioArbiter::reserveConnectionForServer(SERVER_CONNECTION_RESERVE_MS);
   }
 	void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override {
     IFBLEDEBUG IotsaSerial.printf("BLE Disconnect reason %d, restart advertising\n", reason);
@@ -34,7 +34,7 @@ class IotsaBLEServerCallbacks : public NimBLEServerCallbacks {
     // Re-arm rather than let the reservation end right at disconnect: a
     // maintenance sequence often reconnects a few seconds later for its next
     // step (see docs/device-flashing.md's BLE dances).
-    iotsaBLE_reserveConnectionForServer(SERVER_CONNECTION_RESERVE_MS);
+    IotsaBLERadioArbiter::reserveConnectionForServer(SERVER_CONNECTION_RESERVE_MS);
     bool ok = pServer->startAdvertising();
     IotsaBLEServerMod::_noteAdvertisingStartResult(ok, 0);
   }
