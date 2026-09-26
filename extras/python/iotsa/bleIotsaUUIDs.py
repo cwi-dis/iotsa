@@ -13,6 +13,7 @@ _uuid_to_name: dict[str, str] = {
     "6e5d0004-f2a7-4e7a-9b1c-2d3e4f5a6b7c": "reboot",
     "6e5d0005-f2a7-4e7a-9b1c-2d3e4f5a6b7c": "promoteMode",
     "6e5d0006-f2a7-4e7a-9b1c-2d3e4f5a6b7c": "wifiDisabled",
+    "6e5d0007-f2a7-4e7a-9b1c-2d3e4f5a6b7c": "identify",
 
     # Pre-#106 devices (iotsa < 3.0, e.g. still-undeployed-firmware lissabon
     # appliances) only have the old single characteristic this replaced: write
@@ -26,7 +27,12 @@ _uuid_to_name: dict[str, str] = {
 
     "6b2f0001-38bc-4204-a506-1d3546ad3688": "lissabon",
     "6b2f0002-38bc-4204-a506-1d3546ad3688": "isOn",
-    "6b2f0003-38bc-4204-a506-1d3546ad3688": "identify",
+    # Lissabon's own dimmer-specific identify characteristic, predating (and
+    # now duplicating) the generic core "identify" above. Kept reachable
+    # under v2_ (same convention as v2_rebootWifi) while devices still expose
+    # it; superseded once DimmerBLEClient/DimmerBLEServer switch to the
+    # generic runmode identify path.
+    "6b2f0003-38bc-4204-a506-1d3546ad3688": "v2_identify",
     "6b2f0004-38bc-4204-a506-1d3546ad3688": "brightness",
     "6b2f0005-38bc-4204-a506-1d3546ad3688": "temperature",
 
