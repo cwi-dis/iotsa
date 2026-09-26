@@ -63,14 +63,22 @@ public:
   // this only sets a flag; the actual stopScanning() call is deferred to
   // loop(), which is the only task allowed to touch scanner/scanningMod.
   void requestStopScanningForConnect();
-  // Called by IotsaBLEClientConnection::connect() (via its owner back-
-  // pointer) around the actual pClient->connect() call, from whichever task
-  // owns that connection (e.g. BLEDimmer::connectionTask()). Connections
-  // take priority over scanning: updateScanning() refuses to start a new
-  // scan while connectingCount > 0. std::atomic, so plain increment/decrement
-  // from any task is safe without extra locking.
-  void noteConnectAttemptStarted();
-  void noteConnectAttemptEnded();
+  // The actual arbiter for the single outgoing-connect slot (cwi-dis/iotsa#263):
+  // called by IotsaBLEClientConnection::connect(), from whichever task owns
+  // that connection, right before it calls pClient->connect(). Unlike
+  // canConnect() below -- a cheap, non-atomic pre-check a caller may use to
+  // avoid unnecessary work -- this is a real compare-exchange, so it is safe
+  // even when multiple tasks pass canConnect() at the same instant: only one
+  // of them will win tryAcquireConnectSlot(), the other gets false back and
+  // must treat it as "cannot connect right now," not attempt pClient->connect()
+  // too. Fixes the rc=2 collision confirmed live 2026-09-25/26, where two
+  // tasks both observed connectingCount==0 and both proceeded to connect().
+  // releaseConnectSlot() must be called exactly once for every acquire that
+  // returned true, whatever the connect outcome. Connections take priority
+  // over scanning: updateScanning() refuses to start a new scan while the
+  // slot is held.
+  bool tryAcquireConnectSlot();
+  void releaseConnectSlot();
   // Called by IotsaBLEClientConnection::connect() (via its owner back-
   // pointer) when a connect attempt fails and sets needsRescan. Pokes the
   // scan scheduler so loop() re-evaluates needsDiscovery() promptly, instead
@@ -186,9 +194,13 @@ protected:
   // task (e.g. a per-device BLEDimmer::connectionTask()). Same deferral
   // pattern as scanHasEnded -- only loop() acts on it.
   volatile bool scanStopRequested = false;
-  // Number of IotsaBLEClientConnection::connect() calls currently blocked
-  // inside pClient->connect(), across all devices/tasks. updateScanning()
-  // refuses to start a scan while this is > 0 -- connections take priority.
+  // Whether the single device-wide outgoing-connect slot is currently held
+  // (0 or 1, not a real count -- see tryAcquireConnectSlot()/releaseConnectSlot()
+  // above, the actual arbiter). updateScanning() refuses to start a scan
+  // while this is nonzero -- connections take priority. EXPERIMENTAL
+  // (2026-09-25): capping this at one slot device-wide, rather than allowing
+  // NIMBLE_MAX_CONNECTIONS concurrent outgoing connects, is itself still an
+  // open question -- see cwi-dis/iotsa#263.
   std::atomic<int> connectingCount{0};
   BleDeviceFoundCallback unknownDeviceCallback = NULL;
   BleDeviceFoundCallback knownDeviceCallback = NULL;

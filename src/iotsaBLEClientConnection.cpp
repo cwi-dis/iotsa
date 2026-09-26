@@ -148,6 +148,14 @@ bool IotsaBLEClientConnection::connect() {
     numConnectSkipped++;
     return true;
   }
+  // Acquire the single device-wide connect slot atomically right before the
+  // actual attempt -- this, not canConnect()'s earlier (non-atomic) peek, is
+  // what makes concurrent callers race-free (cwi-dis/iotsa#263). A caller
+  // that loses the race is told "not right now," same as a canConnect()==false
+  // outcome, and doesn't get counted as a real failed attempt below.
+  if (owner && !owner->tryAcquireConnectSlot()) {
+    return false;
+  }
   numConnectAttempts++;
   uint32_t t0 = millis();
   // A genuine new connect attempt starts here (the already-connected
@@ -155,12 +163,8 @@ bool IotsaBLEClientConnection::connect() {
   // below. Distinct from lastDisconnectReason, which only ever gets set on a
   // connection that *did* succeed and later went away.
   lastConnectAttemptAtMillis = t0;
-  // Connections take priority over scanning: tell the owning mod a connect
-  // attempt is in flight so updateScanning() holds off starting a new scan
-  // until it's done (see IotsaBLEClientMod::noteConnectAttemptStarted()).
-  if (owner) owner->noteConnectAttemptStarted();
   bool rv = pClient->connect(addr, false); // Keep previously learned services
-  if (owner) owner->noteConnectAttemptEnded();
+  if (owner) owner->releaseConnectSlot();
   uint32_t elapsedMs = millis() - t0;
   if (rv) {
     numConnectSucceeded++;

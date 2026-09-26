@@ -193,6 +193,14 @@ void IotsaBLEClientMod::updateScanning() {
     shouldUpdateScanAtMillis = millis() + SCAN_START_RETRY_MS;
     return;
   }
+  // WiFi-heavy work (OTA especially) asked us to hold off starting anything
+  // new -- see iotsaBLE_holdOffNewWork(), cwi-dis/iotsa#263. Same retry
+  // pattern as the connectingCount check above: don't start a scan now, but
+  // don't forget to look again either.
+  if (iotsaBLE_newWorkHeldOff()) {
+    shouldUpdateScanAtMillis = millis() + SCAN_START_RETRY_MS;
+    return;
+  }
   if (!needsDiscovery()) return;
   IFDEBUG {
     IotsaSerial.print("BLE scan for: ");
@@ -279,6 +287,9 @@ bool IotsaBLEClientMod::canConnect() {
   // has also been observed to fail.
   if (scanner != NULL) return false;
   if (millis() - scanStoppedAtMillis < connectSettleTimeMillis) return false;
+  // WiFi-heavy work (OTA especially) asked us to hold off starting anything
+  // new -- see iotsaBLE_holdOffNewWork(), cwi-dis/iotsa#263.
+  if (iotsaBLE_newWorkHeldOff()) return false;
   // EXPERIMENTAL (2026-09-25, cwi-dis/lissabon#30 follow-up): cap outgoing
   // connect attempts to one at a time, device-wide. Hypothesis: two
   // concurrent NimBLEClient::connect() calls contend for the same physical
@@ -290,6 +301,14 @@ bool IotsaBLEClientMod::canConnect() {
   // bug alone doesn't explain. If this measurably improves connect success
   // rate, make it permanent and revisit true concurrent connects later;
   // if not, revert this hunk first before looking elsewhere.
+  //
+  // This is only a cheap, non-atomic peek -- it lets a caller skip pointless
+  // work (requestStopScanningForConnect(), log spam) when the slot is
+  // obviously taken, but two callers can still both see 0 here and both
+  // proceed. The actual race-free gate is tryAcquireConnectSlot(), which
+  // IotsaBLEClientConnection::connect() calls immediately before attempting
+  // pClient->connect() (see cwi-dis/iotsa#263) -- that compare-exchange is
+  // what makes only one of them actually win.
   if (connectingCount > 0) return false;
   // Leave at least one connection slot free for the server (peripheral) role
   // if it's seen recent activity -- NimBLEDevice's client pool and
@@ -311,12 +330,13 @@ void IotsaBLEClientMod::requestStopScanningForConnect() {
   scanStopRequested = true;
 }
 
-void IotsaBLEClientMod::noteConnectAttemptStarted() {
-  connectingCount++;
+bool IotsaBLEClientMod::tryAcquireConnectSlot() {
+  int expected = 0;
+  return connectingCount.compare_exchange_strong(expected, 1);
 }
 
-void IotsaBLEClientMod::noteConnectAttemptEnded() {
-  connectingCount--;
+void IotsaBLEClientMod::releaseConnectSlot() {
+  connectingCount = 0;
 }
 
 void IotsaBLEClientMod::requestScanUpdate() {
