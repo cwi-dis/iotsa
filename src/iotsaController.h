@@ -64,7 +64,20 @@ public:
   // push its auto-expiry out. The two concerns are deliberately separate.
   void extendCurrentMode() {
     _sleep.noteActivity();
-#ifndef ESP32
+#ifdef ESP32
+    // Feed iotsa's own hardware-timer watchdog (s_watchdog in
+    // iotsaController.cpp), normally only fed from tick() in the main loop.
+    // extendCurrentMode() is called every OTA chunk (otaOnProgress()), which
+    // is exactly the case tick() can't run for: ArduinoOTA.handle() blocks
+    // the whole loop() for the duration of the transfer (cwi-dis/iotsa#259).
+    // Without this, any OTA transfer longer than watchdogDuration trips the
+    // watchdog and reboots mid-transfer -- confirmed live on lissabonController
+    // 2026-09-26, `control`, rc watchdogDuration=10000ms, transfer aborted at
+    // 26% with "assert failed: xQueueSemaphoreTake". The `#ifndef ESP32`
+    // branch below already did the equivalent for ESP8266's own watchdog;
+    // this one was simply missing.
+    _feedWatchdog();
+#else
     ESP.wdtFeed();
 #endif
     _modes.extendWindow();
