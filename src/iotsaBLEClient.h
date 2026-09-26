@@ -44,8 +44,18 @@ public:
   // Interfaces for use by subclasses (or other classes with a reference)
   // to control which BLE devices are known by this class
   //
-  IotsaBLEClientConnection* addDevice(std::string id);
-  IotsaBLEClientConnection* addDevice(String id) { return addDevice(std::string(id.c_str())); }
+  // Registers `id` as a known device. If `device` is null (the common
+  // case), this mod constructs a plain IotsaRunmodeBLEClient itself -- fine
+  // for any caller that doesn't need its own subclass. If `device` is given,
+  // it's already fully constructed by the caller (e.g. Lissabon::DimmerBLEClient
+  // passing itself, via its IotsaRunmodeBLEClient base) and this mod just
+  // starts tracking it -- necessary whenever the caller's own constructor
+  // needs more than just an id (DimmerBLEClient's does), or needs the id
+  // known before this mod could construct anything (this mod's constructor
+  // path requires the id upfront; DimmerBLEClient gets its name later, via
+  // setName()).
+  IotsaBLEClientConnection* addDevice(std::string id, IotsaBLEClientConnection* device = nullptr);
+  IotsaBLEClientConnection* addDevice(String id, IotsaBLEClientConnection* device = nullptr) { return addDevice(std::string(id.c_str()), device); }
   IotsaBLEClientConnection* getDevice(std::string id);
   IotsaBLEClientConnection* getDevice(String id) { return getDevice(std::string(id.c_str())); }
   void delDevice(std::string id);

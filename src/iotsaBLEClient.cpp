@@ -477,18 +477,18 @@ void IotsaBLEClientMod::onResult(const NimBLEAdvertisedDevice *advertisedDevice)
   if (unknownDeviceCallback) unknownDeviceCallback(*advertisedDevice);
 }
 
-IotsaBLEClientConnection* IotsaBLEClientMod::addDevice(std::string id) {
+IotsaBLEClientConnection* IotsaBLEClientMod::addDevice(std::string id, IotsaBLEClientConnection* device) {
   shouldUpdateScanAtMillis = millis(); // We probably want to scan for the new device
   auto it = devices.find(id);
   if (it == devices.end()) {
-    // Device with this ID doesn't exist yet. Add it. Constructed as an
+    // Device with this ID doesn't exist yet. Add it. If the caller didn't
+    // hand us an already-constructed one, default to a plain
     // IotsaRunmodeBLEClient (a superset of IotsaBLEClientConnection, no
     // behavior change for existing callers that only use the base
     // interface) so every connection this mod hands out can also do the
     // generic runmode commands (identify/reboot/etc.), not just app-specific
-    // get/set -- e.g. Lissabon::DimmerBLEClient uses this (see its
-    // _ensureConnection()).
-    IotsaBLEClientConnection* dev = new IotsaRunmodeBLEClient(id);
+    // get/set.
+    IotsaBLEClientConnection* dev = device ? device : new IotsaRunmodeBLEClient(id);
     dev->owner = this;
     devices[id] = dev;
     return dev;
