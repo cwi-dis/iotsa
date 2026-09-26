@@ -15,7 +15,7 @@ class IotsaBLEClientMod;
 class IotsaBLEClientConnection : public IotsaBLEDeviceInfo {
   friend class IotsaBLEClientMod;
 public:
-  IotsaBLEClientConnection(std::string& _name, std::string _bleAddress="");
+  IotsaBLEClientConnection(const std::string& _name, std::string _bleAddress="");
   ~IotsaBLEClientConnection();
   bool receivedAdvertisement(const NimBLEAdvertisedDevice& _device) override;
   void clearDevice();

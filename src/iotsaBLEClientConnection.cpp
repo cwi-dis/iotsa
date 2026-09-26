@@ -14,7 +14,7 @@
 // still advertising fine were triggering a rescan roughly every 10s regardless.
 static const uint32_t RESCAN_STALENESS_MS = 30000;
 
-IotsaBLEClientConnection::IotsaBLEClientConnection(std::string& _name, std::string _bleAddress)
+IotsaBLEClientConnection::IotsaBLEClientConnection(const std::string& _name, std::string _bleAddress)
 : IotsaBLEDeviceInfo(_name, _bleAddress)
 {
   connCallbacks.owner = this;
