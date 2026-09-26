@@ -3,6 +3,7 @@
 #ifdef IOTSA_WITH_BLE
 #include "iotsaConfigFile.h"
 #include "iotsaBLEServer.h"
+#include "iotsaRunmodeBLEClient.h"
 
 //
 // IotsaBLEClientMod is intended to be used as a base class
@@ -480,8 +481,14 @@ IotsaBLEClientConnection* IotsaBLEClientMod::addDevice(std::string id) {
   shouldUpdateScanAtMillis = millis(); // We probably want to scan for the new device
   auto it = devices.find(id);
   if (it == devices.end()) {
-    // Device with this ID doesn't exist yet. Add it.
-    IotsaBLEClientConnection* dev = new IotsaBLEClientConnection(id);
+    // Device with this ID doesn't exist yet. Add it. Constructed as an
+    // IotsaRunmodeBLEClient (a superset of IotsaBLEClientConnection, no
+    // behavior change for existing callers that only use the base
+    // interface) so every connection this mod hands out can also do the
+    // generic runmode commands (identify/reboot/etc.), not just app-specific
+    // get/set -- e.g. Lissabon::DimmerBLEClient uses this (see its
+    // _ensureConnection()).
+    IotsaBLEClientConnection* dev = new IotsaRunmodeBLEClient(id);
     dev->owner = this;
     devices[id] = dev;
     return dev;
