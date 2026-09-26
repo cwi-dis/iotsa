@@ -96,15 +96,8 @@ protected:
   bool _pendingBlePromoteMode = false;
   int _pendingBleWifiDisabled = -1; // -1: nothing pending; 0: enable radio; 1: disable
   bool _bleAllowModeSwitch = false; // set by allowBLEModeSwitch()
-  static constexpr UUIDstring identifyUUID = "6E5D0007-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
-  // Minted for iotsa#106 -- the iotsa runmode control service. xxxx0001 is the
-  // service, xxxx0002+ the characteristics (same convention as elsewhere).
-  static constexpr UUIDstring serviceUUID       = "6E5D0001-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
-  static constexpr UUIDstring currentModeUUID   = "6E5D0002-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
-  static constexpr UUIDstring requestedModeUUID = "6E5D0003-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
-  static constexpr UUIDstring rebootUUID        = "6E5D0004-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
-  static constexpr UUIDstring promoteModeUUID   = "6E5D0005-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
-  static constexpr UUIDstring wifiDisabledUUID  = "6E5D0006-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
+  // UUIDs live in IotsaRunmodeBLE (iotsaBLE.h) now, not here -- that's the
+  // shared home a BLE client can also see, not just this server-side class.
 #endif // IOTSA_WITH_BLE
 #ifdef IOTSA_HAS_SLEEP
 private:

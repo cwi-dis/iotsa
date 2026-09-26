@@ -8,6 +8,25 @@
 #include <NimBLEDevice.h>
 typedef const char * UUIDstring;
 
+// The runmode BLE protocol: service + characteristic UUIDs for IotsaRunmodeMod's
+// BLE control surface (current/requested mode, reboot, promote-mode, wifiDisabled,
+// identify). Moved here from IotsaRunmodeMod (where they used to be `protected`,
+// invisible to anything outside that one class) so a BLE *client* -- not just the
+// server that implements this protocol -- has a real, shared place to reference
+// them from, instead of hardcoding raw UUID strings (which is what the Python CLI's
+// bleIotsaUUIDs.py had to do, duplicated and out of sync with the C++ side). Plays
+// the same role for the runmode protocol that LissabonBLE.h plays for the dimmer
+// protocol. Values themselves are unchanged from IotsaRunmodeMod's originals.
+namespace IotsaRunmodeBLE {
+  static constexpr UUIDstring serviceUUID       = "6E5D0001-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
+  static constexpr UUIDstring currentModeUUID   = "6E5D0002-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
+  static constexpr UUIDstring requestedModeUUID = "6E5D0003-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
+  static constexpr UUIDstring rebootUUID        = "6E5D0004-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
+  static constexpr UUIDstring promoteModeUUID   = "6E5D0005-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
+  static constexpr UUIDstring wifiDisabledUUID  = "6E5D0006-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
+  static constexpr UUIDstring identifyUUID      = "6E5D0007-F2A7-4E7A-9B1C-2D3E4F5A6B7C";
+};
+
 // Idempotent: ensures NimBLEDevice::init() has run exactly once, regardless of
 // whether the server module, the client module, or both call it.
 void iotsaBLE_ensureInitialized();
