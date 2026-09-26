@@ -2,7 +2,7 @@
 #define _IOTSABLEDEVICEINFO_H_
 #include "iotsa.h"
 #include "iotsaApi.h"
-#include "iotsaBle.h"
+#include "iotsaBLE.h"
 
 #ifdef IOTSA_WITH_BLE
 

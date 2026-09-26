@@ -1,7 +1,7 @@
 #ifndef _IOTSABLECLIENTCONNECTION_H_
 #define _IOTSABLECLIENTCONNECTION_H_
 #include "iotsa.h"
-#include "iotsaBle.h"
+#include "iotsaBLE.h"
 #include "iotsaBLEDeviceInfo.h"
 
 #ifdef IOTSA_WITH_BLE

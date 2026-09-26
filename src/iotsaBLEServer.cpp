@@ -16,7 +16,7 @@
 static const uint32_t REBOOT_DELAY_BLE_REINIT_MS = 4000;
 
 // How long a client-role connect attempt gets held off (see
-// iotsaBLE_reserveConnectionForServer(), iotsaBle.h) after we last saw
+// iotsaBLE_reserveConnectionForServer(), iotsaBLE.h) after we last saw
 // activity on the server role -- generous enough to cover a full multi-step
 // maintenance sequence (enable wifi, request a mode, confirm it, set fields),
 // re-armed on every connect/disconnect rather than a single fixed window.

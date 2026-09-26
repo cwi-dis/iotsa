@@ -1,4 +1,4 @@
-#include "iotsaBle.h"
+#include "iotsaBLE.h"
 #ifdef IOTSA_WITH_BLE
 
 static bool s_initialized = false;

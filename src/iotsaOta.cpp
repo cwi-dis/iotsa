@@ -1,7 +1,7 @@
 #include "iotsaOta.h"
 #include <ArduinoOTA.h>
 #ifdef IOTSA_WITH_BLE
-#include "iotsaBle.h"
+#include "iotsaBLE.h"
 #endif
 
 #ifdef ESP32
