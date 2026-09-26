@@ -95,6 +95,11 @@ bool IotsaBLEClientConnection::available() {
   return rv;
 }
 
+bool IotsaBLEClientConnection::canConnect() {
+  if (owner) owner->requestStopScanningForConnect();
+  return owner ? owner->canConnect() : true;
+}
+
 bool IotsaBLEClientConnection::connect() {
   // Snapshot address (and addressType) under the lock, then release it
   // before doing anything BLE-related -- pClient->connect() below can block

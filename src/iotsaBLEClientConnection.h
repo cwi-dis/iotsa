@@ -20,6 +20,17 @@ public:
   bool receivedAdvertisement(const NimBLEAdvertisedDevice& _device) override;
   void clearDevice();
   bool available();
+  // Requests any in-progress scan to stop (connecting and scanning are
+  // mutually exclusive on this stack) and reports whether a connect attempt
+  // is worth making right now. False means "not yet, try again soon" -- not
+  // "gave up"; callers should keep whatever they were about to send/request
+  // pending rather than treat this the same as a failed connect() call.
+  // Generic home for a dance every caller previously had to reimplement by
+  // hand via a direct reference to the owning IotsaBLEClientMod -- only
+  // BLEDimmer ever did (and only on its IOTSA_WITH_BLE_TASKS path; the
+  // non-tasks loop() path never requested the scan stop at all, so it could
+  // get stuck behind a full discovery scan) (cwi-dis/iotsa#143).
+  bool canConnect();
   bool connect();
   void disconnect();
   // Disconnects (if needed) and returns the NimBLEClient slot to the shared
