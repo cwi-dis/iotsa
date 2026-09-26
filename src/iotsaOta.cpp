@@ -1,5 +1,8 @@
 #include "iotsaOta.h"
 #include <ArduinoOTA.h>
+#ifdef IOTSA_WITH_BLE
+#include "iotsaBle.h"
+#endif
 
 #ifdef ESP32
 #define optFeedWatchdog()
@@ -9,6 +12,12 @@
 
 void otaOnStart() {
   IFDEBUG IotsaSerial.println("ota: download started");
+#ifdef IOTSA_WITH_BLE
+  // Ask any BLE client work to hold off starting anything new for the
+  // duration of the transfer (cwi-dis/iotsa#263) -- cleared in otaOnEnd()/
+  // otaOnError(), whichever fires.
+  iotsaBLE_holdOffNewWork(true);
+#endif
   optFeedWatchdog();
 }
 
@@ -23,11 +32,17 @@ void otaOnProgress(unsigned int progress, unsigned int total) {
 
 void otaOnEnd() {
   IFDEBUG IotsaSerial.println("ota: download finished");
+#ifdef IOTSA_WITH_BLE
+  iotsaBLE_holdOffNewWork(false);
+#endif
   optFeedWatchdog();
 }
 
 void otaOnError(int error) {
   IFDEBUG { IotsaSerial.print("ota: error: "); IotsaSerial.println(error); }
+#ifdef IOTSA_WITH_BLE
+  iotsaBLE_holdOffNewWork(false);
+#endif
   optFeedWatchdog();
 }
 

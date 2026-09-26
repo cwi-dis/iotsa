@@ -34,5 +34,21 @@ void iotsaBLE_notifyScanningStateChanged(bool active);
 // with no server role compiled in.
 void iotsaBLE_reserveConnectionForServer(uint32_t graceMs);
 bool iotsaBLE_serverReservationActive();
+
+// Lets WiFi-heavy work that doesn't want BLE radio contention (OTA transfers
+// especially) tell the BLE side to hold off starting anything new for a
+// while. ESP32's WiFi/BT coexistence scheduling already time-slices the two
+// radios at a low level, but that doesn't prevent our own application-level
+// BLE work (a scan, a new outgoing connect) from making a slow OTA transfer
+// slower, or the reverse -- this is a cooperative signal, not a hardware
+// guarantee. Same rule as every other check in this arbiter: only ever
+// blocks *new* scans/connects from starting (IotsaBLEClientMod::canConnect()/
+// updateScanning()); never interrupts one already in progress. Caller (e.g.
+// IotsaOtaMod) is responsible for pairing every true with a matching false --
+// there is no timeout/grace-period auto-clear here, unlike the server
+// reservation above, since OTA already has its own onEnd()/onError() hooks
+// to do that reliably. cwi-dis/iotsa#263.
+void iotsaBLE_holdOffNewWork(bool hold);
+bool iotsaBLE_newWorkHeldOff();
 #endif // IOTSA_WITH_BLE
 #endif // _IOTSABLE_H

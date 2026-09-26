@@ -28,4 +28,14 @@ void iotsaBLE_reserveConnectionForServer(uint32_t graceMs) {
 bool iotsaBLE_serverReservationActive() {
   return millis() < s_serverReservedUntilMillis;
 }
+
+static bool s_holdOffNewBLEWork = false;
+
+void iotsaBLE_holdOffNewWork(bool hold) {
+  s_holdOffNewBLEWork = hold;
+}
+
+bool iotsaBLE_newWorkHeldOff() {
+  return s_holdOffNewBLEWork;
+}
 #endif // IOTSA_WITH_BLE
