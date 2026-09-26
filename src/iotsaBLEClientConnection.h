@@ -15,7 +15,7 @@ class IotsaBLEClientMod;
 class IotsaBLEClientConnection : public IotsaBLEDeviceInfo {
   friend class IotsaBLEClientMod;
 public:
-  IotsaBLEClientConnection(std::string& _name, std::string _address="");
+  IotsaBLEClientConnection(std::string& _name, std::string _bleAddress="");
   ~IotsaBLEClientConnection();
   bool receivedAdvertisement(const NimBLEAdvertisedDevice& _device) override;
   void clearDevice();
@@ -63,7 +63,7 @@ public:
   bool getAsBuffer(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint8_t **datap, size_t *sizep);
   bool getAsNotification(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, BleNotificationCallback callback);
   // Adds connect-specific fields (on top of the base class's
-  // name/address/rssi/lastSeenMillisAgo) to reply: lastConnectAttemptMillisAgo,
+  // name/bleAddress/rssi/lastSeenMillisAgo) to reply: lastConnectAttemptMillisAgo,
   // numConnectCalls, numConnectSkipped, numConnectAttempts, numConnectFailed,
   // numConnectSucceeded, numConnectionOpen, numConnectionFailed,
   // numConnectionClosedLocally, lastDisconnectReason, lastDisconnectMillisAgo.
@@ -100,9 +100,9 @@ protected:
   // connect()'s own call-count bookkeeping, fully closed:
   //   numConnectCalls = numConnectSkipped + numConnectAttempts
   //   numConnectAttempts = numConnectFailed + numConnectSucceeded
-  // Counted from the point connect() knows it has a valid address (i.e. is
+  // Counted from the point connect() knows it has a valid bleAddress (i.e. is
   // actually going to skip or attempt) -- connect() called without an
-  // address at all, or a mutex-timeout bailout, are both exceptional paths
+  // bleAddress at all, or a mutex-timeout bailout, are both exceptional paths
   // no current caller exercises (BLEDimmer always checks available() first)
   // and are deliberately left out of this tree rather than diluting it.
   uint32_t numConnectCalls = 0;
@@ -128,8 +128,8 @@ protected:
   uint32_t numConnectionClosedLocally = 0;
   // True once a connect attempt has failed, until reachability is
   // reconfirmed (a matching advertisement, or a successful connect).
-  // Deliberately separate from addressValid/available(): a failed connect
-  // doesn't mean the address is wrong (e.g. a lightSleep device just happened
+  // Deliberately separate from bleAddressValid/available(): a failed connect
+  // doesn't mean the bleAddress is wrong (e.g. a lightSleep device just happened
   // to be asleep), so it must not force a costly rediscovery-by-name scan.
   // Consulted by IotsaBLEClientMod::needsDiscovery() to trigger a rescan.
   bool needsRescan = false;

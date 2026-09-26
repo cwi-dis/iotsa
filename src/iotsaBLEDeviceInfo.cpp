@@ -2,71 +2,71 @@
 
 #ifdef IOTSA_WITH_BLE
 
-IotsaBLEDeviceInfo::IotsaBLEDeviceInfo(std::string _name, std::string _address)
-: name(_name),
-  addressMutex(xSemaphoreCreateMutex()),
-  address(_address, 0), // Public is default for address type for nimble
-  addressValid(false)
+IotsaBLEDeviceInfo::IotsaBLEDeviceInfo(std::string _name, std::string _bleAddress)
+: bleName(_name),
+  bleAddressMutex(xSemaphoreCreateMutex()),
+  bleAddress(_bleAddress, 0), // Public is default for bleAddress type for nimble
+  bleAddressValid(false)
 {
-  if (_address != "") {
-    // address and addressType have already been set. Not yet shared with
-    // any other task, so no need to take addressMutex here.
-    addressValid = true;
+  if (_bleAddress != "") {
+    // bleAddress and bleAddressType have already been set. Not yet shared with
+    // any other task, so no need to take bleAddressMutex here.
+    bleAddressValid = true;
   }
 }
 
 IotsaBLEDeviceInfo::~IotsaBLEDeviceInfo() {
-  vSemaphoreDelete(addressMutex);
+  vSemaphoreDelete(bleAddressMutex);
 }
 
-void IotsaBLEDeviceInfo::setKnownAddress(const std::string& _address) {
-  if (_address == "") return;
-  if (xSemaphoreTake(addressMutex, addressMutexTimeout) != pdTRUE) {
-    IotsaSerial.println("IotsaBLEDeviceInfo::setKnownAddress: address mutex timeout, skipped");
+void IotsaBLEDeviceInfo::setKnownAddress(const std::string& _bleAddress) {
+  if (_bleAddress == "") return;
+  if (xSemaphoreTake(bleAddressMutex, bleAddressMutexTimeout) != pdTRUE) {
+    IotsaSerial.println("IotsaBLEDeviceInfo::setKnownAddress: bleAddress mutex timeout, skipped");
     return;
   }
-  if (!(addressValid && address.toString() == _address)) {
-    address = NimBLEAddress(_address, 0); // Public is default for address type for nimble
-    addressValid = true;
+  if (!(bleAddressValid && bleAddress.toString() == _bleAddress)) {
+    bleAddress = NimBLEAddress(_bleAddress, 0); // Public is default for bleAddress type for nimble
+    bleAddressValid = true;
   }
-  xSemaphoreGive(addressMutex);
+  xSemaphoreGive(bleAddressMutex);
 }
 
 std::string IotsaBLEDeviceInfo::getAddress() {
   std::string rv = "";
-  if (xSemaphoreTake(addressMutex, addressMutexTimeout) != pdTRUE) {
-    IotsaSerial.println("IotsaBLEDeviceInfo::getAddress: address mutex timeout");
+  if (xSemaphoreTake(bleAddressMutex, bleAddressMutexTimeout) != pdTRUE) {
+    IotsaSerial.println("IotsaBLEDeviceInfo::getAddress: bleAddress mutex timeout");
     return rv;
   }
-  bool valid = addressValid;
-  if (valid) rv = address.toString();
-  xSemaphoreGive(addressMutex);
+  bool valid = bleAddressValid;
+  if (valid) rv = bleAddress.toString();
+  xSemaphoreGive(bleAddressMutex);
   return rv;
 }
 
 bool IotsaBLEDeviceInfo::receivedAdvertisement(const NimBLEAdvertisedDevice& _device) {
   lastSeenAtMillis = millis();
   rssi = _device.getRSSI();
-  if (xSemaphoreTake(addressMutex, addressMutexTimeout) != pdTRUE) {
-    IotsaSerial.println("IotsaBLEDeviceInfo::receivedAdvertisement: address mutex timeout, skipped");
+  if (xSemaphoreTake(bleAddressMutex, bleAddressMutexTimeout) != pdTRUE) {
+    IotsaSerial.println("IotsaBLEDeviceInfo::receivedAdvertisement: bleAddress mutex timeout, skipped");
     return false;
   }
-  // Check whether the address is the same, then we don't have to add anything.
-  bool sameAddress = addressValid && _device.getAddress().equals(address);
+  // Check whether the bleAddress is the same, then we don't have to add anything.
+  bool sameAddress = bleAddressValid && _device.getAddress().equals(bleAddress);
   bool changed = false;
   if (!sameAddress) {
-    address = _device.getAddress();
-    addressValid = true;
+    bleAddress = _device.getAddress();
+    bleAddressValid = true;
     changed = true;
   }
-  xSemaphoreGive(addressMutex);
+  xSemaphoreGive(bleAddressMutex);
   return changed;
 }
 
 void IotsaBLEDeviceInfo::getHandler(JsonObject& reply) {
-  reply["name"] = name;
+  reply["name"] = bleName;
   std::string addr = getAddress();
-  if (addr != "") reply["address"] = String(addr.c_str());
+  if (addr != "") reply["bleAddress"] = String(addr.c_str());
   if (lastSeenAtMillis != 0) {
     reply["rssi"] = rssi;
     reply["lastSeenMillisAgo"] = millis() - lastSeenAtMillis;

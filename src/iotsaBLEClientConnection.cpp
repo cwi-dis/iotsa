@@ -3,7 +3,7 @@
 #ifdef IOTSA_WITH_BLE
 #include "iotsaBLEClient.h"
 
-// A failed connect only means the address is genuinely worth reconfirming via a
+// A failed connect only means the bleAddress is genuinely worth reconfirming via a
 // rescan if we haven't actually seen this device's own advertisement in a while --
 // if it's still advertising regularly (this recently), it's reachable at the
 // discovery level and another scan won't help whatever's actually failing the GAP
@@ -14,8 +14,8 @@
 // still advertising fine were triggering a rescan roughly every 10s regardless.
 static const uint32_t RESCAN_STALENESS_MS = 30000;
 
-IotsaBLEClientConnection::IotsaBLEClientConnection(std::string& _name, std::string _address)
-: IotsaBLEDeviceInfo(_name, _address)
+IotsaBLEClientConnection::IotsaBLEClientConnection(std::string& _name, std::string _bleAddress)
+: IotsaBLEDeviceInfo(_name, _bleAddress)
 {
   connCallbacks.owner = this;
 }
@@ -65,33 +65,33 @@ void IotsaBLEClientConnection::release() {
 bool IotsaBLEClientConnection::receivedAdvertisement(const NimBLEAdvertisedDevice& _device) {
   bool changed = IotsaBLEDeviceInfo::receivedAdvertisement(_device);
   // Seeing this device advertise at all reconfirms it's reachable, regardless
-  // of whether its address happened to change.
+  // of whether its bleAddress happened to change.
   needsRescan = false;
-  // disconnect() only touches pClient, not address/addressValid -- fine to
-  // call after the base class has released addressMutex, and keeps
+  // disconnect() only touches pClient, not bleAddress/bleAddressValid -- fine to
+  // call after the base class has released bleAddressMutex, and keeps
   // disconnect() (which talks to the BLE stack) from ever running while
-  // addressMutex is held.
+  // bleAddressMutex is held.
   if (changed) disconnect();
   return changed;
 }
 
 void IotsaBLEClientConnection::clearDevice() {
-  if (xSemaphoreTake(addressMutex, addressMutexTimeout) != pdTRUE) {
-    IotsaSerial.println("IotsaBLEClientConnection::clearDevice: address mutex timeout, skipped");
+  if (xSemaphoreTake(bleAddressMutex, bleAddressMutexTimeout) != pdTRUE) {
+    IotsaSerial.println("IotsaBLEClientConnection::clearDevice: bleAddress mutex timeout, skipped");
   } else {
-    addressValid = false;
-    xSemaphoreGive(addressMutex);
+    bleAddressValid = false;
+    xSemaphoreGive(bleAddressMutex);
   }
   disconnect();
 }
 
 bool IotsaBLEClientConnection::available() {
-  if (xSemaphoreTake(addressMutex, addressMutexTimeout) != pdTRUE) {
-    IotsaSerial.println("IotsaBLEClientConnection::available: address mutex timeout");
+  if (xSemaphoreTake(bleAddressMutex, bleAddressMutexTimeout) != pdTRUE) {
+    IotsaSerial.println("IotsaBLEClientConnection::available: bleAddress mutex timeout");
     return false;
   }
-  bool rv = addressValid;
-  xSemaphoreGive(addressMutex);
+  bool rv = bleAddressValid;
+  xSemaphoreGive(bleAddressMutex);
   return rv;
 }
 
@@ -101,21 +101,21 @@ bool IotsaBLEClientConnection::canConnect() {
 }
 
 bool IotsaBLEClientConnection::connect() {
-  // Snapshot address (and addressType) under the lock, then release it
+  // Snapshot bleAddress (and bleAddressType) under the lock, then release it
   // before doing anything BLE-related -- pClient->connect() below can block
   // for up to the owning mod's connectTimeoutMillis and must never run
-  // while addressMutex is held.
+  // while bleAddressMutex is held.
   bool valid = false;
   NimBLEAddress addr("", 0);
-  if (xSemaphoreTake(addressMutex, addressMutexTimeout) != pdTRUE) {
-    IotsaSerial.println("IotsaBLEClientConnection::connect: address mutex timeout, skipped");
+  if (xSemaphoreTake(bleAddressMutex, bleAddressMutexTimeout) != pdTRUE) {
+    IotsaSerial.println("IotsaBLEClientConnection::connect: bleAddress mutex timeout, skipped");
     return false;
   }
-  valid = addressValid;
+  valid = bleAddressValid;
   if (valid) {
-    addr = address;
+    addr = bleAddress;
   }
-  xSemaphoreGive(addressMutex);
+  xSemaphoreGive(bleAddressMutex);
   if (!valid) return false;
   numConnectCalls++;
   if (pClient == nullptr) {
@@ -178,10 +178,10 @@ bool IotsaBLEClientConnection::connect() {
     numConnectFailed++;
     IotsaSerial.printf("IotsaBLEClientConnection::connect(%s): failed after %ums, rc=%d (%s)\n",
       addr.toString().c_str(), elapsedMs, pClient->getLastError(), NimBLEUtils::returnCodeToString(pClient->getLastError()));
-    // Don't clearDevice() here: a failed connect doesn't mean the address is
+    // Don't clearDevice() here: a failed connect doesn't mean the bleAddress is
     // wrong (e.g. a lightSleep device just happened to be asleep mid-attempt)
     // -- just that we're not sure it's still reachable. needsRescan triggers
-    // a rescan to reconfirm, without throwing away a known-good address. But
+    // a rescan to reconfirm, without throwing away a known-good bleAddress. But
     // only bother if we haven't actually seen it advertise recently -- if we
     // have, the failure is at the GAP-connect step itself, not discovery, and
     // another scan won't fix that (see RESCAN_STALENESS_MS above).
