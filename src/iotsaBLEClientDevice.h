@@ -3,6 +3,7 @@
 #include "iotsa.h"
 #include "iotsaBLE.h"
 #include "iotsaBLEDeviceInfo.h"
+#include "iotsaConfigFile.h"
 
 #ifdef IOTSA_WITH_BLE
 
@@ -12,10 +13,24 @@ typedef std::function<void(uint8_t *, size_t)> BleNotificationCallback;
 
 class IotsaBLEClientMod;
 
-class IotsaBLEClientDevice : public IotsaBLEDeviceInfo {
+// Also implements IotsaApiModObject (cwi-dis/iotsa#268): every subclass
+// (Lissabon::DimmerBLEClient, IotsaImmediateAlertBLEClient, ...) gets a
+// complete "named/addressed/persistable/reportable BLE device" -- config
+// persistence, REST reporting/renaming, web-form rendering -- for free,
+// instead of each one reimplementing the identity half by hand. A subclass
+// that also inherits some *other* IotsaApiModObject (e.g. DimmerBLEClient
+// also extends AbstractDimmer) will hit the same same-signature-on-two-
+// unrelated-bases situation as available()/isConnected()/getHandler()
+// below, and needs the same explicit-qualification treatment.
+class IotsaBLEClientDevice : public IotsaBLEDeviceInfo, public IotsaApiModObject {
   friend class IotsaBLEClientMod;
 public:
-  IotsaBLEClientDevice(const std::string& _name, std::string _bleAddress="");
+  // _owner: optional, lets a caller-constructed device (one that isn't
+  // handed to IotsaBLEClientMod::addDevice() until later, e.g.
+  // Lissabon::DimmerBLEClient or examples/BLEButton's IotsaImmediateAlertBLEClient)
+  // register itself later via retarget() without the mod having to reach
+  // back in and set the (otherwise friend-only) owner field itself.
+  IotsaBLEClientDevice(const std::string& _name, std::string _bleAddress="", IotsaBLEClientMod* _owner=nullptr);
   ~IotsaBLEClientDevice();
   bool receivedAdvertisement(const NimBLEAdvertisedDevice& _device) override;
   void clearDevice();
@@ -68,11 +83,41 @@ public:
   // numConnectSucceeded, numConnectionOpen, numConnectionFailed,
   // numConnectionClosedLocally, lastDisconnectReason, lastDisconnectMillisAgo.
   void getHandler(JsonObject& reply) override;
+  // f_name is the usual per-instance config-key/form-field prefix (e.g.
+  // "dimmer3"), matching every other IotsaModObject implementation's
+  // convention (see e.g. IotsaRequest). Persists/reports/renders name +
+  // resolved address; connect stats above are report-only (getHandler),
+  // never persisted or web-editable.
+  bool configLoad(IotsaConfigFileLoad& cf, const String& f_name) override;
+  void configSave(IotsaConfigFileSave& cf, const String& f_name) override;
+  // Renaming via REST: {"name": "<newName>"}. Nothing else about this
+  // object is meaningfully settable from outside (address is discovered,
+  // not configured).
+  bool putHandler(const JsonVariant& request) override;
+#ifdef IOTSA_WITH_WEB
+  // Shows a found/connected status line always; the editable name field
+  // only when includeConfig (renaming isn't a day-to-day control).
+  void formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) override;
+  void formHandler_TD(String& message, bool includeConfig) override;
+  bool formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig) override;
+#endif
+  // Renames this device: updates the persisted identity and, if already
+  // registered with an owning IotsaBLEClientMod (owner != nullptr), re-keys
+  // that registration too (delDevice old name + addDevice new name) so
+  // future advertisements/discovery match the new target. Returns false
+  // (a no-op) if newName is unchanged. Does NOT perform the *first*
+  // registration -- a device that has never been added to any mod at all
+  // (owner still nullptr, e.g. one just default-constructed with an empty
+  // name and no _owner argument either) still needs that done explicitly by
+  // its caller.
+  bool retarget(const std::string& newName);
 protected:
-  // Set by IotsaBLEClientMod::addDevice() (a friend) at construction time.
+  // Set at construction time (the optional _owner constructor argument) or
+  // by IotsaBLEClientMod::addDevice() (a friend), whichever happens first.
   // Lets connect() tell the owning mod when a connect attempt starts/ends,
   // so scanning can be held off while any connection is being established --
-  // connections take priority over scanning.
+  // connections take priority over scanning. Also lets retarget() re-key
+  // this device's own registration on a rename.
   IotsaBLEClientMod* owner = nullptr;
   NimBLERemoteCharacteristic *_getCharacteristic(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID);
   NimBLEClient* pClient = nullptr;

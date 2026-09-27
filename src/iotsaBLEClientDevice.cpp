@@ -14,8 +14,9 @@
 // still advertising fine were triggering a rescan roughly every 10s regardless.
 static const uint32_t RESCAN_STALENESS_MS = 30000;
 
-IotsaBLEClientDevice::IotsaBLEClientDevice(const std::string& _name, std::string _bleAddress)
-: IotsaBLEDeviceInfo(_name, _bleAddress)
+IotsaBLEClientDevice::IotsaBLEClientDevice(const std::string& _name, std::string _bleAddress, IotsaBLEClientMod* _owner)
+: IotsaBLEDeviceInfo(_name, _bleAddress),
+  owner(_owner)
 {
   connCallbacks.owner = this;
 }
@@ -248,7 +249,86 @@ void IotsaBLEClientDevice::getHandler(JsonObject& reply) {
     reply["lastDisconnectReason"] = NimBLEUtils::returnCodeToString(lastDisconnectReason);
     reply["lastDisconnectMillisAgo"] = millis() - lastDisconnectAtMillis;
   }
+  reply["found"] = available();
+  reply["connected"] = isConnected();
 }
+
+bool IotsaBLEClientDevice::retarget(const std::string& newName) {
+  if (newName == bleName) return false;
+  if (owner && bleName != "") owner->delDevice(bleName);
+  setKnownName(newName);
+  clearDevice(); // old address/connection state doesn't apply to the new target
+  if (owner && bleName != "") owner->addDevice(bleName, this);
+  return true;
+}
+
+bool IotsaBLEClientDevice::configLoad(IotsaConfigFileLoad& cf, const String& f_name) {
+  std::string cfgName;
+  cf.get(f_name + ".name", cfgName, "");
+  if (cfgName != "") retarget(cfgName);
+  std::string cfgAddress;
+  cf.get(f_name + ".address", cfgAddress, "");
+  if (cfgAddress != "") {
+    // Through owner (if we have one) rather than a direct setKnownAddress(),
+    // so IotsaBLEClientMod's devicesByAddress index stays correct too --
+    // see noteKnownAddress().
+    if (owner) owner->noteKnownAddress(bleName, cfgAddress);
+    else setKnownAddress(cfgAddress);
+  }
+  return bleName != "";
+}
+
+void IotsaBLEClientDevice::configSave(IotsaConfigFileSave& cf, const String& f_name) {
+  cf.put(f_name + ".name", bleName);
+  std::string addr = getAddress();
+  if (addr != "") cf.put(f_name + ".address", addr);
+}
+
+bool IotsaBLEClientDevice::putHandler(const JsonVariant& request) {
+  if (!request.is<JsonObject>()) return false;
+  const JsonObject& reqObj = request.as<JsonObject>();
+  String newName;
+  if (getFromRequest<String>(reqObj, "name", newName)) {
+    return retarget(std::string(newName.c_str()));
+  }
+  return false;
+}
+
+#ifdef IOTSA_WITH_WEB
+void IotsaBLEClientDevice::formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) {
+  message += text;
+  if (includeConfig) {
+    message += "BLE device name: <input name='" + f_name + ".name' value='" + String(bleName.c_str()) + "'><br>";
+  }
+  if (available()) {
+    message += "BLE address " + String(getAddress().c_str());
+    message += isConnected() ? " (connected)" : " (found, not connected)";
+  } else {
+    message += "<em>not found</em>";
+  }
+  message += "<br>";
+}
+
+void IotsaBLEClientDevice::formHandler_TD(String& message, bool includeConfig) {
+  message += "<td>" + String(bleName.c_str()) + "</td><td>";
+  if (available()) {
+    message += String(getAddress().c_str());
+    message += isConnected() ? " (connected)" : "";
+  } else {
+    message += "<em>not found</em>";
+  }
+  message += "</td>";
+}
+
+bool IotsaBLEClientDevice::formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig) {
+  if (!includeConfig) return false;
+  String n_name = f_name + ".name";
+  if (server->hasArg(n_name)) {
+    return retarget(std::string(server->arg(n_name).c_str()));
+  }
+  return false;
+}
+#endif // IOTSA_WITH_WEB
 
 NimBLERemoteCharacteristic *IotsaBLEClientDevice::_getCharacteristic(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID) {
   NimBLERemoteService *service = pClient->getService(serviceUUID);
