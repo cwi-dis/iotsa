@@ -35,10 +35,20 @@ void IotsaRunmodeMod::setup() {
   iotsaController.sleep().didWakeFromSleep = (esp_sleep_get_wakeup_cause() != 0);
 #endif
 #endif // IOTSA_HAS_SLEEP
-}
-
-void IotsaRunmodeMod::lateSetup() {
 #ifdef IOTSA_WITH_BLE
+  // Deliberately here, in setup(), not lateSetup() below: IotsaRunmodeMod is
+  // an early module, and IotsaApplication::setup() runs every early module's
+  // setup() before *any* module's lateSetup() -- early or normal. The BLE
+  // advertisement/scan-response payload has limited space
+  // (NimBLEAdvertising::addServiceUUID() silently drops whatever doesn't
+  // fit), so whichever service registers first wins the slot. Since every
+  // other iotsa BLE service (an app's own, via IotsaBleApiService::setup())
+  // is normally registered from that app's own setup() -- same convention
+  // DimmerBLEServer already uses everywhere in lissabon -- runmode's own
+  // registration has to happen in the *early* setup() phase to reliably win
+  // that race and stay the one universally-discoverable "this is an iotsa
+  // device" signal, confirmed missing from a real device's advertisement
+  // live (2026-09-27) when it was still down in lateSetup().
   bleApi.setup(IotsaRunmodeBLE::serviceUUID, this);
   bleApi.addCharacteristic(IotsaRunmodeBLE::currentModeUUID, bleApi.BLE_READ, NimBLE2904::FORMAT_UINT8, 0x2700, "Current mode");
   bleApi.addCharacteristic(IotsaRunmodeBLE::requestedModeUUID, bleApi.BLE_READ|bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "Request mode for next boot");
@@ -47,6 +57,9 @@ void IotsaRunmodeMod::lateSetup() {
   bleApi.addCharacteristic(IotsaRunmodeBLE::wifiDisabledUUID, bleApi.BLE_READ|bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "WiFi radio disabled");
   bleApi.addCharacteristic(IotsaRunmodeBLE::identifyUUID, bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT8, 0x2700, "Identify");
 #endif
+}
+
+void IotsaRunmodeMod::lateSetup() {
   api.setup("runmode", true, true);
   api.setup("status", true, false, false, false);   // GET only, no web page (cwi-dis/iotsa#106 5e)
   name = "runmode";

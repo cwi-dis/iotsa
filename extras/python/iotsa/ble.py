@@ -7,6 +7,13 @@ from .bleIotsaUUIDs import name_to_uuid, uuid_to_name
 from .consts import VERBOSE
 
 IOTSA_BATTERY_SERVICE = "0000180f-0000-1000-8000-00805f9b34fb"
+# The runmode service is core/mandatory (IotsaRunmodeMod, cwi-dis/iotsa#106) --
+# present on every iotsa device, unlike the battery service above, which is
+# only there if the app happens to compile in IotsaBatteryMod (e.g.
+# examples/BLERinger doesn't). Checked as well as, not instead of, the battery
+# service so pre-#106 devices (battery service, no runmode service yet) are
+# still discoverable.
+IOTSA_RUNMODE_SERVICE = name_to_uuid("runmode")
 IOTSA_REBOOT_CHARACTERISTIC = ""
 
 class BLE:
@@ -49,11 +56,12 @@ class BLE:
 
     async def _asyncFindDevices(self):
         devices_and_advertisement_data_map = await BleakScanner.discover(timeout=self.discover_timeout, return_adv=True)
-        # Iotsa devices have a battery service, and a reboot charcteristic in that service.
-        # So filter for those.
+        # Every iotsa device advertises the runmode service (core, mandatory);
+        # pre-#106 devices instead only have the battery service -- check for
+        # either, so both old and new devices are found.
         iotsaCandidates = []
         for d, adv in devices_and_advertisement_data_map.values():
-            if IOTSA_BATTERY_SERVICE in adv.service_uuids:
+            if IOTSA_RUNMODE_SERVICE in adv.service_uuids or IOTSA_BATTERY_SERVICE in adv.service_uuids:
                 iotsaCandidates.append(adv.local_name or d.name or d.address)
         if iotsaCandidates:
             self._allDevices = iotsaCandidates
