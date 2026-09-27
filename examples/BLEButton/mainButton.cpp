@@ -57,8 +57,12 @@ public:
 protected:
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+#ifdef IOTSA_WITH_WEB
+  void webHandler() override;
+#endif
 private:
   void setTarget(const String& newTarget);
+  void startRingAttempt();
   IotsaImmediateAlertBLEClient ringer;
   String targetName;
   bool lastPressedState = false;
@@ -87,12 +91,32 @@ void BLEButtonMod::setup() {
 
 void BLEButtonMod::lateSetup() {
   name = "doorbell";
-  api.setup("doorbell", true, true, false, false);
+  api.setup("doorbell", true, true);
 }
 
 String BLEButtonMod::info() {
-  return "<p>BLE Doorbell Button: rings a remote Immediate Alert Service device over BLE when the BOOT button is pressed. See <a href='/api/doorbell'>/api/doorbell</a> for the REST API.</p>";
+  return "<p>BLE Doorbell Button: rings a remote Immediate Alert Service device over BLE when the BOOT button is pressed. See <a href='/doorbell'>/doorbell</a> to configure, or <a href='/api/doorbell'>/api/doorbell</a> for the REST API.</p>";
 }
+
+#ifdef IOTSA_WITH_WEB
+void BLEButtonMod::webHandler() {
+  IotsaWebServer *server = api.webService->server;
+  if (server->hasArg("target")) {
+    setTarget(server->arg("target"));
+    configSave();
+  }
+  if (server->hasArg("ringnow")) {
+    startRingAttempt();
+  }
+  String message = "<html><head><title>BLE Doorbell Button</title></head><body><h1>BLE Doorbell Button</h1>";
+  message += "<form method='post'>";
+  message += "Ring target (hostname): <input name='target' value='" + targetName + "'><br>";
+  message += "<input type='submit' value='Set'>";
+  message += "</form>";
+  message += "<form method='post'><input type='hidden' name='ringnow' value='1'><input type='submit' value='Ring now'></form>";
+  server->send(200, "text/html", message);
+}
+#endif // IOTSA_WITH_WEB
 
 bool BLEButtonMod::getHandler(const char *path, JsonObject& reply) {
   reply["target"] = targetName;
@@ -121,16 +145,20 @@ void BLEButtonMod::configSave() {
   cf.put("target", targetName);
 }
 
+void BLEButtonMod::startRingAttempt() {
+  if (targetName == "") {
+    IotsaSerial.println("BLEButton: ring requested, but no target configured");
+    return;
+  }
+  wantsToRing = true;
+  giveUpAtMillis = millis() + connectTimeoutMillis;
+}
+
 void BLEButtonMod::loop() {
   bool nowPressed = doorbellButton->pressed;
   if (nowPressed && !lastPressedState) {
-    if (targetName == "") {
-      IotsaSerial.println("BLEButton: button pressed, but no target configured");
-    } else {
-      IotsaSerial.println("BLEButton: button pressed, ringing");
-      wantsToRing = true;
-      giveUpAtMillis = millis() + connectTimeoutMillis;
-    }
+    IotsaSerial.println("BLEButton: button pressed");
+    startRingAttempt();
   }
   lastPressedState = nowPressed;
 
