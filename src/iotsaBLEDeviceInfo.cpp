@@ -66,7 +66,7 @@ bool IotsaBLEDeviceInfo::receivedAdvertisement(const NimBLEAdvertisedDevice& _de
 void IotsaBLEDeviceInfo::getHandler(JsonObject& reply) {
   reply["name"] = bleName;
   std::string addr = getAddress();
-  if (addr != "") reply["bleAddress"] = String(addr.c_str());
+  if (addr != "") reply["address"] = String(addr.c_str()); // REST field name unchanged by the bleAddress rename -- wire API, not internal naming
   if (lastSeenAtMillis != 0) {
     reply["rssi"] = rssi;
     reply["lastSeenMillisAgo"] = millis() - lastSeenAtMillis;
