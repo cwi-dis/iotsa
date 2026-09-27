@@ -8,10 +8,20 @@
 // Board: esp32c3devkit (Espressif ESP32-C3-DevKitM-1) -- uses its onboard
 // addressable RGB LED (GPIO8) as the alert indicator, zero extra hardware.
 //
+// The alert is shown via IotsaLedMod/iotsaStatus.setStatusPulse(), the same
+// generic status-display mechanism every other iotsa app uses (see
+// examples/Button) -- not a bespoke NeoPixel driver. That means this ringer
+// becomes just another status-pulse consumer if/when a real buzzer is added
+// (combining with examples/Ringer) or other status consumers exist.
+//
 #include "iotsa.h"
 #include "iotsaWifi.h"
 
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
+
+#ifndef IOTSA_PIN_NEOPIXEL
+#define IOTSA_PIN_NEOPIXEL 8 // esp32c3devkit's onboard addressable RGB LED
+#endif
 
 IotsaApplication application("BLE Ringer");
 IotsaWifiMod wifiMod(application);
@@ -24,13 +34,18 @@ IotsaOtaMod otaMod(application);
 #include "iotsaBLEServer.h"
 IotsaBLEServerMod bleServerMod(application);
 
-#include "iotsaImmediateAlertBLEServer.h"
-#include "NeoPixelAlert.h"
+#include "iotsaLed.h"
+IotsaLedMod ledMod(application, IOTSA_PIN_NEOPIXEL);
 
-NeoPixelAlert alertLight;
+#include "iotsaImmediateAlertBLEServer.h"
 
 void onAlertLevelChanged(uint8_t level) {
-  alertLight.setAlertLevel(level);
+  if (level == IotsaImmediateAlertBLE::MildAlert) {
+    iotsaStatus.setStatusPulse(0x000020, 0, 0, 1000, "IAS mild alert"); // dim blue, solid, 1s
+  } else if (level == IotsaImmediateAlertBLE::HighAlert) {
+    iotsaStatus.setStatusPulse(0xff0000, 200, 200, 3000, "IAS high alert"); // bright red, blinking, 3s
+  }
+  // NoAlert: nothing to actively cancel -- pulses expire on their own.
 }
 
 IotsaImmediateAlertBLEServer alertServer(onAlertLevelChanged);
@@ -39,12 +54,9 @@ class BLERingerMod : public IotsaModule {
 public:
   using IotsaModule::IotsaModule;
   void setup() override {
-    alertLight.setup();
     alertServer.setup();
   }
-  void loop() override {
-    alertLight.loop();
-  }
+  void loop() override {}
   String info() override {
     return "<p>BLE Ringer: exposes the Bluetooth SIG Immediate Alert Service (0x1802) over BLE.</p>";
   }

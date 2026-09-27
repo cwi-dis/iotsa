@@ -4,8 +4,7 @@
       "-DIOTSA_WITH_BLE"
     ],
     "lib_deps": [
-      "h2zero/NimBLE-Arduino",
-      "https://github.com/Makuna/NeoPixelBus#master"
+      "h2zero/NimBLE-Arduino"
     ],
     "partitions": "min_spiffs.csv"
   },
