@@ -4,6 +4,12 @@
 
 #ifdef IOTSA_WITH_BLE
 
+// Deliberately duplicated (identically) in examples/BLEButton -- not in iotsa
+// core. This protocol only has one real consumer pair (this example and
+// BLEButton) so far; it hasn't earned a shared home yet (same reasoning as
+// not generalizing Lissabon::DimmerCollection before it had proven use
+// beyond one app). Move it to iotsa/src/ if/when something else needs it.
+//
 // Bluetooth SIG-adopted Immediate Alert Service (IAS) -- not iotsa-specific,
 // a real standard GATT service (part of the "Find Me" profile: a client
 // writes an alert level, the peripheral alerts at that intensity). Using

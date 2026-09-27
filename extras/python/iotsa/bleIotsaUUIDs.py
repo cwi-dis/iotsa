@@ -36,6 +36,12 @@ _uuid_to_name: dict[str, str] = {
     "6b2f0004-38bc-4204-a506-1d3546ad3688": "brightness",
     "6b2f0005-38bc-4204-a506-1d3546ad3688": "temperature",
 
+    # Bluetooth SIG-adopted Immediate Alert Service (IAS, part of the "Find
+    # Me" profile) -- used by examples/BLERinger + BLEButton, not iotsa-
+    # specific. Write 0/1/2 (none/mild/high) to alertLevel.
+    "00001802-0000-1000-8000-00805f9b34fb": "immediateAlert",
+    "00002a06-0000-1000-8000-00805f9b34fb": "alertLevel",
+
     "00001823-0000-1000-8000-00805f9b34fb": "hps",
     "00002ab6-0000-1000-8000-00805f9b34fb" : "hpsURL",
     "00002ab7-0000-1000-8000-00805f9b34fb" : "hpsHeaders",
