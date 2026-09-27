@@ -1,0 +1,21 @@
+{
+  "defaults": {
+    "build_flags": [
+      "-DIOTSA_WITH_BLE"
+    ],
+    "lib_deps": [
+      "h2zero/NimBLE-Arduino",
+      "https://github.com/Makuna/NeoPixelBus#master"
+    ],
+    "partitions": "min_spiffs.csv"
+  },
+  "variants": [
+    {
+      "board": "esp32c3devkit",
+      "ci": {
+        "platformio": true,
+        "arduino": false
+      }
+    }
+  ]
+}

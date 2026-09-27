@@ -1,0 +1,19 @@
+{
+  "defaults": {
+    "build_flags": [
+      "-DIOTSA_WITH_BLE"
+    ],
+    "lib_deps": [
+      "h2zero/NimBLE-Arduino"
+    ]
+  },
+  "variants": [
+    {
+      "board": "esp32c3supermini",
+      "ci": {
+        "platformio": true,
+        "arduino": false
+      }
+    }
+  ]
+}
