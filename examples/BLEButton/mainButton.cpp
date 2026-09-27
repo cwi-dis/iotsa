@@ -109,11 +109,12 @@ void BLEButtonMod::webHandler() {
     startRingAttempt();
   }
   String message = "<html><head><title>BLE Doorbell Button</title></head><body><h1>BLE Doorbell Button</h1>";
-  message += "<form method='post'>";
+  message += "<form method='get'>";
   message += "Ring target (hostname): <input name='target' value='" + targetName + "'><br>";
   message += "<input type='submit' value='Set'>";
   message += "</form>";
-  message += "<form method='post'><input type='hidden' name='ringnow' value='1'><input type='submit' value='Ring now'></form>";
+  message += "<form method='get'><input type='hidden' name='ringnow' value='1'><input type='submit' value='Ring now'></form>";
+  message += "<p>Or just fetch <code>/doorbell?ringnow=1</code> directly -- no form needed.</p>";
   server->send(200, "text/html", message);
 }
 #endif // IOTSA_WITH_WEB
