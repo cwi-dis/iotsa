@@ -430,7 +430,7 @@ void IotsaBLEClientMod::onResult(const NimBLEAdvertisedDevice *advertisedDevice)
       if (changed) {
         devicesByAddress[advertisedDevice->getAddress().toString()] = dev;
         IFDEBUG IotsaSerial.printf("BLEClientMod: advertisement update byname for %s\n", deviceName.c_str());
-        knownDeviceCallback(*advertisedDevice);
+        if (knownDeviceCallback) knownDeviceCallback(*advertisedDevice);
       }
       shouldUpdateScanAtMillis = millis(); // We may have found what we were looking for
       return;
@@ -448,7 +448,7 @@ void IotsaBLEClientMod::onResult(const NimBLEAdvertisedDevice *advertisedDevice)
     if (changed) {
       devicesByAddress[advertisedDevice->getAddress().toString()] = dev;
       IFDEBUG IotsaSerial.printf("BLEClientMod: advertisement update byaddress for %s\n", addr.c_str());
-      knownDeviceCallback(*advertisedDevice);
+      if (knownDeviceCallback) knownDeviceCallback(*advertisedDevice);
     }
     shouldUpdateScanAtMillis = millis(); // We may have found what we were looking for
     return;
