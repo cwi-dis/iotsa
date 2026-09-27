@@ -1,6 +1,6 @@
 #ifndef _IOTSARUNMODEBLECLIENT_H_
 #define _IOTSARUNMODEBLECLIENT_H_
-#include "iotsaBLEClientConnection.h"
+#include "iotsaBLEClientDevice.h"
 #include "iotsaBLE.h"
 
 #ifdef IOTSA_WITH_BLE
@@ -11,14 +11,14 @@
 // by definition, an iotsa BLE server -- that's the generic recognition signal
 // a caller can use (e.g. IotsaBLEClientMod::setServiceFilter()) instead of
 // filtering on a specific app's own protocol. Adds typed methods over
-// IotsaBLEClientConnection's generic get()/set() so a caller doesn't have to
+// IotsaBLEClientDevice's generic get()/set() so a caller doesn't have to
 // hand-roll calls against raw IotsaRunmodeBLE UUIDs itself. Any BLE client
 // connection to an iotsa device can use these directly (e.g. Lissabon's
 // DimmerBLEClient inherits from this to get them for free, alongside its own
 // dimmer-specific protocol).
-class IotsaRunmodeBLEClient : public IotsaBLEClientConnection {
+class IotsaRunmodeBLEClient : public IotsaBLEClientDevice {
 public:
-  using IotsaBLEClientConnection::IotsaBLEClientConnection;
+  using IotsaBLEClientDevice::IotsaBLEClientDevice;
   bool getCurrentMode(uint8_t& mode);
   bool requestMode(uint8_t mode);
   bool reboot();

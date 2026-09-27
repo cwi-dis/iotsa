@@ -11,7 +11,7 @@
 // Base class for anything we've seen advertise over BLE, whether or not we
 // ever intend to connect to it. Holds only what every such device has in
 // common: identity (name/bleAddress) and the most recent advertisement data
-// (RSSI, when we last saw it). IotsaBLEClientConnection (connectable, known
+// (RSSI, when we last saw it). IotsaBLEClientDevice (connectable, known
 // devices) extends this with the heavier connect/disconnect machinery --
 // kept separate so devices we're only passively observing (e.g. results of
 // an "unknown devices" scan) don't pay for a NimBLEClient* and a mutex they'll
@@ -54,7 +54,7 @@ protected:
   std::string bleName;
   // bleAddress/bleAddressValid are written from the NimBLE host task
   // (receivedAdvertisement()) and read from other tasks (e.g. a per-device
-  // connection task in the IotsaBLEClientConnection subclass) -- protected
+  // connection task in the IotsaBLEClientDevice subclass) -- protected
   // by bleAddressMutex. Always take it with a short bounded timeout (never
   // portMAX_DELAY) and never call anything blocking (BLE calls, Serial,
   // etc.) while holding it: a real FreeRTOS mutex wait (unlike a portMUX

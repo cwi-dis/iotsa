@@ -1,6 +1,6 @@
 # BLE client/server timing
 
-How `IotsaBLEClientMod`, `IotsaBLEClientConnection`, and `IotsaBLEServerMod` share the single
+How `IotsaBLEClientMod`, `IotsaBLEClientDevice`, and `IotsaBLEServerMod` share the single
 BLE radio, what each timing setting actually controls, and how to tune them. Written 2026-07-19
 while root-causing a `control`-can't-connect-to-`stripbank` bug that turned out to be a mix of a
 real units bug and genuine radio-scheduling conflicts -- the settings below are the levers that
@@ -102,7 +102,7 @@ needs a moment to actually settle out of scanning mode. Raise if connects still 
 after a scan stop; there's little reason to lower it below the default.
 
 **`connectTimeoutMillis`** (default 6000ms; lives on `IotsaBLEClientMod`, read by
-`IotsaBLEClientConnection::connect()` through its owner back-pointer)
+`IotsaBLEClientDevice::connect()` through its owner back-pointer)
 — *Relevant to: all three shapes, critically shape 3.*
 How long a single `connect()` call waits for the link to establish before giving up. This is the
 setting that was silently 5000x too short (6ms instead of 6s) until 2026-07-19, when it was also
@@ -121,7 +121,7 @@ repeatedly. Conceptually related to those two (it's currently ~1.3x one full dis
 them -- may be derived from the discovery cycle length in the future, but made configurable as-is
 first since that's the more immediately useful change.
 
-**`needsRescan`** (per-device bool, `IotsaBLEClientConnection`; added 2026-08-04, replacing a
+**`needsRescan`** (per-device bool, `IotsaBLEClientDevice`; added 2026-08-04, replacing a
 prior `clearDevice()` call on every failed connect attempt -- see cwi-dis/iotsa#172)
 — *Relevant to: shape 1 mainly (shapes 2/3 peers may rotate private addresses, where clearing the
 address on failure could still be the right call -- not addressed here).*

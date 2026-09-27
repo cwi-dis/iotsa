@@ -1,5 +1,5 @@
-#ifndef _IOTSABLECLIENTCONNECTION_H_
-#define _IOTSABLECLIENTCONNECTION_H_
+#ifndef _IOTSABLECLIENTDEVICE_H_
+#define _IOTSABLECLIENTDEVICE_H_
 #include "iotsa.h"
 #include "iotsaBLE.h"
 #include "iotsaBLEDeviceInfo.h"
@@ -12,11 +12,11 @@ typedef std::function<void(uint8_t *, size_t)> BleNotificationCallback;
 
 class IotsaBLEClientMod;
 
-class IotsaBLEClientConnection : public IotsaBLEDeviceInfo {
+class IotsaBLEClientDevice : public IotsaBLEDeviceInfo {
   friend class IotsaBLEClientMod;
 public:
-  IotsaBLEClientConnection(const std::string& _name, std::string _bleAddress="");
-  ~IotsaBLEClientConnection();
+  IotsaBLEClientDevice(const std::string& _name, std::string _bleAddress="");
+  ~IotsaBLEClientDevice();
   bool receivedAdvertisement(const NimBLEAdvertisedDevice& _device) override;
   void clearDevice();
   bool available();
@@ -80,7 +80,7 @@ protected:
   // completes (not just when we ask for one) -- see isDisconnecting().
   class ConnCallbacks : public NimBLEClientCallbacks {
   public:
-    IotsaBLEClientConnection *owner = nullptr;
+    IotsaBLEClientDevice *owner = nullptr;
     void onConnect(NimBLEClient* pClient) override;
     void onDisconnect(NimBLEClient* pClient, int reason) override;
   };

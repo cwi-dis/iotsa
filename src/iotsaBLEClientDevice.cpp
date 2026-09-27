@@ -1,4 +1,4 @@
-#include "iotsaBLEClientConnection.h"
+#include "iotsaBLEClientDevice.h"
 
 #ifdef IOTSA_WITH_BLE
 #include "iotsaBLEClient.h"
@@ -14,18 +14,18 @@
 // still advertising fine were triggering a rescan roughly every 10s regardless.
 static const uint32_t RESCAN_STALENESS_MS = 30000;
 
-IotsaBLEClientConnection::IotsaBLEClientConnection(const std::string& _name, std::string _bleAddress)
+IotsaBLEClientDevice::IotsaBLEClientDevice(const std::string& _name, std::string _bleAddress)
 : IotsaBLEDeviceInfo(_name, _bleAddress)
 {
   connCallbacks.owner = this;
 }
 
-void IotsaBLEClientConnection::ConnCallbacks::onConnect(NimBLEClient* pClient) {
-  IFDEBUG IotsaSerial.printf("IotsaBLEClientConnection(%s): onConnect\n", owner ? owner->getName().c_str() : "?");
+void IotsaBLEClientDevice::ConnCallbacks::onConnect(NimBLEClient* pClient) {
+  IFDEBUG IotsaSerial.printf("IotsaBLEClientDevice(%s): onConnect\n", owner ? owner->getName().c_str() : "?");
 }
 
-void IotsaBLEClientConnection::ConnCallbacks::onDisconnect(NimBLEClient* pClient, int reason) {
-  IFDEBUG IotsaSerial.printf("IotsaBLEClientConnection(%s): onDisconnect reason=%d (%s)\n",
+void IotsaBLEClientDevice::ConnCallbacks::onDisconnect(NimBLEClient* pClient, int reason) {
+  IFDEBUG IotsaSerial.printf("IotsaBLEClientDevice(%s): onDisconnect reason=%d (%s)\n",
     owner ? owner->getName().c_str() : "?", reason, NimBLEUtils::returnCodeToString(reason));
   if (owner) {
     // disconnectSettled is only ever set false by our own disconnect() call,
@@ -42,18 +42,18 @@ void IotsaBLEClientConnection::ConnCallbacks::onDisconnect(NimBLEClient* pClient
   }
 }
 
-IotsaBLEClientConnection::~IotsaBLEClientConnection() {
+IotsaBLEClientDevice::~IotsaBLEClientDevice() {
   release();
 }
 
-void IotsaBLEClientConnection::release() {
+void IotsaBLEClientDevice::release() {
   // Gives the NimBLEClient slot back to the shared pool (NimBLEDevice's own
   // fixed-size m_pClients array, sized by NIMBLE_MAX_CONNECTIONS) instead of
   // holding it for the lifetime of this object. Safe to call while still
   // connected/disconnecting -- NimBLEDevice::deleteClient() defers the actual
   // delete until any in-flight disconnect completes. Callers that idle out a
   // connection (see BLEDimmer's disconnectAtMillis handling) should call this
-  // instead of disconnect(), so a device with more IotsaBLEClientConnections
+  // instead of disconnect(), so a device with more IotsaBLEClientDevices
   // than the platform has slots for can still round-robin through all of them
   // (cwi-dis/iotsa#106-era gap, found live on lissabonController, 2026-09-25).
   if (pClient) {
@@ -62,7 +62,7 @@ void IotsaBLEClientConnection::release() {
   }
 }
 
-bool IotsaBLEClientConnection::receivedAdvertisement(const NimBLEAdvertisedDevice& _device) {
+bool IotsaBLEClientDevice::receivedAdvertisement(const NimBLEAdvertisedDevice& _device) {
   bool changed = IotsaBLEDeviceInfo::receivedAdvertisement(_device);
   // Seeing this device advertise at all reconfirms it's reachable, regardless
   // of whether its bleAddress happened to change.
@@ -75,9 +75,9 @@ bool IotsaBLEClientConnection::receivedAdvertisement(const NimBLEAdvertisedDevic
   return changed;
 }
 
-void IotsaBLEClientConnection::clearDevice() {
+void IotsaBLEClientDevice::clearDevice() {
   if (xSemaphoreTake(bleAddressMutex, bleAddressMutexTimeout) != pdTRUE) {
-    IotsaSerial.println("IotsaBLEClientConnection::clearDevice: bleAddress mutex timeout, skipped");
+    IotsaSerial.println("IotsaBLEClientDevice::clearDevice: bleAddress mutex timeout, skipped");
   } else {
     bleAddressValid = false;
     xSemaphoreGive(bleAddressMutex);
@@ -85,9 +85,9 @@ void IotsaBLEClientConnection::clearDevice() {
   disconnect();
 }
 
-bool IotsaBLEClientConnection::available() {
+bool IotsaBLEClientDevice::available() {
   if (xSemaphoreTake(bleAddressMutex, bleAddressMutexTimeout) != pdTRUE) {
-    IotsaSerial.println("IotsaBLEClientConnection::available: bleAddress mutex timeout");
+    IotsaSerial.println("IotsaBLEClientDevice::available: bleAddress mutex timeout");
     return false;
   }
   bool rv = bleAddressValid;
@@ -95,12 +95,12 @@ bool IotsaBLEClientConnection::available() {
   return rv;
 }
 
-bool IotsaBLEClientConnection::canConnect() {
+bool IotsaBLEClientDevice::canConnect() {
   if (owner) owner->requestStopScanningForConnect();
   return owner ? owner->canConnect() : true;
 }
 
-bool IotsaBLEClientConnection::connect() {
+bool IotsaBLEClientDevice::connect() {
   // Snapshot bleAddress (and bleAddressType) under the lock, then release it
   // before doing anything BLE-related -- pClient->connect() below can block
   // for up to the owning mod's connectTimeoutMillis and must never run
@@ -108,7 +108,7 @@ bool IotsaBLEClientConnection::connect() {
   bool valid = false;
   NimBLEAddress addr("", 0);
   if (xSemaphoreTake(bleAddressMutex, bleAddressMutexTimeout) != pdTRUE) {
-    IotsaSerial.println("IotsaBLEClientConnection::connect: bleAddress mutex timeout, skipped");
+    IotsaSerial.println("IotsaBLEClientDevice::connect: bleAddress mutex timeout, skipped");
     return false;
   }
   valid = bleAddressValid;
@@ -123,14 +123,14 @@ bool IotsaBLEClientConnection::connect() {
     if (pClient == nullptr) {
       // NimBLEDevice::createClient() returns nullptr once NIMBLE_MAX_CONNECTIONS
       // client slots are all in use -- expected, transient contention when
-      // more IotsaBLEClientConnections exist than the platform has slots for
+      // more IotsaBLEClientDevices exist than the platform has slots for
       // (each one now releases its slot on idle disconnect, see release()),
       // not a bug. Fail this attempt gracefully instead of dereferencing a
       // null pClient below (was a StoreProhibited crash, live on lissabonController
       // with 5 dimmers and NIMBLE_MAX_CONNECTIONS=3, 2026-09-25).
       numConnectAttempts++;
       numConnectFailed++;
-      IotsaSerial.println("IotsaBLEClientConnection::connect: no free BLE client slot, will retry");
+      IotsaSerial.println("IotsaBLEClientDevice::connect: no free BLE client slot, will retry");
       needsRescan = true;
       if (owner) owner->requestScanUpdate();
       return false;
@@ -176,7 +176,7 @@ bool IotsaBLEClientConnection::connect() {
     needsRescan = false;
   } else {
     numConnectFailed++;
-    IotsaSerial.printf("IotsaBLEClientConnection::connect(%s): failed after %ums, rc=%d (%s)\n",
+    IotsaSerial.printf("IotsaBLEClientDevice::connect(%s): failed after %ums, rc=%d (%s)\n",
       addr.toString().c_str(), elapsedMs, pClient->getLastError(), NimBLEUtils::returnCodeToString(pClient->getLastError()));
     // Don't clearDevice() here: a failed connect doesn't mean the bleAddress is
     // wrong (e.g. a lightSleep device just happened to be asleep mid-attempt)
@@ -216,22 +216,22 @@ bool IotsaBLEClientConnection::connect() {
   return rv;
 }
 
-void IotsaBLEClientConnection::disconnect() {
+void IotsaBLEClientDevice::disconnect() {
   if (pClient && pClient->isConnected()) {
     disconnectSettled = false;
     pClient->disconnect();
   }
 }
 
-bool IotsaBLEClientConnection::isConnected() {
+bool IotsaBLEClientDevice::isConnected() {
   return pClient && pClient->isConnected();
 }
 
-bool IotsaBLEClientConnection::isDisconnecting() {
+bool IotsaBLEClientDevice::isDisconnecting() {
   return !disconnectSettled;
 }
 
-void IotsaBLEClientConnection::getHandler(JsonObject& reply) {
+void IotsaBLEClientDevice::getHandler(JsonObject& reply) {
   IotsaBLEDeviceInfo::getHandler(reply);
   if (lastConnectAttemptAtMillis != 0) {
     reply["lastConnectAttemptMillisAgo"] = millis() - lastConnectAttemptAtMillis;
@@ -250,14 +250,14 @@ void IotsaBLEClientConnection::getHandler(JsonObject& reply) {
   }
 }
 
-NimBLERemoteCharacteristic *IotsaBLEClientConnection::_getCharacteristic(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID) {
+NimBLERemoteCharacteristic *IotsaBLEClientDevice::_getCharacteristic(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID) {
   NimBLERemoteService *service = pClient->getService(serviceUUID);
   if (service == NULL) return NULL;
   NimBLERemoteCharacteristic *characteristic = service->getCharacteristic(charUUID);
   return characteristic;
 }
 
-bool IotsaBLEClientConnection::set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, const uint8_t *data, size_t size) {
+bool IotsaBLEClientDevice::set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, const uint8_t *data, size_t size) {
   NimBLERemoteCharacteristic *characteristic = _getCharacteristic(serviceUUID, charUUID);
   if (characteristic == NULL) return false;
   if (!characteristic->canWrite()) return false;
@@ -265,27 +265,27 @@ bool IotsaBLEClientConnection::set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID
   return true;
 }
 
-bool IotsaBLEClientConnection::set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint8_t value) {
+bool IotsaBLEClientDevice::set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint8_t value) {
   return set(serviceUUID, charUUID, (const uint8_t *)&value, 1);
 }
 
-bool IotsaBLEClientConnection::set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint16_t value) {
+bool IotsaBLEClientDevice::set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint16_t value) {
   return set(serviceUUID, charUUID, (const uint8_t *)&value, 2);
 }
 
-bool IotsaBLEClientConnection::set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint32_t value) {
+bool IotsaBLEClientDevice::set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint32_t value) {
   return set(serviceUUID, charUUID, (const uint8_t *)&value, 4);
 }
 
-bool IotsaBLEClientConnection::set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, const std::string& value) {
+bool IotsaBLEClientDevice::set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, const std::string& value) {
   return set(serviceUUID, charUUID, (const uint8_t *)value.c_str(), value.length());
 }
 
-bool IotsaBLEClientConnection::set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, const String& value) {
+bool IotsaBLEClientDevice::set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, const String& value) {
   return set(serviceUUID, charUUID, (const uint8_t *)value.c_str(), value.length());
 }
 
-bool IotsaBLEClientConnection::getAsBuffer(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint8_t **datap, size_t *sizep) {
+bool IotsaBLEClientDevice::getAsBuffer(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint8_t **datap, size_t *sizep) {
   NimBLERemoteCharacteristic *characteristic = _getCharacteristic(serviceUUID, charUUID);
   if (characteristic == NULL) return false;
   if (!characteristic->canRead()) return false;
@@ -294,7 +294,7 @@ bool IotsaBLEClientConnection::getAsBuffer(NimBLEUUID& serviceUUID, NimBLEUUID& 
   *sizep = value.length();
   return true;
 }
-bool IotsaBLEClientConnection::get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint8_t& value) {
+bool IotsaBLEClientDevice::get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint8_t& value) {
   size_t size;
   uint8_t *ptr;
   if (!getAsBuffer(serviceUUID, charUUID, &ptr, &size)) return false;
@@ -303,7 +303,7 @@ bool IotsaBLEClientConnection::get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID
   return true;
 }
 
-bool IotsaBLEClientConnection::get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint16_t& value) {
+bool IotsaBLEClientDevice::get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint16_t& value) {
   size_t size;
   uint8_t *ptr;
   if (!getAsBuffer(serviceUUID, charUUID, &ptr, &size)) return false;
@@ -312,7 +312,7 @@ bool IotsaBLEClientConnection::get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID
   return true;
 }
 
-bool IotsaBLEClientConnection::get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint32_t& value) {
+bool IotsaBLEClientDevice::get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint32_t& value) {
   size_t size;
   uint8_t *ptr;
   if (!getAsBuffer(serviceUUID, charUUID, &ptr, &size)) return false;
@@ -321,7 +321,7 @@ bool IotsaBLEClientConnection::get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID
   return true;
 }
 
-bool IotsaBLEClientConnection::get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, std::string& value) {
+bool IotsaBLEClientDevice::get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, std::string& value) {
   size_t size;
   uint8_t *ptr;
   if (!getAsBuffer(serviceUUID, charUUID, &ptr, &size)) return false;
@@ -335,9 +335,9 @@ static void _staticCallbackCaller(NimBLERemoteCharacteristic* pBLERemoteCharacte
   if (_staticCallback) _staticCallback(pData, length);
 }
 
-bool IotsaBLEClientConnection::getAsNotification(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, BleNotificationCallback callback) {
+bool IotsaBLEClientDevice::getAsNotification(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, BleNotificationCallback callback) {
   if (_staticCallback != NULL) {
-    IotsaSerial.println("IotsaBLEClientConnection: only a single notification supported");
+    IotsaSerial.println("IotsaBLEClientDevice: only a single notification supported");
     return false;
   }
   NimBLERemoteCharacteristic *characteristic = _getCharacteristic(serviceUUID, charUUID);

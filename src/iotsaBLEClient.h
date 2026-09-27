@@ -4,7 +4,7 @@
 #include "iotsaApi.h"
 #include "iotsaBLE.h"
 #include "iotsaBLEDeviceInfo.h"
-#include "iotsaBLEClientConnection.h"
+#include "iotsaBLEClientDevice.h"
 
 #ifdef IOTSA_WITH_BLE
 
@@ -54,10 +54,10 @@ public:
   // known before this mod could construct anything (this mod's constructor
   // path requires the id upfront; DimmerBLEClient gets its name later, via
   // setName()).
-  IotsaBLEClientConnection* addDevice(std::string id, IotsaBLEClientConnection* device = nullptr);
-  IotsaBLEClientConnection* addDevice(String id, IotsaBLEClientConnection* device = nullptr) { return addDevice(std::string(id.c_str()), device); }
-  IotsaBLEClientConnection* getDevice(std::string id);
-  IotsaBLEClientConnection* getDevice(String id) { return getDevice(std::string(id.c_str())); }
+  IotsaBLEClientDevice* addDevice(std::string id, IotsaBLEClientDevice* device = nullptr);
+  IotsaBLEClientDevice* addDevice(String id, IotsaBLEClientDevice* device = nullptr) { return addDevice(std::string(id.c_str()), device); }
+  IotsaBLEClientDevice* getDevice(std::string id);
+  IotsaBLEClientDevice* getDevice(String id) { return getDevice(std::string(id.c_str())); }
   void delDevice(std::string id);
   void delDevice(String id) { delDevice(std::string(id.c_str())); }
   // Seed a known device's persisted address, so it can be found/connected
@@ -74,7 +74,7 @@ public:
   // loop(), which is the only task allowed to touch scanner/scanningMod.
   void requestStopScanningForConnect();
   // The actual arbiter for the single outgoing-connect slot (cwi-dis/iotsa#263):
-  // called by IotsaBLEClientConnection::connect(), from whichever task owns
+  // called by IotsaBLEClientDevice::connect(), from whichever task owns
   // that connection, right before it calls pClient->connect(). Unlike
   // canConnect() below -- a cheap, non-atomic pre-check a caller may use to
   // avoid unnecessary work -- this is a real compare-exchange, so it is safe
@@ -89,7 +89,7 @@ public:
   // slot is held.
   bool tryAcquireConnectSlot();
   void releaseConnectSlot();
-  // Called by IotsaBLEClientConnection::connect() (via its owner back-
+  // Called by IotsaBLEClientDevice::connect() (via its owner back-
   // pointer) when a connect attempt fails and sets needsRescan. Pokes the
   // scan scheduler so loop() re-evaluates needsDiscovery() promptly, instead
   // of waiting for some unrelated event (a different device's advertisement,
@@ -98,7 +98,7 @@ public:
   // indefinitely, since nothing else schedules another look.
   void requestScanUpdate();
   unsigned int maxConnectionKeepOpen();
-  // Read by IotsaBLEClientConnection::connect() via its owner back-pointer.
+  // Read by IotsaBLEClientDevice::connect() via its owner back-pointer.
   uint32_t getConnectTimeoutMillis() { return connectTimeoutMillis; }
   //
   // Interfaces to control which BLE devices are visible to this
@@ -118,11 +118,11 @@ public:
   static bool coordinateWithServer;
 protected:
   // These are all the known devices (known by the application, not by this module)
-  std::map<std::string, IotsaBLEClientConnection*> devices;
+  std::map<std::string, IotsaBLEClientDevice*> devices;
   // These are all known devices by address
-  std::map<std::string, IotsaBLEClientConnection *>devicesByAddress;
+  std::map<std::string, IotsaBLEClientDevice *>devicesByAddress;
   // Devices seen advertising that aren't in `devices` above -- keyed by
-  // name. Lighter-weight than IotsaBLEClientConnection (no NimBLEClient*, no
+  // name. Lighter-weight than IotsaBLEClientDevice (no NimBLEClient*, no
   // connect machinery) since most of these are only ever seen in passing.
   std::map<std::string, IotsaBLEDeviceInfo*> unknownDevices;
 protected:
@@ -140,7 +140,7 @@ protected:
   // True if we still need to actively look for devices: either explicitly
   // hunting for unknown devices, some known device has no address yet
   // (never matched by name), or a known device just failed a connect
-  // attempt and needs reconfirming (see IotsaBLEClientConnection::needsRescan).
+  // attempt and needs reconfirming (see IotsaBLEClientDevice::needsRescan).
   // False means there is currently no reason to scan at all.
   bool needsDiscovery();
   static IotsaBLEClientMod *scanningMod;
@@ -155,9 +155,9 @@ protected:
   uint32_t scanDurationDiscoveryMillis = 11000;  // scan length while actively looking for unknown/unaddressed devices
   uint32_t scanCooldownDiscoveryMillis = 4000;   // minimum gap before starting another discovery scan
   uint32_t connectSettleTimeMillis = 100;        // grace period after scanning stops before a connect() is attempted
-  // How long a single IotsaBLEClientConnection::connect() call waits for the
+  // How long a single IotsaBLEClientDevice::connect() call waits for the
   // link to establish before giving up (NimBLEClient::setConnectTimeout()).
-  // Read via getConnectTimeoutMillis() by IotsaBLEClientConnection through
+  // Read via getConnectTimeoutMillis() by IotsaBLEClientDevice through
   // its owner back-pointer, since the timeout is only actually applied once,
   // when a device's pClient is first created.
   uint32_t connectTimeoutMillis = 6000;

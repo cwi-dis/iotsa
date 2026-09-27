@@ -307,7 +307,7 @@ bool IotsaBLEClientMod::canConnect() {
   // work (requestStopScanningForConnect(), log spam) when the slot is
   // obviously taken, but two callers can still both see 0 here and both
   // proceed. The actual race-free gate is tryAcquireConnectSlot(), which
-  // IotsaBLEClientConnection::connect() calls immediately before attempting
+  // IotsaBLEClientDevice::connect() calls immediately before attempting
   // pClient->connect() (see cwi-dis/iotsa#263) -- that compare-exchange is
   // what makes only one of them actually win.
   if (connectingCount > 0) return false;
@@ -477,18 +477,18 @@ void IotsaBLEClientMod::onResult(const NimBLEAdvertisedDevice *advertisedDevice)
   if (unknownDeviceCallback) unknownDeviceCallback(*advertisedDevice);
 }
 
-IotsaBLEClientConnection* IotsaBLEClientMod::addDevice(std::string id, IotsaBLEClientConnection* device) {
+IotsaBLEClientDevice* IotsaBLEClientMod::addDevice(std::string id, IotsaBLEClientDevice* device) {
   shouldUpdateScanAtMillis = millis(); // We probably want to scan for the new device
   auto it = devices.find(id);
   if (it == devices.end()) {
     // Device with this ID doesn't exist yet. Add it. If the caller didn't
     // hand us an already-constructed one, default to a plain
-    // IotsaRunmodeBLEClient (a superset of IotsaBLEClientConnection, no
+    // IotsaRunmodeBLEClient (a superset of IotsaBLEClientDevice, no
     // behavior change for existing callers that only use the base
     // interface) so every connection this mod hands out can also do the
     // generic runmode commands (identify/reboot/etc.), not just app-specific
     // get/set.
-    IotsaBLEClientConnection* dev = device ? device : new IotsaRunmodeBLEClient(id);
+    IotsaBLEClientDevice* dev = device ? device : new IotsaRunmodeBLEClient(id);
     dev->owner = this;
     devices[id] = dev;
     return dev;
@@ -496,7 +496,7 @@ IotsaBLEClientConnection* IotsaBLEClientMod::addDevice(std::string id, IotsaBLEC
   return it->second;
 }
 
-IotsaBLEClientConnection* IotsaBLEClientMod::getDevice(std::string id) {
+IotsaBLEClientDevice* IotsaBLEClientMod::getDevice(std::string id) {
   auto it = devices.find(id);
   if (it == devices.end()) {
     return NULL;
@@ -506,7 +506,7 @@ IotsaBLEClientConnection* IotsaBLEClientMod::getDevice(std::string id) {
 
 void IotsaBLEClientMod::noteKnownAddress(std::string id, std::string address) {
   if (address == "") return;
-  IotsaBLEClientConnection *dev = addDevice(id);
+  IotsaBLEClientDevice *dev = addDevice(id);
   if (dev == NULL) return;
   dev->setKnownAddress(address);
   devicesByAddress[address] = dev;

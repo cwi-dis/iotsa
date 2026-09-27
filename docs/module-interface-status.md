@@ -159,7 +159,7 @@ Bluetooth HTTP Proxy Service and proxies REST calls over BLE without per-module 
 
 ### 6. BLE client model (device as central)
 
-`iotsaBLEClient`/`iotsaBLEClientConnection` (`IotsaBLEClientMod`/`IotsaBLEClientConnection`)
+`iotsaBLEClient`/`iotsaBLEClientDevice` (`IotsaBLEClientMod`/`IotsaBLEClientDevice`)
 are a different axis from the rest of this document: every other module here describes an
 interface the device *exposes*; `IotsaBLEClientMod` is instead generic infrastructure for a
 device acting as a BLE central — scanning for and connecting to *other* BLE peripherals. It
@@ -168,7 +168,7 @@ and `/api/bleclient`, is about the scanner's own config — scan interval/window
 known/unknown devices seen — not about controlling the device itself).
 
 Generic pieces (name/address-keyed device registry, scan orchestration, service/manufacturer
-filters) live entirely in `IotsaBLEClientMod`/`IotsaBLEClientConnection`; it's intended as a base
+filters) live entirely in `IotsaBLEClientMod`/`IotsaBLEClientDevice`; it's intended as a base
 class for application-specific modules that know what a *specific* remote peripheral's GATT
 layout looks like — see `BLEDimmer` in the sibling `lissabon` repo (`libLissabon/src/BLEDimmer.*`)
 for the worked example: it holds a reference to `IotsaBLEClientMod` (via `addDevice`/`getDevice`)
