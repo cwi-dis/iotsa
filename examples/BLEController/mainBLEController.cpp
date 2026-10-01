@@ -1,18 +1,26 @@
 //
-// Generic BLE-central example: discover, add, rename, and remove any number
-// of named BLE devices entirely through IotsaBLEClientMod's own REST/web
-// surface -- no app-specific protocol code needed at all. Each added device
-// defaults to a plain IotsaRunmodeBLEClient (IotsaBLEClientMod::addDevice()'s
-// own default), so if the target happens to be another iotsa device, the
-// generic runmode commands (identify/reboot/promoteMode/setWifiDisabled)
-// work too; if not (e.g. a non-iotsa BLE peripheral), you still get
-// discovery/connect/disconnect and found/connected status for free, via
-// IotsaBLEClientDevice's own IotsaApiModObject surface (cwi-dis/iotsa#268).
+// iotsa BLE device controller: discover, add, rename, and remove any number
+// of other iotsa devices reachable over BLE, entirely through
+// IotsaBLEClientCollectionMod's own REST/web surface -- no app-specific
+// protocol code needed at all. Unlike the fully-generic collection mod
+// itself, this filters candidates to iotsa devices specifically (anything
+// advertising the universal runmode service every iotsa device compiles in
+// unconditionally), so "Available Unknown/new devices" only ever shows
+// other iotsa devices, not every random BLE gadget nearby.
 //
-// Supersedes sandbox/BLEClient (a dual-role client+server debugging rig,
-// moved to sandbox/ under #222) -- this is the modern "manage BLE devices
-// generically" example the #264 collection-management generalization was
-// built to demonstrate.
+// Each added device defaults to a plain IotsaRunmodeBLEClient
+// (IotsaBLEClientMod::addDevice()'s own default), so the generic runmode
+// commands (identify/reboot/promoteMode/setWifiDisabled) are available on
+// it in principle -- actually exposing those via REST/web (so this becomes
+// a real "WiFi/REST to BLE-only iotsa device" bridge/gateway, the mirror
+// image of HPS, cwi-dis/iotsa#267) is deliberately not built yet; that's
+// IotsaRunmodeBLEClient's own future IotsaApiModObject-style command
+// surface, parked for a later session.
+//
+// Supersedes sandbox/BLEClient in spirit (a dual-role client+server
+// debugging rig, moved there under #222) -- this is the modern replacement
+// built on the cwi-dis/iotsa#268/#264 generic surface, not a from-scratch
+// rewrite of that one (left as-is, still serves its own debugging purpose).
 //
 // See /bleclient for the web UI, or /api/bleclient for the REST equivalent.
 //
@@ -21,7 +29,7 @@
 
 #define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 
-IotsaApplication application("Generic BLE Client");
+IotsaApplication application("iotsa BLE Controller");
 IotsaWifiMod wifiMod(application);
 
 #ifdef WITH_OTA
@@ -29,18 +37,29 @@ IotsaWifiMod wifiMod(application);
 IotsaOtaMod otaMod(application);
 #endif
 
-#include "iotsaBLEClient.h"
-IotsaBLEClientMod bleClientMod(application);
+#include "iotsaBLEClientCollection.h"
+#include "iotsaRunmodeBLEClient.h"
 
-//
-// Boilerplate for iotsa server, with hooks to our code added.
-//
+class BLEControllerMod : public IotsaBLEClientCollectionMod {
+public:
+  using IotsaBLEClientCollectionMod::IotsaBLEClientCollectionMod;
+protected:
+  // Only surface other iotsa devices as "unknown/addable" candidates --
+  // every iotsa device compiles IotsaRunmodeMod in unconditionally, so this
+  // is the generic recognition signal (same one
+  // IotsaRunmodeBLEClient's own header comment describes).
+  bool isInterestingUnknownDevice(const NimBLEAdvertisedDevice* device) override {
+    return device->isAdvertisingService(NimBLEUUID(IotsaRunmodeBLE::serviceUUID));
+  }
+};
+
+BLEControllerMod bleClientMod(application);
+
 void setup(void) {
   application.setup();
   application.lateSetup();
-  // Scan for unknown devices continuously, so an operator can see what's
-  // nearby before deciding what to add by name (see the web UI's "Available
-  // Unknown/new" section).
+  // Scan for unknown (iotsa) devices continuously, so an operator can see
+  // what's nearby before deciding what to add by name.
   bleClientMod.findUnknownDevices(true);
 }
 
