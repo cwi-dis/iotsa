@@ -22,12 +22,15 @@ IotsaWifiMod wifiMod(application);
 IotsaBLEServerMod bleserverMod(application);
 #endif
 
-#include "iotsaBLEClient.h"
+#include "iotsaBLEClientCollection.h"
 #ifdef IOTSA_WITH_BLE
 
-class IotsaBLEClientTestMod : public IotsaBLEClientMod {
+// IotsaBLEClientCollectionMod (not the bare IotsaBLEClientMod), since
+// findUnknownDevices()/the devices-browsing REST/web page it exercises
+// moved there (cwi-dis/iotsa#264).
+class IotsaBLEClientTestMod : public IotsaBLEClientCollectionMod {
 public:
-  using IotsaBLEClientMod::IotsaBLEClientMod;
+  using IotsaBLEClientCollectionMod::IotsaBLEClientCollectionMod;
   void setup() override;
 #ifdef IOTSA_WITH_WEB
   String info() override;
@@ -35,7 +38,7 @@ public:
 };
 
 void IotsaBLEClientTestMod::setup() {
-  IotsaBLEClientMod::setup();
+  IotsaBLEClientCollectionMod::setup();
   // Scan continuously for any unknown BLE device from boot, so this example
   // is useful as a standalone test rig without any app-specific device list.
   findUnknownDevices(true);

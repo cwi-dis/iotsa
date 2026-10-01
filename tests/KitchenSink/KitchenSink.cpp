@@ -39,6 +39,7 @@
 #include "iotsaNothing.h"
 #include "iotsaBLEServer.h"
 #include "iotsaBLEClient.h"
+#include "iotsaBLEClientCollection.h"
 
 #ifndef IOTSA_PIN_NEOPIXEL
 #define IOTSA_PIN_NEOPIXEL 15 // Pulled down during boot on esp8266, can be used for led afterwards.
@@ -132,11 +133,14 @@ IotsaBLEServerMod bleServerMod(application);
 // Subclassed only to start scanning from boot and to exercise coordinateWithServer
 // (pauses/resumes bleServerMod's advertising around each scan) -- the same BLE
 // server/client interplay flagged as unsolved in the #113 scoping discussion.
-class KitchenSinkBLEClientMod : public IotsaBLEClientMod {
+// IotsaBLEClientCollectionMod (not the bare IotsaBLEClientMod), since
+// findUnknownDevices()/the devices-browsing REST/web page it exercises moved
+// there (cwi-dis/iotsa#264).
+class KitchenSinkBLEClientMod : public IotsaBLEClientCollectionMod {
 public:
-  using IotsaBLEClientMod::IotsaBLEClientMod;
+  using IotsaBLEClientCollectionMod::IotsaBLEClientCollectionMod;
   void setup() override {
-    IotsaBLEClientMod::setup();
+    IotsaBLEClientCollectionMod::setup();
     findUnknownDevices(true);
   }
 };

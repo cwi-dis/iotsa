@@ -84,8 +84,6 @@ private:
 
 void BLEButtonMod::setup() {
   configLoad();
-  NimBLEUUID iasServiceUUID(IotsaImmediateAlertBLE::serviceUUID);
-  bleClientMod.setServiceFilter(iasServiceUUID);
 }
 
 void BLEButtonMod::lateSetup() {
