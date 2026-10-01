@@ -11,8 +11,12 @@
 // during normal runtime use.)
 //
 // The target device's name isn't known at compile time -- set it via REST
-// (PUT /api/doorbell {"target": "<name>"}) or the web form, same as any
-// other iotsa config field. Nothing rings until a target is set.
+// (PUT /api/doorbell {"name": "<name>"}) or the web form, same as any other
+// iotsa config field. Nothing rings until a target is set. Config/REST/web
+// for the target's identity itself (name, resolved address, found/connected
+// status, renaming) all come from IotsaImmediateAlertBLEClient's own
+// IotsaApiModObject surface (cwi-dis/iotsa#268) -- BLEButtonMod only adds
+// the button-press/ring-attempt state machine on top.
 //
 #include "iotsa.h"
 #include "iotsaWifi.h"
@@ -46,7 +50,11 @@ class BLEButtonMod : public IotsaModule {
 public:
   BLEButtonMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL)
   : IotsaModule(_app, _auth),
-    ringer(std::string())
+    // Pass bleClientMod as owner right away: ringer.retarget() (called from
+    // configLoad()/putHandler()/webHandler() below, all the way down in
+    // IotsaBLEClientDevice) can then self-register on the very first real
+    // name, no separate addDevice() call needed here (cwi-dis/iotsa#268).
+    ringer(std::string(), "", &bleClientMod)
   {}
   void setup() override;
   void lateSetup() override;
@@ -61,27 +69,18 @@ protected:
   void webHandler() override;
 #endif
 private:
-  void setTarget(const String& newTarget);
   void startRingAttempt();
   IotsaImmediateAlertBLEClient ringer;
-  String targetName;
+  // Outcome of the most recent ring attempt, shown on the web page -- loop()
+  // drives an asynchronous connect/ring state machine, so a ringnow request
+  // can't just return the result synchronously in webHandler(); this is
+  // read back on the next page load instead.
+  String lastRingStatus;
   bool lastPressedState = false;
   bool wantsToRing = false;
   uint32_t giveUpAtMillis = 0;
   static const uint32_t connectTimeoutMillis = 10000;
 };
-
-void BLEButtonMod::setTarget(const String& newTarget) {
-  if (newTarget == targetName) return;
-  targetName = newTarget;
-  if (targetName != "") {
-    // IotsaImmediateAlertBLEClient has none of Lissabon::DimmerBLEClient's
-    // setName()-with-register/unregister convenience (that's lissabon-
-    // specific) -- register directly with the mod ourselves.
-    ringer.setKnownName(std::string(targetName.c_str()));
-    bleClientMod.addDevice(std::string(targetName.c_str()), &ringer);
-  }
-}
 
 void BLEButtonMod::setup() {
   configLoad();
@@ -101,8 +100,7 @@ String BLEButtonMod::info() {
 #ifdef IOTSA_WITH_WEB
 void BLEButtonMod::webHandler() {
   IotsaWebServer *server = api.webService->server;
-  if (server->hasArg("target")) {
-    setTarget(server->arg("target"));
+  if (ringer.formHandler_args(server, "target", true)) {
     configSave();
   }
   if (server->hasArg("ringnow")) {
@@ -110,24 +108,28 @@ void BLEButtonMod::webHandler() {
   }
   String message = "<html><head><title>BLE Doorbell Button</title></head><body><h1>BLE Doorbell Button</h1>";
   message += "<form method='get'>";
-  message += "Ring target (hostname): <input name='target' value='" + targetName + "'><br>";
+  ringer.formHandler_fields(message, "Ring target: ", "target", true);
   message += "<input type='submit' value='Set'>";
   message += "</form>";
-  message += "<form method='get'><input type='hidden' name='ringnow' value='1'><input type='submit' value='Ring now'></form>";
+  message += "<form method='get'><input type='hidden' name='ringnow' value='1'>";
+  message += "<input type='submit' value='Ring now'";
+  if (!ringer.available()) message += " disabled"; // nothing to ring yet
+  message += "></form>";
+  if (lastRingStatus != "") {
+    message += "<p>Last ring attempt: " + lastRingStatus + "</p>";
+  }
   message += "<p>Or just fetch <code>/doorbell?ringnow=1</code> directly -- no form needed.</p>";
   server->send(200, "text/html", message);
 }
 #endif // IOTSA_WITH_WEB
 
 bool BLEButtonMod::getHandler(const char *path, JsonObject& reply) {
-  reply["target"] = targetName;
+  ringer.getHandler(reply);
   return true;
 }
 
 bool BLEButtonMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
-  String newTarget;
-  if (getFromRequest<String>(request.as<JsonObject>(), "target", newTarget)) {
-    setTarget(newTarget);
+  if (ringer.putHandler(request)) {
     configSave();
     return true;
   }
@@ -136,22 +138,22 @@ bool BLEButtonMod::putHandler(const char *path, const JsonVariant& request, Json
 
 void BLEButtonMod::configLoad() {
   IotsaConfigFileLoad cf("/config/doorbell.cfg");
-  String storedTarget;
-  cf.get("target", storedTarget, "");
-  setTarget(storedTarget);
+  ringer.configLoad(cf, "target");
 }
 
 void BLEButtonMod::configSave() {
   IotsaConfigFileSave cf("/config/doorbell.cfg");
-  cf.put("target", targetName);
+  ringer.configSave(cf, "target");
 }
 
 void BLEButtonMod::startRingAttempt() {
-  if (targetName == "") {
+  if (ringer.getName().empty()) {
     IotsaSerial.println("BLEButton: ring requested, but no target configured");
+    lastRingStatus = "no target configured";
     return;
   }
   wantsToRing = true;
+  lastRingStatus = "ringing...";
   giveUpAtMillis = millis() + connectTimeoutMillis;
 }
 
@@ -167,6 +169,7 @@ void BLEButtonMod::loop() {
 
   if (millis() > giveUpAtMillis) {
     IotsaSerial.println("BLEButton: giving up, could not reach the ringer");
+    lastRingStatus = "gave up: target not reachable";
     wantsToRing = false;
     return;
   }
@@ -180,8 +183,10 @@ void BLEButtonMod::loop() {
   }
   if (ringer.ring()) {
     IotsaSerial.println("BLEButton: rang the doorbell");
+    lastRingStatus = "rang successfully";
   } else {
     IotsaSerial.println("BLEButton: ring failed");
+    lastRingStatus = "ring command failed";
   }
   wantsToRing = false;
   ringer.disconnect();
