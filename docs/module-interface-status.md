@@ -38,7 +38,7 @@ Each module can expose up to four interface layers:
 
 - **Web UI** — HTML form served at a URL, handled via `handleRequest`
 - **REST** — JSON get/put/post handlers via `IotsaApiMod` base class
-- **BLE** — Bluetooth HPS (HTTP Proxy Service) for REST, or dedicated `bleGetHandler`/`blePutHandler`
+- **BLE** — Bluetooth [HPS](https://www.bluetooth.com/specifications/specs/http-proxy-service-1-0/) (HTTP Proxy Service, a SIG-adopted GATT service, UUID 0x1823 -- not an iotsa-invented acronym) for REST, or dedicated `bleGetHandler`/`blePutHandler`
 - **Config file** — persistent storage on flash, loaded at boot, saved when settings change
 
 Config files are not an API in the network sense, but they are closely related: most fields
