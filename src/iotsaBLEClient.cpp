@@ -4,6 +4,7 @@
 #include "iotsaConfigFile.h"
 #include "iotsaBLEServer.h"
 #include "iotsaRunmodeBLEClient.h"
+#include <vector>
 
 //
 // IotsaBLEClientMod is intended to be used as a base class
@@ -65,15 +66,35 @@ IotsaBLEClientMod::webHandler() {
 
   formHandler_fields(message, "BLE devices", "bledevice", true);
 
-  message += "<form method='post'><input type='submit' name='refresh' value='Refresh'></form>";
+  message += "<form method='get'><input type='submit' name='refresh' value='Refresh'></form>";
   message += "</body></html>";
   api.webService->server->send(200, "text/html", message);
 }
 
 void IotsaBLEClientMod::formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) {
+  // Known-devices listing (cwi-dis/iotsa#264): generalizes what lissabon's
+  // DimmerCollection/DimmerDynamicCollection used to build for itself --
+  // each device already knows how to render its own name/found/connected
+  // status and (if includeConfig) an editable name field, via its own
+  // IotsaApiModObject surface (cwi-dis/iotsa#268). This mod just lists them.
+  message += "<h2>Known " + text + " devices</h2>";
+  if (devices.size() == 0) {
+    message += "<p>No known devices yet.</p>";
+  } else {
+    for (auto it : devices) {
+      String name(it.first.c_str());
+      it.second->formHandler_fields(message, name + ": ", name, includeConfig);
+      if (includeConfig) {
+        message += "<form method='get'><input type='hidden' name='remove' value='" + name + "'><input type='submit' value='Remove'></form>";
+      }
+    }
+  }
+  if (includeConfig) {
+    message += "<form method='get'>Add device by name: <input name='add'><input type='submit' value='Add'></form>";
+  }
   message += "<h2>Available Unknown/new " + text + " devices</h2>";
-  message += "<form method='post'><input type='submit' name='scanUnknown' value='Scan for " + String(scanUnknownDurationMillis/1000) + " seconds'></form>";
-  message += "<form method='post'><input type='submit' name='refresh' value='Refresh'></form>";
+  message += "<form method='get'><input type='submit' name='scanUnknown' value='Scan for " + String(scanUnknownDurationMillis/1000) + " seconds'></form>";
+  message += "<form method='get'><input type='submit' name='refresh' value='Refresh'></form>";
   if (unknownDevices.size() == 0) {
     message += "<p>No unassigned BLE dimmer devices seen recently.</p>";
   } else {
@@ -90,8 +111,31 @@ String IotsaBLEClientMod::formHandler_field_perdevice(const char *deviceName) {
 }
 
 bool IotsaBLEClientMod::formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig) {
+  bool anyChanged = false;
   if (server->hasArg("scanUnknown")) startScanUnknown();
-  return false;
+  if (includeConfig && server->hasArg("add")) {
+    String addName = server->arg("add");
+    if (addName != "") {
+      addDevice(addName);
+      anyChanged = true;
+    }
+  }
+  if (includeConfig && server->hasArg("remove")) {
+    String removeName = server->arg("remove");
+    if (removeName != "") {
+      delDevice(removeName);
+      anyChanged = true;
+    }
+  }
+  // Snapshot first: a device's own formHandler_args() may call retarget(),
+  // which re-keys `devices` -- mutating a std::map while iterating it
+  // directly would be undefined behavior.
+  std::vector<std::pair<std::string, IotsaBLEClientDevice*>> snapshot(devices.begin(), devices.end());
+  for (auto& kv : snapshot) {
+    String name(kv.first.c_str());
+    if (kv.second->formHandler_args(server, name, includeConfig)) anyChanged = true;
+  }
+  return anyChanged;
 }
 
 #endif // IOTSA_WITH_WEB
@@ -112,6 +156,15 @@ bool IotsaBLEClientMod::getHandler(const char *path, JsonObject& reply) {
     }
   }
   reply["scanUnknown"] = (char *)NULL;
+  // Known devices (cwi-dis/iotsa#264), each reported via its own getHandler()
+  // -- name/address/found/connected/connect-stats, from cwi-dis/iotsa#268.
+  if (devices.size()) {
+    JsonObject devicesReply = reply["devices"].to<JsonObject>();
+    for (auto it : devices) {
+      JsonObject devReply = devicesReply[String(it.first.c_str())].to<JsonObject>();
+      it.second->getHandler(devReply);
+    }
+  }
   return true;
 }
 bool IotsaBLEClientMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
@@ -141,7 +194,33 @@ bool IotsaBLEClientMod::putHandler(const char *path, const JsonVariant& request,
   if (_startScanUnknown) {
     startScanUnknown();
   }
-  return anyChanged;
+  // Known-devices management (cwi-dis/iotsa#264): add/remove by name, or
+  // route a sub-object keyed by an existing device's name to that device's
+  // own putHandler() (e.g. renaming, via its cwi-dis/iotsa#268 surface).
+  // Kept separate from anyChanged above -- these never need configSave()/
+  // setupScanner(), that's scan-tuning only.
+  bool deviceChanged = false;
+  String addName;
+  if (getFromRequest<String>(reqObj, "add", addName) && addName != "") {
+    addDevice(addName);
+    deviceChanged = true;
+  }
+  String removeName;
+  if (getFromRequest<String>(reqObj, "remove", removeName) && removeName != "") {
+    delDevice(removeName);
+    deviceChanged = true;
+  }
+  // Snapshot first: a device's own putHandler() may call retarget(), which
+  // re-keys `devices` -- mutating a std::map while iterating it directly
+  // would be undefined behavior.
+  std::vector<std::pair<std::string, IotsaBLEClientDevice*>> snapshot(devices.begin(), devices.end());
+  for (auto& kv : snapshot) {
+    JsonVariant devRequest = reqObj[String(kv.first.c_str())];
+    if (devRequest && kv.second->putHandler(devRequest)) {
+      deviceChanged = true;
+    }
+  }
+  return anyChanged || deviceChanged;
 }
 
 void IotsaBLEClientMod::startScanUnknown() {
@@ -515,10 +594,23 @@ void IotsaBLEClientMod::noteKnownAddress(std::string id, std::string address) {
 
 void IotsaBLEClientMod::delDevice(std::string id) {
   shouldUpdateScanAtMillis = millis();  // We may be able to stop scanning
-  int nDeleted = devices.erase(id);
+  auto it = devices.find(id);
+  if (it != devices.end()) {
+    // Also drop the devicesByAddress entry, if any -- otherwise it's left
+    // dangling (onResult() dereferences it on a future matching
+    // advertisement) once the device object itself goes away, whether via
+    // its own destructor (DimmerBLEClient removes itself this way) or a
+    // generic REST/web "remove" action (cwi-dis/iotsa#264). Found while
+    // adding the latter -- previously the only caller removed an object it
+    // was about to delete itself, so this was a real but neverbefore-
+    // exercised-for-long risk.
+    std::string address = it->second->getAddress();
+    if (address != "") devicesByAddress.erase(address);
+    devices.erase(it);
+  }
 #if 0
   // xxxjack bad idea to save config stright away
-  if (nDeleted > 0) configSave();
+  configSave();
 #endif
 }
 #endif // IOTSA_WITH_BLE

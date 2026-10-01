@@ -38,7 +38,13 @@ public:
 
   virtual void loop() override;
 #ifdef IOTSA_WITH_WEB
-  virtual String info() override { return ""; }
+  // Default blurb good enough for a standalone consumer (examples/BLEClient);
+  // an app that only uses this mod as infrastructure behind its own page
+  // (e.g. examples/BLEButton) can still override with something more
+  // specific, or "" to suppress it from the home page entirely.
+  virtual String info() override {
+    return "<p>See <a href='/bleclient'>/bleclient</a> for known/unknown BLE devices, or <a href='/api/bleclient'>/api/bleclient</a> for the REST equivalent.</p>";
+  }
 #endif
   //
   // Interfaces for use by subclasses (or other classes with a reference)
