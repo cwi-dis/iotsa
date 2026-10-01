@@ -4,7 +4,6 @@
 #include "iotsaConfigFile.h"
 #include "iotsaBLEServer.h"
 #include "iotsaRunmodeBLEClient.h"
-#include <vector>
 
 //
 // IotsaBLEClientMod is intended to be used as a base class
@@ -16,7 +15,7 @@ const int SCAN_START_RETRY_MS = 1000; // How long to wait before retrying start 
 
 bool IotsaBLEClientMod::coordinateWithServer = false;
 
-void IotsaBLEClientMod::configLoad() {
+void IotsaBLEClientMod::loadScanConfig() {
   IotsaConfigFileLoad cf("/config/bleclient.cfg");
   cf.get("scan_interval", scan_interval, scan_interval);
   cf.get("scan_window", scan_window, scan_window);
@@ -24,10 +23,9 @@ void IotsaBLEClientMod::configLoad() {
   cf.get("scan_cooldown_discovery", scanCooldownDiscoveryMillis, scanCooldownDiscoveryMillis);
   cf.get("connect_settle_time", connectSettleTimeMillis, connectSettleTimeMillis);
   cf.get("connect_timeout", connectTimeoutMillis, connectTimeoutMillis);
-  cf.get("scan_unknown_duration", scanUnknownDurationMillis, scanUnknownDurationMillis);
 }
 
-void IotsaBLEClientMod::configSave() {
+void IotsaBLEClientMod::saveScanConfig() {
   IotsaConfigFileSave cf("/config/bleclient.cfg");
   cf.put("scan_interval", scan_interval);
   cf.put("scan_window", scan_window);
@@ -35,12 +33,11 @@ void IotsaBLEClientMod::configSave() {
   cf.put("scan_cooldown_discovery", scanCooldownDiscoveryMillis);
   cf.put("connect_settle_time", connectSettleTimeMillis);
   cf.put("connect_timeout", connectTimeoutMillis);
-  cf.put("scan_unknown_duration", scanUnknownDurationMillis);
 }
 
 void IotsaBLEClientMod::setup() {
   IFDEBUG IotsaSerial.println("BLEClientmod::setup()");
-  configLoad();
+  loadScanConfig();
   iotsaBLE_ensureInitialized();
   setupScanner();
 }
@@ -56,90 +53,6 @@ void IotsaBLEClientMod::setupScanner() {
 
 }
 
-#ifdef IOTSA_WITH_WEB
-void
-IotsaBLEClientMod::webHandler() {
-  bool anyChanged = false;
-  anyChanged |= formHandler_args(api.webService->server, "", true);
-  if (anyChanged) configSave();
-  String message = "<html><head><title>BLE Devices</title></head><body><h1>BLE Devices</h1>";
-
-  formHandler_fields(message, "BLE devices", "bledevice", true);
-
-  message += "<form method='get'><input type='submit' name='refresh' value='Refresh'></form>";
-  message += "</body></html>";
-  api.webService->server->send(200, "text/html", message);
-}
-
-void IotsaBLEClientMod::formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) {
-  // Known-devices listing (cwi-dis/iotsa#264): generalizes what lissabon's
-  // DimmerCollection/DimmerDynamicCollection used to build for itself --
-  // each device already knows how to render its own name/found/connected
-  // status and (if includeConfig) an editable name field, via its own
-  // IotsaApiModObject surface (cwi-dis/iotsa#268). This mod just lists them.
-  message += "<h2>Known " + text + " devices</h2>";
-  if (devices.size() == 0) {
-    message += "<p>No known devices yet.</p>";
-  } else {
-    for (auto it : devices) {
-      String name(it.first.c_str());
-      it.second->formHandler_fields(message, name + ": ", name, includeConfig);
-      if (includeConfig) {
-        message += "<form method='get'><input type='hidden' name='remove' value='" + name + "'><input type='submit' value='Remove'></form>";
-      }
-    }
-  }
-  if (includeConfig) {
-    message += "<form method='get'>Add device by name: <input name='add'><input type='submit' value='Add'></form>";
-  }
-  message += "<h2>Available Unknown/new " + text + " devices</h2>";
-  message += "<form method='get'><input type='submit' name='scanUnknown' value='Scan for " + String(scanUnknownDurationMillis/1000) + " seconds'></form>";
-  message += "<form method='get'><input type='submit' name='refresh' value='Refresh'></form>";
-  if (unknownDevices.size() == 0) {
-    message += "<p>No unassigned BLE dimmer devices seen recently.</p>";
-  } else {
-    message += "<ul>";
-    for (auto it: unknownDevices) {
-      message += "<li>" + formHandler_field_perdevice(it.first.c_str()) + " (RSSI " + String(it.second->getRSSI()) + ")</li>";
-    }
-    message += "</ul>";
-  }
-}
-
-String IotsaBLEClientMod::formHandler_field_perdevice(const char *deviceName) {
-  return String(deviceName);
-}
-
-bool IotsaBLEClientMod::formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig) {
-  bool anyChanged = false;
-  if (server->hasArg("scanUnknown")) startScanUnknown();
-  if (includeConfig && server->hasArg("add")) {
-    String addName = server->arg("add");
-    if (addName != "") {
-      addDevice(addName);
-      anyChanged = true;
-    }
-  }
-  if (includeConfig && server->hasArg("remove")) {
-    String removeName = server->arg("remove");
-    if (removeName != "") {
-      delDevice(removeName);
-      anyChanged = true;
-    }
-  }
-  // Snapshot first: a device's own formHandler_args() may call retarget(),
-  // which re-keys `devices` -- mutating a std::map while iterating it
-  // directly would be undefined behavior.
-  std::vector<std::pair<std::string, IotsaBLEClientDevice*>> snapshot(devices.begin(), devices.end());
-  for (auto& kv : snapshot) {
-    String name(kv.first.c_str());
-    if (kv.second->formHandler_args(server, name, includeConfig)) anyChanged = true;
-  }
-  return anyChanged;
-}
-
-#endif // IOTSA_WITH_WEB
-
 bool IotsaBLEClientMod::getHandler(const char *path, JsonObject& reply) {
   reply["scan_interval"] = scan_interval;
   reply["scan_window"] = scan_window;
@@ -147,29 +60,11 @@ bool IotsaBLEClientMod::getHandler(const char *path, JsonObject& reply) {
   reply["scan_cooldown_discovery"] = scanCooldownDiscoveryMillis;
   reply["connect_settle_time"] = connectSettleTimeMillis;
   reply["connect_timeout"] = connectTimeoutMillis;
-  reply["scan_unknown_duration"] = scanUnknownDurationMillis;
-  if (unknownDevices.size()) {
-    JsonArray unknownReply = reply["unassigned"].to<JsonArray>();
-    for (auto it : unknownDevices) {
-      JsonObject devReply = unknownReply.add<JsonObject>();
-      it.second->getHandler(devReply);
-    }
-  }
-  reply["scanUnknown"] = (char *)NULL;
-  // Known devices (cwi-dis/iotsa#264), each reported via its own getHandler()
-  // -- name/address/found/connected/connect-stats, from cwi-dis/iotsa#268.
-  if (devices.size()) {
-    JsonObject devicesReply = reply["devices"].to<JsonObject>();
-    for (auto it : devices) {
-      JsonObject devReply = devicesReply[String(it.first.c_str())].to<JsonObject>();
-      it.second->getHandler(devReply);
-    }
-  }
   return true;
 }
+
 bool IotsaBLEClientMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
-  bool _startScanUnknown = false;
   JsonObject reqObj = request.as<JsonObject>();
   if (getFromRequest<int>(reqObj, "scan_interval", scan_interval)) {
     scan_interval = reqObj["scan_interval"];
@@ -183,55 +78,11 @@ bool IotsaBLEClientMod::putHandler(const char *path, const JsonVariant& request,
   if (getFromRequest<int>(reqObj, "scan_cooldown_discovery", scanCooldownDiscoveryMillis)) anyChanged = true;
   if (getFromRequest<int>(reqObj, "connect_settle_time", connectSettleTimeMillis)) anyChanged = true;
   if (getFromRequest<int>(reqObj, "connect_timeout", connectTimeoutMillis)) anyChanged = true;
-  if (getFromRequest<int>(reqObj, "scan_unknown_duration", scanUnknownDurationMillis)) anyChanged = true;
-  if (reqObj["scanUnknown"]|0) {
-    _startScanUnknown = true;
-  }
   if (anyChanged) {
-    configSave();
+    saveScanConfig();
     setupScanner();
   }
-  if (_startScanUnknown) {
-    startScanUnknown();
-  }
-  // Known-devices management (cwi-dis/iotsa#264): add/remove by name, or
-  // route a sub-object keyed by an existing device's name to that device's
-  // own putHandler() (e.g. renaming, via its cwi-dis/iotsa#268 surface).
-  // Kept separate from anyChanged above -- these never need configSave()/
-  // setupScanner(), that's scan-tuning only.
-  bool deviceChanged = false;
-  String addName;
-  if (getFromRequest<String>(reqObj, "add", addName) && addName != "") {
-    addDevice(addName);
-    deviceChanged = true;
-  }
-  String removeName;
-  if (getFromRequest<String>(reqObj, "remove", removeName) && removeName != "") {
-    delDevice(removeName);
-    deviceChanged = true;
-  }
-  // Snapshot first: a device's own putHandler() may call retarget(), which
-  // re-keys `devices` -- mutating a std::map while iterating it directly
-  // would be undefined behavior.
-  std::vector<std::pair<std::string, IotsaBLEClientDevice*>> snapshot(devices.begin(), devices.end());
-  for (auto& kv : snapshot) {
-    JsonVariant devRequest = reqObj[String(kv.first.c_str())];
-    if (devRequest && kv.second->putHandler(devRequest)) {
-      deviceChanged = true;
-    }
-  }
-  return anyChanged || deviceChanged;
-}
-
-void IotsaBLEClientMod::startScanUnknown() {
-  findUnknownDevices(true);
-  scanUnknownUntilMillis = millis() + scanUnknownDurationMillis;
-  iotsaController.postponeSleep(scanUnknownDurationMillis + IotsaSleepPolicy::SCAN_COMPLETION_MARGIN_MS);
-}
-
-void IotsaBLEClientMod::findUnknownDevices(bool on) {
-  scanForUnknownClients = on;
-  shouldUpdateScanAtMillis = millis();
+  return anyChanged;
 }
 
 bool IotsaBLEClientMod::isScanning() {
@@ -246,10 +97,10 @@ unsigned int IotsaBLEClientMod::maxConnectionKeepOpen() {
 }
 
 bool IotsaBLEClientMod::needsDiscovery() {
-  // We need active discovery if we're hunting for unknown devices, any known
-  // device has never been matched by name yet (no address at all), or a
-  // known device just failed a connect attempt and needs reconfirming.
-  if (scanForUnknownClients) return true;
+  // We need active discovery if any known device has never been matched by
+  // name yet (no address at all), or a known device just failed a connect
+  // attempt and needs reconfirming. (IotsaBLEClientCollectionMod adds "or
+  // we're hunting for unknown devices" on top of this.)
   for (auto it: devices) {
     if (!it.second->available()) return true;
     if (it.second->needsRescan) return true;
@@ -284,9 +135,6 @@ void IotsaBLEClientMod::updateScanning() {
   if (!needsDiscovery()) return;
   IFDEBUG {
     IotsaSerial.print("BLE scan for: ");
-    if (scanForUnknownClients) {
-      IotsaSerial.print("(new/unknown) ");
-    }
     for (auto it: devices) {
       if (!it.second->available()) {
         IotsaSerial.printf("%s ", it.second->getName().c_str());
@@ -303,23 +151,6 @@ void IotsaBLEClientMod::startScanning() {
     return;
   }
   IFDEBUG IotsaSerial.println("IotsaBLEClientMod: BLE scan start");
-#if 0
-  // First close all connections. Scanning while connected has proved to result in issues.
-  for (auto it : devices) {
-    if (it.second && it.second->isConnected()) {
-      if (!disconnectClientsForScan) {
-        // Don't scan if any active clients. But next time around we will disconnect them
-        IFDEBUG IotsaSerial.println("BLE scan aborted: active connection");
-        shouldUpdateScan = true;
-        dontUpdateScanBefore = millis() + PAUSE_BETWEEN_SCANS;
-        disconnectClientsForScan = true;
-        return;
-      }
-      IFDEBUG IotsaSerial.printf("BLE scan start: disconnect %s\n", it.second->name.c_str());
-      it.second->disconnect();
-    }
-  }
-#endif
   if (coordinateWithServer) {
     advertisingWasPausedByScan = IotsaBLEServerMod::pauseServer();
   }
@@ -438,26 +269,8 @@ void IotsaBLEClientMod::lateSetup() {
   name = "bleclient";
 }
 
-void IotsaBLEClientMod::setUnknownDeviceFoundCallback(BleDeviceFoundCallback _callback) {
-  unknownDeviceCallback = _callback;
-}
-
 void IotsaBLEClientMod::setKnownDeviceChangedCallback(BleDeviceFoundCallback _callback) {
   knownDeviceCallback = _callback;
-}
-
-void IotsaBLEClientMod::setDuplicateNameFilter(bool noDuplicateNames) {
-  duplicateNameFilter = noDuplicateNames;
-}
-
-void IotsaBLEClientMod::setServiceFilter(const NimBLEUUID& serviceUUID) {
-  if (serviceFilter) delete serviceFilter;
-  serviceFilter = new NimBLEUUID(serviceUUID);
-}
-
-void IotsaBLEClientMod::setManufacturerFilter(uint16_t manufacturerID) {
-  manufacturerFilter = manufacturerID;
-  hasManufacturerFilter = true;
 }
 
 void IotsaBLEClientMod::loop() {
@@ -477,10 +290,6 @@ void IotsaBLEClientMod::loop() {
   }
   if (wantStop && scanner != nullptr) {
     stopScanning();
-  }
-  if (scanUnknownUntilMillis != 0 && millis() > scanUnknownUntilMillis) {
-    scanUnknownUntilMillis = 0;
-    findUnknownDevices(false);
   }
   if (shouldUpdateScanAtMillis != 0 && millis() >= shouldUpdateScanAtMillis) {
     shouldUpdateScanAtMillis = 0;
@@ -533,27 +342,7 @@ void IotsaBLEClientMod::onResult(const NimBLEAdvertisedDevice *advertisedDevice)
     return;
   }
   if (deviceName == "") return;
-  // Do we filter on services?
-  if (serviceFilter != NULL) {
-    if (!advertisedDevice->isAdvertisingService(*serviceFilter)) return;
-  }
-  // Do we filter on manufacturer data?
-  if (hasManufacturerFilter) {
-    std::string mfgData(advertisedDevice->getManufacturerData());
-    if (mfgData.length() < 2) return;
-    const uint16_t *mfg = (const uint16_t *)mfgData.c_str();
-    if (*mfg != manufacturerFilter) return;
-  }
-  IotsaBLEDeviceInfo *devInfo;
-  auto it3 = unknownDevices.find(deviceName);
-  if (it3 == unknownDevices.end()) {
-    devInfo = new IotsaBLEDeviceInfo(deviceName);
-    unknownDevices[deviceName] = devInfo;
-  } else {
-    devInfo = it3->second;
-  }
-  devInfo->receivedAdvertisement(*advertisedDevice);
-  if (unknownDeviceCallback) unknownDeviceCallback(*advertisedDevice);
+  onUnknownDeviceSeen(advertisedDevice, deviceName);
 }
 
 IotsaBLEClientDevice* IotsaBLEClientMod::addDevice(std::string id, IotsaBLEClientDevice* device) {
@@ -610,7 +399,7 @@ void IotsaBLEClientMod::delDevice(std::string id) {
   }
 #if 0
   // xxxjack bad idea to save config stright away
-  configSave();
+  saveScanConfig();
 #endif
 }
 #endif // IOTSA_WITH_BLE

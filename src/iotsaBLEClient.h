@@ -15,6 +15,15 @@
 typedef std::function<void(const NimBLEAdvertisedDevice&)> BleDeviceFoundCallback;
 typedef const char *UUIDString;
 
+// Bare scanner + single-outgoing-connect arbiter (cwi-dis/iotsa#263) + named-
+// device registry -- the minimum any BLE-central consumer needs, whether it
+// tracks one device (examples/BLEButton) or many. Deliberately does NOT
+// include a human-facing "browse/manage known and unknown devices" REST/web
+// surface, or unknown-device discovery -- that's IotsaBLEClientCollectionMod
+// (iotsaBLEClientCollection.h), which subclasses this. Split out
+// cwi-dis/iotsa#264: found while asking why examples/BLEButton -- which only
+// ever needs a reference to its single ringer -- had to carry a whole
+// "collection" class at all.
 class IotsaBLEClientMod : public IotsaModule, public NimBLEScanCallbacks {
 public:
   using IotsaModule::IotsaModule;
@@ -23,29 +32,7 @@ public:
   virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
   virtual void setup() override;
   virtual void lateSetup() override;
-#ifdef IOTSA_WITH_WEB
-  // Declaration/definition mismatch fixed here: these two used to be declared
-  // unconditionally (giving every instance a vtable slot regardless of this guard)
-  // while only ever *defined* under IOTSA_WITH_WEB in the .cpp -- a latent link
-  // error nothing had ever actually built until cwi-dis/iotsa#205. Both render
-  // literal HTML for the BLE-device-list page and have no other caller, so the fix
-  // is to guard the declaration too, not to strip the .cpp's guard.
-  virtual String formHandler_field_perdevice(const char *deviceName);
-  virtual void formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig);
-  virtual void webHandler() override;
-  virtual bool formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig);
-#endif
-
   virtual void loop() override;
-#ifdef IOTSA_WITH_WEB
-  // Default blurb good enough for a standalone consumer (examples/BLEClient);
-  // an app that only uses this mod as infrastructure behind its own page
-  // (e.g. examples/BLEButton) can still override with something more
-  // specific, or "" to suppress it from the home page entirely.
-  virtual String info() override {
-    return "<p>See <a href='/bleclient'>/bleclient</a> for known/unknown BLE devices, or <a href='/api/bleclient'>/api/bleclient</a> for the REST equivalent.</p>";
-  }
-#endif
   //
   // Interfaces for use by subclasses (or other classes with a reference)
   // to control which BLE devices are known by this class
@@ -106,16 +93,7 @@ public:
   unsigned int maxConnectionKeepOpen();
   // Read by IotsaBLEClientDevice::connect() via its owner back-pointer.
   uint32_t getConnectTimeoutMillis() { return connectTimeoutMillis; }
-  //
-  // Interfaces to control which BLE devices are visible to this
-  // class (and any subclass)
-  //
-  void findUnknownDevices(bool on);
-  void setUnknownDeviceFoundCallback(BleDeviceFoundCallback _callback);
   void setKnownDeviceChangedCallback(BleDeviceFoundCallback _callback);
-  void setDuplicateNameFilter(bool noDuplicates);
-  void setServiceFilter(const NimBLEUUID& serviceUUID);
-  void setManufacturerFilter(uint16_t manufacturerID);
   //
   // If true, scanning pauses IotsaBLEServerMod's advertising for the duration
   // of the scan (and resumes it afterwards). Off by default: this only ever
@@ -127,14 +105,24 @@ protected:
   std::map<std::string, IotsaBLEClientDevice*> devices;
   // These are all known devices by address
   std::map<std::string, IotsaBLEClientDevice *>devicesByAddress;
-  // Devices seen advertising that aren't in `devices` above -- keyed by
-  // name. Lighter-weight than IotsaBLEClientDevice (no NimBLEClient*, no
-  // connect machinery) since most of these are only ever seen in passing.
-  std::map<std::string, IotsaBLEDeviceInfo*> unknownDevices;
 protected:
-  void configLoad();
-  void configSave();
+  // Named distinctly from "configLoad"/"configSave" (not just "virtual"), on
+  // purpose: a subclass meant to be used as an app's own module (e.g.
+  // LissabonControllerMod, LissabonRemoteMod) already has its own, unrelated
+  // IotsaModule-level configLoad()/configSave() for its own app config --
+  // same name, same signature, would otherwise silently become an
+  // unintended override of *this* class's scan-tuning persistence the
+  // moment either became virtual (found while adding
+  // IotsaBLEClientCollectionMod's own config field, cwi-dis/iotsa#264).
+  virtual void loadScanConfig();
+  virtual void saveScanConfig();
   void onResult(const NimBLEAdvertisedDevice *advertisedDevice);
+  // Called from onResult() for an advertisement that doesn't match any known
+  // device (by name or address) -- i.e. a candidate this class itself has no
+  // opinion on. Default: ignore it entirely. IotsaBLEClientCollectionMod
+  // overrides this to populate its unknownDevices listing (subject to its
+  // own isInterestingUnknownDevice() filter).
+  virtual void onUnknownDeviceSeen(const NimBLEAdvertisedDevice* advertisedDevice, const std::string& deviceName) {}
   void onScanEnd(const NimBLEScanResults& scanResults, int reason) override;
   void setupScanner();
   void updateScanning();
@@ -142,13 +130,13 @@ protected:
   void stopScanning();
   virtual void scanningChanged() {}
   bool isScanning();
-  void startScanUnknown();
-  // True if we still need to actively look for devices: either explicitly
-  // hunting for unknown devices, some known device has no address yet
-  // (never matched by name), or a known device just failed a connect
-  // attempt and needs reconfirming (see IotsaBLEClientDevice::needsRescan).
-  // False means there is currently no reason to scan at all.
-  bool needsDiscovery();
+  // True if we still need to actively look for devices: some known device
+  // has no address yet (never matched by name), or a known device just
+  // failed a connect attempt and needs reconfirming (see
+  // IotsaBLEClientDevice::needsRescan). False means there is currently no
+  // reason to scan at all. IotsaBLEClientCollectionMod overrides this to
+  // also return true while hunting for unknown devices.
+  virtual bool needsDiscovery();
   static IotsaBLEClientMod *scanningMod;
   int scan_interval = 155;
   int scan_window = 151;
@@ -167,16 +155,6 @@ protected:
   // its owner back-pointer, since the timeout is only actually applied once,
   // when a device's pClient is first created.
   uint32_t connectTimeoutMillis = 6000;
-  // How long the manual "scan for unknown devices" session (REST scanUnknown
-  // flag, or the web form's "Scan for Nms" button) stays active before
-  // findUnknownDevices(false) turns it back off. This is a session length,
-  // not a single scan's duration -- during the session, updateScanning()
-  // still runs its normal discovery-scan/cooldown cycle
-  // (scanDurationDiscoveryMillis/scanCooldownDiscoveryMillis) repeatedly.
-  // Currently independent of those two; may eventually be derived from them
-  // instead (e.g. N full discovery cycles) but for now it's its own
-  // configurable value, kept at its original default.
-  uint32_t scanUnknownDurationMillis = 20000;
   // maxConnectionKeepOpen()'s fallback when there's no scheduled scan
   // deadline to respect -- how long a connection may be held open with
   // nothing else pending. shouldUpdateScanAtMillis is 0 not just when idle,
@@ -194,8 +172,6 @@ protected:
   // (e.g. BLEDimmer::connectionTask()) -- volatile so those reads see fresh
   // values across tasks.
   volatile uint32_t scanStoppedAtMillis = 0;
-  bool scanForUnknownClients = false;
-  uint32_t scanUnknownUntilMillis = 0;
   uint32_t shouldUpdateScanAtMillis = 0;
   // Only loop() (and the functions it calls: startScanning/stopScanning) may
   // write this. canConnect(), called from other tasks, only reads it -- hence
@@ -218,12 +194,7 @@ protected:
   // NIMBLE_MAX_CONNECTIONS concurrent outgoing connects, is itself still an
   // open question -- see cwi-dis/iotsa#263.
   std::atomic<int> connectingCount{0};
-  BleDeviceFoundCallback unknownDeviceCallback = NULL;
   BleDeviceFoundCallback knownDeviceCallback = NULL;
-  bool duplicateNameFilter = false;
-  NimBLEUUID* serviceFilter = NULL;
-  uint16_t manufacturerFilter;
-  bool hasManufacturerFilter = false;
   bool advertisingWasPausedByScan = false;
 };
 

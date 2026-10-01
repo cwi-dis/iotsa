@@ -9,8 +9,8 @@
 // iotsa device compiles IotsaRunmodeMod in unconditionally (it's core, not
 // optional), so any remote that answers on IotsaRunmodeBLE::serviceUUID is,
 // by definition, an iotsa BLE server -- that's the generic recognition signal
-// a caller can use (e.g. IotsaBLEClientMod::setServiceFilter()) instead of
-// filtering on a specific app's own protocol. Adds typed methods over
+// a caller can use (e.g. IotsaBLEClientCollectionMod::isInterestingUnknownDevice())
+// instead of filtering on a specific app's own protocol. Adds typed methods over
 // IotsaBLEClientDevice's generic get()/set() so a caller doesn't have to
 // hand-roll calls against raw IotsaRunmodeBLE UUIDs itself. Any BLE client
 // connection to an iotsa device can use these directly (e.g. Lissabon's
