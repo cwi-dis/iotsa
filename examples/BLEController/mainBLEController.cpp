@@ -9,13 +9,12 @@
 // other iotsa devices, not every random BLE gadget nearby.
 //
 // Each added device defaults to a plain IotsaRunmodeBLEClient
-// (IotsaBLEClientMod::addDevice()'s own default), so the generic runmode
-// commands (identify/reboot/promoteMode/setWifiDisabled) are available on
-// it in principle -- actually exposing those via REST/web (so this becomes
+// (IotsaBLEClientMod::addDevice()'s own default), which now also exposes
+// identify/reboot/promoteMode/setWifiDisabled as queueable commands via its
+// own REST/web surface (IotsaRunmodeBLEClient::queueIdentify() & friends,
+// serviced every tick by IotsaBLEClientCollectionMod::loop()) -- so this is
 // a real "WiFi/REST to BLE-only iotsa device" bridge/gateway, the mirror
-// image of HPS, cwi-dis/iotsa#267) is deliberately not built yet; that's
-// IotsaRunmodeBLEClient's own future IotsaApiModObject-style command
-// surface, parked for a later session.
+// image of HPS (cwi-dis/iotsa#267).
 //
 // Supersedes sandbox/BLEClient in spirit (a dual-role client+server
 // debugging rig, moved there under #222) -- this is the modern replacement

@@ -111,6 +111,16 @@ public:
   // name and no _owner argument either) still needs that done explicitly by
   // its caller.
   bool retarget(const std::string& newName);
+  // Drives whatever outbound work this device has queued for itself (if
+  // any) -- connects when reachable, fires it, disconnects. Default: no-op,
+  // this base class has no notion of queued work. IotsaRunmodeBLEClient
+  // overrides this to service a pending identify/reboot/promoteMode/
+  // setWifiDisabled request (cwi-dis/iotsa#264's BLEController needed a way
+  // to actually control a device, not just discover/name it).
+  // IotsaBLEClientCollectionMod::loop() calls this on every known device
+  // each tick; a single-target consumer (e.g. examples/BLEButton) that
+  // drives its own device's connection directly has no need to call it.
+  virtual void serviceIfNeeded() {}
 protected:
   // Set at construction time (the optional _owner constructor argument) or
   // by IotsaBLEClientMod::addDevice() (a friend), whichever happens first.
