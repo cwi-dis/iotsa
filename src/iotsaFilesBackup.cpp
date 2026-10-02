@@ -110,8 +110,17 @@ IotsaFilesBackupMod::handler() {
   	// Write data
   	while (fileSize > 0) {
 	  	int curLen = fp.read((uint8_t *)buf, 512);
+	  	if (curLen <= 0) {
+	  		// Short read: previously this looped forever (curLen -1 grew fileSize)
+	  		// until the watchdog fired, see cwi-dis/iotsa#51. Zero-fill the rest
+	  		// so the tar stream stays aligned with the size in the header.
+	  		IotsaSerial.printf("Backup: short read on %s\n", fileName.c_str());
+	  		memset(buf, '\0', 512);
+	  		curLen = fileSize < 512 ? fileSize : 512;
+	  	}
 	  	app.server->sendContent_P(buf, curLen);
 	  	fileSize -= curLen;
+	  	yield();
 	}
 	fp.close();
   	// Write padding
