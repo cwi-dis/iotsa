@@ -23,6 +23,27 @@ def ipv4_getaddrinfo(host, port, family=0, socktype=0, proto=0, flags=0):
     return orig_getaddrinfo(host, port, family, socktype, proto, flags)
 
 
+def _tobool(value: str) -> bool:
+    """bool:value cast. Plain bool() would turn "false" into True."""
+    if value.lower() in ("true", "1"):
+        return True
+    if value.lower() in ("false", "0"):
+        return False
+    raise ValueError("expected true/false/1/0")
+
+
+# Type prefixes accepted in name=type:value arguments (config, wifiConfig, xConfig).
+# json covers arrays and objects (cwi-dis/iotsa#155). json.JSONDecodeError is a
+# ValueError subclass.
+_TYPECASTS = {
+    "int": int,
+    "float": float,
+    "str": str,
+    "bool": _tobool,
+    "json": json.loads,
+}
+
+
 class Main(object):
     """Main commandline program"""
     
@@ -290,17 +311,17 @@ class Main(object):
         if not "=" in subCmd:
             self._ungetcmd(subCmd)
             return None, None
-        name, rest = subCmd.split("=")
-        if type(rest) == type(()):
-            value = "=".join(rest)
-        else:
-            value = rest
-        if ":" in value:
-            # If a type is specified (as in name=int:3 or name=str:3)
-            # we cast to that type.
-            typename, rest = value.split(":")
-            typecast = eval(typename)
-            value = typecast(rest)
+        # Split on the first "=" only: the value itself may contain "=".
+        name, value = subCmd.split("=", 1)
+        typename, sep, rest = value.partition(":")
+        if sep and typename in _TYPECASTS:
+            # A known type prefix (as in name=int:3 or name=json:[1,2]): cast to
+            # that type. Anything else with a ":" in it (e.g. a URL) is just a
+            # value, see cwi-dis/iotsa#155.
+            try:
+                value = _TYPECASTS[typename](rest)
+            except ValueError as e:
+                raise api.IotsaError(f"{name}: cannot convert {rest!r} to {typename}: {e}")
             print(
                 f"{sys.argv[0]}: xConfig {modName}: {name}={value} after cast.",
                 file=sys.stderr,
@@ -1095,7 +1116,8 @@ class Main(object):
 
     def cmd_wifiConfig(self) -> None:
         """Set WiFi parameters (target must be in configuration or private WiFi mode)
-        Parameters are name=value, or optionally name=type:value for example name=int:0"""
+        Parameters are name=value, or optionally name=type:value for example name=int:0
+        (type is int, float, str, bool or json)"""
         self.loadDevice()
         assert self.device
         wifi = self.device.getApi("wificonfig")
@@ -1129,7 +1151,8 @@ class Main(object):
 
     def cmd_xConfig(self) -> None:
         """Configure a specific module on the target, next argument is module name
-        Parameters are name=value, or optionally name=type:value for example name=int:0"""
+        Parameters are name=value, or optionally name=type:value for example name=int:0
+        (type is int, float, str, bool or json)"""
         self.loadDevice()
         assert self.device
         modName = self._getcmd()

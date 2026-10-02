@@ -43,7 +43,7 @@ iotsa -t yourdevice.local xInfo modulename
 iotsa -t yourdevice.local xConfig modulename key=value
 ```
 
-Parameters are `name=value`. Values are auto-coerced: `true`/`false` become booleans, anything that looks like an integer becomes an int, then a float, otherwise it stays a string. Use `name=type:value` to override (e.g. `name=str:123` to pass a number as a string).
+Parameters are `name=value`. Values are auto-coerced: `true`/`false` become `1`/`0`, anything that looks like an integer becomes an int, then a float, otherwise it stays a string. Use `name=type:value` to override, with type `int`, `float`, `str`, `bool` or `json` (e.g. `name=str:123` to pass a number as a string, `name=json:["a","b"]` for an array or object). Any other `prefix:` is part of the value, so URLs work as-is.
 
 ### WiFi information and configuration
 

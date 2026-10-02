@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - BLE client: advertised device names padded with NUL bytes are cleaned up, and now match known devices (#170)
 - PlatformIO and Arduino CI builds for ESP32 now set `CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE=8192`, so HPS PUTs no longer overflow the NimBLE host task stack (#127)
 - `IotsaEndpoint`: a failed `load()` no longer leaves an empty status marked as cached, and `get(name, default)` accepts any default (#122)
+- `config`/`wifiConfig`/`xConfig`: values containing `=` or `:` (e.g. URLs) no longer crash, `bool:false` is false, and `json:` sets arrays and objects (#155)
 
 ### Changed
 
