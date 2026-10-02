@@ -20,11 +20,38 @@ public:
       newLoc += ".local";
     }
     newLoc += server.uri();
+    // The web server only hands us the decoded arguments, not the raw query
+    // string, so rebuild it (cwi-dis/iotsa#49). "plain" is the request body,
+    // not a query argument.
+    char sep = '?';
+    for (int i = 0; i < server.args(); i++) {
+      if (server.argName(i) == "plain") continue;
+      newLoc += sep;
+      newLoc += urlEncode(server.argName(i));
+      newLoc += '=';
+      newLoc += urlEncode(server.arg(i));
+      sep = '&';
+    }
     IFDEBUG IotsaSerial.print("HTTP 301 to ");
     IFDEBUG IotsaSerial.println(newLoc);
     server.sendHeader("Location", newLoc);
-    server.uri();
     server.send(301, "", "");
+  }
+
+  static String urlEncode(const String& in) {
+    static const char hex[] = "0123456789ABCDEF";
+    String out;
+    for (size_t i = 0; i < in.length(); i++) {
+      char c = in[i];
+      if (isalnum((unsigned char)c) || c == '-' || c == '_' || c == '.' || c == '~') {
+        out += c;
+      } else {
+        out += '%';
+        out += hex[((unsigned char)c) >> 4];
+        out += hex[((unsigned char)c) & 0xf];
+      }
+    }
+    return out;
   }
 };
 
