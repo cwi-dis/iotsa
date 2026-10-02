@@ -969,13 +969,20 @@ class Main(object):
         self.loadBLE()
         assert self.ble
         # Note we don't use getnamevalue: ble.set() will know the type to convert
-        # to so we simply pass strings.
+        # to so we simply pass strings. A type: prefix (as config/xConfig take) is
+        # accepted and stripped, for consistency (cwi-dis/iotsa#131).
         subcommand = self._getcmd()
         assert subcommand
         if "=" in subcommand:
             # Set command
-            name, value = subcommand.split("=")
-            self.ble.set(name, value)
+            name, value = subcommand.split("=", 1)
+            typename, sep, rest = value.partition(":")
+            if sep and typename in _TYPECASTS:
+                value = rest
+            try:
+                self.ble.set(name, value)
+            except ValueError as e:
+                raise api.IotsaError(f"{name}: cannot convert {value!r} to this characteristic's type: {e}")
         else:
             # Get command
             value = self.ble.get(subcommand)
