@@ -16,6 +16,11 @@
 #if !defined(CONFIG_IDF_TARGET_ESP32S3) && !defined(CONFIG_IDF_TARGET_ESP32C3)
 #define IOTSA_SLEEP_CAN_RTC_MEM_POWER_DOMAINS 1
 #endif
+// ESP32-C3 has no RTC peripherals power domain either (ESP-IDF 5 doesn't even
+// declare ESP_PD_DOMAIN_RTC_PERIPH for it), see cwi-dis/iotsa#200.
+#if !defined(CONFIG_IDF_TARGET_ESP32C3)
+#define IOTSA_SLEEP_CAN_RTC_PERIPH_POWER_DOMAIN 1
+#endif
 #endif // ESP32
 #endif // IOTSA_HAS_SLEEP
 
@@ -637,7 +642,9 @@ void IotsaRunmodeMod::_sleepTick() {
     esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_OFF);
     esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_OFF);
 #endif
+#ifdef IOTSA_SLEEP_CAN_RTC_PERIPH_POWER_DOMAIN
     esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
+#endif
   }
   esp_deep_sleep_start();
   IotsaSerial.println("esp_deep_sleep_start() failed?");
