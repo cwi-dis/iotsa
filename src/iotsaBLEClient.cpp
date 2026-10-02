@@ -306,6 +306,11 @@ void IotsaBLEClientMod::onResult(const NimBLEAdvertisedDevice *advertisedDevice)
   // known device may well show up with no name at all -- the address match below
   // has to be reachable even then.)
   std::string deviceName = advertisedDevice->getName();
+  // Some devices pad their advertised name with NUL bytes, which would then
+  // never match a known device by name and show up as garbage in
+  // /api/bleclient. Cut it at the first NUL (cwi-dis/iotsa#170).
+  size_t nul = deviceName.find('\0');
+  if (nul != std::string::npos) deviceName.erase(nul);
   if (deviceName != "") {
     auto it = devices.find(deviceName);
     if (it != devices.end()) {
