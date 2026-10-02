@@ -15,6 +15,10 @@ from .ble import BLE
 from .wifi import IotsaWifi
 from .protocols import HandlerForProto, IotsaAbstractProtocolHandler
 
+# Marks "no default given" for IotsaEndpoint.get(); any real value, even the
+# string "no default", is a legitimate default (cwi-dis/iotsa#122).
+_NO_DEFAULT = object()
+
 
 class IotsaEndpoint:
     """Class representing a iotsa (REST or COAP) endpoint.
@@ -47,7 +51,7 @@ class IotsaEndpoint:
         if self.didLoad and self.cache:
             return
         self.status = {}
-        self.didload = False
+        self.didLoad = False
         assert self.device.protocolHandler
         self.status = self.device.protocolHandler.get(self.endpoint)
         if self.status == "" or self.status == None:
@@ -85,14 +89,14 @@ class IotsaEndpoint:
                 if VERBOSE:
                     print("config: reboot to activate new setting")
 
-    def get(self, name: str, default: Any = "no default"):
+    def get(self, name: str, default: Any = _NO_DEFAULT):
         """Get a named value from previous loaded (or set) data
 
         :param name: the name of the value to get
         :param default: optional default value, if not specified KeyError is raised
         """
         self.load()
-        if default == "no default":
+        if default is _NO_DEFAULT:
             return self.status[name]
         return self.status.get(name, default)
 
