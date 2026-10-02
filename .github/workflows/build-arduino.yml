@@ -148,6 +148,9 @@ jobs:
         fi
         BUILD_PROPS=()
         if [ -n "$BUILD_FLAGS" ]; then
+          # c too, not just cpp: some flags (e.g. #127's NimBLE stack size) are
+          # consumed by C sources in libraries.
+          BUILD_PROPS+=(--build-property "compiler.c.extra_flags=$BUILD_FLAGS")
           BUILD_PROPS+=(--build-property "compiler.cpp.extra_flags=$BUILD_FLAGS")
         fi
         arduino-cli compile --fqbn "$FQBN" "${BOARD_OPTS[@]}" "${BUILD_PROPS[@]}" "$SOURCE"

@@ -27,13 +27,15 @@ REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..")
 # needed because emit_github_matrix/emit_standalone_ini don't go through any
 # ini extends chain, so they can't pick a trait's flags up by inheritance the
 # way a local `pio run` build does. Keep in sync with iotsa-board-traits.ini by hand.
+# See iotsa-board-traits.ini [_esp32_allvariants] and #127.
+_NIMBLE_STACK = "-DCONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE=8192"
 TRAIT_BUILD_FLAGS = {
     "_esp8266": [],
-    "_esp32_allvariants": [],
-    "_esp32c3_extusb": ["-DESP32C3"],
-    "_esp32c3_nativeusb": ["-DESP32C3", "-DARDUINO_USB_MODE=1", "-DARDUINO_USB_CDC_ON_BOOT=1",
+    "_esp32_allvariants": [_NIMBLE_STACK],
+    "_esp32c3_extusb": [_NIMBLE_STACK, "-DESP32C3"],
+    "_esp32c3_nativeusb": [_NIMBLE_STACK, "-DESP32C3", "-DARDUINO_USB_MODE=1", "-DARDUINO_USB_CDC_ON_BOOT=1",
                             "-DIOTSA_SERIAL_SPEED=460800", "-DIOTSA_DELAY_ON_BOOT=3"],
-    "_esp32s3_nativeusb": ["-DESP32S3", "-DARDUINO_USB_MODE=1", "-DARDUINO_USB_CDC_ON_BOOT=1",
+    "_esp32s3_nativeusb": [_NIMBLE_STACK, "-DESP32S3", "-DARDUINO_USB_MODE=1", "-DARDUINO_USB_CDC_ON_BOOT=1",
                             "-DIOTSA_SERIAL_SPEED=460800", "-DIOTSA_DELAY_ON_BOOT=3"],
 }
 

@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The HTTP-to-HTTPS redirect now keeps the query string (#49)
 - `/backup.tar` no longer hangs (until the watchdog fires) on a short file read, and yields while streaming (#51)
 - BLE client: advertised device names padded with NUL bytes are cleaned up, and now match known devices (#170)
+- PlatformIO and Arduino CI builds for ESP32 now set `CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE=8192`, so HPS PUTs no longer overflow the NimBLE host task stack (#127)
 
 ### Changed
 
