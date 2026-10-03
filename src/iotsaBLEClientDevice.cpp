@@ -365,48 +365,38 @@ bool IotsaBLEClientDevice::set(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, co
   return set(serviceUUID, charUUID, (const uint8_t *)value.c_str(), value.length());
 }
 
-bool IotsaBLEClientDevice::getAsBuffer(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint8_t **datap, size_t *sizep) {
+bool IotsaBLEClientDevice::get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, std::string& value) {
   NimBLERemoteCharacteristic *characteristic = _getCharacteristic(serviceUUID, charUUID);
   if (characteristic == NULL) return false;
   if (!characteristic->canRead()) return false;
-  std::string value = characteristic->readValue();
-  *datap = (uint8_t *)value.c_str();
-  *sizep = value.length();
+  // Copy into the caller's string: readValue() returns a temporary, so a
+  // pointer into it (what the old getAsBuffer() handed out) dangles as soon
+  // as this function returns.
+  value = characteristic->readValue();
   return true;
 }
-bool IotsaBLEClientDevice::get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint8_t& value) {
-  size_t size;
-  uint8_t *ptr;
-  if (!getAsBuffer(serviceUUID, charUUID, &ptr, &size)) return false;
-  if (size != sizeof(uint8_t)) return false;
-  value = *(uint8_t *)ptr;
+
+// Typed reads: the characteristic value must be exactly sizeof(T) bytes.
+// memcpy() rather than a pointer cast, the string's buffer need not be
+// aligned for T.
+template<typename T> static bool _getTyped(IotsaBLEClientDevice *dev, NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, T& value) {
+  std::string buf;
+  if (!dev->get(serviceUUID, charUUID, buf)) return false;
+  if (buf.size() != sizeof(T)) return false;
+  memcpy(&value, buf.data(), sizeof(T));
   return true;
+}
+
+bool IotsaBLEClientDevice::get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint8_t& value) {
+  return _getTyped(this, serviceUUID, charUUID, value);
 }
 
 bool IotsaBLEClientDevice::get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint16_t& value) {
-  size_t size;
-  uint8_t *ptr;
-  if (!getAsBuffer(serviceUUID, charUUID, &ptr, &size)) return false;
-  if (size != sizeof(uint16_t)) return false;
-  value = *(uint16_t *)ptr;
-  return true;
+  return _getTyped(this, serviceUUID, charUUID, value);
 }
 
 bool IotsaBLEClientDevice::get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint32_t& value) {
-  size_t size;
-  uint8_t *ptr;
-  if (!getAsBuffer(serviceUUID, charUUID, &ptr, &size)) return false;
-  if (size != sizeof(uint32_t)) return false;
-  value = *(uint32_t *)ptr;
-  return true;
-}
-
-bool IotsaBLEClientDevice::get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, std::string& value) {
-  size_t size;
-  uint8_t *ptr;
-  if (!getAsBuffer(serviceUUID, charUUID, &ptr, &size)) return false;
-  value = std::string((const char *)ptr, size);
-  return true;
+  return _getTyped(this, serviceUUID, charUUID, value);
 }
 
 static BleNotificationCallback _staticCallback;

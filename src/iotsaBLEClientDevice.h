@@ -75,7 +75,6 @@ public:
   bool get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint16_t& value);
   bool get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint32_t& value);
   bool get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, std::string& value);
-  bool getAsBuffer(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint8_t **datap, size_t *sizep);
   bool getAsNotification(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, BleNotificationCallback callback);
   // Adds connect-specific fields (on top of the base class's
   // name/bleAddress/rssi/lastSeenMillisAgo) to reply: lastConnectAttemptMillisAgo,
