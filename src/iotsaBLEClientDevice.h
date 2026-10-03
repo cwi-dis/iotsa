@@ -110,16 +110,69 @@ public:
   // name and no _owner argument either) still needs that done explicitly by
   // its caller.
   bool retarget(const std::string& newName);
-  // Drives whatever outbound work this device has queued for itself (if
-  // any) -- connects when reachable, fires it, disconnects. Default: no-op,
-  // this base class has no notion of queued work. IotsaRunmodeBLEClient
-  // overrides this to service a pending identify/reboot/promoteMode/
-  // setWifiDisabled request (cwi-dis/iotsa#264's BLEController needed a way
-  // to actually control a device, not just discover/name it).
-  // IotsaBLEClientCollectionMod::loop() calls this on every known device
-  // each tick; a single-target consumer (e.g. examples/BLEButton) that
-  // drives its own device's connection directly has no need to call it.
-  virtual void serviceIfNeeded() {}
+  //
+  // Connection state machine (cwi-dis/iotsa#263 step 2, #144): the one
+  // generic copy of "wait for the address, wait for the radio, connect, do
+  // the work, linger a bit, disconnect" that used to be hand-written in every
+  // consumer. A subclass only says *that* it has work (requestWork()) and
+  // *what* the work is (doWork()); the rest happens here.
+  //
+  enum class LinkState : uint8_t {
+    Idle,               // no link, nothing to do (or work pending and about to be looked at)
+    WaitingForAddress,  // work pending, device not found yet (a scan will look for it)
+    WaitingForRadio,    // work pending, address known, waiting for a free radio/link slot
+    Connecting,         // asynchronous connect in progress
+    Lingering           // connected, work done, kept open for keepOpenMillis in case more follows
+  };
+  // "There is work for this device": connect when possible, then call
+  // doWork(). Gives up (lastWorkStatus "gave up", workAbandoned()) if it
+  // can't get connected within deadlineMs. A second request while one is
+  // pending just extends the deadline. Safe from any task.
+  void requestWork(uint32_t deadlineMs);
+  bool hasPendingWork() { return workPending; }
+  // Advances the state machine. Called only by IotsaBLEClientMod::loop() --
+  // one driver, everything else only submits requests (decision 1 on
+  // cwi-dis/iotsa#263), so it can later move to a worker task unchanged.
+  void service();
+  LinkState getLinkState() { return linkState; }
+  // Outcome of the most recent work: "done", "failed", "gave up: ...", or
+  // nullptr if there hasn't been any yet.
+  const char *getLastWorkStatus() { return lastWorkStatus; }
+  // Driver only: close a lingering link now, because another device needs
+  // the slot (cwi-dis/iotsa#263 decision 2).
+  void endLinger();
+protected:
+  // The actual work, called by service() while connected. Return false if
+  // it failed (reported as lastWorkStatus "failed"; not retried). Default:
+  // nothing to do.
+  virtual bool doWork() { return true; }
+  // Called when pending work is given up on (deadline passed before a
+  // connection could be made), so a subclass can drop whatever it queued.
+  virtual void workAbandoned() {}
+  // How long to keep the link open after doWork(), in case more work follows
+  // quickly (e.g. a dimmer slider being dragged). Per subclass, not
+  // user-configurable (cwi-dis/iotsa#263 decision 3); 0 = disconnect right
+  // away. Capped by the owner's maxConnectionKeepOpen().
+  uint32_t keepOpenMillis = 0;
+  volatile LinkState linkState = LinkState::Idle;
+  volatile bool workPending = false;
+  uint32_t workDeadlineAtMillis = 0;
+  uint32_t lingerUntilMillis = 0;
+  uint32_t connectStartedAtMillis = 0;
+  // Outcome of an asynchronous connect, set by ConnCallbacks on the NimBLE
+  // host task, consumed by service(): 0 pending, 1 connected, -1 failed.
+  volatile int8_t asyncConnectResult = 0;
+  volatile int asyncConnectFailReason = 0;
+  const char *lastWorkStatus = nullptr;   // "done", "failed", "gave up: ..."
+  // How long doWork() took, last time and worst case: doWork() blocks the
+  // main loop for its GATT reads/writes, so this is what to look at when
+  // things feel laggy (cwi-dis/iotsa#263 decision 1).
+  uint32_t lastWorkMillis = 0;
+  uint32_t maxWorkMillis = 0;
+  void _runWork();
+  bool _startAsyncConnect();
+  void _connectFailed(int rc);
+  void _closeLink();
 protected:
   // Set at construction time (the optional _owner constructor argument) or
   // by IotsaBLEClientMod::addDevice() (a friend), whichever happens first.
@@ -136,6 +189,7 @@ protected:
   public:
     IotsaBLEClientDevice *owner = nullptr;
     void onConnect(NimBLEClient* pClient) override;
+    void onConnectFail(NimBLEClient* pClient, int reason) override;
     void onDisconnect(NimBLEClient* pClient, int reason) override;
   };
   ConnCallbacks connCallbacks;

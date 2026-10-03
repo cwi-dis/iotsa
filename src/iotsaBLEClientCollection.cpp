@@ -25,14 +25,6 @@ void IotsaBLEClientCollectionMod::loop() {
     scanUnknownUntilMillis = 0;
     findUnknownDevices(false);
   }
-  // Drive any queued outbound command (identify/reboot/promoteMode/
-  // setWifiDisabled, via IotsaRunmodeBLEClient::serviceIfNeeded()) on every
-  // known device -- a no-op for any device with nothing queued (the common
-  // case), including every Lissabon::DimmerBLEClient, which queues its own
-  // work through an entirely separate mechanism.
-  for (auto it : devices) {
-    it.second->serviceIfNeeded();
-  }
 }
 
 void IotsaBLEClientCollectionMod::onUnknownDeviceSeen(const NimBLEAdvertisedDevice* advertisedDevice, const std::string& deviceName) {

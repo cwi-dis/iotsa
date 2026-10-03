@@ -40,8 +40,7 @@ bool IotsaRunmodeBLEClient::identify() {
 bool IotsaRunmodeBLEClient::queueCommand(PendingCommand cmd) {
   if (pendingCommand != PendingCommand::None) return false;
   pendingCommand = cmd;
-  pendingDeadlineAtMillis = millis() + commandTimeoutMillis;
-  lastCommandStatus = "pending...";
+  requestWork(commandTimeoutMillis);
   return true;
 }
 
@@ -54,20 +53,8 @@ bool IotsaRunmodeBLEClient::queueSetWifiDisabled(bool disabled) {
   return true;
 }
 
-void IotsaRunmodeBLEClient::serviceIfNeeded() {
-  if (pendingCommand == PendingCommand::None) return;
-  if (millis() > pendingDeadlineAtMillis) {
-    lastCommandStatus = "gave up: device not reachable";
-    pendingCommand = PendingCommand::None;
-    return;
-  }
-  if (!available()) return; // still waiting for a scan to find it
-  if (!isConnected()) {
-    if (isDisconnecting()) return; // previous disconnect still settling
-    if (!canConnect()) return; // radio busy (scanning or another connect), try again next tick
-    if (!connect()) return; // failed this attempt, retry until the deadline
-  }
-  bool ok = false;
+bool IotsaRunmodeBLEClient::doWork() {
+  bool ok = true;
   switch (pendingCommand) {
     case PendingCommand::Identify: ok = identify(); break;
     case PendingCommand::Reboot: ok = reboot(); break;
@@ -75,15 +62,12 @@ void IotsaRunmodeBLEClient::serviceIfNeeded() {
     case PendingCommand::SetWifiDisabled: ok = setWifiDisabled(pendingSetWifiDisabledValue); break;
     default: break;
   }
-  lastCommandStatus = ok ? "done" : "command failed";
   pendingCommand = PendingCommand::None;
-  disconnect();
+  return ok;
 }
 
-void IotsaRunmodeBLEClient::getHandler(JsonObject& reply) {
-  IotsaBLEClientDevice::getHandler(reply);
-  reply["commandPending"] = pendingCommand != PendingCommand::None;
-  if (lastCommandStatus != "") reply["lastCommandStatus"] = lastCommandStatus;
+void IotsaRunmodeBLEClient::workAbandoned() {
+  pendingCommand = PendingCommand::None;
 }
 
 bool IotsaRunmodeBLEClient::putHandler(const JsonVariant& request) {
@@ -108,8 +92,10 @@ void IotsaRunmodeBLEClient::formHandler_fields(String& message, const String& te
     message += "<form method='get'><input type='hidden' name='" + f_name + ".setWifiDisabled' value='0'><input type='submit' value='Enable WiFi'></form>";
     message += "<form method='get'><input type='hidden' name='" + f_name + ".setWifiDisabled' value='1'><input type='submit' value='Disable WiFi'></form>";
   }
-  if (lastCommandStatus != "") {
-    message += "<p>Last command: " + lastCommandStatus + "</p>";
+  if (workPending) {
+    message += "<p>Command pending...</p>";
+  } else if (lastWorkStatus) {
+    message += "<p>Last command: " + String(lastWorkStatus) + "</p>";
   }
 }
 

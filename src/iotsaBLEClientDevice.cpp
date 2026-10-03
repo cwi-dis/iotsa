@@ -23,6 +23,18 @@ IotsaBLEClientDevice::IotsaBLEClientDevice(const std::string& _name, std::string
 
 void IotsaBLEClientDevice::ConnCallbacks::onConnect(NimBLEClient* pClient) {
   IFDEBUG IotsaSerial.printf("IotsaBLEClientDevice(%s): onConnect\n", owner ? owner->getName().c_str() : "?");
+  // Host task: only hand the outcome to service(). (Also fires for the
+  // blocking connect() path, where linkState isn't Connecting -- ignored.)
+  if (owner && owner->linkState == LinkState::Connecting) owner->asyncConnectResult = 1;
+}
+
+void IotsaBLEClientDevice::ConnCallbacks::onConnectFail(NimBLEClient* pClient, int reason) {
+  IFDEBUG IotsaSerial.printf("IotsaBLEClientDevice(%s): onConnectFail reason=%d (%s)\n",
+    owner ? owner->getName().c_str() : "?", reason, NimBLEUtils::returnCodeToString(reason));
+  if (owner && owner->linkState == LinkState::Connecting) {
+    owner->asyncConnectFailReason = reason;
+    owner->asyncConnectResult = -1;
+  }
 }
 
 void IotsaBLEClientDevice::ConnCallbacks::onDisconnect(NimBLEClient* pClient, int reason) {
@@ -40,6 +52,11 @@ void IotsaBLEClientDevice::ConnCallbacks::onDisconnect(NimBLEClient* pClient, in
     owner->disconnectSettled = true;
     owner->lastDisconnectReason = reason;
     owner->lastDisconnectAtMillis = millis();
+    // Link established, then lost before NimBLE reported it fully connected.
+    if (owner->linkState == LinkState::Connecting && owner->asyncConnectResult == 0) {
+      owner->asyncConnectFailReason = reason;
+      owner->asyncConnectResult = -1;
+    }
   }
 }
 
@@ -232,6 +249,155 @@ bool IotsaBLEClientDevice::isDisconnecting() {
   return !disconnectSettled;
 }
 
+// How long past the connect timeout service() waits for NimBLE to report the
+// outcome of an asynchronous connect before giving up on it itself. NimBLE
+// applies the timeout and reports it through onConnectFail(); this is only a
+// backstop against a callback that never comes.
+static const uint32_t ASYNC_CONNECT_BACKSTOP_MS = 2000;
+
+void IotsaBLEClientDevice::requestWork(uint32_t deadlineMs) {
+  workDeadlineAtMillis = millis() + deadlineMs;
+  workPending = true;
+  // The address may need finding first.
+  if (owner) owner->requestScanUpdate();
+}
+
+void IotsaBLEClientDevice::service() {
+  uint32_t now = millis();
+  if (linkState == LinkState::Connecting) {
+    int8_t result = asyncConnectResult;
+    if (result == 0) {
+      uint32_t timeout = (owner ? owner->getConnectTimeoutMillis() : 6000) + ASYNC_CONNECT_BACKSTOP_MS;
+      if (now - connectStartedAtMillis < timeout) return;
+      IotsaSerial.printf("IotsaBLEClientDevice(%s): no connect outcome after %ums, giving up\n", bleName.c_str(), (unsigned)(now - connectStartedAtMillis));
+      if (owner) owner->releaseConnectSlot();
+      _connectFailed(BLE_HS_ETIMEOUT);
+      return;
+    }
+    if (owner) owner->releaseConnectSlot();
+    if (result < 0) {
+      _connectFailed(asyncConnectFailReason);
+      return; // work stays pending: retried until its deadline
+    }
+    numConnectSucceeded++;
+    needsRescan = false;
+    linkState = LinkState::Lingering; // connected; the work runs below
+    lingerUntilMillis = now;
+  }
+  if (linkState == LinkState::Lingering && !isConnected()) {
+    // The peer (or the link) went away on its own.
+    release();
+    linkState = LinkState::Idle;
+  }
+  if (!workPending) {
+    if (linkState == LinkState::Lingering) {
+      if ((int32_t)(now - lingerUntilMillis) >= 0) _closeLink();
+    } else {
+      linkState = LinkState::Idle;
+    }
+    return;
+  }
+  if ((int32_t)(now - workDeadlineAtMillis) >= 0) {
+    workPending = false;
+    lastWorkStatus = "gave up: device not reachable";
+    IotsaSerial.printf("IotsaBLEClientDevice(%s): %s\n", bleName.c_str(), lastWorkStatus);
+    workAbandoned();
+    if (linkState != LinkState::Lingering) linkState = LinkState::Idle;
+    return;
+  }
+  if (linkState == LinkState::Lingering) {
+    _runWork();
+    return;
+  }
+  if (!available()) {
+    linkState = LinkState::WaitingForAddress;
+    return;
+  }
+  if (isConnected()) {
+    // Someone (the blocking connect() path) left a link open: just use it.
+    numConnectCalls++;
+    numConnectSkipped++;
+    linkState = LinkState::Lingering;
+    _runWork();
+    return;
+  }
+  linkState = LinkState::WaitingForRadio;
+  if (isDisconnecting()) return;  // NimBLE rejects a connect while the previous disconnect settles
+  if (owner && !owner->mayOpenLink()) return;  // the driver will cut a lingering link short for us
+  if (!canConnect()) return;  // radio busy (also asks a running scan to stop)
+  if (_startAsyncConnect()) linkState = LinkState::Connecting;
+}
+
+void IotsaBLEClientDevice::_runWork() {
+  // Clear first: a request arriving while doWork() runs is new work.
+  workPending = false;
+  uint32_t t0 = millis();
+  bool ok = doWork();
+  lastWorkMillis = millis() - t0;
+  if (lastWorkMillis > maxWorkMillis) maxWorkMillis = lastWorkMillis;
+  lastWorkStatus = ok ? "done" : "failed";
+  uint32_t keepOpen = keepOpenMillis;
+  if (owner && keepOpen > owner->maxConnectionKeepOpen()) keepOpen = owner->maxConnectionKeepOpen();
+  lingerUntilMillis = millis() + keepOpen;
+  if (keepOpen) iotsaController.postponeSleep(keepOpen + 1000);
+}
+
+bool IotsaBLEClientDevice::_startAsyncConnect() {
+  // Same bookkeeping as the blocking connect() below, minus the wait.
+  NimBLEAddress addr("", 0);
+  if (xSemaphoreTake(bleAddressMutex, bleAddressMutexTimeout) != pdTRUE) return false;
+  bool valid = bleAddressValid;
+  if (valid) addr = bleAddress;
+  xSemaphoreGive(bleAddressMutex);
+  if (!valid) return false;
+  if (pClient == nullptr) {
+    pClient = NimBLEDevice::createClient(addr);
+    if (pClient == nullptr) {
+      // All NIMBLE_MAX_CONNECTIONS client slots in use: transient, retry later.
+      return false;
+    }
+    pClient->setConnectTimeout(owner ? owner->getConnectTimeoutMillis() : 6000);
+    pClient->setClientCallbacks(&connCallbacks, false);
+  }
+  if (owner && !owner->tryAcquireConnectSlot()) return false;
+  numConnectCalls++;
+  numConnectAttempts++;
+  connectStartedAtMillis = lastConnectAttemptAtMillis = millis();
+  asyncConnectResult = 0;
+  // linkState must be Connecting before the callbacks can fire.
+  linkState = LinkState::Connecting;
+  if (!pClient->connect(addr, false, true)) { // keep learned services, asynchronous
+    if (owner) owner->releaseConnectSlot();
+    _connectFailed(pClient->getLastError());
+    return false;
+  }
+  return true;
+}
+
+void IotsaBLEClientDevice::_connectFailed(int rc) {
+  numConnectFailed++;
+  IotsaSerial.printf("IotsaBLEClientDevice(%s): connect failed after %ums, rc=%d (%s)\n",
+    bleName.c_str(), (unsigned)(millis() - connectStartedAtMillis), rc, NimBLEUtils::returnCodeToString(rc));
+  // Same reasoning as in connect(): only rescan if we haven't seen the device
+  // advertise lately, and give the client slot back.
+  if (millis() - getLastSeenAtMillis() > RESCAN_STALENESS_MS) {
+    needsRescan = true;
+    if (owner) owner->requestScanUpdate();
+  }
+  release();
+  linkState = LinkState::Idle;
+}
+
+void IotsaBLEClientDevice::_closeLink() {
+  disconnect();  // marks it as a local close, for the connection statistics
+  release();
+  linkState = LinkState::Idle;
+}
+
+void IotsaBLEClientDevice::endLinger() {
+  if (linkState == LinkState::Lingering && !workPending) _closeLink();
+}
+
 void IotsaBLEClientDevice::getHandler(JsonObject& reply) {
   IotsaBLEDeviceInfo::getHandler(reply);
   if (lastConnectAttemptAtMillis != 0) {
@@ -251,6 +417,12 @@ void IotsaBLEClientDevice::getHandler(JsonObject& reply) {
   }
   reply["found"] = available();
   reply["connected"] = isConnected();
+  static const char *linkStateNames[] = {"idle", "waitingForAddress", "waitingForRadio", "connecting", "lingering"};
+  reply["linkState"] = linkStateNames[(int)linkState];
+  reply["workPending"] = (bool)workPending;
+  if (lastWorkStatus) reply["lastWorkStatus"] = lastWorkStatus;
+  reply["lastWorkMillis"] = lastWorkMillis;
+  reply["maxWorkMillis"] = maxWorkMillis;
 }
 
 bool IotsaBLEClientDevice::retarget(const std::string& newName) {

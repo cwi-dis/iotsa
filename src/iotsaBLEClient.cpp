@@ -95,6 +95,15 @@ unsigned int IotsaBLEClientMod::maxConnectionKeepOpen() {
   return (unsigned int)millisUntilScanDeadline;
 }
 
+bool IotsaBLEClientMod::mayOpenLink() {
+  int open = 0;
+  for (auto it: devices) {
+    auto st = it.second->getLinkState();
+    if (st == IotsaBLEClientDevice::LinkState::Connecting || st == IotsaBLEClientDevice::LinkState::Lingering) open++;
+  }
+  return open < maxOpenClientConnections;
+}
+
 bool IotsaBLEClientMod::needsDiscovery() {
   // We need active discovery if any known device has never been matched by
   // name yet (no address at all), or a known device just failed a connect
@@ -256,6 +265,24 @@ void IotsaBLEClientMod::loop() {
   if (shouldUpdateScanAtMillis != 0 && millis() >= shouldUpdateScanAtMillis) {
     shouldUpdateScanAtMillis = 0;
     updateScanning();
+  }
+  // The one driver of every device's connection state machine
+  // (cwi-dis/iotsa#263 step 2): nothing else advances it.
+  bool someoneWaitsForLink = false;
+  for (auto it: devices) {
+    it.second->service();
+    if (it.second->getLinkState() == IotsaBLEClientDevice::LinkState::WaitingForRadio) someoneWaitsForLink = true;
+  }
+  // A device is waiting and we're at maxOpenClientConnections: close a
+  // lingering link early, the waiting device connects on a later pass.
+  if (someoneWaitsForLink && !mayOpenLink()) {
+    for (auto it: devices) {
+      if (it.second->getLinkState() == IotsaBLEClientDevice::LinkState::Lingering && !it.second->hasPendingWork()) {
+        IFDEBUG IotsaSerial.printf("IotsaBLEClientMod: closing lingering link to %s, another device needs the radio\n", it.second->getName().c_str());
+        it.second->endLinger();
+        break;
+      }
+    }
   }
 }
 

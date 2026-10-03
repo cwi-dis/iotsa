@@ -15,8 +15,10 @@
 // iotsa config field. Nothing rings until a target is set. Config/REST/web
 // for the target's identity itself (name, resolved address, found/connected
 // status, renaming) all come from IotsaImmediateAlertBLEClient's own
-// IotsaApiModObject surface (cwi-dis/iotsa#268) -- BLEButtonMod only adds
-// the button-press/ring-attempt state machine on top.
+// IotsaApiModObject surface (cwi-dis/iotsa#268), and connecting, ringing and
+// disconnecting is the base class's connection state machine
+// (cwi-dis/iotsa#263) -- BLEButtonMod only turns a button press into
+// ringer.requestRing().
 //
 #include "iotsa.h"
 #include "iotsaWifi.h"
@@ -70,16 +72,11 @@ protected:
 #endif
 private:
   void startRingAttempt();
+  String ringStatus();
   IotsaImmediateAlertBLEClient ringer;
-  // Outcome of the most recent ring attempt, shown on the web page -- loop()
-  // drives an asynchronous connect/ring state machine, so a ringnow request
-  // can't just return the result synchronously in webHandler(); this is
-  // read back on the next page load instead.
-  String lastRingStatus;
+  bool noTargetConfigured = false;
   bool lastPressedState = false;
-  bool wantsToRing = false;
-  uint32_t giveUpAtMillis = 0;
-  static const uint32_t connectTimeoutMillis = 10000;
+  static const uint32_t ringTimeoutMillis = 10000;
 };
 
 void BLEButtonMod::setup() {
@@ -113,8 +110,11 @@ void BLEButtonMod::webHandler() {
   message += "<input type='submit' value='Ring now'";
   if (!ringer.available()) message += " disabled"; // nothing to ring yet
   message += "></form>";
-  if (lastRingStatus != "") {
-    message += "<p>Last ring attempt: " + lastRingStatus + "</p>";
+  // Ringing is asynchronous (connect, ring, disconnect), so a ringnow request
+  // can't report its outcome right away -- it shows up on the next page load.
+  String status = ringStatus();
+  if (status != "") {
+    message += "<p>Last ring attempt: " + status + "</p>";
   }
   message += "<p>Or just fetch <code>/doorbell?ringnow=1</code> directly -- no form needed.</p>";
   server->send(200, "text/html", message);
@@ -147,12 +147,18 @@ void BLEButtonMod::configSave() {
 void BLEButtonMod::startRingAttempt() {
   if (ringer.getName().empty()) {
     IotsaSerial.println("BLEButton: ring requested, but no target configured");
-    lastRingStatus = "no target configured";
+    noTargetConfigured = true;
     return;
   }
-  wantsToRing = true;
-  lastRingStatus = "ringing...";
-  giveUpAtMillis = millis() + connectTimeoutMillis;
+  noTargetConfigured = false;
+  ringer.requestRing(ringTimeoutMillis);
+}
+
+String BLEButtonMod::ringStatus() {
+  if (noTargetConfigured) return "no target configured";
+  if (ringer.hasPendingWork()) return "ringing...";
+  const char *status = ringer.getLastWorkStatus();
+  return status ? status : "";
 }
 
 void BLEButtonMod::loop() {
@@ -162,32 +168,6 @@ void BLEButtonMod::loop() {
     startRingAttempt();
   }
   lastPressedState = nowPressed;
-
-  if (!wantsToRing) return;
-
-  if (millis() > giveUpAtMillis) {
-    IotsaSerial.println("BLEButton: giving up, could not reach the ringer");
-    lastRingStatus = "gave up: target not reachable";
-    wantsToRing = false;
-    return;
-  }
-  if (!ringer.available()) {
-    return; // still waiting for a scan to find it
-  }
-  if (!ringer.isConnected()) {
-    if (ringer.isDisconnecting()) return; // previous disconnect still settling
-    if (!ringer.canConnect()) return; // radio busy (scanning or another connect), try again next loop()
-    if (!ringer.connect()) return; // failed this attempt, retry until giveUpAtMillis
-  }
-  if (ringer.ring()) {
-    IotsaSerial.println("BLEButton: rang the doorbell");
-    lastRingStatus = "rang successfully";
-  } else {
-    IotsaSerial.println("BLEButton: ring failed");
-    lastRingStatus = "ring command failed";
-  }
-  wantsToRing = false;
-  ringer.disconnect();
 }
 
 // Instantiate the module, and install it in the framework

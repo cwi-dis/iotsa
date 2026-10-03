@@ -84,6 +84,14 @@ public:
   // indefinitely, since nothing else schedules another look.
   void requestScanUpdate();
   unsigned int maxConnectionKeepOpen();
+  // True if another client link may be opened now: fewer than
+  // maxOpenClientConnections devices are connecting or lingering. Consulted by
+  // IotsaBLEClientDevice::service() before it starts a connect; when it says
+  // no, loop() closes a lingering link early (cwi-dis/iotsa#263 decision 2).
+  // Only counts devices driven by the state machine -- not links opened
+  // through the blocking IotsaBLEClientDevice::connect() (lissabon, until
+  // it moves over).
+  bool mayOpenLink();
   // Read by IotsaBLEClientDevice::connect() via its owner back-pointer.
   uint32_t getConnectTimeoutMillis() { return connectTimeoutMillis; }
   void setKnownDeviceChangedCallback(BleDeviceFoundCallback _callback);
@@ -160,6 +168,10 @@ protected:
   // application), meant to be overridden by a subclass's constructor, not
   // tuned per-deployment by an end user.
   uint32_t noScheduledScanKeepOpenCapMillis = 30000;
+  // How many client links the state machine keeps open at once (connecting +
+  // lingering). 1: a device that needs the radio makes a lingering one close
+  // early (cwi-dis/iotsa#263 decision 2). A constant per app, not tunable.
+  int maxOpenClientConnections = 1;
   uint32_t scanStartedAtMillis = 0;
   uint32_t shouldUpdateScanAtMillis = 0;
   // Only loop() (and the functions it calls: startScanning/stopScanning) may

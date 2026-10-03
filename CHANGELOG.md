@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `iotsa dfu monitor [seconds]`: stream the device serial output without resetting it
 - `IotsaLedMod` registers a default `identify()` handler (two flashes) (#176)
 - Boot now always prints `iotsa <version> / <programName> <programVersion>` (not gated behind debug)
+- BLE client devices get one generic connection state machine (`requestWork()`/`doWork()`, asynchronous connect, keep-open); `IotsaRunmodeBLEClient` and BLEButton use it (#263, #144)
 
 ### Fixed
 
