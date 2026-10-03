@@ -114,20 +114,10 @@ void IotsaBLEClientMod::updateScanning() {
     if (!needsDiscovery()) stopScanning();
     return;
   }
-  // Connections take priority over scanning: never start a new scan while
-  // any connect attempt is in progress (starting one has been observed to
-  // disrupt the in-flight connection at the link layer, even when NimBLE's
-  // own scan-vs-connect exclusion correctly rejects the scan-start call).
-  // Retry once the connect is done.
-  if (connectingCount > 0) {
-    shouldUpdateScanAtMillis = millis() + SCAN_START_RETRY_MS;
-    return;
-  }
-  // WiFi-heavy work (OTA especially) asked us to hold off starting anything
-  // new -- see IotsaBLERadioArbiter::holdOffNewWork(), cwi-dis/iotsa#263. Same retry
-  // pattern as the connectingCount check above: don't start a scan now, but
-  // don't forget to look again either.
-  if (IotsaBLERadioArbiter::newWorkHeldOff()) {
+  // A connect in progress (connections take priority over scanning) or
+  // holdOffNewWork() (OTA) -- see IotsaBLERadioArbiter. Don't start a scan
+  // now, but don't forget to look again either.
+  if (!IotsaBLERadioArbiter::canBeginScan()) {
     shouldUpdateScanAtMillis = millis() + SCAN_START_RETRY_MS;
     return;
   }
@@ -149,6 +139,11 @@ void IotsaBLEClientMod::startScanning() {
     IotsaSerial.println("IotsaBLEClientMod.startScanning: already scanning...");
     return;
   }
+  if (!IotsaBLERadioArbiter::tryBeginScan()) {
+    // Lost the race against a connect that started since updateScanning()'s peek.
+    shouldUpdateScanAtMillis = millis() + SCAN_START_RETRY_MS;
+    return;
+  }
   IFDEBUG IotsaSerial.println("IotsaBLEClientMod: BLE scan start");
   if (coordinateWithServer) {
     IotsaBLERadioArbiter::pauseAdvertising(IotsaBLERadioArbiter::PAUSE_SCAN);
@@ -163,6 +158,7 @@ void IotsaBLEClientMod::startScanning() {
   if (!startOk) {
     scanner = nullptr;
     scanningMod = NULL;
+    IotsaBLERadioArbiter::endActivity(IotsaBLERadioArbiter::ACTIVITY_SCAN);
     // Lift the pause again: stopScanning() won't run for a scan that never
     // started, so advertising would otherwise stay off until the next scan.
     if (coordinateWithServer) {
@@ -183,7 +179,7 @@ void IotsaBLEClientMod::stopScanning() {
     scanner->stop();
     scanner = NULL;
     scanningMod = NULL;
-    scanStoppedAtMillis = millis();
+    IotsaBLERadioArbiter::endActivity(IotsaBLERadioArbiter::ACTIVITY_SCAN);
     iotsaBLE_notifyScanningStateChanged(false);
     if (coordinateWithServer) {
       IotsaBLERadioArbiter::resumeAdvertising(IotsaBLERadioArbiter::PAUSE_SCAN);
@@ -195,47 +191,10 @@ void IotsaBLEClientMod::stopScanning() {
 }
 
 bool IotsaBLEClientMod::canConnect() {
-  // Connecting to a device while we are scanning has proved to result in issues
-  // (confirmed live 2026-07-18: NimBLE's ble_gap_connect() outright rejects a
-  // connection attempt while a scan is active). Also require a short settle
-  // time after scanning stops -- an immediate connect right after stopScanning()
-  // has also been observed to fail.
-  if (scanner != NULL) return false;
-  if (millis() - scanStoppedAtMillis < connectSettleTimeMillis) return false;
-  // WiFi-heavy work (OTA especially) asked us to hold off starting anything
-  // new -- see IotsaBLERadioArbiter::holdOffNewWork(), cwi-dis/iotsa#263.
-  if (IotsaBLERadioArbiter::newWorkHeldOff()) return false;
-  // EXPERIMENTAL (2026-09-25, cwi-dis/lissabon#30 follow-up): cap outgoing
-  // connect attempts to one at a time, device-wide. Hypothesis: two
-  // concurrent NimBLEClient::connect() calls contend for the same physical
-  // radio at the link layer, corrupting/missing each other's packets, the
-  // same class of problem already confirmed above for scan-vs-connect --
-  // observed live on lissabonController with 5 dimmers: two devices
-  // (striprechts, stripbank) racked up 300+ back-to-back failed attempts
-  // while the others barely got a turn, which a slot-exhaustion or fairness
-  // bug alone doesn't explain. If this measurably improves connect success
-  // rate, make it permanent and revisit true concurrent connects later;
-  // if not, revert this hunk first before looking elsewhere.
-  //
-  // This is only a cheap, non-atomic peek -- it lets a caller skip pointless
-  // work (requestStopScanningForConnect(), log spam) when the slot is
-  // obviously taken, but two callers can still both see 0 here and both
-  // proceed. The actual race-free gate is tryAcquireConnectSlot(), which
-  // IotsaBLEClientDevice::connect() calls immediately before attempting
-  // pClient->connect() (see cwi-dis/iotsa#263) -- that compare-exchange is
-  // what makes only one of them actually win.
-  if (connectingCount > 0) return false;
-  // Leave at least one connection slot free for the server (peripheral) role
-  // if it's seen recent activity -- NimBLEDevice's client pool and
-  // NimBLEServer's peer tracking share one underlying NIMBLE_MAX_CONNECTIONS
-  // link budget, so unrestrained outgoing connects here can starve out an
-  // incoming maintenance connection (confirmed live on lissabonController,
-  // 2026-09-25, with 5 dimmers competing for 3 total slots). Only refuses a
-  // *new* connect attempt -- never interrupts one already in progress.
-  if (IotsaBLERadioArbiter::serverReservationActive() && NimBLEDevice::getCreatedClientCount() >= (size_t)(NIMBLE_MAX_CONNECTIONS - 1)) {
-    return false;
-  }
-  return true;
+  // Cheap non-atomic peek, see IotsaBLERadioArbiter (cwi-dis/iotsa#263): no
+  // scan or other connect in progress, settle time after the last scan
+  // passed, no OTA hold-off, a slot left for the server role if it's active.
+  return IotsaBLERadioArbiter::canBeginConnect(connectSettleTimeMillis);
 }
 
 void IotsaBLEClientMod::requestStopScanningForConnect() {
@@ -246,12 +205,11 @@ void IotsaBLEClientMod::requestStopScanningForConnect() {
 }
 
 bool IotsaBLEClientMod::tryAcquireConnectSlot() {
-  int expected = 0;
-  return connectingCount.compare_exchange_strong(expected, 1);
+  return IotsaBLERadioArbiter::tryBeginConnect(connectSettleTimeMillis);
 }
 
 void IotsaBLEClientMod::releaseConnectSlot() {
-  connectingCount = 0;
+  IotsaBLERadioArbiter::endActivity(IotsaBLERadioArbiter::ACTIVITY_CONNECT);
 }
 
 void IotsaBLEClientMod::requestScanUpdate() {

@@ -6,6 +6,7 @@
 // Common include file for iotsa BLE clients and servers
 #ifdef IOTSA_WITH_BLE
 #include <NimBLEDevice.h>
+#include <atomic>
 typedef const char * UUIDstring;
 
 // The runmode BLE protocol: service + characteristic UUIDs for IotsaRunmodeMod's
@@ -78,6 +79,30 @@ public:
   static void holdOffNewWork(bool hold);
   static bool newWorkHeldOff();
 
+  // Outgoing radio activity (cwi-dis/iotsa#263): at most one scan or one
+  // outgoing connect at a time, device-wide -- scanning and connecting
+  // exclude each other on this stack (NimBLE rejects a connect during a scan,
+  // and a scan starting during a connect has been seen to disturb it), and
+  // two concurrent connects collided with rc=2 (confirmed live 2026-09-25).
+  // tryBegin*() is the real gate: a compare-exchange, safe even when several
+  // tasks try at the same instant. canBegin*() is a cheap non-atomic peek
+  // with the same conditions, for callers that want to skip pointless work.
+  // Every successful tryBegin*() must be paired with exactly one
+  // endActivity(), whatever the outcome. Besides "is the radio free":
+  //   - a connect also waits settleMs after the last scan ended (an
+  //     immediate connect right after a scan stops has been seen to fail),
+  //     and leaves one connection slot free while the server reservation is
+  //     active (see reserveConnectionForServer() above);
+  //   - nothing new starts while holdOffNewWork() is set.
+  // Neither ever interrupts an activity already in progress.
+  enum Activity : uint8_t { ACTIVITY_NONE = 0, ACTIVITY_SCAN = 1, ACTIVITY_CONNECT = 2 };
+  static bool canBeginScan();
+  static bool tryBeginScan();
+  static bool canBeginConnect(uint32_t settleMs);
+  static bool tryBeginConnect(uint32_t settleMs);
+  static void endActivity(Activity activity);
+  static Activity currentActivity() { return (Activity)s_activity.load(); }
+
   // Advertising is a derived state, not something callers switch on and off
   // directly (cwi-dis/iotsa#263, ex-#208 Part A). Anyone who needs it off for
   // a while adds a reason, and removes it again when done; IotsaBLEServerMod
@@ -107,6 +132,8 @@ private:
   static bool s_holdOffNewBLEWork;
   static uint8_t s_advertisingPauseReasons;
   static AdvertisingReconciler s_advertisingReconciler;
+  static std::atomic<uint8_t> s_activity;
+  static volatile uint32_t s_scanEndedAtMillis;
 };
 #endif // IOTSA_WITH_BLE
 #endif // _IOTSABLE_H

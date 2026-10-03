@@ -66,20 +66,13 @@ public:
   // this only sets a flag; the actual stopScanning() call is deferred to
   // loop(), which is the only task allowed to touch scanner/scanningMod.
   void requestStopScanningForConnect();
-  // The actual arbiter for the single outgoing-connect slot (cwi-dis/iotsa#263):
-  // called by IotsaBLEClientDevice::connect(), from whichever task owns
-  // that connection, right before it calls pClient->connect(). Unlike
-  // canConnect() below -- a cheap, non-atomic pre-check a caller may use to
-  // avoid unnecessary work -- this is a real compare-exchange, so it is safe
-  // even when multiple tasks pass canConnect() at the same instant: only one
-  // of them will win tryAcquireConnectSlot(), the other gets false back and
-  // must treat it as "cannot connect right now," not attempt pClient->connect()
-  // too. Fixes the rc=2 collision confirmed live 2026-09-25/26, where two
-  // tasks both observed connectingCount==0 and both proceeded to connect().
+  // Claim/release the device-wide outgoing-connect slot: thin wrappers around
+  // IotsaBLERadioArbiter::tryBeginConnect()/endActivity() (cwi-dis/iotsa#263),
+  // adding this mod's connectSettleTimeMillis. Called by
+  // IotsaBLEClientDevice::connect() right before pClient->connect(). Unlike
+  // canConnect() (a cheap non-atomic peek) this is the real, race-free gate.
   // releaseConnectSlot() must be called exactly once for every acquire that
-  // returned true, whatever the connect outcome. Connections take priority
-  // over scanning: updateScanning() refuses to start a new scan while the
-  // slot is held.
+  // returned true, whatever the connect outcome.
   bool tryAcquireConnectSlot();
   void releaseConnectSlot();
   // Called by IotsaBLEClientDevice::connect() (via its owner back-
@@ -168,14 +161,10 @@ protected:
   // tuned per-deployment by an end user.
   uint32_t noScheduledScanKeepOpenCapMillis = 30000;
   uint32_t scanStartedAtMillis = 0;
-  // Written by loop()/stopScanning(), read from other tasks by canConnect()
-  // (e.g. BLEDimmer::connectionTask()) -- volatile so those reads see fresh
-  // values across tasks.
-  volatile uint32_t scanStoppedAtMillis = 0;
   uint32_t shouldUpdateScanAtMillis = 0;
   // Only loop() (and the functions it calls: startScanning/stopScanning) may
-  // write this. canConnect(), called from other tasks, only reads it -- hence
-  // volatile, same reasoning as scanStoppedAtMillis above.
+  // write this. Cross-task scan/connect exclusion no longer reads it (that's
+  // IotsaBLERadioArbiter's activity now); volatile kept for isScanning().
   NimBLEScan * volatile scanner = NULL;
   // Set from onScanEnd(), which NimBLE calls on its own host task. Only this
   // flag is touched from that context; the actual stopScanning() call (which
@@ -186,14 +175,6 @@ protected:
   // task (e.g. a per-device BLEDimmer::connectionTask()). Same deferral
   // pattern as scanHasEnded -- only loop() acts on it.
   volatile bool scanStopRequested = false;
-  // Whether the single device-wide outgoing-connect slot is currently held
-  // (0 or 1, not a real count -- see tryAcquireConnectSlot()/releaseConnectSlot()
-  // above, the actual arbiter). updateScanning() refuses to start a scan
-  // while this is nonzero -- connections take priority. EXPERIMENTAL
-  // (2026-09-25): capping this at one slot device-wide, rather than allowing
-  // NIMBLE_MAX_CONNECTIONS concurrent outgoing connects, is itself still an
-  // open question -- see cwi-dis/iotsa#263.
-  std::atomic<int> connectingCount{0};
   BleDeviceFoundCallback knownDeviceCallback = NULL;
 };
 
