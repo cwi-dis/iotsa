@@ -27,10 +27,12 @@ class IotsaBLEServerCallbacks : public NimBLEServerCallbacks {
     IFBLEDEBUG IotsaSerial.printf("BLE connect\n");
     iotsaController.pauseSleep();
     IotsaBLERadioArbiter::reserveConnectionForServer(SERVER_CONNECTION_RESERVE_MS);
+    IotsaBLEServerMod::_notePeerConnected(connInfo.getConnHandle());
   }
 	void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override {
     IFBLEDEBUG IotsaSerial.printf("BLE Disconnect reason %d, restart advertising\n", reason);
     iotsaController.resumeSleep();
+    IotsaBLEServerMod::_notePeerDisconnected(connInfo.getConnHandle());
     // Re-arm rather than let the reservation end right at disconnect: a
     // maintenance sequence often reconnects a few seconds later for its next
     // step (see docs/device-flashing.md's BLE dances).
@@ -50,11 +52,13 @@ public:
 	void onRead(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override {
     IFBLEDEBUG IotsaSerial.printf("BLE char onRead %s\n", pCharacteristic->getUUID().toString().c_str());
     iotsaController.noteActivity();
+    IotsaBLEServerMod::_notePeerActivity(connInfo.getConnHandle());
     api->bleGetHandler(charUUID);
   }
 	void onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override {
     IFBLEDEBUG IotsaSerial.printf("BLE char onWrite %s\n", pCharacteristic->getUUID().toString().c_str());
     iotsaController.noteActivity();
+    IotsaBLEServerMod::_notePeerActivity(connInfo.getConnHandle());
     api->blePutHandler(charUUID);
   }
 	void onStatus(NimBLECharacteristic* pCharacteristic, uint32_t code) {
@@ -89,6 +93,10 @@ IotsaBLEServerMod::webHandler() {
     tx_power_dbm = strtol(api.webService->server->arg("tx_power_dbm").c_str(), 0, 10);
     anyChanged = true;
   }
+  if( api.webService->server->hasArg("idle_timeout")) {
+    idle_timeout = strtol(api.webService->server->arg("idle_timeout").c_str(), 0, 10);
+    anyChanged = true;
+  }
   if (anyChanged) configSave();
 
   
@@ -99,6 +107,7 @@ IotsaBLEServerMod::webHandler() {
   message += "Advertising interval (max): <input type='text' name='adv_max' value='" + String(adv_max) + "'> (default: -1, unit: 0.625ms, range: 32..16384)<br>";
   message += "Transmit power level: <input type='text' name='tx_power_dbm' value='" + String(tx_power_dbm) + "'> (raw dBm; -1: leave at hardware default; valid range is chip-dependent, e.g. -12..+9 on classic ESP32, -24..+21 on ESP32-C3/S3/C6)<br>";
   message += "Transmit power level (actual): " + String(tx_power_dbm_actual) + " dBm<br>";
+  message += "Idle connection timeout: <input type='text' name='idle_timeout' value='" + String(idle_timeout) + "'> (seconds; disconnect a client that hasn't read or written anything for this long; 0: never)<br>";
   message += "<input type='submit'></form></body></html>";
   api.webService->server->send(200, "text/html", message);
 }
@@ -119,6 +128,61 @@ int IotsaBLEServerMod::tx_power_dbm = -1;
 int IotsaBLEServerMod::tx_power_dbm_actual = -1;
 volatile uint32_t IotsaBLEServerMod::advertisingRetryAtMillis = 0;
 volatile uint32_t IotsaBLEServerMod::advertisingRetryDuration = 0;
+int IotsaBLEServerMod::idle_timeout = 60;
+IotsaBLEServerMod::PeerActivity IotsaBLEServerMod::s_peers[NIMBLE_MAX_CONNECTIONS];
+
+const uint32_t IDLE_CHECK_INTERVAL_MS = 1000;
+
+void IotsaBLEServerMod::_notePeerConnected(uint16_t connHandle) {
+  for (auto& p : s_peers) {
+    if (p.connHandle == BLE_HS_CONN_HANDLE_NONE) {
+      // Timestamp first, so loop() never sees this handle with a stale time.
+      p.lastActivityMillis = millis();
+      p.connHandle = connHandle;
+      return;
+    }
+  }
+  IotsaSerial.printf("IotsaBLEServerMod: no free peer slot for connection %d\n", connHandle);
+}
+
+void IotsaBLEServerMod::_notePeerActivity(uint16_t connHandle) {
+  for (auto& p : s_peers) {
+    if (p.connHandle == connHandle) {
+      p.lastActivityMillis = millis();
+      return;
+    }
+  }
+}
+
+void IotsaBLEServerMod::_notePeerDisconnected(uint16_t connHandle) {
+  for (auto& p : s_peers) {
+    if (p.connHandle == connHandle) {
+      p.connHandle = BLE_HS_CONN_HANDLE_NONE;
+      return;
+    }
+  }
+}
+
+void IotsaBLEServerMod::_checkIdlePeers() {
+  if (idle_timeout <= 0 || s_server == nullptr) return;
+  uint32_t now = millis();
+  if (now - _lastIdleCheckMillis < IDLE_CHECK_INTERVAL_MS) return;
+  _lastIdleCheckMillis = now;
+  for (auto& p : s_peers) {
+    uint16_t h = p.connHandle;
+    if (h == BLE_HS_CONN_HANDLE_NONE) continue;
+    uint32_t idle = now - p.lastActivityMillis;
+    if (idle > (uint32_t)idle_timeout * 1000) {
+      // Not debug-gated: a central holding a connection open without using it
+      // is exactly the field problem this exists for (cwi-dis/iotsa#265).
+      IotsaSerial.printf("IotsaBLEServerMod: connection %d idle for %ds, disconnecting\n", h, (int)(idle / 1000));
+      // Reset the timestamp so we don't re-issue every check while the
+      // disconnect is in progress; onDisconnect() frees the slot.
+      p.lastActivityMillis = now;
+      s_server->disconnect(h);
+    }
+  }
+}
 
 const uint32_t ADVERTISING_RETRY_MS = 2000; // How long to wait before retrying a failed advertising start
 
@@ -249,6 +313,7 @@ void IotsaBLEServerMod::resumeServer(int duration) {
 }
 
 void IotsaBLEServerMod::setup() {
+  for (auto& p : s_peers) p.connHandle = BLE_HS_CONN_HANDLE_NONE;
   createServer();
   configLoad();   // sets isEnabled from bleserver.cfg (default true)
   if (!isEnabled) {
@@ -265,6 +330,11 @@ bool IotsaBLEServerMod::getHandler(const char *path, JsonObject& reply) {
   reply["adv_max"] = adv_max;
   reply["tx_power_dbm"] = tx_power_dbm;
   reply["tx_power_dbm_actual"] = tx_power_dbm_actual;
+  reply["idle_timeout"] = idle_timeout;
+  // Read-only state, so a stuck connection (cwi-dis/iotsa#265) is visible over WiFi.
+  reply["connected_peers"] = s_server ? (int)s_server->getConnectedCount() : 0;
+  NimBLEAdvertising *pAdvertising = NimBLEDevice::isInitialized() ? NimBLEDevice::getAdvertising() : nullptr;
+  reply["advertising"] = pAdvertising != nullptr && pAdvertising->isAdvertising();
   return true;
 }
 
@@ -280,6 +350,7 @@ bool IotsaBLEServerMod::putHandler(const char *path, const JsonVariant& request,
   if (getFromRequest<int>(reqObj, "adv_min", adv_min)) anyChanged = true;
   if (getFromRequest<int>(reqObj, "adv_max", adv_max)) anyChanged = true;
   if (getFromRequest<int>(reqObj, "tx_power_dbm", tx_power_dbm)) anyChanged = true;
+  if (getFromRequest<int>(reqObj, "idle_timeout", idle_timeout)) anyChanged = true;
   if (anyChanged) configSave();
   checkUnhandled(reqObj);
   return anyChanged;
@@ -303,6 +374,7 @@ void IotsaBLEServerMod::configLoad() {
   cf.get("adv_max", adv_max, adv_max);
   if (adv_max >= 0) pAdvertising->setMaxInterval(adv_max);
   cf.get("tx_power_dbm", tx_power_dbm, tx_power_dbm);
+  cf.get("idle_timeout", idle_timeout, idle_timeout);
   _applyTxPower();
 #ifdef IOTSA_BLE_DEBUG
   pAdvertising->setAdvertisingCompleteCallback([](NimBLEAdvertising* adv) {
@@ -317,6 +389,7 @@ void IotsaBLEServerMod::configSave() {
   cf.put("adv_min", adv_min);
   cf.put("adv_max", adv_max);
   cf.put("tx_power_dbm", tx_power_dbm);
+  cf.put("idle_timeout", idle_timeout);
   if (NimBLEDevice::isInitialized()) {
     NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
     pAdvertising->stop();
@@ -351,6 +424,7 @@ void IotsaBLEServerMod::loop() {
       _noteAdvertisingStartResult(ok, duration);
     }
   }
+  _checkIdlePeers();
 }
 
 void IotsaBleApiService::setup(const char* serviceUUID, IotsaBLEProvider *_apiProvider) {

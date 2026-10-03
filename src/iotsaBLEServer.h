@@ -86,6 +86,14 @@ public:
   // only writes plain volatile scalars, the actual retried start() call
   // always happens from loop().
   static void _noteAdvertisingStartResult(bool ok, uint32_t duration);
+  // Per-connection activity tracking for the idle-connection timeout
+  // (cwi-dis/iotsa#265): a central that stays alive but never closes its
+  // connection would otherwise keep us from advertising indefinitely. Called
+  // from the NimBLE host task; only writes plain volatile scalars, loop()
+  // does the actual disconnecting.
+  static void _notePeerConnected(uint16_t connHandle);
+  static void _notePeerActivity(uint16_t connHandle);
+  static void _notePeerDisconnected(uint16_t connHandle);
 protected:
   bool isEnabled = true;   // config.cfg overrides in configLoad()
   // Last iotsaController.bleRadioWanted() applied by loop(), so a policy change
@@ -122,6 +130,16 @@ protected:
   static volatile uint32_t advertisingRetryAtMillis;
   // Duration to retry with (0 = indefinite) -- whatever the failed call used.
   static volatile uint32_t advertisingRetryDuration;
+  // Disconnect a peer that hasn't read or written anything for this many
+  // seconds. 0: never. See _notePeerConnected() above.
+  static int idle_timeout;
+  struct PeerActivity {
+    volatile uint16_t connHandle;   // BLE_HS_CONN_HANDLE_NONE: slot free
+    volatile uint32_t lastActivityMillis;
+  };
+  static PeerActivity s_peers[NIMBLE_MAX_CONNECTIONS];
+  uint32_t _lastIdleCheckMillis = 0;
+  void _checkIdlePeers();
 private:
   void _startServer();
   static void _bleGotoMode();
