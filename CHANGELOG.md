@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ble name=type:value` accepts the same type prefix as `config`, and a bad value gives a clear error instead of a traceback (#131)
 - BLE server drops a client connection that has been idle for `idle_timeout` seconds (default 60), so a misbehaving central can no longer keep a device from advertising; `/api/bleserver` also reports `connected_peers` and `advertising` (#265)
 - BLE client: typed `get()` read freed memory (removed `getAsBuffer()`)
+- BLE advertising no longer restarts after light sleep, a scan or a config change when BLE is off by policy (#263)
 
 ### Changed
 

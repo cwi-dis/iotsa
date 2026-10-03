@@ -354,12 +354,12 @@ the `--no-ff` merge to `develop`.
 
 Separable follow-ons (own issues, not gating the merge):
 
-- BLE server advertising-state coordination -- folded into
-  [#208](https://github.com/cwi-dis/iotsa/issues/208) Part A (the client/server
-  scan-vs-advertise coordination object): `isEnabled` (stack up?) vs
-  `bleRadioWanted()` (advertise?) as clean layers, and a single funnel for the ~3
-  uncoordinated advertising pokers (`_bleGotoMode`, `pauseServer`/`resumeServer`,
-  the retry machinery). Internal only -- no module or API change. The full
+- BLE server advertising-state coordination -- done in
+  [#263](https://github.com/cwi-dis/iotsa/issues/263) (which absorbed #208 Part A):
+  advertising is now derived in one place, `IotsaBLEServerMod::_reconcileAdvertising()`,
+  from `isEnabled` (stack up?), `bleRadioWanted()` (policy) and the
+  `IotsaBLERadioArbiter` pause reasons (sleep, scan, GATT build), replacing
+  `_bleGotoMode`, `pauseServer`/`resumeServer` and the separate retry restarts. The full
   WiFi-style `IotsaBLEDriver`/`IotsaBLEController` split stays a separate
   "someday, if the 2-state case ever justifies it" note.
 - Mode-declaration / reject-unregistered-mode -- the

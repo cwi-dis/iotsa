@@ -2,7 +2,6 @@
 #include "iotsaBLEClient.h"
 #ifdef IOTSA_WITH_BLE
 #include "iotsaConfigFile.h"
-#include "iotsaBLEServer.h"
 #include "iotsaRunmodeBLEClient.h"
 
 //
@@ -152,7 +151,7 @@ void IotsaBLEClientMod::startScanning() {
   }
   IFDEBUG IotsaSerial.println("IotsaBLEClientMod: BLE scan start");
   if (coordinateWithServer) {
-    advertisingWasPausedByScan = IotsaBLEServerMod::pauseServer();
+    IotsaBLERadioArbiter::pauseAdvertising(IotsaBLERadioArbiter::PAUSE_SCAN);
   }
   // Now start the scan
   uint32_t duration = scanDurationDiscoveryMillis;
@@ -163,6 +162,12 @@ void IotsaBLEClientMod::startScanning() {
   iotsaBLE_notifyScanningStateChanged(startOk && scanner->isScanning());
   if (!startOk) {
     scanner = nullptr;
+    scanningMod = NULL;
+    // Lift the pause again: stopScanning() won't run for a scan that never
+    // started, so advertising would otherwise stay off until the next scan.
+    if (coordinateWithServer) {
+      IotsaBLERadioArbiter::resumeAdvertising(IotsaBLERadioArbiter::PAUSE_SCAN);
+    }
     IFDEBUG IotsaSerial.println("NimBLEClient: cannot start scan, retry in 1s");
     shouldUpdateScanAtMillis = millis() + SCAN_START_RETRY_MS;
     return;
@@ -180,9 +185,8 @@ void IotsaBLEClientMod::stopScanning() {
     scanningMod = NULL;
     scanStoppedAtMillis = millis();
     iotsaBLE_notifyScanningStateChanged(false);
-    if (coordinateWithServer && advertisingWasPausedByScan) {
-      IotsaBLEServerMod::resumeServer();
-      advertisingWasPausedByScan = false;
+    if (coordinateWithServer) {
+      IotsaBLERadioArbiter::resumeAdvertising(IotsaBLERadioArbiter::PAUSE_SCAN);
     }
     scanningChanged();
   }

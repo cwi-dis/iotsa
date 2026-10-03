@@ -30,15 +30,16 @@ class IotsaBLEServerCallbacks : public NimBLEServerCallbacks {
     IotsaBLEServerMod::_notePeerConnected(connInfo.getConnHandle());
   }
 	void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override {
-    IFBLEDEBUG IotsaSerial.printf("BLE Disconnect reason %d, restart advertising\n", reason);
+    IFBLEDEBUG IotsaSerial.printf("BLE Disconnect reason %d\n", reason);
     iotsaController.resumeSleep();
     IotsaBLEServerMod::_notePeerDisconnected(connInfo.getConnHandle());
     // Re-arm rather than let the reservation end right at disconnect: a
     // maintenance sequence often reconnects a few seconds later for its next
     // step (see docs/device-flashing.md's BLE dances).
     IotsaBLERadioArbiter::reserveConnectionForServer(SERVER_CONNECTION_RESERVE_MS);
-    bool ok = pServer->startAdvertising();
-    IotsaBLEServerMod::_noteAdvertisingStartResult(ok, 0);
+    // We're on the NimBLE host task: don't restart advertising here, let
+    // loop() decide whether we should be advertising at all (cwi-dis/iotsa#263).
+    IotsaBLEServerMod::_requestReconcile();
   }
 };
 
@@ -128,6 +129,8 @@ int IotsaBLEServerMod::tx_power_dbm = -1;
 int IotsaBLEServerMod::tx_power_dbm_actual = -1;
 volatile uint32_t IotsaBLEServerMod::advertisingRetryAtMillis = 0;
 volatile uint32_t IotsaBLEServerMod::advertisingRetryDuration = 0;
+volatile bool IotsaBLEServerMod::s_reconcileRequested = false;
+bool IotsaBLEServerMod::s_enabled = true;
 int IotsaBLEServerMod::idle_timeout = 60;
 IotsaBLEServerMod::PeerActivity IotsaBLEServerMod::s_peers[NIMBLE_MAX_CONNECTIONS];
 
@@ -215,6 +218,7 @@ void IotsaBLEServerMod::createServer() {
   _applyTxPower();
   s_server = NimBLEDevice::createServer();
   s_server->setCallbacks(new IotsaBLEServerCallbacks());
+  IotsaBLERadioArbiter::setAdvertisingReconciler(_reconcileAdvertising);
   // NimBLE-Arduino 2.1.0 stopped advertising the device name by default, and
   // scan response is no longer enabled by default either. Turn scan response
   // back on and set the name explicitly (setName() puts it in the scan
@@ -226,96 +230,60 @@ void IotsaBLEServerMod::createServer() {
   pAdvertising->setName(iotsaConfig.hostName.c_str());
 }
 
-void IotsaBLEServerMod::_startServer() {
-  // Note: services no longer need starting explicitly here -- NimBLEService::start()
-  // is now a deprecated no-op; NimBLEAdvertising::start() (called via _bleGotoMode()
-  // below) starts the GATT server itself before advertising begins.
-  // The boot enable/disable decision is IotsaController policy now
-  // (cwi-dis/iotsa#106): begin() seeded it from !bleDisabledOnBoot.
-  _bleGotoMode();
-  _lastBleRadioWanted = iotsaController.bleRadioWanted();
-}
-
-void IotsaBLEServerMod::_bleGotoMode() {
-  // if (s_server == nullptr) return;
+void IotsaBLEServerMod::_reconcileAdvertising(uint32_t durationMs) {
+  if (!s_enabled || s_server == nullptr) return;
   NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
   if (pAdvertising == nullptr) return;
-  bool wasActive = pAdvertising->isAdvertising();
-  bool isActive = iotsaController.bleRadioWanted();
-  if (wasActive == isActive) {
-    IFBLEDEBUG IotsaSerial.printf("BLE advertising is already %s\n", isActive ? "active" : "inactive");
+  bool want = iotsaController.bleRadioWanted() && IotsaBLERadioArbiter::advertisingPauseReasons() == 0;
+  bool active = pAdvertising->isAdvertising();
+  if (!want) {
+    advertisingRetryAtMillis = 0; // a pending retry must not undo this
+    if (active) {
+      IFBLEDEBUG IotsaSerial.printf("BLE stop advertising (wanted=%d, pause reasons=0x%x)\n",
+        (int)iotsaController.bleRadioWanted(), IotsaBLERadioArbiter::advertisingPauseReasons());
+      pAdvertising->stop();
+      iotsaBLE_notifyAdvertisingStateChanged(false);
+    }
     return;
   }
-  if (isActive) {
-    IFBLEDEBUG IotsaSerial.println("BLE start advertising");
-    // causes crash: esp_bt_controller_enable(esp_bt_mode_t::ESP_BT_MODE_BLE);
-    bool ok = pAdvertising->start();
-    iotsaBLE_notifyAdvertisingStateChanged(ok);
-    _noteAdvertisingStartResult(ok, 0);
-  } else {
-    IFBLEDEBUG IotsaSerial.println("BLE stop advertising");
-    advertisingRetryAtMillis = 0; // explicit stop takes priority over any pending retry
-    pAdvertising->stop();
-    iotsaBLE_notifyAdvertisingStateChanged(false);
-    // re-enabling causes crash: esp_bt_controller_disable();
-  }
-}
-
-bool IotsaBLEServerMod::pauseServer() {
-  // For now we keep pauseServer() and resumeServer(), because the use case is for light sleep.
-  // An explicit pause always takes priority over any pending advertising-start
-  // retry -- clear it unconditionally, even if we're already not advertising
-  // (a retry could otherwise still be pending and fire later, fighting this
-  // pause).
-  advertisingRetryAtMillis = 0;
-  if (s_server) {
-    NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
-    if (pAdvertising == nullptr || !pAdvertising->isAdvertising()) return true;
-    IFBLEDEBUG IotsaSerial.println("BLE pause advertising");
-    pAdvertising->stop();
-    iotsaBLE_notifyAdvertisingStateChanged(false);
-    return true;
-  }
-  return false;
-}
-
-void IotsaBLEServerMod::resumeServer(int duration) {
-  NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
-  // minAdvertisingDurationMillis needs at least one full advertising cycle to
-  // have a chance of being seen -- it must scale with adv_min (raw units,
-  // 0.625ms each; BLE_HCI_ADV_ITVL_MIN=32 units=20ms is the legal minimum,
-  // confirmed against NimBLE source), not stay fixed, or it silently goes
-  // stale for any server configured slower than the legal minimum (e.g.
-  // control's adv_min=100). The +50ms margin is calibrated, not derived from
-  // first principles: chosen so this reproduces the previous hardcoded,
-  // already field-tested value (70ms) at the legal-minimum interval, rather
-  // than guessing at a BLE-timing formula the original 70ms comment's own
-  // arithmetic didn't fully reconcile (it claimed "20ms cycle + 10ms margin
-  // = 70ms", which doesn't add up).
+  if (active) return;
+  const uint32_t requestedMs = durationMs; // what a retry should ask for again
+  // A limited-duration start (the light-sleep wake window) needs at least one
+  // full advertising cycle to have a chance of being seen -- it must scale
+  // with adv_min (raw units, 0.625ms each; BLE_HCI_ADV_ITVL_MIN=32 units=20ms
+  // is the legal minimum, confirmed against NimBLE source), not stay fixed, or
+  // it silently goes stale for any server configured slower than the legal
+  // minimum (e.g. control's adv_min=100). The +50ms margin is calibrated, not
+  // derived from first principles: chosen so this reproduces the previous
+  // hardcoded, already field-tested value (70ms) at the legal-minimum
+  // interval. A window too short for that advertises indefinitely instead.
   const int advIntervalMillis = (adv_min >= 0 ? adv_min : 32) * 5 / 8;
-  const int minAdvertisingDurationMillis = advIntervalMillis + 50;
+  const uint32_t minAdvertisingDurationMillis = advIntervalMillis + 50;
   // Independent of advertise interval -- this is BLE connection-establishment
   // handshake time, not an advertising-cycle cost.
-  const int extraDurationForConnectingMillis = 30;
-  if (duration == 0 || duration < minAdvertisingDurationMillis + extraDurationForConnectingMillis) {
-    IFBLEDEBUG IotsaSerial.println("BLE resume advertising");
-    bool ok = pAdvertising->start();
-    iotsaBLE_notifyAdvertisingStateChanged(ok);
-    _noteAdvertisingStartResult(ok, 0);
-    return;
-  } else {
-    duration -= extraDurationForConnectingMillis;
-    IFBLEDEBUG IotsaSerial.printf("BLE resume advertising for %d ms\n", duration);
-    bool ok = pAdvertising->start(duration);
-    iotsaBLE_notifyAdvertisingStateChanged(ok);
-    _noteAdvertisingStartResult(ok, (uint32_t)duration);
+  const uint32_t extraDurationForConnectingMillis = 30;
+  if (durationMs != 0 && durationMs < minAdvertisingDurationMillis + extraDurationForConnectingMillis) {
+    durationMs = 0;
+  } else if (durationMs != 0) {
+    durationMs -= extraDurationForConnectingMillis;
   }
+  bool ok;
+  if (durationMs == 0) {
+    IFBLEDEBUG IotsaSerial.println("BLE start advertising");
+    ok = pAdvertising->start();
+  } else {
+    IFBLEDEBUG IotsaSerial.printf("BLE start advertising for %u ms\n", (unsigned)durationMs);
+    ok = pAdvertising->start(durationMs);
+  }
+  iotsaBLE_notifyAdvertisingStateChanged(ok);
+  _noteAdvertisingStartResult(ok, requestedMs);
 }
 
 void IotsaBLEServerMod::setup() {
   for (auto& p : s_peers) p.connHandle = BLE_HS_CONN_HANDLE_NONE;
   createServer();
   configLoad();   // sets isEnabled from bleserver.cfg (default true)
+  s_enabled = isEnabled;
   if (!isEnabled) {
     IFBLEDEBUG IotsaSerial.println("BLE deinit, not isEnabled");
     NimBLEDevice::deinit(false);
@@ -335,6 +303,10 @@ bool IotsaBLEServerMod::getHandler(const char *path, JsonObject& reply) {
   reply["connected_peers"] = s_server ? (int)s_server->getConnectedCount() : 0;
   NimBLEAdvertising *pAdvertising = NimBLEDevice::isInitialized() ? NimBLEDevice::getAdvertising() : nullptr;
   reply["advertising"] = pAdvertising != nullptr && pAdvertising->isAdvertising();
+  // Why not, when it isn't (cwi-dis/iotsa#263): IotsaBLERadioArbiter pause
+  // reasons, 1=sleep 2=scan 4=GATT build. 0 with advertising false means the
+  // policy (bleRadioWanted) or a failed start.
+  reply["advertising_paused"] = IotsaBLERadioArbiter::advertisingPauseReasons();
   return true;
 }
 
@@ -362,7 +334,13 @@ void IotsaBLEServerMod::lateSetup() {
 }
 
 void IotsaBLEServerMod::lateSetupDone() {
-  _startServer();
+  // All services are built now. Services no longer need starting explicitly:
+  // NimBLEService::start() is a deprecated no-op, NimBLEAdvertising::start()
+  // starts the GATT server itself. Whether we actually advertise is up to
+  // _reconcileAdvertising() -- the boot enable/disable decision is
+  // IotsaController policy (cwi-dis/iotsa#106), seeded from !bleDisabledOnBoot.
+  _lastBleRadioWanted = iotsaController.bleRadioWanted();
+  IotsaBLERadioArbiter::resumeAdvertising(IotsaBLERadioArbiter::PAUSE_GATT_BUILD);
 }
 
 void IotsaBLEServerMod::configLoad() {
@@ -392,46 +370,44 @@ void IotsaBLEServerMod::configSave() {
   cf.put("idle_timeout", idle_timeout);
   if (NimBLEDevice::isInitialized()) {
     NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
+    // Stop so the new interval/power take effect, then let the reconciler
+    // decide whether to start again (it used to restart unconditionally,
+    // even while paused or with BLE off by policy).
     pAdvertising->stop();
-    advertisingRetryAtMillis = 0; // about to explicitly restart below
     if (adv_min >= 0) pAdvertising->setMinInterval(adv_min);
     if (adv_max >= 0) pAdvertising->setMaxInterval(adv_max);
     _applyTxPower();
-    bool ok = pAdvertising->start();
-    _noteAdvertisingStartResult(ok, 0);
+    _reconcileAdvertising();
   }
 }
 
 void IotsaBLEServerMod::loop() {
-  // Reconcile advertising with IotsaController's BLE radio-enablement policy
-  // (cwi-dis/iotsa#106). Poll for a change rather than an armed timer -- and only
-  // on an actual change, so pauseServer()/resumeServer() (light sleep) aren't
-  // fought by a same-tick restart.
+  // Reconcile advertising on events only (see _reconcileAdvertising()): a
+  // change in IotsaController's BLE radio policy (cwi-dis/iotsa#106), a request
+  // from the NimBLE host task (a peer disconnected), or a due retry.
   bool bleWanted = iotsaController.bleRadioWanted();
   if (bleWanted != _lastBleRadioWanted) {
     IFBLEDEBUG IotsaSerial.printf("BLE radio %s by policy\n", bleWanted ? "wanted" : "not wanted");
     _lastBleRadioWanted = bleWanted;
-    _bleGotoMode();
+    _reconcileAdvertising();
+  }
+  if (s_reconcileRequested) {
+    s_reconcileRequested = false;
+    _reconcileAdvertising();
   }
   if (advertisingRetryAtMillis != 0 && millis() >= advertisingRetryAtMillis) {
     advertisingRetryAtMillis = 0;
-    NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
-    if (pAdvertising != nullptr) {
-      IFBLEDEBUG IotsaSerial.println("BLE retry start advertising");
-      uint32_t duration = advertisingRetryDuration;
-      bool ok = (duration == 0) ? pAdvertising->start() : pAdvertising->start(duration);
-      iotsaBLE_notifyAdvertisingStateChanged(ok);
-      _noteAdvertisingStartResult(ok, duration);
-    }
+    IFBLEDEBUG IotsaSerial.println("BLE retry start advertising");
+    _reconcileAdvertising(advertisingRetryDuration);
   }
   _checkIdlePeers();
 }
 
 void IotsaBleApiService::setup(const char* serviceUUID, IotsaBLEProvider *_apiProvider) {
-  // Stop advertising while the GATT table is being built (return value ignored --
-  // advertising is (re)started later by IotsaBLEServerMod::lateSetupDone() ->
-  // _startServer()). xxxjack: resuming it right here instead has proved wrong.
-  IotsaBLEServerMod::pauseServer();
+  // No advertising while the GATT table is being built. The pause is lifted in
+  // IotsaBLEServerMod::lateSetupDone(), once every service exists. xxxjack:
+  // resuming it right here instead has proved wrong.
+  IotsaBLERadioArbiter::pauseAdvertising(IotsaBLERadioArbiter::PAUSE_GATT_BUILD);
   IotsaBLEServerMod::createServer();
   next = IotsaBLEServerMod::s_services;
   IotsaBLEServerMod::s_services = this;

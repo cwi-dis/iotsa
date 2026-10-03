@@ -95,8 +95,8 @@ public:
   uint32_t getConnectTimeoutMillis() { return connectTimeoutMillis; }
   void setKnownDeviceChangedCallback(BleDeviceFoundCallback _callback);
   //
-  // If true, scanning pauses IotsaBLEServerMod's advertising for the duration
-  // of the scan (and resumes it afterwards). Off by default: this only ever
+  // If true, scanning pauses advertising for the duration of the scan, via
+  // IotsaBLERadioArbiter's PAUSE_SCAN reason. Off by default: this only ever
   // affects apps that use both a client and a server together.
   //
   static bool coordinateWithServer;
@@ -195,7 +195,6 @@ protected:
   // open question -- see cwi-dis/iotsa#263.
   std::atomic<int> connectingCount{0};
   BleDeviceFoundCallback knownDeviceCallback = NULL;
-  bool advertisingWasPausedByScan = false;
 };
 
 #endif // IOTSA_WITH_BLE

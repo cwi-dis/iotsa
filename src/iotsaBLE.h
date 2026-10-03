@@ -77,9 +77,36 @@ public:
   // to do that reliably.
   static void holdOffNewWork(bool hold);
   static bool newWorkHeldOff();
+
+  // Advertising is a derived state, not something callers switch on and off
+  // directly (cwi-dis/iotsa#263, ex-#208 Part A). Anyone who needs it off for
+  // a while adds a reason, and removes it again when done; IotsaBLEServerMod
+  // advertises only while BLE is enabled, iotsaController.bleRadioWanted()
+  // says so, and no reason is set. Replaces IotsaBLEServerMod::pauseServer()/
+  // resumeServer(), whose callers each started advertising again regardless
+  // of what the others (or the policy) wanted.
+  enum AdvertisingPauseReason : uint8_t {
+    PAUSE_SLEEP = 1,        // light sleep (IotsaRunmodeMod's sleep executor)
+    PAUSE_SCAN = 2,         // client scan, IotsaBLEClientMod::coordinateWithServer
+    PAUSE_GATT_BUILD = 4,   // GATT table being built (IotsaBleApiService::setup() until lateSetupDone())
+  };
+  // Both re-evaluate advertising right away (through the reconciler below), so
+  // a pause has taken effect when pauseAdvertising() returns -- the sleep
+  // executor relies on that. Main task only. durationMs: when this resume ends
+  // up starting advertising, stop again after that long (0: indefinitely) --
+  // used for the light-sleep wake window.
+  static void pauseAdvertising(AdvertisingPauseReason reason);
+  static void resumeAdvertising(AdvertisingPauseReason reason, uint32_t durationMs = 0);
+  static uint8_t advertisingPauseReasons() { return s_advertisingPauseReasons; }
+  // Installed by IotsaBLEServerMod. Stays null in an app without a server
+  // role, where pause/resume just record the reasons.
+  typedef void (*AdvertisingReconciler)(uint32_t durationMs);
+  static void setAdvertisingReconciler(AdvertisingReconciler reconciler) { s_advertisingReconciler = reconciler; }
 private:
   static uint32_t s_serverReservedUntilMillis;
   static bool s_holdOffNewBLEWork;
+  static uint8_t s_advertisingPauseReasons;
+  static AdvertisingReconciler s_advertisingReconciler;
 };
 #endif // IOTSA_WITH_BLE
 #endif // _IOTSABLE_H

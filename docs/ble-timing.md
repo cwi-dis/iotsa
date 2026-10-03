@@ -202,7 +202,7 @@ means staying invisible/unconnectable longer than necessary once the pool frees 
 retry cadence for "try again once whatever blocked us clears up," not a deployment-tunable.
 
 **`minAdvertisingDurationMillis`** / **`extraDurationForConnectingMillis`** (local variables,
-`resumeServer()`, `iotsaBLEServer.cpp`; fixed 2026-07-19, were hardcoded 70ms/30ms)
+`_reconcileAdvertising()`, formerly `resumeServer()`, `iotsaBLEServer.cpp`; fixed 2026-07-19, were hardcoded 70ms/30ms)
 — *Not a good fit for independent configurability* -- correctly so now, and not just in principle.
 `minAdvertisingDurationMillis` is computed from `adv_min` (`(adv_min >= 0 ? adv_min : 32) * 5 / 8
 + 50`) instead of being a fixed 70ms that only happened to be correct at the legal-minimum

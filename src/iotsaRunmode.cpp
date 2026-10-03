@@ -621,13 +621,15 @@ void IotsaRunmodeMod::_sleepTick() {
   if (d.mode == IOTSA_SLEEP_LIGHT) {
     // Everything stays powered, just runs slowly; we return here after waking.
 #ifdef IOTSA_WITH_BLE
-    bool btActive = IotsaBLEServerMod::pauseServer();
+    IotsaBLERadioArbiter::pauseAdvertising(IotsaBLERadioArbiter::PAUSE_SLEEP);
 #endif
     esp_light_sleep_start();
     sp.noteWokeFromSleep();
     IFDEBUG IotsaSerial.printf("light sleep wakeup at %u\n", (unsigned)sp.millisAtWakeup);
 #ifdef IOTSA_WITH_BLE
-    if (btActive) IotsaBLEServerMod::resumeServer(_sleepConfig.wakeDuration);
+    // Advertise for the wake window only -- and only if BLE is wanted at all
+    // (this used to restart advertising regardless of policy).
+    IotsaBLERadioArbiter::resumeAdvertising(IotsaBLERadioArbiter::PAUSE_SLEEP, _sleepConfig.wakeDuration);
 #endif
     iotsaController.resumeWatchdog();
     _notifySleepWakeup(false);

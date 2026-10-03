@@ -37,4 +37,17 @@ void IotsaBLERadioArbiter::holdOffNewWork(bool hold) {
 bool IotsaBLERadioArbiter::newWorkHeldOff() {
   return s_holdOffNewBLEWork;
 }
+
+uint8_t IotsaBLERadioArbiter::s_advertisingPauseReasons = 0;
+IotsaBLERadioArbiter::AdvertisingReconciler IotsaBLERadioArbiter::s_advertisingReconciler = nullptr;
+
+void IotsaBLERadioArbiter::pauseAdvertising(AdvertisingPauseReason reason) {
+  s_advertisingPauseReasons |= reason;
+  if (s_advertisingReconciler) s_advertisingReconciler(0);
+}
+
+void IotsaBLERadioArbiter::resumeAdvertising(AdvertisingPauseReason reason, uint32_t durationMs) {
+  s_advertisingPauseReasons &= ~reason;
+  if (s_advertisingReconciler) s_advertisingReconciler(durationMs);
+}
 #endif // IOTSA_WITH_BLE

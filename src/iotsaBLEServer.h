@@ -73,18 +73,23 @@ public:
   }
 #endif
 
-  static bool pauseServer();
-  static void resumeServer(int duration=0); // duration=0 means advertise indefinitely
-  // pAdvertising->start() (and NimBLEServer::startAdvertising(), used by
-  // IotsaBLEServerCallbacks::onDisconnect()) can fail -- e.g. BLE_HS_ENOMEM
-  // when the shared connection pool is exhausted by outbound client
-  // connections -- and every call site used to silently discard that,
-  // leaving the device permanently non-advertising with no log output and
-  // no retry. Every start() call site now reports its outcome here instead;
-  // on failure this arms a retry that loop() acts on. Safe to call from any
-  // task (e.g. the NimBLE host task, which is where onDisconnect() runs) --
-  // only writes plain volatile scalars, the actual retried start() call
-  // always happens from loop().
+  // The single place that starts or stops advertising (cwi-dis/iotsa#263):
+  // advertise iff BLE is enabled, iotsaController.bleRadioWanted(), and no
+  // IotsaBLERadioArbiter pause reason is set. Installed as the arbiter's
+  // reconciler, so pause/resume calls land here; also called from loop() on a
+  // policy change, a due retry, or a request from the NimBLE host task (see
+  // _requestReconcile()). Event-driven on purpose, not run every loop(): a
+  // light-sleep wake window starts advertising with a duration, and that must
+  // be allowed to run out without being restarted. durationMs: see
+  // IotsaBLERadioArbiter::resumeAdvertising(). Main task only.
+  static void _reconcileAdvertising(uint32_t durationMs = 0);
+  // For callers on the NimBLE host task (onDisconnect()): just sets a flag,
+  // loop() does the reconcile.
+  static void _requestReconcile() { s_reconcileRequested = true; }
+  // pAdvertising->start() can fail -- e.g. BLE_HS_ENOMEM when the shared
+  // connection pool is exhausted by outbound client connections. On failure
+  // this arms a retry that loop() acts on (through _reconcileAdvertising(),
+  // so a retry never starts advertising that has meanwhile been paused).
   static void _noteAdvertisingStartResult(bool ok, uint32_t duration);
   // Per-connection activity tracking for the idle-connection timeout
   // (cwi-dis/iotsa#265): a central that stays alive but never closes its
@@ -97,7 +102,7 @@ public:
 protected:
   bool isEnabled = true;   // config.cfg overrides in configLoad()
   // Last iotsaController.bleRadioWanted() applied by loop(), so a policy change
-  // is acted on once (cwi-dis/iotsa#106). Starts true; _startServer() resyncs it.
+  // is acted on once (cwi-dis/iotsa#106). Starts true; lateSetupDone() resyncs it.
   bool _lastBleRadioWanted = true;
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
@@ -125,11 +130,16 @@ protected:
   // for). Read-only -- not settable via REST/web, not persisted to flash.
   static int tx_power_dbm_actual;
   // 0 means no retry pending. Set by _noteAdvertisingStartResult() on
-  // failure, cleared by it on success and by any intentional stop/pause
-  // (so a retry never fights an explicit pause). loop() is the only reader.
+  // failure, cleared by it on success and whenever _reconcileAdvertising()
+  // decides advertising should be off. loop() is the only reader.
   static volatile uint32_t advertisingRetryAtMillis;
   // Duration to retry with (0 = indefinite) -- whatever the failed call used.
   static volatile uint32_t advertisingRetryDuration;
+  // Set by _requestReconcile(), consumed by loop().
+  static volatile bool s_reconcileRequested;
+  // Static mirror of isEnabled, for the static _reconcileAdvertising(): false
+  // means the stack was deinit()ed in setup(), so never touch advertising.
+  static bool s_enabled;
   // Disconnect a peer that hasn't read or written anything for this many
   // seconds. 0: never. See _notePeerConnected() above.
   static int idle_timeout;
@@ -141,8 +151,6 @@ protected:
   uint32_t _lastIdleCheckMillis = 0;
   void _checkIdlePeers();
 private:
-  void _startServer();
-  static void _bleGotoMode();
   // Applies tx_power_dbm via NimBLEDevice::setPower() (unless it's -1), then
   // sets tx_power_dbm_actual to the level read back via getPower() -- see
   // the field comments above.
