@@ -135,7 +135,7 @@ void IotsaBLEClientMod::updateScanning() {
   IFDEBUG {
     IotsaSerial.print("BLE scan for: ");
     for (auto it: devices) {
-      if (!it.second->available()) {
+      if (!it.second->available() || it.second->needsRescan) {
         IotsaSerial.printf("%s ", it.second->getName().c_str());
       }
     }

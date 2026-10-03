@@ -267,6 +267,12 @@ void IotsaBLEClientDevice::service() {
   if (linkState == LinkState::Connecting) {
     int8_t result = asyncConnectResult;
     if (result == 0) {
+      // Work deadline passed mid-connect: cancel, onConnectFail() follows
+      // and the give-up below happens on a later pass.
+      if (workPending && (int32_t)(now - workDeadlineAtMillis) >= 0 && pClient && !cancelRequested) {
+        cancelRequested = true;
+        pClient->cancelConnect();
+      }
       uint32_t timeout = (owner ? owner->getConnectTimeoutMillis() : 6000) + ASYNC_CONNECT_BACKSTOP_MS;
       if (now - connectStartedAtMillis < timeout) return;
       IotsaSerial.printf("IotsaBLEClientDevice(%s): no connect outcome after %ums, giving up\n", bleName.c_str(), (unsigned)(now - connectStartedAtMillis));
@@ -311,7 +317,10 @@ void IotsaBLEClientDevice::service() {
     _runWork();
     return;
   }
-  if (!available()) {
+  if (!available() || needsRescan) {
+    // No address, or a failed connect and we haven't seen it advertise
+    // lately: wait for a scan to (re)confirm it rather than retrying the
+    // connect blindly -- a retry would also cut that scan short.
     linkState = LinkState::WaitingForAddress;
     return;
   }
@@ -366,6 +375,7 @@ bool IotsaBLEClientDevice::_startAsyncConnect() {
   numConnectAttempts++;
   connectStartedAtMillis = lastConnectAttemptAtMillis = millis();
   asyncConnectResult = 0;
+  cancelRequested = false;
   // linkState must be Connecting before the callbacks can fire.
   linkState = LinkState::Connecting;
   if (!pClient->connect(addr, false, true)) { // keep learned services, asynchronous

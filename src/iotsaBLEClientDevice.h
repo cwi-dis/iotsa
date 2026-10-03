@@ -163,6 +163,7 @@ protected:
   // host task, consumed by service(): 0 pending, 1 connected, -1 failed.
   volatile int8_t asyncConnectResult = 0;
   volatile int asyncConnectFailReason = 0;
+  bool cancelRequested = false;  // cancelConnect() already issued for this attempt
   const char *lastWorkStatus = nullptr;   // "done", "failed", "gave up: ..."
   // How long doWork() took, last time and worst case: doWork() blocks the
   // main loop for its GATT reads/writes, so this is what to look at when
