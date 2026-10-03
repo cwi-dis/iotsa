@@ -303,6 +303,8 @@ void IotsaBLEClientDevice::service() {
     IotsaSerial.printf("IotsaBLEClientDevice(%s): %s\n", bleName.c_str(), lastWorkStatus);
     workAbandoned();
     if (linkState != LinkState::Lingering) linkState = LinkState::Idle;
+    // A scan may have been running only for this work: let it stop now.
+    if (owner) owner->requestScanUpdate();
     return;
   }
   if (linkState == LinkState::Lingering) {

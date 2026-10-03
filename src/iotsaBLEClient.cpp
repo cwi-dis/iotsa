@@ -110,8 +110,9 @@ bool IotsaBLEClientMod::needsDiscovery() {
   // attempt and needs reconfirming. (IotsaBLEClientCollectionMod adds "or
   // we're hunting for unknown devices" on top of this.)
   for (auto it: devices) {
-    if (!it.second->available()) return true;
-    if (it.second->needsRescan) return true;
+    if (it.second->available() && !it.second->needsRescan) continue;
+    if (scanOnlyForPendingWork && !it.second->hasPendingWork()) continue;
+    return true;
   }
   return false;
 }

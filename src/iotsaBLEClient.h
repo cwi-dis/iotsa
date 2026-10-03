@@ -92,6 +92,15 @@ public:
   // through the blocking IotsaBLEClientDevice::connect() (lissabon, until
   // it moves over).
   bool mayOpenLink();
+  // Only scan for a known device when it has work pending (requestWork()),
+  // not merely because its address is unknown or stale (cwi-dis/iotsa#263
+  // step 3, #171): a device nobody wants to talk to no longer keeps the
+  // radio scanning. The cost is that a never-seen device is only looked for
+  // once someone wants it, so that first request is slower.
+  // TRANSITIONAL: off by default, because lissabon's DimmerBLEClient doesn't
+  // use requestWork() yet and relies on being discovered regardless; becomes
+  // the default once it does (step 4).
+  void setScanOnlyForPendingWork(bool on) { scanOnlyForPendingWork = on; requestScanUpdate(); }
   // Read by IotsaBLEClientDevice::connect() via its owner back-pointer.
   uint32_t getConnectTimeoutMillis() { return connectTimeoutMillis; }
   void setKnownDeviceChangedCallback(BleDeviceFoundCallback _callback);
@@ -134,9 +143,10 @@ protected:
   // True if we still need to actively look for devices: some known device
   // has no address yet (never matched by name), or a known device just
   // failed a connect attempt and needs reconfirming (see
-  // IotsaBLEClientDevice::needsRescan). False means there is currently no
-  // reason to scan at all. IotsaBLEClientCollectionMod overrides this to
-  // also return true while hunting for unknown devices.
+  // IotsaBLEClientDevice::needsRescan) -- and, with scanOnlyForPendingWork,
+  // only if that device also has work pending. False means there is
+  // currently no reason to scan at all. IotsaBLEClientCollectionMod
+  // overrides this to also return true while hunting for unknown devices.
   virtual bool needsDiscovery();
   static IotsaBLEClientMod *scanningMod;
   int scan_interval = 155;
@@ -172,6 +182,7 @@ protected:
   // lingering). 1: a device that needs the radio makes a lingering one close
   // early (cwi-dis/iotsa#263 decision 2). A constant per app, not tunable.
   int maxOpenClientConnections = 1;
+  bool scanOnlyForPendingWork = false;
   uint32_t scanStartedAtMillis = 0;
   uint32_t shouldUpdateScanAtMillis = 0;
   // Only loop() (and the functions it calls: startScanning/stopScanning) may
