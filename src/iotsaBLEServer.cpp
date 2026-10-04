@@ -227,7 +227,9 @@ void IotsaBLEServerMod::createServer() {
   // advertisement + scan-response mechanism.
   NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
   pAdvertising->enableScanResponse(true);
-  pAdvertising->setName(iotsaConfig.hostName.c_str());
+  if (!pAdvertising->setName(iotsaConfig.hostName.c_str())) {
+    IotsaSerial.printf("IotsaBLEServerMod: hostname \"%s\" too long to advertise\n", iotsaConfig.hostName.c_str());
+  }
 }
 
 void IotsaBLEServerMod::_reconcileAdvertising(uint32_t durationMs) {
@@ -403,7 +405,11 @@ void IotsaBLEServerMod::loop() {
   _checkIdlePeers();
 }
 
-void IotsaBleApiService::setup(const char* serviceUUID, IotsaBLEProvider *_apiProvider) {
+// Number of 128-bit service UUIDs advertised so far: two fit (one in the
+// advertisement, one in the scan response, cwi-dis/iotsa#277).
+static int s_advertised128 = 0;
+
+void IotsaBleApiService::setup(const char* serviceUUID, IotsaBLEProvider *_apiProvider, bool advertise) {
   // No advertising while the GATT table is being built. The pause is lifted in
   // IotsaBLEServerMod::lateSetupDone(), once every service exists. xxxjack:
   // resuming it right here instead has proved wrong.
@@ -415,8 +421,17 @@ void IotsaBleApiService::setup(const char* serviceUUID, IotsaBLEProvider *_apiPr
   IFBLEDEBUG IotsaSerial.printf("IotsaBleApiService: create ble service %s to 0x%x\n", serviceUUID, (uint32_t)apiProvider);
   bleService = IotsaBLEServerMod::s_server->createService(serviceUUID);
 
-  NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
-  pAdvertising->addServiceUUID(serviceUUID);
+  if (advertise) {
+    NimBLEUUID uuid(serviceUUID);
+    if (uuid.bitSize() == 128 && ++s_advertised128 > 2) {
+      IotsaSerial.printf("IotsaBleApiService: more than two 128-bit services advertised, %s probably won't fit\n", serviceUUID);
+    }
+    // NimBLE tries the advertisement, then the scan response; false means neither had room.
+    NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
+    if (!pAdvertising->addServiceUUID(uuid)) {
+      IotsaSerial.printf("IotsaBleApiService: no room to advertise service %s (still available after connecting)\n", serviceUUID);
+    }
+  }
 }
 
 void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask, uint8_t d2904format, uint16_t d2904unit, const char *d2901descr) {

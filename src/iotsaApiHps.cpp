@@ -57,7 +57,9 @@ public:
   // lateSetupDone()) turned out to no longer apply, see cwi-dis/iotsa#210.
   void lateSetup() override {
     IFBLEDEBUG IotsaSerial.println("IotsaHpsServiceMod::lateSetup called");
-    bleApi.setup(IotsaApiServiceHps::serviceUUID, this);
+    // Not advertised (cwi-dis/iotsa#277): clients find iotsa devices by the
+    // runmode service and reach HPS through GATT after connecting.
+    bleApi.setup(IotsaApiServiceHps::serviceUUID, this, false);
     // Explain to clients what the rgb characteristic looks like
     bleApi.addCharacteristic(IotsaApiServiceHps::urlUUID, bleApi.BLE_READ|bleApi.BLE_WRITE, NimBLE2904::FORMAT_UTF8, 0x2700, "HPS URL");
     bleApi.addCharacteristic(IotsaApiServiceHps::headersUUID, bleApi.BLE_READ|bleApi.BLE_WRITE, NimBLE2904::FORMAT_UTF8, 0x2700, "HPS Headers");

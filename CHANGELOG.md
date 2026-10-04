@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Toplevel PlatformIO envs no longer compile a leftover `.pio/` from a standalone example build
 - BLE client now scans for known devices only when they have work pending, by default (#263, #171)
 - BLE client collection: REST/web add/remove by name go through overridable hooks, so a subclass's own device type gets registered instead of a plain client (#264)
+- BLE: only services marked as advertised go in the advertisement/scan response (HPS no longer is), and a service or name that doesn't fit is logged instead of silently dropped (#277)
 
 ### Changed
 

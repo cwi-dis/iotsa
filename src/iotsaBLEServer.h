@@ -31,7 +31,15 @@ public:
     characteristicUUIDs(NULL),
     bleCharacteristics(NULL)
   {}
-  void setup(const char* serviceUUID, IotsaBLEProvider *_apiProvider);
+  // advertise: also list this service's UUID in the advertisement/scan
+  // response (cwi-dis/iotsa#277), so scanners can recognise the device
+  // without connecting. Every service is in the GATT database either way;
+  // after connecting a client finds all of them through service discovery.
+  // There's room for the core runmode service plus one 128-bit service of
+  // the app's own (in the scan response, if the device name is at most 11
+  // characters) and a few 16-bit ones, so advertise only an app's main
+  // service. Whatever doesn't fit is logged, not silently dropped.
+  void setup(const char* serviceUUID, IotsaBLEProvider *_apiProvider, bool advertise=true);
   void addCharacteristic(UUIDstring charUUID, int mask, uint8_t d2904format, uint16_t d2904unit, const char *d2901 = NULL);
   void set(UUIDstring charUUID, const uint8_t *data, size_t size);
   void set(UUIDstring charUUID, uint8_t value);
