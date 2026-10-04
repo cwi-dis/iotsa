@@ -60,8 +60,6 @@ void setup(void) {
   // Scan for unknown (iotsa) devices continuously, so an operator can see
   // what's nearby before deciding what to add by name.
   bleClientMod.findUnknownDevices(true);
-  // Known devices are only looked for when a command is queued for them (cwi-dis/iotsa#263).
-  bleClientMod.setScanOnlyForPendingWork(true);
 }
 
 void loop(void) {

@@ -97,9 +97,8 @@ public:
   // step 3, #171): a device nobody wants to talk to no longer keeps the
   // radio scanning. The cost is that a never-seen device is only looked for
   // once someone wants it, so that first request is slower.
-  // TRANSITIONAL: off by default, because lissabon's DimmerBLEClient doesn't
-  // use requestWork() yet and relies on being discovered regardless; becomes
-  // the default once it does (step 4).
+  // On by default. Turn it off only for a consumer that drives its devices
+  // without requestWork() and relies on them being discovered regardless.
   void setScanOnlyForPendingWork(bool on) { scanOnlyForPendingWork = on; requestScanUpdate(); }
   // Read by IotsaBLEClientDevice::connect() via its owner back-pointer.
   uint32_t getConnectTimeoutMillis() { return connectTimeoutMillis; }
@@ -182,7 +181,7 @@ protected:
   // lingering). 1: a device that needs the radio makes a lingering one close
   // early (cwi-dis/iotsa#263 decision 2). A constant per app, not tunable.
   int maxOpenClientConnections = 1;
-  bool scanOnlyForPendingWork = false;
+  bool scanOnlyForPendingWork = true;
   uint32_t scanStartedAtMillis = 0;
   uint32_t shouldUpdateScanAtMillis = 0;
   // Only loop() (and the functions it calls: startScanning/stopScanning) may

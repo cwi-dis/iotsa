@@ -81,8 +81,6 @@ private:
 
 void BLEButtonMod::setup() {
   configLoad();
-  // Only look for the ringer when there's a ring to deliver (cwi-dis/iotsa#263).
-  bleClientMod.setScanOnlyForPendingWork(true);
 }
 
 void BLEButtonMod::lateSetup() {
