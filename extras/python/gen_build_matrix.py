@@ -274,7 +274,10 @@ def emit_platformio_ini(entries, out):
             continue
         out.write(f"[env:{env_name(e)}]\n")
         out.write(f"extends = {board}\n")
-        out.write(f"build_src_filter = +<*> +<../{e['source']}>\n")
+        # Exclude the source's own .pio/: a standalone build of the example
+        # (its own platformio.ini) leaves one there, and its libdeps' example
+        # sketches would otherwise get compiled into this env and fail.
+        out.write(f"build_src_filter = +<*> +<../{e['source']}> -<../{e['source']}/.pio/>\n")
         if e["build_flags"]:
             out.write(f"build_flags = ${{{board}.build_flags}} {' '.join(e['build_flags'])}\n")
         if e.get("partitions"):

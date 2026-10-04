@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - BLE client: typed `get()` read freed memory (removed `getAsBuffer()`)
 - BLE advertising no longer restarts after light sleep, a scan or a config change when BLE is off by policy (#263)
 - BLE client can scan only for devices that have work pending (`setScanOnlyForPendingWork()`, used by BLEButton and BLEController) (#171)
+- Toplevel PlatformIO envs no longer compile a leftover `.pio/` from a standalone example build
 
 ### Changed
 
