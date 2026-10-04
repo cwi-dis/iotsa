@@ -113,8 +113,11 @@ committed generated file is stale.
 - `Led`, `Light` — LED control / BLE
 - `Button`, `Input`, `Ringer` — input handling
 - `Log`, `Temperature`, `DateTime` — logging and sensors
-- `sandbox/BLEClient` — active-development test rig for `IotsaBLEClientMod`-based
-  device-to-device communication; not in the list above since it isn't doc-grade
+- `BLEController`, `BLEButton`, `BLERinger` — BLE device-to-device communication:
+  a central that manages and controls other iotsa devices, and a button/ringer
+  pair (Immediate Alert Service)
+- `sandbox/Infra` — minimal scaffold for infrastructure/transport work; not in the
+  list above since it isn't doc-grade
 
 ## CI
 

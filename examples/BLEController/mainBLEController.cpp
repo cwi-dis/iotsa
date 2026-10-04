@@ -16,10 +16,10 @@
 // a real "WiFi/REST to BLE-only iotsa device" bridge/gateway, the mirror
 // image of HPS (cwi-dis/iotsa#267).
 //
-// Supersedes sandbox/BLEClient in spirit (a dual-role client+server
-// debugging rig, moved there under #222) -- this is the modern replacement
-// built on the cwi-dis/iotsa#268/#264 generic surface, not a from-scratch
-// rewrite of that one (left as-is, still serves its own debugging purpose).
+// Replaces sandbox/BLEClient (a dual-role client+server debugging rig,
+// retired in cwi-dis/iotsa#273): built on the cwi-dis/iotsa#268/#264 generic
+// surface, and it took over that sandbox's build coverage (Arduino CI,
+// classic ESP32/S3/lolin32, and a debug variant).
 //
 // See /bleclient for the web UI, or /api/bleclient for the REST equivalent.
 //

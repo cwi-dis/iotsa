@@ -399,7 +399,7 @@ def emit_standalone_ini(entries, target_dir, out):
     out.write(';   {"iotsa": "https://github.com/cwi-dis/iotsa.git#develop"}\n')
     out.write(";\n")
     # A board can appear more than once (e.g. a plain variant plus a differently
-    # labeled one, as with sandbox/BLEClient's merged matrix, #222) -- suffix the
+    # labeled one, #222) -- suffix the
     # env name with the label whenever one is present, so two variants sharing a
     # board don't collide into the same [env:xxx] section.
     env_names = [e["board"] if not e.get("label") else f"{e['board']}-{e['label']}"

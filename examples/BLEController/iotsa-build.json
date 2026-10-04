@@ -22,6 +22,33 @@
         "platformio": true,
         "arduino": false
       }
+    },
+    {
+      "board": "esp32thing",
+      "ci": {
+        "platformio": true,
+        "arduino": true
+      }
+    },
+    {
+      "board": "esp32s3supermini",
+      "ci": {
+        "platformio": true,
+        "arduino": true
+      }
+    },
+    {
+      "board": "lolin32",
+      "label": "debug",
+      "build_flags": [
+        "-DIOTSA_WITH_BLE",
+        "-DIOTSA_DEBUG_BLE_PRINT_ALL_CLIENTS",
+        "-DCONFIG_NIMBLE_CPP_ENABLE_RETURN_CODE_TEXT"
+      ],
+      "ci": {
+        "platformio": true,
+        "arduino": false
+      }
     }
   ]
 }

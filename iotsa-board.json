@@ -27,7 +27,7 @@
       "chip": "ESP32 (Xtensa dual-core)",
       "reference": "https://www.sparkfun.com/products/13907",
       "provenance": "off-the-shelf",
-      "best_example": "sandbox/BLEClient",
+      "best_example": "examples/BLEController",
       "constraints": null,
       "status": "supported",
       "notes": "Canonical vanilla_esp32 target for CI. Being phased out for esp32dev / pico32 / lolin32(_lite)."
@@ -43,7 +43,7 @@
       "chip": "ESP32 (Xtensa dual-core)",
       "reference": "https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-devkitc.html",
       "provenance": "off-the-shelf",
-      "best_example": "sandbox/BLEClient",
+      "best_example": "examples/BLEController",
       "constraints": null,
       "status": "supported",
       "notes": "Known to work, not continuously CI-tested. Current pick when no charger is needed."
@@ -60,7 +60,7 @@
       "chip": "ESP32 (Xtensa dual-core)",
       "reference": "https://www.espboards.dev/esp32/lolin32-lite/",
       "provenance": "off-the-shelf; key name is historical (the full LOLIN32 is not used, pio_board is the Lite -- cwi-dis/iotsa#228)",
-      "best_example": "sandbox/BLEClient",
+      "best_example": "examples/BLEController",
       "constraints": "Fewer GPIOs broken out than a full devkit.",
       "status": "supported",
       "notes": "The 'lolin32' key is kept (not renamed to lolin32_lite) so downstream `extends = lolin32` keeps resolving. Current pick when a LiPo charger is wanted."
@@ -185,7 +185,7 @@
       "chip": "ESP32-S3 (Xtensa dual-core) + 2 MB PSRAM",
       "reference": "https://www.espboards.dev/esp32/esp32-s3-super-mini/",
       "provenance": "off-the-shelf clone",
-      "best_example": "sandbox/BLEClient (built as vanilla_esp32s3)",
+      "best_example": "examples/BLEController",
       "constraints": "Clone boards run hot; intermittent WiFi drops even with wifiPowerReduction (cwi-dis/iotsa#194). USB-OTG/TinyUSB not implemented.",
       "status": "supported",
       "notes": "BLE confirmed working, including BLE/HPS-only (no WiFi) operation."

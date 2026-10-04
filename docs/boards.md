@@ -50,7 +50,7 @@ Historic default ESP32 board: lots of I/O, onboard LiPo charger. Now overpriced 
 - **PlatformIO board:** `esp32thing` · **Arduino FQBN:** `esp32:esp32:esp32thing`
 - **Provenance:** off-the-shelf
 - **Reference:** [https://www.sparkfun.com/products/13907](https://www.sparkfun.com/products/13907)
-- **Example:** sandbox/BLEClient
+- **Example:** examples/BLEController
 - **Notes:** Canonical vanilla_esp32 target for CI. Being phased out for esp32dev / pico32 / lolin32(_lite).
 
 ### <a id="esp32dev"></a>`esp32dev` — Espressif ESP32-DevKitC (or clone)
@@ -62,7 +62,7 @@ Generic ESP32 devkit, usually a cheap clone. No LiPo charger.
 - **PlatformIO board:** `esp32dev` · **Arduino FQBN:** `—`
 - **Provenance:** off-the-shelf
 - **Reference:** [https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-devkitc.html](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-devkitc.html)
-- **Example:** sandbox/BLEClient
+- **Example:** examples/BLEController
 - **Notes:** Known to work, not continuously CI-tested. Current pick when no charger is needed.
 
 ### <a id="lolin32"></a>`lolin32` — WEMOS LOLIN32 Lite
@@ -76,7 +76,7 @@ Compact ESP32 with an onboard TP4054 LiPo charger and JST-PH battery connector.
 - **Provenance:** off-the-shelf; key name is historical (the full LOLIN32 is not used, pio_board is the Lite -- cwi-dis/iotsa#228)
 - **Constraints:** Fewer GPIOs broken out than a full devkit.
 - **Reference:** [https://www.espboards.dev/esp32/lolin32-lite/](https://www.espboards.dev/esp32/lolin32-lite/)
-- **Example:** sandbox/BLEClient
+- **Example:** examples/BLEController
 - **Notes:** The 'lolin32' key is kept (not renamed to lolin32_lite) so downstream `extends = lolin32` keeps resolving. Current pick when a LiPo charger is wanted.
 
 ### <a id="lolin32_oled"></a>`lolin32_oled` — WEMOS LOLIN32 OLED
@@ -173,7 +173,7 @@ Tiny cheap ESP32-S3 board, native USB-Serial/JTAG, 4 MB flash + 2 MB PSRAM.
 - **Provenance:** off-the-shelf clone
 - **Constraints:** Clone boards run hot; intermittent WiFi drops even with wifiPowerReduction (cwi-dis/iotsa#194). USB-OTG/TinyUSB not implemented.
 - **Reference:** [https://www.espboards.dev/esp32/esp32-s3-super-mini/](https://www.espboards.dev/esp32/esp32-s3-super-mini/)
-- **Example:** sandbox/BLEClient (built as vanilla_esp32s3)
+- **Example:** examples/BLEController
 - **Notes:** BLE confirmed working, including BLE/HPS-only (no WiFi) operation.
 
 ## Role aliases

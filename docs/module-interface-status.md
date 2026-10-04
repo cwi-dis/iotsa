@@ -177,7 +177,7 @@ and layers app-specific characteristic UUIDs on top.
 If an app uses both `IotsaBLEServerMod` and `IotsaBLEClientMod` together (a device that's both a
 BLE peripheral and a BLE central, e.g. a remote-control unit), `IotsaBLEClientMod::coordinateWithServer`
 (default `false`) can be set to have `startScanning()`/`stopScanning()` pause/resume the server's
-advertising for the duration of each scan, via `IotsaBLERadioArbiter`'s `PAUSE_SCAN` reason (cwi-dis/iotsa#263). See `sandbox/BLEClient/` for a standalone test rig exercising both roles together.
+advertising for the duration of each scan, via `IotsaBLERadioArbiter`'s `PAUSE_SCAN` reason (cwi-dis/iotsa#263). `tests/KitchenSink` exercises both roles together with `coordinateWithServer` on.
 
 ## Checking sibling repos
 

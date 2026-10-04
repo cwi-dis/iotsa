@@ -42,7 +42,7 @@ generated from [`iotsa-board.json`](iotsa-board.json).
 
 | Hardware | Flash / OTA | Status | Notes |
 |---|---|---|---|
-| ESP32 (original, Xtensa) | 4 MB. OTA works; use `min_spiffs.csv` when BLE is enabled. Lolin32 + BLE is large enough to require `no_ota.csv`. | **Supported** | Tested in CI (esp32thing, canonical -- `vanilla_esp32`, #222). Lolin32 also tracked in CI via `sandbox/BLEClient`. Pico32, ESP32dev also known to work but not continuously tested. Full features: BLE, sleep/wakeup, touch, rotary encoder. |
+| ESP32 (original, Xtensa) | 4 MB. OTA works; use `min_spiffs.csv` when BLE is enabled. Lolin32 + BLE is large enough to require `no_ota.csv`. | **Supported** | Tested in CI (esp32thing, canonical -- `vanilla_esp32`, #222). Lolin32 also tracked in CI via `examples/BLEController` and `sandbox/Infra`. Pico32, ESP32dev also known to work but not continuously tested. Full features: BLE, sleep/wakeup, touch, rotary encoder. |
 | ESP32-C3 (RISC-V) | 4 MB (devkit, supermini): OTA works with `min_spiffs.csv`. LCD board variant has 2 MB and is very tightly constrained. | **Supported** | Tested in CI (esp32-c3-devkitm-1). Limitations: no analog voltage reading, no deep-sleep wakeup, no rotary encoder (no PCNT), no touch. WiFi power reduction defaults on as a hardware workaround. |
 | ESP8266 / ESP-12 | 4 MB. OTA works. | **Supported** | Tested in CI (nodemcuv2). Used by the iotsa board. No BLE. HTTPS not recommended, see below. |
 | ESP32-S3 | 4 MB flash + 2 MB embedded PSRAM (SuperMini clone). OTA works with `min_spiffs.csv`. | **Supported** | Tested in CI (esp32s3supermini). BLE confirmed working, including BLE/HPS-only (no WiFi) operation. Native USB via USB-Serial/JTAG (`esp32s3jtag`); USB-OTG/TinyUSB not yet implemented. Cheap SuperMini clone boards can have WiFi-reliability issues (runs hot, drops WiFi intermittently) even with `wifiPowerReduction` enabled — not fully resolved, see #194. |
@@ -709,7 +709,7 @@ building on the previous one:
 - [FileShare](examples/FileShare/FileShare.ino) upload a file over HTTP and fetch it back
   again. Uses _iotsaFiles_, _iotsaFilesUpload_ and _iotsaFilesBackup_ together.
 
-Board/feature build coverage (not tutorial material) lives separately, under `tests/`, mirrored one-for-one against the `examples/` source they build -- see `extras/python/gen_build_matrix.py`. Sketches under active development, not yet stable enough to be doc-grade material (e.g. [BLEClient](sandbox/BLEClient/BLEClient.ino), a test rig for `IotsaBLEClientMod`-based device-to-device communication), live under `sandbox/` instead -- still built on every push, just without `examples/`'s promise of being a stable starting point to copy.
+Board/feature build coverage (not tutorial material) lives separately, under `tests/`, mirrored one-for-one against the `examples/` source they build -- see `extras/python/gen_build_matrix.py`. Sketches under active development, not yet stable enough to be doc-grade material (e.g. [Infra](sandbox/Infra), a minimal scaffold for infrastructure and transport work), live under `sandbox/` instead -- still built on every push, just without `examples/`'s promise of being a stable starting point to copy.
 
 ## more projects using iotsa
 
