@@ -77,8 +77,13 @@ class BLE:
         if re.fullmatch("[0-9a-fA-F:-]*", name_or_address):
             dev = await BleakScanner.find_device_by_address(name_or_address)
         else:
+            # Same name source as _asyncFindDevices() (bleTargets): the
+            # advertised name first. d.name is the OS's cached device name,
+            # which can be missing or stale (macOS), so a device listed by
+            # bleTargets could not be selected by name.
+            wanted = name_or_address.lower()
             dev = await BleakScanner.find_device_by_filter(
-                lambda d, ad: bool(d.name) and d.name.lower() == name_or_address
+                lambda d, ad: (ad.local_name or d.name or "").lower() == wanted
             )
         if not dev:
             print(f"Device {name_or_address} not found")
