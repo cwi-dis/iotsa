@@ -52,6 +52,18 @@ void IotsaBLEClientCollectionMod::findUnknownDevices(bool on) {
   shouldUpdateScanAtMillis = millis();
 }
 
+bool IotsaBLEClientCollectionMod::addDeviceByName(const std::string& name) {
+  if (getDevice(name) != nullptr) return false;
+  addDevice(name);
+  return true;
+}
+
+bool IotsaBLEClientCollectionMod::removeDeviceByName(const std::string& name) {
+  if (getDevice(name) == nullptr) return false;
+  delDevice(name);
+  return true;
+}
+
 void IotsaBLEClientCollectionMod::setUnknownDeviceFoundCallback(BleDeviceFoundCallback _callback) {
   unknownDeviceCallback = _callback;
 }
@@ -93,13 +105,11 @@ bool IotsaBLEClientCollectionMod::putHandler(const char *path, const JsonVariant
   bool deviceChanged = false;
   String addName;
   if (getFromRequest<String>(reqObj, "add", addName) && addName != "") {
-    addDevice(addName);
-    deviceChanged = true;
+    if (addDeviceByName(addName.c_str())) deviceChanged = true;
   }
   String removeName;
   if (getFromRequest<String>(reqObj, "remove", removeName) && removeName != "") {
-    delDevice(removeName);
-    deviceChanged = true;
+    if (removeDeviceByName(removeName.c_str())) deviceChanged = true;
   }
   // Snapshot first: a device's own putHandler() may call retarget(), which
   // re-keys `devices` -- mutating a std::map while iterating it directly
@@ -172,17 +182,11 @@ bool IotsaBLEClientCollectionMod::formHandler_args(IotsaWebServer *server, const
   if (server->hasArg("scanUnknown")) startScanUnknown();
   if (includeConfig && server->hasArg("add")) {
     String addName = server->arg("add");
-    if (addName != "") {
-      addDevice(addName);
-      anyChanged = true;
-    }
+    if (addName != "" && addDeviceByName(addName.c_str())) anyChanged = true;
   }
   if (includeConfig && server->hasArg("remove")) {
     String removeName = server->arg("remove");
-    if (removeName != "") {
-      delDevice(removeName);
-      anyChanged = true;
-    }
+    if (removeName != "" && removeDeviceByName(removeName.c_str())) anyChanged = true;
   }
   // Snapshot first: a device's own formHandler_args() may call retarget(),
   // which re-keys `devices` -- mutating a std::map while iterating it

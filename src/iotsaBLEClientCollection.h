@@ -38,6 +38,20 @@ public:
   //
   void findUnknownDevices(bool on);
   void setUnknownDeviceFoundCallback(BleDeviceFoundCallback _callback);
+  //
+  // What REST/web "add"/"remove" (by name) actually do. The registry
+  // (IotsaBLEClientMod's devices) is the one place that knows which devices
+  // exist; a subclass that keeps devices of its own type (e.g. lissabon's
+  // controller and its DimmerBLEClients, in a numbered list for its UI)
+  // overrides these to create/delete its own kind, and its device then
+  // registers itself, rather than handling "add"/"remove" a second time --
+  // which used to register a plain IotsaRunmodeBLEClient under the name
+  // first, so the subclass's own device was never registered at all
+  // (cwi-dis/iotsa#264). A subclass with a fixed set of devices returns
+  // false from both. Return true if something changed.
+  // Default: add a plain IotsaRunmodeBLEClient / delDevice().
+  virtual bool addDeviceByName(const std::string& name);
+  virtual bool removeDeviceByName(const std::string& name);
 protected:
   virtual void loadScanConfig() override;
   virtual void saveScanConfig() override;

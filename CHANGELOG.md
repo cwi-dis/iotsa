@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - BLE advertising no longer restarts after light sleep, a scan or a config change when BLE is off by policy (#263)
 - Toplevel PlatformIO envs no longer compile a leftover `.pio/` from a standalone example build
 - BLE client now scans for known devices only when they have work pending, by default (#263, #171)
+- BLE client collection: REST/web add/remove by name go through overridable hooks, so a subclass's own device type gets registered instead of a plain client (#264)
 
 ### Changed
 
