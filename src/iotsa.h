@@ -166,9 +166,9 @@ public:
 // A bool target accepts both a JSON bool and a JSON integer, whatever JT
 // says, so both `true` and `1` work for every boolean field.
 template <typename JT, typename CT> bool iotsaGetFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
-  JsonVariantConst v = reqObj[name];
-  if (!v.is<JT>()) return false;
-  var = v.as<CT>();
+  // Not via a JsonVariantConst: CT can be a mutable JsonArray/JsonObject.
+  if (!reqObj[name].is<JT>()) return false;
+  var = reqObj[name].as<CT>();
   return true;
 }
 
