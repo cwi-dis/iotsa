@@ -39,6 +39,14 @@ TRAIT_BUILD_FLAGS = {
                             "-DIOTSA_SERIAL_SPEED=460800", "-DIOTSA_DELAY_ON_BOOT=3"],
 }
 
+# Per chip family, the pinned PlatformIO platform, for emit_standalone_ini (no
+# ini extends chain to the traits there either). Keep in sync with
+# iotsa-board-traits.ini's [_esp8266] / [_esp32_allvariants] by hand (#269).
+FAMILY_PLATFORM = {
+    "esp8266": "espressif8266@4.0",
+    "esp32": "espressif32@7.1.3",
+}
+
 # Layer 2 (boards we use) and layer 1 (vanilla_* role aliases) are authored in
 # the toplevel iotsa-board.json -- the single source of truth. Each board entry
 # also carries human-facing fields (display_name, description, chip, reference,
@@ -47,7 +55,7 @@ TRAIT_BUILD_FLAGS = {
 #
 # Per board, the build-facing keys: pio_board (the real PlatformIO board ID),
 # fqbn (arduino-cli, or null), trait (layer 3, see TRAIT_BUILD_FLAGS above and
-# iotsa-board-traits.ini), family (drives emit_standalone_ini's "platform ="
+# iotsa-board-traits.ini), family (drives emit_standalone_ini's "platform =" via FAMILY_PLATFORM
 # line), and the hardware facts not covered by the trait -- build_flags (e.g. a
 # neopixel pin), partitions / mcu / flash_size. build_flags here is
 # *board-specific only*: emit_board_defs_ini pulls the trait's flags in via ini
@@ -418,7 +426,8 @@ def emit_standalone_ini(entries, target_dir, out):
         info = BOARD_INFO[board]
         out.write(f"[env:{env}]\n")
         out.write("extends = common\n")
-        out.write(f"platform = {'espressif8266' if info['family'] == 'esp8266' else 'espressif32'}\n")
+        out.write(f"platform = {FAMILY_PLATFORM[info['family']]}\n")
+        out.write("board_build.filesystem = littlefs\n")
         out.write(f"board = {info['pio_board']}\n")
         # No ini extends chain to a board/trait section here (this file is
         # self-contained), so resolve the board's/trait's facts explicitly --
