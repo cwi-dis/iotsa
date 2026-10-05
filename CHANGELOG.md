@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `iotsa-board-traits.ini`: ESP32 envs no longer silently drop the app's `[common]` build_flags (regression in v3.0a8 from the NimBLE stack flag, #127)
 - Boolean API fields accept both JSON `true`/`false` and `1`/`0` everywhere; `int:` values were silently ignored for some (e.g. `wifiPowerReduction`, lissabon's `isOn`), JSON bools for others (#261)
 - `iotsa dfu otaset` no longer crashes with `AttributeError` on esptool v5 (raw bytes now passed to `write_flash`, not a bare `BytesIO`)
 - The Python tool now declares its `littlefs-python` (and `pyserial`) dependency, so `dfu lsfs`/`extractfs`/`installfs`/`monitor` work on a fresh install without a manual `pip install`
