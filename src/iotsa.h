@@ -161,6 +161,30 @@ public:
 // harmless do-nothing defaults) whether or not it actually registers any
 // endpoint with a transport -- see cwi-dis/iotsa#206.
 //
+// Fetch field `name` from an API request into `var`, if it has JSON type JT.
+// The single implementation behind every getFromRequest() member (#261).
+// A bool target accepts both a JSON bool and a JSON integer, whatever JT
+// says, so both `true` and `1` work for every boolean field.
+template <typename JT, typename CT> bool iotsaGetFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
+  JsonVariantConst v = reqObj[name];
+  if (!v.is<JT>()) return false;
+  var = v.as<CT>();
+  return true;
+}
+
+template <typename JT> bool iotsaGetFromRequest(const JsonObject& reqObj, const char *name, bool& var) {
+  JsonVariantConst v = reqObj[name];
+  if (v.is<bool>()) {
+    var = v.as<bool>();
+    return true;
+  }
+  if (v.is<int>()) {
+    var = (v.as<int>() != 0);
+    return true;
+  }
+  return false;
+}
+
 class IotsaApiProvider {
 public:
   IotsaApiProvider() {}
@@ -174,11 +198,7 @@ public:
   // straight off the server, and does its own auth check internally.
   virtual void webHandler() {}
   template <typename JT, typename CT>  bool getFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
-    if (reqObj[name].is<JT>()) {
-      var = reqObj[name].as<CT>();
-      return true;
-    }
-    return false;
+    return iotsaGetFromRequest<JT>(reqObj, name, var);
   }
 };
 

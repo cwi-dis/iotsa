@@ -11,30 +11,10 @@ public:
   virtual void getHandler(JsonObject& reply) = 0;
   virtual bool putHandler(const JsonVariant& request) = 0;
   template <typename JT, typename CT>  bool getFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
-    if (reqObj[name].is<JT>()) {
-      var = reqObj[name].as<CT>();
-      return true;
-    }
-    return false;
+    return iotsaGetFromRequest<JT>(reqObj, name, var);
   }
 #endif
 };
-
-#ifdef IOTSA_WITH_API
-// Specialization, so that bools can be retrieved from int fields as well
-template<> inline bool IotsaApiModObject::getFromRequest<bool,bool>(const JsonObject& reqObj, const char *name, bool& var) {
-  if (reqObj[name].is<bool>()) {
-    var = reqObj[name].as<bool>();
-    return true;
-  }
-  if (reqObj[name].is<int>()) {
-    int ival = reqObj[name].as<int>();
-    var = (ival != 0);
-    return true;
-  }
-  return false;
-}
-#endif
 
 class IotsaApiServiceProvider {
 public:
@@ -120,14 +100,15 @@ public:
   virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
   bool hasApi() const override { return true; }
 protected:
+  // Like the other getFromRequest() copies, but also removes a consumed field,
+  // so checkUnhandled() can report whatever is left over.
   template <typename JT, typename CT>  bool getFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
-    if (reqObj[name].is<JT>()) {
-      var = reqObj[name].as<CT>();
-      reqObj.remove(name);
-      return true;
+    if (!iotsaGetFromRequest<JT>(reqObj, name, var)) {
+      // IFDEBUG IotsaSerial.printf("xxxjack IotsaApi parameter %s not found\n", name);
+      return false;
     }
-    // IFDEBUG IotsaSerial.printf("xxxjack IotsaApi parameter %s not found\n", name);
-    return false;
+    reqObj.remove(name);
+    return true;
   }
   bool checkUnhandled(const JsonObject& reqObj) {
     bool rv = false;
