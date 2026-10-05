@@ -12,8 +12,7 @@
       "ci": {
         "platformio": false,
         "arduino": true
-      },
-      "partitions": "min_spiffs.csv"
+      }
     }
   ]
 }

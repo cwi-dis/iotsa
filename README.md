@@ -20,8 +20,8 @@ Note that the build badges above are for the [develop branch](https://github.com
 
 For new projects, the recommended hardware is any modern **ESP32-based board**. Pick a board that suits your project's form factor and power requirements and use the matching `[env:...]` in `platformio.ini`. Esp32 variants (like esp32c3) are somewhat supported, see the table below.
 
-**Flash size and OTA:** Over-the-air programming requires enough flash to hold two copies of the firmware plus the LittleFS filesystem. On a 4 MB board this generally works, but including large features like BLE can push firmware size up. Common workarounds:
-- Use a `min_spiffs.csv` partition layout — reduces LittleFS space but keeps OTA.
+**Flash size and OTA:** Over-the-air programming requires enough flash to hold two copies of the firmware plus the LittleFS filesystem. A full iotsa app doesn't fit the stock 1.25 MB app slots of a 4 MB ESP32, so iotsa's board definitions use the `min_spiffs.csv` partition layout (1.875 MB app slots, 192 KB LittleFS) for every 4 MB ESP32 board (#245). In the Arduino IDE, select the "Minimal SPIFFS" partition scheme yourself. Changing the layout of a deployed device needs a USB reflash; OTA can't do it. If firmware still doesn't fit:
+
 - Use `no_ota.csv` — gives the full flash to a single firmware image, disabling OTA entirely.
 - Reduce firmware size by excluding optional modules (e.g. omitting BLE or HTTPS).
 
@@ -42,7 +42,7 @@ generated from [`iotsa-board.json`](iotsa-board.json).
 
 | Hardware | Flash / OTA | Status | Notes |
 |---|---|---|---|
-| ESP32 (original, Xtensa) | 4 MB. OTA works; use `min_spiffs.csv` when BLE is enabled. Lolin32 + BLE is large enough to require `no_ota.csv`. | **Supported** | Tested in CI (esp32thing, canonical -- `vanilla_esp32`, #222). Lolin32 also tracked in CI via `examples/BLEController` and `sandbox/Infra`. Pico32, ESP32dev also known to work but not continuously tested. Full features: BLE, sleep/wakeup, touch, rotary encoder. |
+| ESP32 (original, Xtensa) | 4 MB. OTA works with `min_spiffs.csv` (the default for these boards). Lolin32 + BLE is large enough to require `no_ota.csv`. | **Supported** | Tested in CI (esp32thing, canonical -- `vanilla_esp32`, #222). Lolin32 also tracked in CI via `examples/BLEController` and `sandbox/Infra`. Pico32, ESP32dev also known to work but not continuously tested. Full features: BLE, sleep/wakeup, touch, rotary encoder. |
 | ESP32-C3 (RISC-V) | 4 MB (devkit, supermini): OTA works with `min_spiffs.csv`. LCD board variant has 2 MB and is very tightly constrained. | **Supported** | Tested in CI (esp32-c3-devkitm-1). Limitations: no analog voltage reading, no deep-sleep wakeup, no rotary encoder (no PCNT), no touch. WiFi power reduction defaults on as a hardware workaround. |
 | ESP8266 / ESP-12 | 4 MB. OTA works. | **Supported** | Tested in CI (nodemcuv2). Used by the iotsa board. No BLE. HTTPS not recommended, see below. |
 | ESP32-S3 | 4 MB flash + 2 MB embedded PSRAM (SuperMini clone). OTA works with `min_spiffs.csv`. | **Supported** | Tested in CI (esp32s3supermini). BLE confirmed working, including BLE/HPS-only (no WiFi) operation. Native USB via USB-Serial/JTAG (`esp32s3jtag`); USB-OTG/TinyUSB not yet implemented. Cheap SuperMini clone boards can have WiFi-reliability issues (runs hot, drops WiFi intermittently) even with `wifiPowerReduction` enabled — not fully resolved, see #194. |
@@ -103,7 +103,8 @@ self-contained -- so spell out `platform`, `board`, and any `build_flags` /
 ```ini
 [env:quicktest]
 extends = common
-platform = espressif32
+platform = espressif32@7.1.3
+board_build.filesystem = littlefs
 board = esp32-c3-devkitm-1
 build_flags = -DESP32C3 -DWITH_ROUNDLCD_DISPLAY
 board_build.partitions = min_spiffs.csv

@@ -9,7 +9,6 @@
     },
     {
       "board": "vanilla_esp32",
-      "partitions": "min_spiffs.csv",
       "ci": {
         "platformio": true,
         "arduino": true
@@ -20,16 +19,14 @@
       "ci": {
         "platformio": true,
         "arduino": false
-      },
-      "partitions": "min_spiffs.csv"
+      }
     },
     {
       "board": "vanilla_esp32s3",
       "ci": {
         "platformio": true,
         "arduino": true
-      },
-      "partitions": "min_spiffs.csv"
+      }
     }
   ]
 }

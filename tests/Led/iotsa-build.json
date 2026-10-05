@@ -24,7 +24,6 @@
         "-DIOTSA_WITH_COAP",
         "-DIOTSA_WITH_HTTPS"
       ],
-      "partitions": "min_spiffs.csv",
       "ci": {
         "platformio": true,
         "arduino": true
@@ -37,8 +36,7 @@
         "-DIOTSA_WITH_BLE",
         "-DIOTSA_WITH_COAP",
         "-DIOTSA_WITH_HTTPS"
-      ],
-      "partitions": "min_spiffs.csv"
+      ]
     },
     {
       "board": "vanilla_esp32s3",
@@ -48,7 +46,6 @@
         "-DIOTSA_WITH_COAP",
         "-DIOTSA_WITH_HTTPS"
       ],
-      "partitions": "min_spiffs.csv",
       "ci": {
         "platformio": true,
         "arduino": true
@@ -74,8 +71,7 @@
         "-DIOTSA_WITHOUT_REST",
         "-DIOTSA_WITHOUT_HTTP",
         "-DIOTSA_WITHOUT_HTTPS"
-      ],
-      "partitions": "min_spiffs.csv"
+      ]
     },
     {
       "board": "vanilla_esp8266",
@@ -91,8 +87,7 @@
       "build_flags": [
         "-DIOTSA_WITHOUT_HTTP",
         "-DIOTSA_WITH_HTTPS"
-      ],
-      "partitions": "min_spiffs.csv"
+      ]
     },
     {
       "board": "vanilla_esp32s3",
@@ -109,8 +104,6 @@
     {
       "board": "vanilla_esp8266",
       "label": "nonetworking",
-      "_partitions_note": "null overrides the file default deliberately: -DIOTSA_WITHOUT_WIFI makes OTA unreachable in this build regardless of partition scheme, so there's nothing for min_spiffs.csv to protect here -- see iotsa#40.",
-      "partitions": null,
       "build_flags": [
         "-DIOTSA_WITHOUT_WIFI",
         "-DIOTSA_WITHOUT_HTTP",
@@ -125,8 +118,8 @@
     {
       "board": "vanilla_esp32",
       "label": "nonetworking",
-      "_partitions_note": "null overrides the file default deliberately: -DIOTSA_WITHOUT_WIFI makes OTA unreachable in this build regardless of partition scheme, so there's nothing for min_spiffs.csv to protect here -- see iotsa#40.",
-      "partitions": null,
+      "_partitions_note": "Deliberately on default.csv, the stock Arduino-IDE layout: since #245 every 4MB ESP32 board defaults to min_spiffs.csv, so this is the only remaining build coverage of default.csv. Fits easily: -DIOTSA_WITHOUT_WIFI leaves a tiny app.",
+      "partitions": "default.csv",
       "build_flags": [
         "-DIOTSA_WITHOUT_WIFI",
         "-DIOTSA_WITHOUT_HTTP",

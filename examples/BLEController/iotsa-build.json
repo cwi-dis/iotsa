@@ -5,8 +5,7 @@
     ],
     "lib_deps": [
       "h2zero/NimBLE-Arduino"
-    ],
-    "partitions": "min_spiffs.csv"
+    ]
   },
   "variants": [
     {

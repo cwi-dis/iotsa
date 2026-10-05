@@ -48,6 +48,7 @@ Historic default ESP32 board: lots of I/O, onboard LiPo charger. Now overpriced 
 - **Chip:** ESP32 (Xtensa dual-core)
 - **Status:** supported
 - **PlatformIO board:** `esp32thing` · **Arduino FQBN:** `esp32:esp32:esp32thing`
+- **Build:** partitions `min_spiffs.csv`
 - **Provenance:** off-the-shelf
 - **Reference:** [https://www.sparkfun.com/products/13907](https://www.sparkfun.com/products/13907)
 - **Example:** examples/BLEController
@@ -60,6 +61,7 @@ Generic ESP32 devkit, usually a cheap clone. No LiPo charger.
 - **Chip:** ESP32 (Xtensa dual-core)
 - **Status:** supported
 - **PlatformIO board:** `esp32dev` · **Arduino FQBN:** `—`
+- **Build:** partitions `min_spiffs.csv`
 - **Provenance:** off-the-shelf
 - **Reference:** [https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-devkitc.html](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-devkitc.html)
 - **Example:** examples/BLEController
@@ -100,6 +102,7 @@ Small ESP32-PICO board: enough pins, cheap. No LiPo charger.
 - **Chip:** ESP32-PICO-D4 (Xtensa dual-core SiP)
 - **Status:** supported
 - **PlatformIO board:** `pico32` · **Arduino FQBN:** `—`
+- **Build:** partitions `min_spiffs.csv`
 - **Provenance:** off-the-shelf
 - **Constraints:** Minimodule JTAG debugging shares pins with the touchpads.
 - **Reference:** [https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-pico-kit.html](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-pico-kit.html)
@@ -113,7 +116,7 @@ Reference ESP32-C3 devkit, external USB-serial chip.
 - **Chip:** ESP32-C3 (RISC-V single-core)
 - **Status:** supported
 - **PlatformIO board:** `esp32-c3-devkitm-1` · **Arduino FQBN:** `—`
-- **Build:** build flags `-DIOTSA_PIN_NEOPIXEL=8`
+- **Build:** partitions `min_spiffs.csv`, build flags `-DIOTSA_PIN_NEOPIXEL=8`
 - **Provenance:** off-the-shelf
 - **Constraints:** No PCNT (no rotary encoder), no touch, no analog voltage reading, no deep-sleep wakeup. Reduced WiFi TX power defaults on.
 - **Reference:** [https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/hw-reference/esp32c3/user-guide-devkitm-1.html](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/hw-reference/esp32c3/user-guide-devkitm-1.html)
