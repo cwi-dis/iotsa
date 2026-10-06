@@ -49,12 +49,15 @@ void otaOnError(int error) {
 void IotsaOtaMod::setup() {
   // "OTA is available" is now derived by introspection -- IotsaRunmodeMod checks
   // for a module named "ota" (cwi-dis/iotsa#106); no iotsaConfig.otaEnabled flag.
-  if (iotsaController.currentMode() == IOTSA_MODE_OTA) {
-    _start();
-  }
+  _startIfReady();
 }
 
-void IotsaOtaMod::_start() {
+// Starts listening for OTA uploads once the device is in OTA mode and the
+// TCP/IP stack is up (ArduinoOTA.begin() binds a UDP socket, see
+// IotsaHttpServiceMod::_startIfReady(), cwi-dis/iotsa#239). Called every loop().
+void IotsaOtaMod::_startIfReady() {
+  if (_started || !iotsaStatus.networkStackUp) return;
+  if (iotsaController.currentMode() != IOTSA_MODE_OTA) return;
   IotsaSerial.println("OTA-update enabled");
   ArduinoOTA.setPort(8266);
   ArduinoOTA.setHostname(iotsaConfig.hostName.c_str());
@@ -63,7 +66,7 @@ void IotsaOtaMod::_start() {
   ArduinoOTA.onEnd(otaOnEnd);
   ArduinoOTA.onError(otaOnError);
   ArduinoOTA.begin();
-  started = true;
+  _started = true;
 }
 
 void IotsaOtaMod::lateSetup() {
@@ -71,10 +74,9 @@ void IotsaOtaMod::lateSetup() {
 }
 
 void IotsaOtaMod::loop() {
-  if (iotsaController.currentMode() == IOTSA_MODE_OTA) {
-    if (!started) _start();
-    ArduinoOTA.handle();
-  }
+  _startIfReady();
+  if (!_started || iotsaController.currentMode() != IOTSA_MODE_OTA) return;
+  ArduinoOTA.handle();
 }
 
 #ifdef IOTSA_WITH_WEB

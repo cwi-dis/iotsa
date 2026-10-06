@@ -52,6 +52,7 @@ public:
   static constexpr uint32_t COLOUR_WHITE   = 0x3f3f3f;
 
   bool wifiEnabled = false;           // WiFi radio is not disabled (NOT "connected" -- see networkIsUp())
+  bool networkStackUp = false;        // TCP/IP stack initialised, so servers can bind sockets; never goes back to false (published by IotsaWifiMod, cwi-dis/iotsa#239)
   bool wifiStationConnected = false;  // STA has an IP
   bool wifiApActive = false;          // softAP is up, for any reason
   bool wifiApInUse = false;           // ...and a client is actually connected to it (published by IotsaWifiMod)

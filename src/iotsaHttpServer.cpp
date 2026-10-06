@@ -77,17 +77,27 @@ IotsaHttpServiceMod::setup() {
 #ifdef IOTSA_HAS_WEBSERVER
 void
 IotsaHttpServiceMod::lateSetup() {
-  if (!iotsaStatus.wifiEnabled) return;
+  // Registering handlers needs no network; only begin() does.
+  server->onNotFound(std::bind(&IotsaHttpServiceMod::webServerNotFoundHandler, this));
+#ifdef IOTSA_WITH_WEB
+  server->on("/", std::bind(&IotsaHttpServiceMod::webServerRootHandler, this));
+#endif
+  _startIfReady();
+}
+
+// Starts the server(s) once the TCP/IP stack is up: binding a socket before
+// that crashes lwIP ("Invalid mbox", cwi-dis/iotsa#106). Called every loop(),
+// so WiFi coming up late (disabled at boot, enabled at runtime) is fine too.
+// Never stops: a server listening on all addresses survives the station
+// dropping and the AP coming and going (cwi-dis/iotsa#239).
+void
+IotsaHttpServiceMod::_startIfReady() {
+  if (_started || !iotsaStatus.networkStackUp) return;
 
 #ifdef IOTSA_HAS_FORWARDING_WEBSERVER
   if (singletonTFS == NULL)
     singletonTFS = new TinyForwardServer();
 #endif // defined(IOTSA_HAS_FORWARDING_WEBSERVER)
-
-  server->onNotFound(std::bind(&IotsaHttpServiceMod::webServerNotFoundHandler, this));
-#ifdef IOTSA_WITH_WEB
-  server->on("/", std::bind(&IotsaHttpServiceMod::webServerRootHandler, this));
-#endif
 
 #ifdef IOTSA_WITH_HTTPS
   IFDEBUG IotsaSerial.print("Using https key len=");
@@ -115,21 +125,14 @@ IotsaHttpServiceMod::lateSetup() {
 #endif
 #endif
   server->begin();
-  serverInitialized = true;
+  _started = true;
   IFDEBUG IotsaSerial.println("Web server started");
 }
 
 void
 IotsaHttpServiceMod::loop() {
-  if (!iotsaStatus.wifiEnabled) return;
-  if (!serverInitialized) {
-    // Wifi is enabled but the server has not been initialized yet.
-    // Apparently wifi was disabled when we booted, so setup the server
-    // now.
-    IFDEBUG IotsaSerial.println("Setup web server after WiFi enabled");
-    lateSetup();
-    return;
-  }
+  _startIfReady();
+  if (!_started) return;
   server->handleClient();
 #ifdef IOTSA_HAS_FORWARDING_WEBSERVER
   singletonTFS->server.handleClient();

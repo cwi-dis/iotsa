@@ -142,6 +142,8 @@ public:
 protected:
   WiFiUDP udp;
   Coap coap;
+  bool _started = false;
+  void _startIfReady();
 };
 
 IotsaCoapServiceMod::IotsaCoapServiceMod(IotsaApplication &_app)
@@ -154,17 +156,28 @@ IotsaCoapServiceMod::IotsaCoapServiceMod(IotsaApplication &_app)
 
 void IotsaCoapServiceMod::setup() {
     name = "coap";
-    if (!iotsaStatus.wifiEnabled) return;
+    _startIfReady();
+}
+
+// Binds the UDP socket once the TCP/IP stack is up. Called every loop(), so
+// WiFi coming up late is fine; same reasoning as IotsaHttpServiceMod's
+// _startIfReady() (cwi-dis/iotsa#238, #239).
+void IotsaCoapServiceMod::_startIfReady() {
+    if (_started || !iotsaStatus.networkStackUp) return;
     coap.start();
+    _started = true;
+    IFDEBUG IotsaSerial.println("CoAP server started");
 }
 
 void IotsaCoapServiceMod::loop() {
-    if (!iotsaStatus.wifiEnabled) return;
+    _startIfReady();
+    if (!_started) return;
     coap.loop();
 }
 
+// Only adds to the CoAP library's URI table, no socket needed: always register,
+// whatever the network state.
 void IotsaCoapServiceMod::addEndpoint(CoapEndpoint *ep, const char *path) {
-    if (!iotsaStatus.wifiEnabled) return;
     coap.server(ep->getCallback(&coap), String(path));
 }
 
@@ -180,14 +193,12 @@ void IotsaApiServiceCoap::ensureServiceMod(IotsaApplication &app) {
 }
 
 void IotsaApiServiceCoap::setup(const char* path, bool get, bool put, bool post, bool webPage) {
-    if (iotsaStatus.wifiEnabled) {
-        // CoAP has no use for an HTTP-ism in its own resource namespace, so it registers
-        // the bare name directly; it still reconstructs /api/+name for what it hands to
-        // the module's handlers, to keep that contract identical to REST/HPS.
-        String fullPath = String("/api/") + path;
-        CoapEndpoint *ep = new CoapEndpoint(provider, fullPath, get, put, post);
-        IotsaCoapServiceMod::instance()->addEndpoint(ep, path);
-    }
+    // CoAP has no use for an HTTP-ism in its own resource namespace, so it registers
+    // the bare name directly; it still reconstructs /api/+name for what it hands to
+    // the module's handlers, to keep that contract identical to REST/HPS.
+    String fullPath = String("/api/") + path;
+    CoapEndpoint *ep = new CoapEndpoint(provider, fullPath, get, put, post);
+    IotsaCoapServiceMod::instance()->addEndpoint(ep, path);
     // webPage is Web-only; CoAP ignores it and just forwards it down the chain.
     if (next) next->setup(path, get, put, post, webPage);
 }

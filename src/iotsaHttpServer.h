@@ -41,10 +41,11 @@ public:
   // the comment above for how the rest of the code reaches it.
 #ifdef IOTSA_HAS_WEBSERVER
   IotsaWebServer *server = nullptr;
-  bool serverInitialized = false;
 #endif
 private:
 #ifdef IOTSA_HAS_WEBSERVER
+  bool _started = false;
+  void _startIfReady();
   void webServerNotFoundHandler();
 #endif
 #ifdef IOTSA_WITH_WEB

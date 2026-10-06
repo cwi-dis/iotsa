@@ -48,6 +48,10 @@ class IotsaWifiDriver {
 public:
   void begin();                 // install the platform WiFi event handlers (once)
   void setTxPowerReduction(bool on) { _txPowerReduction = on; }
+  // True once the TCP/IP stack has been brought up by a first successful
+  // STA/AP mode switch. lwIP stays initialised after that, also with the radio
+  // off, so this never goes back to false.
+  bool isStackUp() const { return _stackUp; }
 
   // SDK auto-reconnect. On by default (good for a transient blip). IotsaWifiController
   // turns it *off* when it takes over the AP/hunt duty cycle -- with it on, the SDK
@@ -83,6 +87,7 @@ private:
   volatile uint8_t _evLastChannel = 0;
   volatile bool _l2Associated = false; // level, not a latch: L2 associated, cleared on disconnect / startStation
   uint8_t _evLastBssid[6] = {0};
+  bool _stackUp = false;         // a WiFi.mode() enabling STA or AP has succeeded at least once
   bool _haveIp = false;          // touched only in the callbacks: staLost vs staFailed
 #ifndef ESP32
   WiFiEventHandler _evH_gotIp, _evH_disconnected, _evH_connected, _evH_apConnect, _evH_apDisconnect;

@@ -137,6 +137,7 @@ bool IotsaWifiDriver::startStation(const String &ssid, const String &psk, uint8_
   _l2Associated = false;
   WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() | (int)WIFI_STA);
   if (!WiFi.mode(newMode)) return false;
+  _stackUp = true;
   wl_status_t sts;
   if (channel != 0 && bssid != nullptr) {
     sts = WiFi.begin(ssid.c_str(), psk.c_str(), channel, bssid);
@@ -160,6 +161,7 @@ void IotsaWifiDriver::stopStation() {
 bool IotsaWifiDriver::startAP(const String &apName) {
   WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() | (int)WIFI_AP);
   if (!WiFi.mode(newMode)) return false;
+  _stackUp = true;
   return WiFi.softAP(apName.c_str());
 }
 

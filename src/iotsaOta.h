@@ -12,8 +12,8 @@ public:
   String info() override;
 #endif
 protected:
-  bool started = false;
-  void _start();
+  bool _started = false;
+  void _startIfReady();
 };
 
 #endif

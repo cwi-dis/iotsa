@@ -54,13 +54,13 @@ void IotsaWifiMod::setup() {
   // iotsaStatus.wifiEnabled means "the radio is not disabled", NOT "connected"
   // (that's networkIsUp()).
   iotsaStatus.wifiEnabled = iotsaController.wifiRadioWanted();
-  // One reconcile now, synchronously. This is what actually brings the WiFi /
-  // TCP-IP stack up (the first startStation()/startAP() -> WiFi.mode()/begin()),
-  // which the old IotsaWifiMod::setup() did too -- modules that bind a socket in
-  // their own setup()/lateSetup() (IotsaHttpServiceMod::server->begin(),
-  // IotsaCoapServiceMod::coap.start()) crash on an uninitialised lwIP otherwise.
-  // Re-establishing that implicit contract here is a workaround; the dependents
-  // ought to react to network-up instead -- see cwi-dis/iotsa#239 (and #238).
+  // One reconcile now, synchronously. This brings the WiFi / TCP-IP stack up
+  // (the first startStation()/startAP() -> WiFi.mode()/begin()) before other
+  // modules' setup(), as the old IotsaWifiMod::setup() did. The HTTP and CoAP
+  // servers no longer depend on it: they start when iotsaStatus.networkStackUp
+  // becomes true (cwi-dis/iotsa#239). Kept because it starts the connection a
+  // loop earlier, and because other setup()-time users of the network stack
+  // (e.g. configTime() in IotsaNtpMod::setup()) may still rely on it.
   // The connection then continues from loop() -> tick() as normal. Skipped only
   // when the radio is not wanted at boot -- a wifiDisabledOnBoot device that is
   // NOT booting into CONFIG/OTA (wifiRadioWanted() folds both in, cwi-dis/iotsa#106).
@@ -80,6 +80,7 @@ void IotsaWifiMod::_publishControllerState() {
   iotsaStatus.wifiApActive = apAct;
   iotsaStatus.wifiApInUse = (apSt == IotsaWifiApState::InUse);  // cwi-dis/iotsa#176
   iotsaStatus.wifiEnabled = iotsaController.wifiRadioWanted();  // "radio may be powered", not "connected"
+  iotsaStatus.networkStackUp = _driver.isStackUp();
   iotsaStatus.wifiHunting = (staState == IotsaWifiStaState::Hunting);  // cwi-dis/iotsa#176
 
   // Diagnostic (cwi-dis/iotsa#176): staState() drives wifiHunting, which drives

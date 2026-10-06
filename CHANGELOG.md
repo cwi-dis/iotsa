@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The CoAP server and its endpoints work when WiFi comes up after boot (e.g. `wifiDisabledOnBoot`), instead of never; HTTP, CoAP and OTA start once the network stack is up, not on a boot-time guess (#238, #239)
 - Changing the NTP server takes effect immediately instead of after a reboot (#283)
 - `IotsaRtcMod` seeds the system clock correctly regardless of timezone or declaration order relative to `IotsaNtpMod`; `isoTime()` now marks its UTC value with `Z` (#104)
 - `iotsa-board-traits.ini`: ESP32 envs no longer silently drop the app's `[common]` build_flags (regression in v3.0a8 from the NimBLE stack flag, #127)
