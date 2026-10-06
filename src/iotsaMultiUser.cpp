@@ -57,7 +57,6 @@ bool IotsaUser::formHandler_args(IotsaWebServer *server, const String& name, boo
 
 #endif
 
-#ifdef IOTSA_WITH_API
 void IotsaUser::getHandler(JsonObject& reply) {
   reply["username"] = username;
   bool hasPassword = password.length() > 0;
@@ -83,7 +82,6 @@ bool IotsaUser::putHandler(const JsonVariant& request) {
   }
   return anyChanged;
 }
-#endif // IOTSA_WITH_API
 
 IotsaMultiUserMod::IotsaMultiUserMod(IotsaApplication &_app)
 :	IotsaAuthMod(_app),
@@ -155,7 +153,6 @@ String IotsaMultiUserMod::info() {
 #endif // IOTSA_WITH_WEB
 
 bool IotsaMultiUserMod::getHandler(const char *path, JsonObject& reply) {
-#ifdef IOTSA_WITH_API
   if (strcmp(path, "/api/users") == 0) {
     reply["multi"] = true;
     JsonArray usersList = reply["users"].to<JsonArray>();
@@ -171,12 +168,10 @@ bool IotsaMultiUserMod::getHandler(const char *path, JsonObject& reply) {
       return true;
     }
   }
-#endif // IOTSA_WITH_API
   return false;
 }
 
 bool IotsaMultiUserMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
-#ifdef IOTSA_WITH_API
   if (strncmp(path, "/api/users/", 11) != 0) return false;
   if (!iotsaController.inConfigurationMode()) return false;
   // xxxjack should also check access rights? Maybe in stead of configurationMode?
@@ -192,12 +187,8 @@ bool IotsaMultiUserMod::putHandler(const char *path, const JsonVariant& request,
     configSave();
   }
   return anyChanged;
-#else
-  return false;
-#endif // IOTSA_WITH_API
 }
 bool IotsaMultiUserMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
-#ifdef IOTSA_WITH_API
   if (strcmp(path, "/api/users") != 0) return false;
   if (!iotsaController.inConfigurationMode()) return false;
   bool anyChanged = false;
@@ -210,9 +201,6 @@ bool IotsaMultiUserMod::postHandler(const char *path, const JsonVariant& request
     configSave();
   }
   return anyChanged;
-#else
-  return false;
-#endif // IOTSA_WITH_API
 }
 
 int IotsaMultiUserMod::_addUser(IotsaUser& newUser) {

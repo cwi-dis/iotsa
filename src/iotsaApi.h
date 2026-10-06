@@ -7,13 +7,11 @@ class IotsaApiModObject : public IotsaModObject {
 public:
   virtual ~IotsaApiModObject() {}
 
-#ifdef IOTSA_WITH_API
   virtual void getHandler(JsonObject& reply) = 0;
   virtual bool putHandler(const JsonVariant& request) = 0;
   template <typename JT, typename CT>  bool getFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
     return iotsaGetFromRequest<JT>(reqObj, name, var);
   }
-#endif
 };
 
 class IotsaApiServiceProvider {

@@ -28,9 +28,7 @@ public:
   String info() override;
 #endif
 protected:
-#ifdef IOTSA_WITH_API
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
-#endif
 #ifdef IOTSA_WITH_WEB
   void webHandler() override;
 #endif

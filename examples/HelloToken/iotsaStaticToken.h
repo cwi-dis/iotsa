@@ -17,10 +17,8 @@ public:
   void formHandler_TD(String& message, bool includeConfig) override;
   bool formHandler_args(IotsaWebServer *server, const String& name, bool includeConfig) override;
 #endif
-#ifdef IOTSA_WITH_API
   void getHandler(JsonObject& reply) override;
   bool putHandler(const JsonVariant& request) override;
-#endif
 };
 
 class IotsaStaticTokenMod : public IotsaAuthMod {

@@ -49,9 +49,7 @@ IotsaBatteryMod::webHandler() {
 
 String IotsaBatteryMod::info() {
   String message = "<p>Built with battery module. See <a href=\"/battery\">/battery</a>.";
-#ifdef IOTSA_WITH_API
   message += " Or access the REST interface at <a href='/api/battery'>/api/battery</a>.";
-#endif
 #ifdef IOTSA_WITH_BLE
   message += " Or use BLE service " + String(serviceUUID) + " on device " + iotsaConfig.hostName + ".";
 #endif

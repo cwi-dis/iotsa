@@ -72,7 +72,6 @@ String IotsaLedControlMod::info() {
 }
 #endif // IOTSA_WITH_WEB
 
-#ifdef IOTSA_WITH_API
 bool IotsaLedControlMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   uint32_t _rgb = request["rgb"]|0xffffff;
   uint32_t _onDuration = request["onDuration"]|0;
@@ -81,13 +80,10 @@ bool IotsaLedControlMod::putHandler(const char *path, const JsonVariant& request
   iotsaStatus.setStatusPulse(_rgb, _onDuration, _offDuration, _durationMs, "REST led control");
   return true;
 }
-#endif // IOTSA_WITH_API
 
 void IotsaLedControlMod::lateSetup() {
   name = "led";
   // Setup the web server hooks for this module. No GET: a pulse is transient,
   // there's nothing meaningful to read back (cwi-dis/iotsa#256).
-#ifdef IOTSA_WITH_API
   api.setup("led", false, true);
-#endif
 }

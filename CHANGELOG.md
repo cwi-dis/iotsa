@@ -65,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- `IOTSA_WITHOUT_API` (now an `#error`): API handlers are always compiled; leave out a transport with `IOTSA_WITHOUT_REST`/`IOTSA_WITHOUT_HPS` instead (#225)
 - `iotsaStatus.mdnsEnabled` and the `mdns` entry in `/api/config`'s `features` (#237)
 - `IotsaNtpMod`: the dead pre-libc NTP client, `IOTSA_WITHOUT_TIMEZONE`, the always-zero `minutesWest` API field, and `localTime()` (which returned UTC) (#283)
 - `IotsaRtcMod::localSeconds/Minutes/Hours/Hours12/IsPM()`: they returned UTC; use `IotsaNtpMod` for local time (#104)

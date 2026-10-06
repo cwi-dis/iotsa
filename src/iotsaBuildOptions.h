@@ -72,10 +72,13 @@
 #define IOTSA_WITH_WEB
 #endif
 
-#ifndef IOTSA_WITHOUT_API
-// Rest or Coap API is enabled by default
-#define IOTSA_WITH_API
+#ifdef IOTSA_WITHOUT_API
+#error IOTSA_WITHOUT_API has been removed (cwi-dis/iotsa#225): API handlers are always compiled. To leave out a transport use IOTSA_WITHOUT_REST or IOTSA_WITHOUT_HPS, or don't enable IOTSA_WITH_COAP.
 #endif
+// Always defined now. Kept only so that remaining `#ifdef IOTSA_WITH_API` guards
+// (downstream) still compile their code instead of silently dropping it; those
+// guards should go (cwi-dis/iotsa#225), after which this define can be removed.
+#define IOTSA_WITH_API
 
 // ---- Stage 3: default-off WITH flags (opt in directly; nothing here defines them) ----
 
@@ -136,18 +139,17 @@
 #define IOTSA_HAS_FORWARDING_WEBSERVER
 #endif
 
-#if !defined(IOTSA_WITHOUT_REST) && !defined(IOTSA_WITHOUT_API)
+#ifndef IOTSA_WITHOUT_REST
 // Rest API is enabled by default.
 #define IOTSA_HAS_RESTSERVER
 #endif
 
-#if defined(IOTSA_WITH_COAP) && !defined(IOTSA_WITHOUT_API)
+#ifdef IOTSA_WITH_COAP
 #define IOTSA_HAS_COAPSERVER
 #endif
 
-// If BLE support is enabled, HPS isn't individually disabled, and API support is
-// enabled, we have an HPS service.
-#if defined(IOTSA_WITH_BLE) && !defined(IOTSA_WITHOUT_HPS) && defined(IOTSA_WITH_API)
+// If BLE support is enabled and HPS isn't individually disabled, we have an HPS service.
+#if defined(IOTSA_WITH_BLE) && !defined(IOTSA_WITHOUT_HPS)
 #define IOTSA_HAS_HPSSERVER
 #endif
 
@@ -168,8 +170,5 @@
 #error IOTSA WEB support requires HTTP or HTTPS support
 #endif
 
-#if defined(IOTSA_WITH_API) && !(defined(IOTSA_HAS_RESTSERVER) || defined(IOTSA_HAS_COAPSERVER) || defined(IOTSA_HAS_HPSSERVER))
-#error IOTSA API support requires REST, COAP or HPS
-#endif
 
 #endif

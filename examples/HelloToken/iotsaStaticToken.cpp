@@ -47,7 +47,6 @@ bool IotsaStaticTokenObject::formHandler_args(IotsaWebServer *server, const Stri
 
 #endif // IOTSA_WITH_WEB
 
-#ifdef IOTSA_WITH_API
 void IotsaStaticTokenObject::getHandler(JsonObject& reply) {
   reply["token"] = token;
   reply["rights"] = rights;
@@ -66,7 +65,6 @@ bool IotsaStaticTokenObject::putHandler(const JsonVariant& request) {
   }
   return anyChanged;
 }
-#endif
 
 IotsaStaticTokenMod::IotsaStaticTokenMod(IotsaApplication &_app, IotsaAuthenticationProvider &_chain)
 :	IotsaAuthMod(_app),

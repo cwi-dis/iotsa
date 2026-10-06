@@ -221,7 +221,6 @@ bool IotsaRequest::send(const char *query, String *responseBody) {
   return rv;
 }
 
-#ifdef IOTSA_WITH_API
 void IotsaRequest::getHandler(JsonObject& reply) {
   reply["url"] = url;
   reply[SSL_INFO_NAME] = sslInfo;
@@ -247,4 +246,3 @@ bool IotsaRequest::putHandler(const JsonVariant& request) {
   }
   return any;
 }
-#endif // IOTSA_WITH_API
