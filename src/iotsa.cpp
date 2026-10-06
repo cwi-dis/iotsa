@@ -70,6 +70,7 @@ IotsaApplication::setup() {
   // so log messages that aren't flagged with IFDEBUG always work.
   // But this means the serial port cannot be used for other things.
   Serial.begin(IOTSA_SERIAL_SPEED);
+  iotsaBreadcrumbs.begin();
   IFDEBUG IotsaSerial.println("Serial opened");
   // Always shown, not IFDEBUG-gated: "which firmware is this, exactly" is the first
   // thing you want on a cold boot, not something to enable after the fact.
@@ -200,12 +201,16 @@ void
 IotsaApplication::loop() {
   iotsaController.tick();
   IotsaBaseModule *m;
+  uint8_t index = 0;
   for (m=firstEarlyModule; m; m=m->nextModule) {
+    iotsaBreadcrumbs.setActivity(IOTSA_CRUMB_LOOP, index++);
   	m->loop();
   }
   for (m=firstModule; m; m=m->nextModule) {
+    iotsaBreadcrumbs.setActivity(IOTSA_CRUMB_LOOP, index++);
   	m->loop();
   }
+  iotsaBreadcrumbs.setActivity(IOTSA_CRUMB_CORE);
 #ifdef ESP32
   {
     // Print available free heap space first time we have gone through all loop() calls.

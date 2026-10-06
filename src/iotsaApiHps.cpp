@@ -196,6 +196,7 @@ protected:
   }
 
   int _processRequest(HPSControl command, bool chunking) {
+    IotsaActivityScope activity(IOTSA_CRUMB_REQUEST, IOTSA_CRUMB_HPS);
     IFDEBUG IotsaSerial.printf("HPS 0x%02x %s chunking=%d\n", (int)command, curUrl.c_str(), (int)chunking);
     // Every reply generated from here on (including the early-return error paths
     // below) is read back under this request's chunking mode.

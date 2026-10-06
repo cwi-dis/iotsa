@@ -16,7 +16,14 @@
 //   replySize: N        GET /api/fault includes a "filler" string of N bytes
 //   payload: "..."      any (large) string: the reply reports its length
 //   crash: 1            write through a null pointer in the next loop()
+//   breadcrumbs: bool   switch breadcrumb writing on/off (iotsaBreadcrumbsEnabled),
+//                       to measure its cost with loopsPerSecond
 //
+// GET /api/fault also reports loopsPerSecond: application.loop() passes counted
+// over the last whole second.
+//
+// Each fault sets an application breadcrumb activity (cwi-dis/iotsa#276) before it
+// misbehaves, so after the resulting reset /api/status shows which one it was.
 // Every reply includes millisStart/millisEnd (handler entry/exit), and the BLE
 // "millis" characteristic returns millis() at the time of its read callback, so
 // the timelines of the different transports can be compared. Blocking is a busy
@@ -28,6 +35,14 @@
 #ifdef IOTSA_WITH_BLE
 #include "iotsaBLEServer.h"
 #endif
+
+// Application breadcrumb codes.
+enum : uint8_t {
+  CRUMB_BLOCK_LOOP = IOTSA_CRUMB_APP,
+  CRUMB_BLOCK_HANDLER,
+  CRUMB_BLOCK_BLE,
+  CRUMB_CRASH
+};
 
 static void busyWait(uint32_t ms) {
   uint32_t start = millis();
@@ -53,6 +68,9 @@ protected:
   volatile uint32_t _blockBle = 0;
   uint32_t _replySize = 0;
   bool _crash = false;
+  uint32_t _loopCount = 0;
+  uint32_t _loopCountStartedAt = 0;
+  uint32_t _loopsPerSecond = 0;
 #ifdef IOTSA_WITH_BLE
   IotsaBleApiService bleApi;
   bool blePutHandler(UUIDstring charUUID) override;
@@ -77,7 +95,14 @@ void IotsaFaultMod::lateSetup() {
 }
 
 void IotsaFaultMod::loop() {
+  _loopCount++;
+  if (millis() - _loopCountStartedAt >= 1000) {
+    _loopsPerSecond = _loopCount;
+    _loopCount = 0;
+    _loopCountStartedAt = millis();
+  }
   if (_crash) {
+    iotsaBreadcrumbs.setActivity(CRUMB_CRASH);
     IOTSA_LOG("fault", "crashing now, millis=%lu", (unsigned long)millis());
     volatile int *p = nullptr;
     *p = 42;
@@ -85,6 +110,7 @@ void IotsaFaultMod::loop() {
   uint32_t ms = _blockLoopOnce ? _blockLoopOnce : _blockLoopEvery;
   if (ms == 0) return;
   _blockLoopOnce = 0;
+  iotsaBreadcrumbs.setActivity(CRUMB_BLOCK_LOOP);
   IOTSA_LOG("fault", "loop block %lu ms start, millis=%lu", (unsigned long)ms, (unsigned long)millis());
   busyWait(ms);
   IOTSA_LOG("fault", "loop block end, millis=%lu", (unsigned long)millis());
@@ -95,6 +121,8 @@ bool IotsaFaultMod::getHandler(const char *path, JsonObject& reply) {
   reply["blockLoopEvery"] = _blockLoopEvery;
   reply["blockBle"] = (uint32_t)_blockBle;
   reply["replySize"] = _replySize;
+  reply["breadcrumbs"] = iotsaBreadcrumbsEnabled;
+  reply["loopsPerSecond"] = _loopsPerSecond;
   if (_replySize) {
     String filler;
     filler.reserve(_replySize);
@@ -116,12 +144,14 @@ bool IotsaFaultMod::putHandler(const char *path, const JsonVariant& request, Jso
   if (getFromRequest<int>(reqObj, "blockBle", ble)) { _blockBle = ble; any = true; }
   if (getFromRequest<int>(reqObj, "replySize", _replySize)) any = true;
   if (getFromRequest<bool>(reqObj, "crash", _crash)) any = true;
+  if (getFromRequest<bool>(reqObj, "breadcrumbs", iotsaBreadcrumbsEnabled)) any = true;
   const char *payload = nullptr;
   if (getFromRequest<const char *>(reqObj, "payload", payload)) {
     reply["payloadLength"] = payload ? strlen(payload) : 0;
     any = true;
   }
   if (getFromRequest<int>(reqObj, "blockHandler", blockHandler)) {
+    IotsaActivityScope activity(CRUMB_BLOCK_HANDLER);
     IOTSA_LOG("fault", "handler block %lu ms start, millis=%lu", (unsigned long)blockHandler, (unsigned long)millis());
     busyWait(blockHandler);
     IOTSA_LOG("fault", "handler block end, millis=%lu", (unsigned long)millis());
@@ -137,6 +167,7 @@ bool IotsaFaultMod::blePutHandler(UUIDstring charUUID) {
   if (charUUID == triggerUUID) {
     uint32_t ms = _blockBle;
     _blockBle = 0;
+    IotsaActivityScope activity(CRUMB_BLOCK_BLE);
     IOTSA_LOG("fault", "BLE block %lu ms start, millis=%lu", (unsigned long)ms, (unsigned long)millis());
     busyWait(ms);
     IOTSA_LOG("fault", "BLE block end, millis=%lu", (unsigned long)millis());

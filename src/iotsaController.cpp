@@ -18,6 +18,7 @@ IotsaController iotsaController;
 static hw_timer_t *s_watchdog = nullptr;
 
 static void IRAM_ATTR watchdogFired() {
+  iotsaBreadcrumbsMarkIotsaWatchdog();
   ets_printf("iotsa watchdog reboot");
   esp_restart();
 }
@@ -94,6 +95,7 @@ void IotsaController::tick() {
 #endif
   if (_rebootAtMillis && millis() > _rebootAtMillis) {
     IFDEBUG IotsaSerial.println("Software requested reboot.");
+    iotsaBreadcrumbs.addBreadcrumb(IOTSA_CRUMB_REBOOT);
     ESP.restart();
   }
   _modes.tick();

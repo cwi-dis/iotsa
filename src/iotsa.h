@@ -20,6 +20,7 @@
 #include "iotsaWebServer.h"
 #include "iotsaConfig.h"
 #include "iotsaStatus.h"
+#include "iotsaBreadcrumbs.h"
 #include "iotsaController.h"
 #include "iotsaDeadline.h"
 #include <ArduinoJson.h>
