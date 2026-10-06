@@ -38,6 +38,7 @@ IotsaWifiMod::IotsaWifiMod(IotsaApplication &_app)
   ssid(""),
   ssidPassword("")
 {
+  claimSingleton(this);
   // IotsaConfigMod is core infrastructure, not a WiFi sub-object -- it used to be a
   // member here purely so it got created, which meant a WiFi-less build lost
   // /api/config entirely (cwi-dis/iotsa#195). Create it via the shared singleton

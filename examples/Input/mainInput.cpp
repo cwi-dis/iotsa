@@ -5,18 +5,9 @@
 
 #include <Arduino.h>
 #include "iotsa.h"
-#include "iotsaWifi.h"
 #include "iotsaInput.h"
 
-#define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
-
 IotsaApplication application("Iotsa Input Sample");
-IotsaWifiMod wifiMod(application);
-
-#ifdef WITH_OTA
-#include "iotsaOta.h"
-IotsaOtaMod otaMod(application);
-#endif
 
 // When using an Alps EC12D rotary encoder with pushbutton here is the pinout:
 // When viewed from the top there are pins at northwest, north, northeast, southwest, southeast.

@@ -6,20 +6,11 @@
 //
 
 #include "iotsa.h"
-#include "iotsaWifi.h"
 #include "iotsaFiles.h"
 #include "iotsaFilesUpload.h"
 #include "iotsaFilesBackup.h"
 
-#define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
-
 IotsaApplication application("Iotsa FileShare Server");
-IotsaWifiMod wifiMod(application);
-
-#ifdef WITH_OTA
-#include "iotsaOta.h"
-IotsaOtaMod otaMod(application);
-#endif
 
 IotsaFilesMod filesMod(application);
 IotsaFilesUploadMod filesUploadMod(application);

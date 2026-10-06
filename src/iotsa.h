@@ -116,9 +116,8 @@ protected:
 
 //
 // Mix-in for the small set of modules that are single-instance infrastructure
-// rather than application features: the HTTP/CoAP/HPS transports today, and (as
-// cwi-dis/iotsa#85 progresses) IotsaWifiMod, IotsaConfigMod, IotsaOtaMod,
-// IotsaNtpMod, IotsaBLEServerMod. It gives every one of them the same
+// rather than application features: the HTTP/CoAP/HPS transports, IotsaConfigMod,
+// IotsaRunmodeMod, IotsaBLEServerMod, IotsaWifiMod and IotsaOtaMod (cwi-dis/iotsa#85). It gives every one of them the same
 // "there is at most one, create it on demand" shape, replacing the hand-rolled
 // static-pointer + ensureServiceMod() copies these classes used to carry.
 //

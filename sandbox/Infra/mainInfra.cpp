@@ -12,9 +12,7 @@
 // IotsaApplication::setup() (cwi-dis/iotsa#195), which this sketch also exercises.
 //
 #include "iotsa.h"
-#include "iotsaWifi.h"
 #include "iotsaBattery.h"
-#include "iotsaOta.h"
 #include "iotsaLogger.h"
 #include "iotsaFilesBackup.h"
 #include "iotsaNothing.h"
@@ -24,9 +22,7 @@
 
 IotsaApplication application("Iotsa Infra test rig");
 
-IotsaWifiMod wifiMod(application);
 IotsaBatteryMod batteryMod(application);
-IotsaOtaMod otaMod(application);
 IotsaLoggerMod loggerMod(application);
 IotsaFilesBackupMod filesBackupMod(application);
 #ifdef IOTSA_PIN_NEOPIXEL

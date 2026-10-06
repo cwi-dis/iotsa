@@ -55,6 +55,13 @@
 #define IOTSA_WITH_WIFI
 #endif
 
+#if !defined(IOTSA_WITHOUT_OTA) && defined(IOTSA_WITH_WIFI)
+// Over-the-air updates are enabled by default whenever WiFi is. The OTA module
+// is then created automatically (cwi-dis/iotsa#85); -DIOTSA_WITHOUT_OTA saves
+// its flash when a device doesn't need it.
+#define IOTSA_WITH_OTA
+#endif
+
 #ifndef IOTSA_WITHOUT_HTTP
 // http is enabled by default
 #define IOTSA_WITH_HTTP

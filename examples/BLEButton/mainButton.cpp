@@ -21,23 +21,14 @@
 // ringer.requestRing().
 //
 #include "iotsa.h"
-#include "iotsaWifi.h"
 #include "iotsaConfigFile.h"
 #include "iotsaInput.h"
-
-#define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 
 #ifndef BUTTON_PIN
 #define BUTTON_PIN 9 // BOOT button on esp32c3supermini/esp32c3devkit
 #endif
 
 IotsaApplication application("BLE Doorbell Button");
-IotsaWifiMod wifiMod(application);
-
-#ifdef WITH_OTA
-#include "iotsaOta.h"
-IotsaOtaMod otaMod(application);
-#endif
 
 #include "iotsaBLEClient.h"
 IotsaBLEClientMod bleClientMod(application);

@@ -4,11 +4,8 @@
 //
 
 #include "iotsa.h"
-#include "iotsaWifi.h"
 #include "iotsaLed.h"
 #include "iotsaButton.h"
-
-#define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 
 #ifndef BUTTON_PIN
 #define BUTTON_PIN 4	// GPIO4 is the pushbutton
@@ -20,12 +17,6 @@
 IotsaApplication application("Button Server");
 
 // Configure modules we need
-IotsaWifiMod wifiMod(application);  // wifi is always needed
-
-#ifdef WITH_OTA
-#include "iotsaOta.h"
-IotsaOtaMod otaMod(application);    // we want OTA for updating the software (will not work with esp-201)
-#endif
 
 IotsaLedMod ledMod(application, IOTSA_PIN_NEOPIXEL);
 

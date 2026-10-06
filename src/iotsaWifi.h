@@ -6,7 +6,9 @@
 #include "iotsaWifiController.h"  // policy layer + the shared driver<->controller types
 
 #ifdef IOTSA_WITH_WIFI
-class IotsaWifiMod : public IotsaModule {
+// Created automatically by IotsaApplication::setup() (cwi-dis/iotsa#85); an
+// explicit declaration in a sketch is still allowed and then used instead.
+class IotsaWifiMod : public IotsaModule, public IotsaSingletonModule<IotsaWifiMod> {
 public:
   IotsaWifiMod(IotsaApplication &_app);
 	void setup() override;

@@ -21,12 +21,9 @@
 //
 
 #include "iotsa.h"
-#include "iotsaWifi.h"
 #include "iotsaBattery.h"
 #include "iotsaBLEServer.h"
 #include "iotsaLedControlMod.h"
-
-#define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 
 #ifndef WITHOUT_BATTERY
 #define WITH_BATTERY
@@ -52,14 +49,6 @@
 #endif
 
 IotsaApplication application("Iotsa LED Server");
-#ifdef IOTSA_WITH_WIFI
-IotsaWifiMod wifiMod(application);
-#endif
-
-#ifdef WITH_OTA
-#include "iotsaOta.h"
-IotsaOtaMod otaMod(application);
-#endif
 
 #ifdef WITH_BATTERY
 IotsaBatteryMod batteryMod(application);

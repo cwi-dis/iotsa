@@ -8,20 +8,19 @@
 
 #include <Arduino.h>
 #include "iotsa.h"
-#include "iotsaWifi.h"
 
 // CHANGE: Add application includes and declarations here
 
+// The WiFi and over-the-air update modules are created automatically. To leave
+// OTA out (saves flash), build with -DIOTSA_WITHOUT_OTA.
 #undef WITH_USER   // Enable username/password authentication for changing configurations
 #undef WITH_NTP    // Use network time protocol to synchronize the clock.
-#define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 #undef WITH_FILES  // Enable static files webserver
 #undef WITH_FILESUPLOAD  // Enable upload of static files for webserver
 #undef WITH_FILESBACKUP  // Enable backup of all files including config files and webserver files
 #undef WITH_BATTERY // Enable power-saving support
 
 IotsaApplication application("Iotsa Skeleton Server");
-IotsaWifiMod wifiMod(application);
 
 #ifdef WITH_USER
 #include "iotsaUser.h"
@@ -34,11 +33,6 @@ IotsaUserMod userMod(application);
 #ifdef WITH_NTP
 #include "iotsaNtp.h"
 IotsaNtpMod ntpMod(application);
-#endif
-
-#ifdef WITH_OTA
-#include "iotsaOta.h"
-IotsaOtaMod otaMod(application);
 #endif
 
 #ifdef WITH_FILES

@@ -49,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The WiFi and OTA modules are created automatically; sketches no longer need to declare them. `-DIOTSA_WITHOUT_OTA` leaves OTA out (#85)
 - **Breaking:** modules no longer take an authenticator argument; an application sets one with `application.setAuth()`, used by every module (#284)
 - The HTTP-to-HTTPS forwarder redirects to the host name or address the client used, instead of guessing between `hostname.local` and `192.168.4.1` (#237)
 - `min_spiffs.csv` is now the default partition layout for all 4MB ESP32 boards (esp32thing, esp32dev, pico32, esp32c3devkit); deployed devices on `default.csv` need one USB reflash to adopt it (#245)

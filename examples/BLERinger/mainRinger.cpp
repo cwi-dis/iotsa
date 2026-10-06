@@ -15,21 +15,12 @@
 // (combining with examples/Ringer) or other status consumers exist.
 //
 #include "iotsa.h"
-#include "iotsaWifi.h"
-
-#define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 
 #ifndef IOTSA_PIN_NEOPIXEL
 #define IOTSA_PIN_NEOPIXEL 8 // esp32c3devkit's onboard addressable RGB LED
 #endif
 
 IotsaApplication application("BLE Ringer");
-IotsaWifiMod wifiMod(application);
-
-#ifdef WITH_OTA
-#include "iotsaOta.h"
-IotsaOtaMod otaMod(application);
-#endif
 
 #include "iotsaBLEServer.h"
 IotsaBLEServerMod bleServerMod(application);

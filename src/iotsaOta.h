@@ -2,9 +2,16 @@
 #define _IOTSAOTA_H_
 #include "iotsa.h"
 
-class IotsaOtaMod : public IotsaBaseModule {
+#ifdef IOTSA_WITH_OTA
+// Created automatically by IotsaApplication::setup() (cwi-dis/iotsa#85); an
+// explicit declaration in a sketch is still allowed and then used instead.
+class IotsaOtaMod : public IotsaBaseModule, public IotsaSingletonModule<IotsaOtaMod> {
 public:
-  using IotsaBaseModule::IotsaBaseModule;
+  IotsaOtaMod(IotsaApplication &_app)
+  : IotsaBaseModule(_app)
+  {
+    claimSingleton(this);
+  }
   void setup() override;
   void lateSetup() override;
   void loop() override;
@@ -15,5 +22,15 @@ protected:
   bool _started = false;
   void _startIfReady();
 };
+#elif IOTSA_WITH_PLACEHOLDERS
+class IotsaOtaMod : public IotsaBaseModule {
+public:
+  using IotsaBaseModule::IotsaBaseModule;
+  void setup() override {}
+  void lateSetup() override {}
+  void loop() override {}
+  String info() override {return "";}
+};
+#endif // IOTSA_WITH_OTA || IOTSA_WITH_PLACEHOLDERS
 
 #endif

@@ -24,17 +24,8 @@
 // See /bleclient for the web UI, or /api/bleclient for the REST equivalent.
 //
 #include "iotsa.h"
-#include "iotsaWifi.h"
-
-#define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 
 IotsaApplication application("iotsa BLE Controller");
-IotsaWifiMod wifiMod(application);
-
-#ifdef WITH_OTA
-#include "iotsaOta.h"
-IotsaOtaMod otaMod(application);
-#endif
 
 #include "iotsaBLEClientCollection.h"
 #include "iotsaRunmodeBLEClient.h"

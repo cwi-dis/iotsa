@@ -1,7 +1,8 @@
 //
 // Simplest Iotsa service.
 //
-// This server includes just the wifi configuration module.
+// The standard modules (WiFi configuration, over-the-air updates, ...) are
+// included automatically, so the sketch only declares its own.
 //
 // A "hello" module is added, which greets the user with a name settable through
 // a web form (not kept over reboots).
@@ -12,13 +13,11 @@
 //
 
 #include "iotsa.h"
-#include "iotsaWifi.h"
 #include "iotsaSimple.h"
 
 // CHANGE: Add application includes and declarations here
 
 IotsaApplication application("Iotsa Hello World Server");
-IotsaWifiMod wifiMod(application);
 
 //
 // Hello "name" module. Greets visitors to the /hello page, and allows

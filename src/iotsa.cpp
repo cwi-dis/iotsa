@@ -3,6 +3,8 @@
 #include "iotsaHttpServer.h"
 #include "iotsaConfigMod.h"
 #include "iotsaRunmode.h"
+#include "iotsaWifi.h"
+#include "iotsaOta.h"
 #include "iotsaFS.h"
 #if defined(IOTSA_HAS_COAPSERVER) || defined(IOTSA_HAS_HPSSERVER)
 #include "iotsaApi.h"
@@ -118,6 +120,16 @@ IotsaApplication::setup() {
   // reboot, runtime radio toggles) is core-tier too, same treatment as
   // IotsaConfigMod -- see docs/controller-architecture.md (cwi-dis/iotsa#106).
   IotsaRunmodeMod::ensure(*this);
+
+  // WiFi and OTA are standard modules too: created here unless the sketch
+  // declared them itself (cwi-dis/iotsa#85). Opt out at build time with
+  // -DIOTSA_WITHOUT_WIFI / -DIOTSA_WITHOUT_OTA.
+#ifdef IOTSA_WITH_WIFI
+  IotsaWifiMod::ensure(*this);
+#endif
+#ifdef IOTSA_WITH_OTA
+  IotsaOtaMod::ensure(*this);
+#endif
 
   // Ensure the CoAP/HPS companion modules exist before any module's setup() runs,
   // rather than being lazily created as a side effect of whichever module happens to

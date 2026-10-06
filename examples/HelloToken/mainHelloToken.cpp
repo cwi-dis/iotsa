@@ -12,12 +12,9 @@
 //
 
 #include "iotsa.h"
-#include "iotsaWifi.h"
 #include "iotsaUser.h"
 #include "iotsaStaticToken.h"
 #include "iotsaHelloMod.h"
-
-#define WITH_OTA    // Enable Over The Air updates from ArduinoIDE. Needs at least 1MB flash.
 
 //
 // Instantiate all the objects we need.
@@ -34,13 +31,6 @@ IotsaUserMod myUserAuthenticator(application, "owner");  // Our authenticator mo
 // Authentication class #2, token based. The user can add static tokens with specific rights.
 //
 IotsaStaticTokenMod myTokenAuthenticator(application, myUserAuthenticator);
-
-IotsaWifiMod wifiMod(application);  // The network configuration module
-
-#ifdef WITH_OTA
-#include "iotsaOta.h"
-IotsaOtaMod otaMod(application);  // The over-the-air updater module
-#endif
 
 IotsaHelloMod helloMod(application); // Our hello module
 

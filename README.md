@@ -284,17 +284,16 @@ Iotsa has two main types of objects:
 * `IotsaApplication`, of which there is only one, which is the web server and the container for the plugin modules.
 * `IotsaMod` which is a plugin module and of which there can be many. Each plugin module provides a web interface (usually with a HTML form to allow control over it) plus some functionality. The `IotsaMod` class is subclassed to provide specific functionality. 
 
-  One subclass that is always used is the `IotsaWifiMod`, which provides the functionality to connect to a specific Wifi network (after the user has provided the name and password). 
+  The standard modules are created automatically: `IotsaWifiMod` (connect to a specific Wifi network, after the user has provided the name and password), `IotsaOtaMod` (over-the-air updates), and the configuration and runmode modules. Your program only declares its own modules. 
   
   One that is often used is `IotsaSimpleMod` which allows you to write two functions to implement your own functionality (your reason for actually using Iotsa).
 
 ### Do-nothing application
 
-You create a global variable `application` of type `IotsaApplication` to hold the basic implementation of your service framework, plus the `ESP8266WebServer` object on which the application will serve. You also create one `IotsaWifiMod` and link it to the application so the end user can configure the WiFi network to join and such:
+You create a global variable `application` of type `IotsaApplication` to hold the basic implementation of your service framework. The WiFi module (so the end user can configure the WiFi network to join and such) and the OTA module are created automatically:
 
 ```
 IotsaApplication application("Iotsa Hello World Server");
-IotsaWifiMod wifiMod(application);
 
 ```
 
@@ -513,8 +512,7 @@ The module also provides a REST api on `/api/config` (and this api depends on wh
 ### iotsaWifi.h
 
 Handles WiFi configuration.
-It is possible to build a Iotsa application without this module, but except for special use cases such as creating a Bluetooth LE only service it is not recommended.
-You must instantiate it in your program.
+Created automatically whenever WiFi is compiled in; you don't need to declare it. Building without WiFi (`-DIOTSA_WITHOUT_WIFI`) is possible, but except for special use cases such as creating a Bluetooth LE only service it is not recommended.
 
 A iotsa device can join an existing WiFi network (normal WiFi mode) or create a temporary network as an Access Point (private WiFi mode). 
 In private mode the device does not connect to a WiFi network, but in stead creates its own network (as a base station) with a name starting with "_config-_". The user can now connect a device to this network and visit `http://192.168.4.1/wificonfig`. Here it is possible to set the normal WiFi network to connect to and the password.
@@ -655,7 +653,7 @@ The RTC keeps UTC, and `isoTime()` (also `/api/rtcconfig`) returns it as `YYYY-M
 
 ### iotsaOta.h
 
-Allows Over-the-air reprogramming of a iotsa server. After ota-programming has been enabled the device will show up (for a few minutes) in the Arduino IDE, menu _Tools_ -> _Port_, under the _Network Ports_ section. Select it, and press the checkmark on your sketch to upload. Requires _IOTSA\_WITH\_HTTP_ or _IOTSA\_WITH\_HTTPS_.
+Allows Over-the-air reprogramming of a iotsa server. Created automatically whenever WiFi is compiled in; build with `-DIOTSA_WITHOUT_OTA` to leave it out (saves flash). After ota-programming has been enabled the device will show up (for a few minutes) in the Arduino IDE, menu _Tools_ -> _Port_, under the _Network Ports_ section. Select it, and press the checkmark on your sketch to upload. Requires _IOTSA\_WITH\_HTTP_ or _IOTSA\_WITH\_HTTPS_.
 
 ### iotsaRequest.h
 

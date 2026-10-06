@@ -1,4 +1,5 @@
 #include "iotsaOta.h"
+#ifdef IOTSA_WITH_OTA
 #include <ArduinoOTA.h>
 #ifdef IOTSA_WITH_BLE
 #include "iotsaBLE.h"
@@ -97,3 +98,4 @@ String IotsaOtaMod::info() {
   return rv;
 }
 #endif
+#endif // IOTSA_WITH_OTA

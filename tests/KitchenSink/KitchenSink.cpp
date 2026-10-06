@@ -22,10 +22,8 @@
 //
 
 #include "iotsa.h"
-#include "iotsaWifi.h"
 #include "iotsaMultiUser.h"
 #include "iotsaCapabilities.h"
-#include "iotsaOta.h"
 #include "iotsaBattery.h"
 #include "iotsaFiles.h"
 #include "iotsaFilesUpload.h"
@@ -86,11 +84,6 @@ IotsaMultiUserMod multiUserMod(application);
 IotsaCapabilityMod capabilityMod(application, multiUserMod);
 #define authProvider (&capabilityMod)
 
-#ifdef IOTSA_WITH_WIFI
-IotsaWifiMod wifiMod(application);
-#endif
-
-IotsaOtaMod otaMod(application);
 IotsaBatteryMod batteryMod(application);
 IotsaFilesMod filesMod(application);
 IotsaFilesUploadMod filesUploadMod(application);
