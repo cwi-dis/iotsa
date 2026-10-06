@@ -142,7 +142,7 @@
       "fqbn": null,
       "family": "esp32",
       "trait": "_esp32c3_nativeusb",
-      "build_flags": [],
+      "build_flags": ["-DIOTSA_PIN_LED=8", "-DIOTSA_LED_ACTIVE_LOW"],
       "mcu": "esp32c3",
       "partitions": "min_spiffs.csv",
       "flash_size": "4MB",
@@ -154,7 +154,7 @@
       "best_example": "examples/DateTime",
       "constraints": "All ESP32-C3 limits (no PCNT / touch / analog Vbat / deep-sleep wakeup).",
       "status": "supported",
-      "notes": "The in-progress P1-port-powered iotsaSmartMeter build targets this (cwi-dis/iotsaSmartMeter#1). Status LED: none configured yet. Believed to be a plain LED on GPIO8, active-low, still to be confirmed (cwi-dis/iotsa#272). A variant with a NeoPixel reportedly exists but has not been seen."
+      "notes": "The in-progress P1-port-powered iotsaSmartMeter build targets this (cwi-dis/iotsaSmartMeter#1). Status LED: plain blue LED on GPIO8, active-low (confirmed on blecontrol, cwi-dis/iotsa#272); rather dim next to the red power LED. A variant with a NeoPixel reportedly exists but has not been seen."
     },
     "crowpanel128": {
       "pio_board": "esp32-c3-devkitm-1",

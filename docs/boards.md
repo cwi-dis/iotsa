@@ -145,12 +145,12 @@ Tiny cheap ESP32-C3 board, native USB-Serial/JTAG, 4 MB flash.
 - **Chip:** ESP32-C3 (RISC-V single-core)
 - **Status:** supported
 - **PlatformIO board:** `esp32-c3-devkitm-1` · **Arduino FQBN:** `—`
-- **Build:** partitions `min_spiffs.csv`, flash 4MB
+- **Build:** partitions `min_spiffs.csv`, flash 4MB, build flags `-DIOTSA_PIN_LED=8 -DIOTSA_LED_ACTIVE_LOW`
 - **Provenance:** off-the-shelf clone
 - **Constraints:** All ESP32-C3 limits (no PCNT / touch / analog Vbat / deep-sleep wakeup).
 - **Reference:** [https://www.espboards.dev/esp32/esp32-c3-super-mini/](https://www.espboards.dev/esp32/esp32-c3-super-mini/)
 - **Example:** examples/DateTime
-- **Notes:** The in-progress P1-port-powered iotsaSmartMeter build targets this (cwi-dis/iotsaSmartMeter#1). Status LED: none configured yet. Believed to be a plain LED on GPIO8, active-low, still to be confirmed (cwi-dis/iotsa#272). A variant with a NeoPixel reportedly exists but has not been seen.
+- **Notes:** The in-progress P1-port-powered iotsaSmartMeter build targets this (cwi-dis/iotsaSmartMeter#1). Status LED: plain blue LED on GPIO8, active-low (confirmed on blecontrol, cwi-dis/iotsa#272); rather dim next to the red power LED. A variant with a NeoPixel reportedly exists but has not been seen.
 
 ### <a id="crowpanel128"></a>`crowpanel128` — Elecrow CrowPanel 1.28" round LCD
 
