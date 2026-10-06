@@ -612,7 +612,11 @@ for callbacks to be made on changes, and (on ESP32) wakeup from sleep. Will be i
 
 ### iotsaLed.h
 
-Drives a single NeoPixel LED by polling `iotsaStatus.statusColor()` every `loop()` call, so it shows status information (breathing/blinking, per subsystem) during the boot sequence and whenever the iotsa board is running in a nonstandard mode (configuration mode, OTA mode, etc). To show your own color/pattern from your program, call `iotsaStatus.setStatusPulse(rgb, onDuration, offDuration, durationMs, reason)` -- a transient pulse that decays back to the normal status display on its own once `durationMs` elapses, no restore logic needed.
+The status LED: a single NeoPixel, or a plain LED, driven by polling `iotsaStatus.statusColor()` every `loop()` call, so it shows status information (breathing/blinking, per subsystem) during the boot sequence and whenever the iotsa board is running in a nonstandard mode (configuration mode, OTA mode, etc). To show your own color/pattern from your program, call `iotsaStatus.setStatusPulse(rgb, onDuration, offDuration, durationMs, reason)` -- a transient pulse that decays back to the normal status display on its own once `durationMs` elapses, no restore logic needed.
+
+A plain LED shows the rhythms and pulses as brightness; only the colour is lost.
+
+The module is created automatically when the board definition describes a status LED: `IOTSA_PIN_LED=<pin>`, plus `IOTSA_LED_NEOPIXEL` for a NeoPixel, or `IOTSA_LED_ACTIVE_LOW` for a plain LED that lights when the pin is low (see [docs/boards.md](docs/boards.md) for which boards have one). Build with `-DIOTSA_WITHOUT_STATUS_LED` if your program uses that pin for something else. You can still declare it yourself, e.g. for a NeoPixel on another pin: `IotsaLedMod ledMod(application, pin)`; that one is then used instead.
 
 The module does not provide a user-visible endpoint or REST api, but can be used as a base class for this. See [examples/Led](examples/Led) for an example of triggering a pulse over the web/REST/BLE API.
 

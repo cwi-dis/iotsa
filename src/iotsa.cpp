@@ -5,6 +5,7 @@
 #include "iotsaRunmode.h"
 #include "iotsaWifi.h"
 #include "iotsaOta.h"
+#include "iotsaLed.h"
 #include "iotsaFS.h"
 #if defined(IOTSA_HAS_COAPSERVER) || defined(IOTSA_HAS_HPSSERVER)
 #include "iotsaApi.h"
@@ -129,6 +130,10 @@ IotsaApplication::setup() {
 #endif
 #ifdef IOTSA_WITH_OTA
   IotsaOtaMod::ensure(*this);
+#endif
+  // The status LED, when the board definition says there is one (cwi-dis/iotsa#272).
+#if defined(IOTSA_PIN_LED) && !defined(IOTSA_WITHOUT_STATUS_LED)
+  IotsaLedMod::ensure(*this);
 #endif
 
   // Ensure the CoAP/HPS companion modules exist before any module's setup() runs,

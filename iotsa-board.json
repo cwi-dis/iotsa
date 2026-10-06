@@ -5,7 +5,7 @@
       "fqbn": "esp8266:esp8266:nodemcuv2",
       "family": "esp8266",
       "trait": "_esp8266",
-      "build_flags": [],
+      "build_flags": ["-DIOTSA_PIN_LED=15", "-DIOTSA_LED_NEOPIXEL"],
       "display_name": "iotsa v4 board",
       "description": "iotsa's own custom PCB: ESP-12 module, FTDI programming header. The reference ESP8266 target.",
       "chip": "ESP8266 (ESP-12)",
@@ -14,7 +14,7 @@
       "best_example": "examples/Skeleton (built as vanilla_esp8266)",
       "constraints": "No BLE. HTTPS unreliable on ESP8266 (see cwi-dis/iotsa#159).",
       "status": "supported",
-      "notes": "The canonical ESP8266 target; the vanilla_esp8266 alias points here."
+      "notes": "The canonical ESP8266 target; the vanilla_esp8266 alias points here. Status LED: NeoPixel on GPIO15 (a few boards were built without one)."
     },
     "esp32thing": {
       "pio_board": "esp32thing",
@@ -31,7 +31,7 @@
       "best_example": "examples/BLEController",
       "constraints": null,
       "status": "supported",
-      "notes": "Canonical vanilla_esp32 target for CI. Being phased out for esp32dev / pico32 / lolin32(_lite)."
+      "notes": "Canonical vanilla_esp32 target for CI. Being phased out for esp32dev / pico32 / lolin32(_lite). Status LED: none configured yet; which LED (if any) and which pin is still to be confirmed on the hardware (cwi-dis/iotsa#272)."
     },
     "esp32dev": {
       "pio_board": "esp32dev",
@@ -48,7 +48,7 @@
       "best_example": "examples/BLEController",
       "constraints": null,
       "status": "supported",
-      "notes": "Known to work, not continuously CI-tested. Current pick when no charger is needed."
+      "notes": "Known to work, not continuously CI-tested. Current pick when no charger is needed. Status LED: none configured yet; which LED (if any) and which pin is still to be confirmed on the hardware (cwi-dis/iotsa#272)."
     },
     "lolin32": {
       "pio_board": "lolin32_lite",
@@ -65,7 +65,7 @@
       "best_example": "examples/BLEController",
       "constraints": "Fewer GPIOs broken out than a full devkit.",
       "status": "supported",
-      "notes": "The 'lolin32' key is kept (not renamed to lolin32_lite) so downstream `extends = lolin32` keeps resolving. Current pick when a LiPo charger is wanted."
+      "notes": "The 'lolin32' key is kept (not renamed to lolin32_lite) so downstream `extends = lolin32` keeps resolving. Current pick when a LiPo charger is wanted. Status LED: none configured yet; which LED (if any) and which pin is still to be confirmed on the hardware (cwi-dis/iotsa#272)."
     },
     "lolin32_oled": {
       "pio_board": "lolin32_lite",
@@ -82,7 +82,7 @@
       "best_example": "cwi-dis/lissabon:lissabonController",
       "constraints": "Built-in OLED occupies GPIO5/GPIO4; fewer GPIOs broken out; no charger.",
       "status": "supported",
-      "notes": "Added in cwi-dis/iotsa#229. lolin32_lite is used because its LED_BUILTIN=GPIO22 does not clash with the OLED's SDA on GPIO5 (the full lolin32 profile's GPIO5 would)."
+      "notes": "Added in cwi-dis/iotsa#229. lolin32_lite is used because its LED_BUILTIN=GPIO22 does not clash with the OLED's SDA on GPIO5 (the full lolin32 profile's GPIO5 would). Status LED: none configured yet; which LED (if any) and which pin is still to be confirmed on the hardware (cwi-dis/iotsa#272)."
     },
     "pico32": {
       "pio_board": "pico32",
@@ -99,14 +99,14 @@
       "best_example": "cwi-dis/lissabon:lissabonLedstrip",
       "constraints": "Minimodule JTAG debugging shares pins with the touchpads.",
       "status": "supported",
-      "notes": "Used by the lissabon ledstrip appliances."
+      "notes": "Used by the lissabon ledstrip appliances. Status LED: none configured yet; which LED (if any) and which pin is still to be confirmed on the hardware (cwi-dis/iotsa#272)."
     },
     "esp32c3devkit": {
       "pio_board": "esp32-c3-devkitm-1",
       "fqbn": null,
       "family": "esp32",
       "trait": "_esp32c3_extusb",
-      "build_flags": ["-DIOTSA_PIN_NEOPIXEL=8"],
+      "build_flags": ["-DIOTSA_PIN_LED=8", "-DIOTSA_LED_NEOPIXEL"],
       "partitions": "min_spiffs.csv",
       "display_name": "Espressif ESP32-C3-DevKitM-1",
       "description": "Reference ESP32-C3 devkit, external USB-serial chip.",
@@ -135,7 +135,7 @@
       "best_example": null,
       "constraints": "2 MB flash: bare_minimum_2MB.csv partitions, extremely tight. Plus all ESP32-C3 limits.",
       "status": "experimental",
-      "notes": "Barely fits a full-featured app; no iotsa example or downstream user yet."
+      "notes": "Barely fits a full-featured app; no iotsa example or downstream user yet. Status LED: none configured yet; which LED (if any) and which pin is still to be confirmed on the hardware (cwi-dis/iotsa#272)."
     },
     "esp32c3supermini": {
       "pio_board": "esp32-c3-devkitm-1",
@@ -154,7 +154,7 @@
       "best_example": "examples/DateTime",
       "constraints": "All ESP32-C3 limits (no PCNT / touch / analog Vbat / deep-sleep wakeup).",
       "status": "supported",
-      "notes": "The in-progress P1-port-powered iotsaSmartMeter build targets this (cwi-dis/iotsaSmartMeter#1)."
+      "notes": "The in-progress P1-port-powered iotsaSmartMeter build targets this (cwi-dis/iotsaSmartMeter#1). Status LED: none configured yet. Believed to be a plain LED on GPIO8, active-low, still to be confirmed (cwi-dis/iotsa#272). A variant with a NeoPixel reportedly exists but has not been seen."
     },
     "crowpanel128": {
       "pio_board": "esp32-c3-devkitm-1",
@@ -173,14 +173,14 @@
       "best_example": "cwi-dis/iotsaNeoClock:crowpanel128",
       "constraints": "min_spiffs.csv required -- a full C3 app (LovyanGFX + HTTPS) overflows default.csv (cwi-dis/iotsa#226). Plus all ESP32-C3 limits.",
       "status": "supported",
-      "notes": "Used by iotsaNeoClock's round-LCD clock. Partitions fixed in cwi-dis/iotsa#226."
+      "notes": "Used by iotsaNeoClock's round-LCD clock. Partitions fixed in cwi-dis/iotsa#226. Status LED: none configured yet; which LED (if any) and which pin is still to be confirmed on the hardware (cwi-dis/iotsa#272)."
     },
     "esp32s3supermini": {
       "pio_board": "esp32-s3-devkitc-1",
       "fqbn": "esp32:esp32:esp32s3",
       "family": "esp32",
       "trait": "_esp32s3_nativeusb",
-      "build_flags": ["-DIOTSA_PIN_NEOPIXEL=48"],
+      "build_flags": ["-DIOTSA_PIN_LED=48", "-DIOTSA_LED_NEOPIXEL"],
       "mcu": "esp32s3",
       "partitions": "min_spiffs.csv",
       "flash_size": "4MB",

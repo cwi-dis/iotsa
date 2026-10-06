@@ -35,11 +35,12 @@ iotsa's own custom PCB: ESP-12 module, FTDI programming header. The reference ES
 - **Chip:** ESP8266 (ESP-12)
 - **Status:** supported
 - **PlatformIO board:** `nodemcuv2` · **Arduino FQBN:** `esp8266:esp8266:nodemcuv2`
+- **Build:** build flags `-DIOTSA_PIN_LED=15 -DIOTSA_LED_NEOPIXEL`
 - **Provenance:** iotsa-custom PCB
 - **Constraints:** No BLE. HTTPS unreliable on ESP8266 (see cwi-dis/iotsa#159).
 - **Reference:** `README.md#supported-hardware-variants`
 - **Example:** examples/Skeleton (built as vanilla_esp8266)
-- **Notes:** The canonical ESP8266 target; the vanilla_esp8266 alias points here.
+- **Notes:** The canonical ESP8266 target; the vanilla_esp8266 alias points here. Status LED: NeoPixel on GPIO15 (a few boards were built without one).
 
 ### <a id="esp32thing"></a>`esp32thing` — SparkFun ESP32 Thing
 
@@ -52,7 +53,7 @@ Historic default ESP32 board: lots of I/O, onboard LiPo charger. Now overpriced 
 - **Provenance:** off-the-shelf
 - **Reference:** [https://www.sparkfun.com/products/13907](https://www.sparkfun.com/products/13907)
 - **Example:** examples/BLEController
-- **Notes:** Canonical vanilla_esp32 target for CI. Being phased out for esp32dev / pico32 / lolin32(_lite).
+- **Notes:** Canonical vanilla_esp32 target for CI. Being phased out for esp32dev / pico32 / lolin32(_lite). Status LED: none configured yet; which LED (if any) and which pin is still to be confirmed on the hardware (cwi-dis/iotsa#272).
 
 ### <a id="esp32dev"></a>`esp32dev` — Espressif ESP32-DevKitC (or clone)
 
@@ -65,7 +66,7 @@ Generic ESP32 devkit, usually a cheap clone. No LiPo charger.
 - **Provenance:** off-the-shelf
 - **Reference:** [https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-devkitc.html](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-devkitc.html)
 - **Example:** examples/BLEController
-- **Notes:** Known to work, not continuously CI-tested. Current pick when no charger is needed.
+- **Notes:** Known to work, not continuously CI-tested. Current pick when no charger is needed. Status LED: none configured yet; which LED (if any) and which pin is still to be confirmed on the hardware (cwi-dis/iotsa#272).
 
 ### <a id="lolin32"></a>`lolin32` — WEMOS LOLIN32 Lite
 
@@ -79,7 +80,7 @@ Compact ESP32 with an onboard TP4054 LiPo charger and JST-PH battery connector.
 - **Constraints:** Fewer GPIOs broken out than a full devkit.
 - **Reference:** [https://www.espboards.dev/esp32/lolin32-lite/](https://www.espboards.dev/esp32/lolin32-lite/)
 - **Example:** examples/BLEController
-- **Notes:** The 'lolin32' key is kept (not renamed to lolin32_lite) so downstream `extends = lolin32` keeps resolving. Current pick when a LiPo charger is wanted.
+- **Notes:** The 'lolin32' key is kept (not renamed to lolin32_lite) so downstream `extends = lolin32` keeps resolving. Current pick when a LiPo charger is wanted. Status LED: none configured yet; which LED (if any) and which pin is still to be confirmed on the hardware (cwi-dis/iotsa#272).
 
 ### <a id="lolin32_oled"></a>`lolin32_oled` — WEMOS LOLIN32 OLED
 
@@ -93,7 +94,7 @@ ESP32 with a built-in 0.96" 128x64 SSD1306 wired to GPIO5 (SDA) / GPIO4 (SCL). N
 - **Constraints:** Built-in OLED occupies GPIO5/GPIO4; fewer GPIOs broken out; no charger.
 - **Reference:** [https://randomnerdtutorials.com/esp32-built-in-oled-ssd1306/](https://randomnerdtutorials.com/esp32-built-in-oled-ssd1306/)
 - **Example:** cwi-dis/lissabon:lissabonController
-- **Notes:** Added in cwi-dis/iotsa#229. lolin32_lite is used because its LED_BUILTIN=GPIO22 does not clash with the OLED's SDA on GPIO5 (the full lolin32 profile's GPIO5 would).
+- **Notes:** Added in cwi-dis/iotsa#229. lolin32_lite is used because its LED_BUILTIN=GPIO22 does not clash with the OLED's SDA on GPIO5 (the full lolin32 profile's GPIO5 would). Status LED: none configured yet; which LED (if any) and which pin is still to be confirmed on the hardware (cwi-dis/iotsa#272).
 
 ### <a id="pico32"></a>`pico32` — Espressif ESP32-PICO-KIT
 
@@ -107,7 +108,7 @@ Small ESP32-PICO board: enough pins, cheap. No LiPo charger.
 - **Constraints:** Minimodule JTAG debugging shares pins with the touchpads.
 - **Reference:** [https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-pico-kit.html](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-pico-kit.html)
 - **Example:** cwi-dis/lissabon:lissabonLedstrip
-- **Notes:** Used by the lissabon ledstrip appliances.
+- **Notes:** Used by the lissabon ledstrip appliances. Status LED: none configured yet; which LED (if any) and which pin is still to be confirmed on the hardware (cwi-dis/iotsa#272).
 
 ### <a id="esp32c3devkit"></a>`esp32c3devkit` — Espressif ESP32-C3-DevKitM-1
 
@@ -116,7 +117,7 @@ Reference ESP32-C3 devkit, external USB-serial chip.
 - **Chip:** ESP32-C3 (RISC-V single-core)
 - **Status:** supported
 - **PlatformIO board:** `esp32-c3-devkitm-1` · **Arduino FQBN:** `—`
-- **Build:** partitions `min_spiffs.csv`, build flags `-DIOTSA_PIN_NEOPIXEL=8`
+- **Build:** partitions `min_spiffs.csv`, build flags `-DIOTSA_PIN_LED=8 -DIOTSA_LED_NEOPIXEL`
 - **Provenance:** off-the-shelf
 - **Constraints:** No PCNT (no rotary encoder), no touch, no analog voltage reading, no deep-sleep wakeup. Reduced WiFi TX power defaults on.
 - **Reference:** [https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/hw-reference/esp32c3/user-guide-devkitm-1.html](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/hw-reference/esp32c3/user-guide-devkitm-1.html)
@@ -135,7 +136,7 @@ ESP32-C3 with an attached LCD and only 2 MB flash.
 - **Constraints:** 2 MB flash: bare_minimum_2MB.csv partitions, extremely tight. Plus all ESP32-C3 limits.
 - **Reference:** —
 - **Example:** —
-- **Notes:** Barely fits a full-featured app; no iotsa example or downstream user yet.
+- **Notes:** Barely fits a full-featured app; no iotsa example or downstream user yet. Status LED: none configured yet; which LED (if any) and which pin is still to be confirmed on the hardware (cwi-dis/iotsa#272).
 
 ### <a id="esp32c3supermini"></a>`esp32c3supermini` — ESP32-C3 SuperMini (clone)
 
@@ -149,7 +150,7 @@ Tiny cheap ESP32-C3 board, native USB-Serial/JTAG, 4 MB flash.
 - **Constraints:** All ESP32-C3 limits (no PCNT / touch / analog Vbat / deep-sleep wakeup).
 - **Reference:** [https://www.espboards.dev/esp32/esp32-c3-super-mini/](https://www.espboards.dev/esp32/esp32-c3-super-mini/)
 - **Example:** examples/DateTime
-- **Notes:** The in-progress P1-port-powered iotsaSmartMeter build targets this (cwi-dis/iotsaSmartMeter#1).
+- **Notes:** The in-progress P1-port-powered iotsaSmartMeter build targets this (cwi-dis/iotsaSmartMeter#1). Status LED: none configured yet. Believed to be a plain LED on GPIO8, active-low, still to be confirmed (cwi-dis/iotsa#272). A variant with a NeoPixel reportedly exists but has not been seen.
 
 ### <a id="crowpanel128"></a>`crowpanel128` — Elecrow CrowPanel 1.28" round LCD
 
@@ -163,7 +164,7 @@ ESP32-C3 with a built-in 1.28" round IPS LCD (GC9A01).
 - **Constraints:** min_spiffs.csv required -- a full C3 app (LovyanGFX + HTTPS) overflows default.csv (cwi-dis/iotsa#226). Plus all ESP32-C3 limits.
 - **Reference:** [https://www.elecrow.com/crowpanel-esp32-1-28-inch-240x240-hd-ips-round-display.html](https://www.elecrow.com/crowpanel-esp32-1-28-inch-240x240-hd-ips-round-display.html)
 - **Example:** cwi-dis/iotsaNeoClock:crowpanel128
-- **Notes:** Used by iotsaNeoClock's round-LCD clock. Partitions fixed in cwi-dis/iotsa#226.
+- **Notes:** Used by iotsaNeoClock's round-LCD clock. Partitions fixed in cwi-dis/iotsa#226. Status LED: none configured yet; which LED (if any) and which pin is still to be confirmed on the hardware (cwi-dis/iotsa#272).
 
 ### <a id="esp32s3supermini"></a>`esp32s3supermini` — ESP32-S3 SuperMini (clone)
 
@@ -172,7 +173,7 @@ Tiny cheap ESP32-S3 board, native USB-Serial/JTAG, 4 MB flash + 2 MB PSRAM.
 - **Chip:** ESP32-S3 (Xtensa dual-core) + 2 MB PSRAM
 - **Status:** supported
 - **PlatformIO board:** `esp32-s3-devkitc-1` · **Arduino FQBN:** `esp32:esp32:esp32s3`
-- **Build:** partitions `min_spiffs.csv`, flash 4MB, build flags `-DIOTSA_PIN_NEOPIXEL=48`
+- **Build:** partitions `min_spiffs.csv`, flash 4MB, build flags `-DIOTSA_PIN_LED=48 -DIOTSA_LED_NEOPIXEL`
 - **Provenance:** off-the-shelf clone
 - **Constraints:** Clone boards run hot; intermittent WiFi drops even with wifiPowerReduction (cwi-dis/iotsa#194). USB-OTG/TinyUSB not implemented.
 - **Reference:** [https://www.espboards.dev/esp32/esp32-s3-super-mini/](https://www.espboards.dev/esp32/esp32-s3-super-mini/)

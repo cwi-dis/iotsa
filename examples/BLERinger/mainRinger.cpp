@@ -16,17 +16,13 @@
 //
 #include "iotsa.h"
 
-#ifndef IOTSA_PIN_NEOPIXEL
-#define IOTSA_PIN_NEOPIXEL 8 // esp32c3devkit's onboard addressable RGB LED
-#endif
-
 IotsaApplication application("BLE Ringer");
 
 #include "iotsaBLEServer.h"
 IotsaBLEServerMod bleServerMod(application);
 
-#include "iotsaLed.h"
-IotsaLedMod ledMod(application, IOTSA_PIN_NEOPIXEL);
+// The alert is shown on the board's status LED, which iotsa creates
+// automatically (cwi-dis/iotsa#272) -- e.g. esp32c3devkit's onboard NeoPixel.
 
 #include "iotsaImmediateAlertBLEServer.h"
 

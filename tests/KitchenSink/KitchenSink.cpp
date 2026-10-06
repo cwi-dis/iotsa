@@ -39,9 +39,6 @@
 #include "iotsaBLEClient.h"
 #include "iotsaBLEClientCollection.h"
 
-#ifndef IOTSA_PIN_NEOPIXEL
-#define IOTSA_PIN_NEOPIXEL 15 // Pulled down during boot on esp8266, can be used for led afterwards.
-#endif
 
 #ifndef IOTSA_PIN_BUTTON
 #define IOTSA_PIN_BUTTON 0 // GPIO0 is the "Boot" pin, wired to a pushbutton on most dev boards.
@@ -91,7 +88,13 @@ IotsaFilesBackupMod filesBackupMod(application);
 IotsaNtpMod ntpMod(application);
 IotsaRtcMod rtcMod(application, PIN_RTC_ENA, PIN_RTC_CLK, PIN_RTC_DAT);
 IotsaLoggerMod loggerMod(application);
-IotsaLedMod ledMod(application, IOTSA_PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
+// Declared explicitly (rather than auto-created) so the module is exercised on
+// every board: the board's own status LED where it has one, else a NeoPixel on 15.
+#ifdef IOTSA_PIN_LED
+IotsaLedMod ledMod(application);
+#else
+IotsaLedMod ledMod(application, 15, NEO_GRB + NEO_KHZ800);
+#endif
 IotsaNothingMod nothingMod(application);
 
 // iotsaInput: a rotary encoder and a pushbutton (see examples/Input for pin meaning).

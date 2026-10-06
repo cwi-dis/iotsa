@@ -4,21 +4,18 @@
 //
 
 #include "iotsa.h"
-#include "iotsaLed.h"
 #include "iotsaButton.h"
 
 #ifndef BUTTON_PIN
 #define BUTTON_PIN 4	// GPIO4 is the pushbutton
-#endif
-#ifndef IOTSA_PIN_NEOPIXEL
-#define IOTSA_PIN_NEOPIXEL 15  // pulled-down during boot, can be used for NeoPixel afterwards
 #endif
 
 IotsaApplication application("Button Server");
 
 // Configure modules we need
 
-IotsaLedMod ledMod(application, IOTSA_PIN_NEOPIXEL);
+// Feedback goes to the board's status LED, created automatically when the
+// board has one (cwi-dis/iotsa#272).
 
 Button buttons[] = {
   Button(BUTTON_PIN, true, false)

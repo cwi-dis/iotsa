@@ -16,20 +16,14 @@
 #include "iotsaLogger.h"
 #include "iotsaFilesBackup.h"
 #include "iotsaNothing.h"
-#ifdef IOTSA_PIN_NEOPIXEL
-#include "iotsaLed.h"
-#endif
 
 IotsaApplication application("Iotsa Infra test rig");
 
 IotsaBatteryMod batteryMod(application);
 IotsaLoggerMod loggerMod(application);
 IotsaFilesBackupMod filesBackupMod(application);
-#ifdef IOTSA_PIN_NEOPIXEL
-// Only when the board definition says this board has a NeoPixel -- then the
-// status LED (and iotsaStatus.statusColor()) is exercised too.
-IotsaLedMod ledMod(application, IOTSA_PIN_NEOPIXEL);
-#endif
+// The status LED (and iotsaStatus.statusColor()) is exercised too on boards
+// whose definition has one: iotsa creates it automatically (cwi-dis/iotsa#272).
 
 #ifdef IOTSA_WITH_BLE
 #include "iotsaBLEServer.h"

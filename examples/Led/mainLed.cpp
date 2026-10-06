@@ -44,9 +44,6 @@
 #endif
 #endif // ESP32
 
-#ifndef IOTSA_PIN_NEOPIXEL
-#define IOTSA_PIN_NEOPIXEL 15 // Pulled down during boot on esp8266, can be used for led afterwards.
-#endif
 
 IotsaApplication application("Iotsa LED Server");
 
@@ -58,7 +55,14 @@ IotsaBatteryMod batteryMod(application);
 IotsaBLEServerMod bleserverMod(application);
 #endif
 
-IotsaLedControlMod ledMod(application, IOTSA_PIN_NEOPIXEL);
+// The board's own status LED where it has one (NeoPixel or plain LED, from its
+// IOTSA_PIN_LED/IOTSA_LED_* defines), otherwise a NeoPixel on GPIO15 (pulled
+// down during boot on esp8266, can be used for a LED afterwards).
+#ifdef IOTSA_PIN_LED
+IotsaLedControlMod ledMod(application);
+#else
+IotsaLedControlMod ledMod(application, 15);
+#endif
 
 // Standard setup() method, hands off most work to the application framework
 void setup(void){
