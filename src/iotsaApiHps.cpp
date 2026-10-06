@@ -5,7 +5,7 @@
 #ifdef IOTSA_HAS_HPSSERVER
 #include "iotsaBLEServer.h"
 
-#ifdef IOTSA_BLE_DEBUG
+#ifdef IOTSA_DEBUG_BLE
 #define IFBLEDEBUG if(1)
 #else
 #define IFBLEDEBUG if(0)

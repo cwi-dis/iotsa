@@ -4,7 +4,7 @@
 #ifdef IOTSA_WITH_BLE
 //#include <BLE2902.h>
 
-#ifdef IOTSA_BLE_DEBUG
+#ifdef IOTSA_DEBUG_BLE
 #define IFBLEDEBUG if(1)
 #else
 #define IFBLEDEBUG if(0)
@@ -356,7 +356,7 @@ void IotsaBLEServerMod::configLoad() {
   cf.get("tx_power_dbm", tx_power_dbm, tx_power_dbm);
   cf.get("idle_timeout", idle_timeout, idle_timeout);
   _applyTxPower();
-#ifdef IOTSA_BLE_DEBUG
+#ifdef IOTSA_DEBUG_BLE
   pAdvertising->setAdvertisingCompleteCallback([](NimBLEAdvertising* adv) {
     IFBLEDEBUG IotsaSerial.println("BLE advertising complete callback");
   });

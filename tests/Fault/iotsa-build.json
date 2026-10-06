@@ -14,13 +14,15 @@
     {
       "board": "vanilla_esp32",
       "build_flags": [
-        "-DIOTSA_WITH_BLE"
+        "-DIOTSA_WITH_BLE",
+        "-DIOTSA_DEBUG_BLE"
       ]
     },
     {
       "board": "vanilla_esp32c3",
       "build_flags": [
-        "-DIOTSA_WITH_BLE"
+        "-DIOTSA_WITH_BLE",
+        "-DIOTSA_DEBUG_BLE"
       ]
     }
   ]
