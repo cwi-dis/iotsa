@@ -1,0 +1,27 @@
+{
+  "defaults": {
+    "minimal": false,
+    "ci": {
+      "platformio": true,
+      "arduino": false
+    }
+  },
+  "variants": [
+    {
+      "board": "vanilla_esp8266",
+      "_note": "No BLE on ESP8266: only the loop/handler/size/crash faults."
+    },
+    {
+      "board": "vanilla_esp32",
+      "build_flags": [
+        "-DIOTSA_WITH_BLE"
+      ]
+    },
+    {
+      "board": "vanilla_esp32c3",
+      "build_flags": [
+        "-DIOTSA_WITH_BLE"
+      ]
+    }
+  ]
+}

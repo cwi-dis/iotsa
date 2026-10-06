@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `tests/Fault`: a test sketch whose module deliberately blocks `loop()`, a handler or a BLE callback, sends huge replies or crashes, on request (#285)
 - `iotsaLog.h`: `IOTSA_LOG`, `IOTSA_LOG_DEBUG` and per-subsystem `IOTSA_LOG_DEBUG_<X>` macros; debug logging can be switched off per device (`debugLog` on `/api/runmode`) (#182)
 - `iotsa dfu installfs <dir>`: build a LittleFS image from a directory (sized from the live partition table) and flash it to the spiffs partition -- the write half of `dfu extractfs` (#191)
 - `iotsa dfu restart [seconds]`: reset the USB-attached device via the DTR/RTS auto-reset lines and boot from flash (no bootloader entry), optionally streaming the boot log
