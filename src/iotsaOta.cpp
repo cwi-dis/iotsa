@@ -13,6 +13,7 @@
 
 void otaOnStart() {
   IFDEBUG IotsaSerial.println("ota: download started");
+  iotsaBreadcrumbs.setActivity(IOTSA_CRUMB_OTA);
 #ifdef IOTSA_WITH_BLE
   // Ask any BLE client work to hold off starting anything new for the
   // duration of the transfer (cwi-dis/iotsa#263) -- cleared in otaOnEnd()/
@@ -26,6 +27,7 @@ void otaOnProgress(unsigned int progress, unsigned int total) {
   IFDEBUG IotsaSerial.print("ota: got data ");
   IFDEBUG IotsaSerial.print(progress*100/total);
   IFDEBUG IotsaSerial.println("%");
+  iotsaBreadcrumbs.setActivity(IOTSA_CRUMB_OTA);
   iotsaController.extendCurrentMode();
   iotsaStatus.setStatusPulse(IotsaStatus::COLOUR_CYAN, 0, 0, 2000, "OTA update in progress");  // re-armed per chunk (cwi-dis/iotsa#176)
   optFeedWatchdog();
@@ -33,6 +35,7 @@ void otaOnProgress(unsigned int progress, unsigned int total) {
 
 void otaOnEnd() {
   IFDEBUG IotsaSerial.println("ota: download finished");
+  iotsaBreadcrumbs.addBreadcrumb(IOTSA_CRUMB_REBOOT, 1);   // ArduinoOTA restarts the device itself
 #ifdef IOTSA_WITH_BLE
   IotsaBLERadioArbiter::holdOffNewWork(false);
 #endif

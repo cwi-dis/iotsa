@@ -61,7 +61,9 @@ public:
   bool onUsbPower = false;            // running on USB power (published by IotsaBatteryMod; false if no VUSB sense)
 
   bool networkIsUp();                 // reachable over the configured WiFi network (STA has an IP)
-  const char *getBootReason();        // human-readable reset cause (computed once, then cached)
+  const char *getBootReason();        // human-readable reset cause
+  uint8_t rawBootReason();            // the platform's reset reason code
+  static const char *bootReasonName(uint8_t raw);  // ...and its name
   bool wasHardwareReset();            // this boot was a power-cycle / reset-button, not a software reboot / watchdog / crash
   void printHeapSpace();              // debug: free heap + largest block (prints on ESP32 only)
 

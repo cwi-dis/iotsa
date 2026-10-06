@@ -378,6 +378,36 @@ bool IotsaRunmodeMod::getHandler(const char *path, JsonObject& reply) {
     // null when there's nothing to say. Pulses are short (about 2s), so this means
     // "right now", not "recently". The reason is a static string, no lifetime issue.
     reply["notice"] = iotsaStatus.overrideSignal().reason;
+
+    // What the device was doing before each earlier reset (cwi-dis/iotsa#276),
+    // oldest first. uptime in seconds, at a resolution of about a minute.
+    JsonObject crumbs = reply["breadcrumbs"].to<JsonObject>();
+    crumbs["enabled"] = iotsaBreadcrumbsEnabled;
+    JsonArray events = crumbs["events"].to<JsonArray>();
+    uint32_t entries[IotsaBreadcrumbs::RING_SIZE];
+    int count = iotsaBreadcrumbs.events(entries);
+    for (int i = 0; i < count; i++) {
+      uint8_t code = IotsaBreadcrumbs::entryCode(entries[i]);
+      uint8_t arg = IotsaBreadcrumbs::entryArg(entries[i]);
+      JsonObject event = events.add<JsonObject>();
+      const char *name = IotsaBreadcrumbs::codeName(code);
+      if (name) event["code"] = name; else event["code"] = code;
+      event["arg"] = arg;
+      event["uptime"] = IotsaBreadcrumbs::entryUptime(entries[i]);
+      if (code == IOTSA_CRUMB_BOOT) {
+        event["cause"] = IotsaStatus::bootReasonName(arg);
+      } else if (code == IOTSA_CRUMB_LOOP) {
+        // Module names are only right if the firmware hasn't changed since.
+        uint8_t index = 0;
+        IotsaBaseModule *m = app.firstEarlyModule;
+        for (; m && index < arg; m = m->nextModule) index++;
+        if (!m) {
+          m = app.firstModule;
+          for (; m && index < arg; m = m->nextModule) index++;
+        }
+        if (m) event["module"] = m->name;
+      }
+    }
     return true;
   }
   reply["currentMode"] = int(iotsaController.currentMode());
@@ -643,6 +673,7 @@ void IotsaRunmodeMod::_sleepTick() {
     }
   }
   IFDEBUG IotsaSerial.printf("Going to sleep at %u for %u mode %d\n", (unsigned)millis(), (unsigned)d.durationMs, (int)d.mode);
+  iotsaBreadcrumbs.setActivity(IOTSA_CRUMB_SLEEP, (uint8_t)d.mode);
   _notifySleepWakeup(true);
 #ifdef ESP32
   if (_cpuFrequencySleep != 0) {

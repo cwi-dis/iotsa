@@ -630,9 +630,17 @@ no `IotsaStatusMod`.
   "wifi":    {"enabled": true, "configured": true, "stationConnected": true,
               "apActive": false, "apInUse": false, "hunting": false, "private": false},
   "fs":      {"totalBytes": 0, "usedBytes": 0},
-  "notice":  null
+  "notice":  null,
+  "breadcrumbs": {"enabled": true, "events": [
+    {"code": "loop", "arg": 5, "uptime": 3604, "module": "fault"},
+    {"code": "boot", "arg": 7, "uptime": 0, "cause": "hardwareWatchdog"}]}
 }
 ```
+
+- **`breadcrumbs`** (#276) is the event ring from RTC memory, oldest first: what the
+  device was doing before each earlier reset (`iotsaBreadcrumbs`' activity word, moved
+  into the ring at boot), the boot causes, and requested reboots. `uptime` is in
+  seconds, at a resolution of about a minute. App codes (128 and up) appear as numbers.
 
 - **Semantic facts only.** How the status LED paints them (`colour`, `rhythm` of
   `IotsaStatusSignal`) is presentation and is not exposed.

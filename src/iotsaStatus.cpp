@@ -77,77 +77,50 @@ bool IotsaStatus::networkIsUp() {
   return wifiStationConnected;
 }
 
-const char* IotsaStatus::getBootReason() {
-  static const char *reason = NULL;
-  if (reason == NULL) {
-    reason = "unknown";
+uint8_t IotsaStatus::rawBootReason() {
 #ifndef ESP32
-    rst_info *rip = ESP.getResetInfoPtr();
-    static const char *reasons[] = {
-      "power",
-      "hardwareWatchdog",
-      "exception",
-      "softwareWatchdog",
-      "softwareReboot",
-      "deepSleepAwake",
-      "externalReset"
-    };
-    if (rip->reason < sizeof(reasons)/sizeof(reasons[0])) {
-      reason = reasons[(int)rip->reason];
-    }
+  return ESP.getResetInfoPtr()->reason;
 #else
-#if 1
-    esp_reset_reason_t r = esp_reset_reason();
-    switch(r) {
-      case ESP_RST_UNKNOWN: reason = "unknown"; break;
-      case ESP_RST_POWERON: reason = "power"; break;
-      case ESP_RST_EXT: reason = "externalReset"; break;
-      case ESP_RST_SW: reason = "softwareReboot"; break;
-      case ESP_RST_PANIC: reason = "panic"; break;
-      case ESP_RST_INT_WDT: reason = "interruptWatchdog"; break;
-      case ESP_RST_TASK_WDT: reason = "taskWatchdog"; break;
-      case ESP_RST_WDT: reason = "hardwareWatchdog"; break;
-      case ESP_RST_DEEPSLEEP: reason = "deepSleepAwake"; break;
-      case ESP_RST_BROWNOUT: reason = "brownout"; break;
-      case ESP_RST_SDIO: reason = "sdioReset"; break;
-      default: reason = "other"; break;
-    }
-#else
-  RESET_REASON r1 = rtc_get_reset_reason(0);
-  RESET_REASON r2 = rtc_get_reset_reason(1);
-  static char reasonBuffer[64];
-  // Determine best reset reason
+  return esp_reset_reason();
+#endif
+}
+
+const char* IotsaStatus::bootReasonName(uint8_t raw) {
+#ifndef ESP32
   static const char *reasons[] = {
-    "0",
     "power",
-    "2",
+    "hardwareWatchdog",
+    "exception",
+    "softwareWatchdog",
     "softwareReboot",
-    "legacyWatchdog",
     "deepSleepAwake",
-    "sdio",
-    "tg0Watchdog",
-    "tg1Watchdog",
-    "rtcWatchdog",
-    "intrusion",
-    "tgWatchdogCpu",
-    "softwareRebootCpu",
-    "rtcWatchdogCpu",
-    "externalReset",
-    "brownout",
-    "rtcWatchdogRtc"
+    "externalReset"
   };
-  if ((int)r1 < sizeof(reasons)/sizeof(reasons[0])) {
-    strcpy(reasonBuffer, reasons[(int)r1]);
+  if (raw < sizeof(reasons)/sizeof(reasons[0])) return reasons[raw];
+  return "unknown";
+#else
+  switch((esp_reset_reason_t)raw) {
+    case ESP_RST_UNKNOWN: return "unknown";
+    case ESP_RST_POWERON: return "power";
+    case ESP_RST_EXT: return "externalReset";
+    case ESP_RST_SW: return "softwareReboot";
+    case ESP_RST_PANIC: return "panic";
+    case ESP_RST_INT_WDT: return "interruptWatchdog";
+    case ESP_RST_TASK_WDT: return "taskWatchdog";
+    case ESP_RST_WDT: return "hardwareWatchdog";
+    case ESP_RST_DEEPSLEEP: return "deepSleepAwake";
+    case ESP_RST_BROWNOUT: return "brownout";
+    case ESP_RST_SDIO: return "sdioReset";
+    default: return "other";
   }
-  strcpy(reasonBuffer + strlen(reasonBuffer), "/");
-  if ((int)r2 < sizeof(reasons)/sizeof(reasons[0])) {
-    strcat(reasonBuffer, reasons[(int)r2]);
-  }
-  reason = reasonBuffer;
 #endif
-#endif
-  }
-  return reason;
+}
+
+const char* IotsaStatus::getBootReason() {
+  // iotsa's own watchdog restarts the device in software, so the platform calls
+  // that a software reboot. The breadcrumbs know better (cwi-dis/iotsa#276).
+  if (iotsaBreadcrumbs.bootedByIotsaWatchdog()) return "iotsaWatchdog";
+  return bootReasonName(rawBootReason());
 }
 
 bool IotsaStatus::wasHardwareReset() {

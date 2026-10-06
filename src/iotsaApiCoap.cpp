@@ -35,6 +35,7 @@ CoapCallback CoapEndpoint::getCallback(Coap *_coap) {
 }
 
 void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
+    IotsaActivityScope activity(IOTSA_CRUMB_REQUEST, IOTSA_CRUMB_COAP);
 #ifdef COAP_PROTOCOL_DEBUG
     IotsaSerial.print("COAP pkt recvd from "); IotsaSerial.print(ip); IotsaSerial.print(" port "); IotsaSerial.println(port);
     IotsaSerial.print("type "); IotsaSerial.println(int(pkt.type));

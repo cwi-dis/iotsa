@@ -51,12 +51,14 @@ public:
   {}
 
 	void onRead(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override {
+    IotsaActivityScope activity(IOTSA_CRUMB_BLE_CALLBACK, 1);
     IFBLEDEBUG IotsaSerial.printf("BLE char onRead %s\n", pCharacteristic->getUUID().toString().c_str());
     iotsaController.noteActivity();
     IotsaBLEServerMod::_notePeerActivity(connInfo.getConnHandle());
     api->bleGetHandler(charUUID);
   }
 	void onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override {
+    IotsaActivityScope activity(IOTSA_CRUMB_BLE_CALLBACK, 2);
     IFBLEDEBUG IotsaSerial.printf("BLE char onWrite %s\n", pCharacteristic->getUUID().toString().c_str());
     iotsaController.noteActivity();
     IotsaBLEServerMod::_notePeerActivity(connInfo.getConnHandle());
