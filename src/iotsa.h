@@ -156,11 +156,6 @@ public:
   virtual bool allows(const char *obj, IotsaApiOperation verb) = 0;
 };
 
-//
-// REST/CoAP/HPS API provider interface. Every module implements this (with
-// harmless do-nothing defaults) whether or not it actually registers any
-// endpoint with a transport -- see cwi-dis/iotsa#206.
-//
 // Fetch field `name` from an API request into `var`, if it has JSON type JT.
 // The single implementation behind every getFromRequest() member (#261).
 // A bool target accepts both a JSON bool and a JSON integer, whatever JT
@@ -185,6 +180,11 @@ template <typename JT> bool iotsaGetFromRequest(const JsonObject& reqObj, const 
   return false;
 }
 
+//
+// REST/CoAP/HPS API provider interface. Every module implements this (with
+// harmless do-nothing defaults) whether or not it actually registers any
+// endpoint with a transport -- see cwi-dis/iotsa#206.
+//
 class IotsaApiProvider {
 public:
   IotsaApiProvider() {}
