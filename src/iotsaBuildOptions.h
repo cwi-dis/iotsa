@@ -70,10 +70,6 @@
 #define IOTSA_WITH_API
 #endif
 
-#ifndef IOTSA_WITHOUT_TIMEZONE
-#define IOTSA_WITH_TIMEZONE
-#endif
-
 // ---- Stage 3: default-off WITH flags (opt in directly; nothing here defines them) ----
 
 // https is NOT enabled by default. Opt in with -DIOTSA_WITH_HTTPS.

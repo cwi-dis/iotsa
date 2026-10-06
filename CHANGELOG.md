@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Changing the NTP server takes effect immediately instead of after a reboot (#283)
 - `IotsaRtcMod` seeds the system clock correctly regardless of timezone or declaration order relative to `IotsaNtpMod`; `isoTime()` now marks its UTC value with `Z` (#104)
 - `iotsa-board-traits.ini`: ESP32 envs no longer silently drop the app's `[common]` build_flags (regression in v3.0a8 from the NimBLE stack flag, #127)
 - Boolean API fields accept both JSON `true`/`false` and `1`/`0` everywhere; `int:` values were silently ignored for some (e.g. `wifiPowerReduction`, lissabon's `isOn`), JSON bools for others (#261)
@@ -56,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- `IotsaNtpMod`: the dead pre-libc NTP client, `IOTSA_WITHOUT_TIMEZONE`, the always-zero `minutesWest` API field, and `localTime()` (which returned UTC) (#283)
 - `IotsaRtcMod::localSeconds/Minutes/Hours/Hours12/IsPM()`: they returned UTC; use `IotsaNtpMod` for local time (#104)
 - `IotsaStatusInterface` / `IotsaApplication::status` (push-based status notification) -- `IotsaLedMod` now polls `iotsaStatus.statusColor()` every `loop()` instead. Breaking for any other implementor (e.g. iotsaNeoClock) (#176)
 - `IotsaLedMod::set()`/`showStatus()` and its pattern-in-flight state -- an app-level side-channel that predates and bypassed the status-pulse precedence chain. Anything that wants to override the pixel temporarily (the default `identify()` handler, `examples/Led`'s `IotsaLedControlMod`) now calls `iotsaStatus.setStatusPulse()` like any other transient signal. Breaking for any downstream app calling `ledMod.set()`/`showStatus()` directly -- use `iotsaStatus.setStatusPulse(rgb, onDuration, offDuration, durationMs, reason)` instead (#256)

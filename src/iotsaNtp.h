@@ -2,10 +2,11 @@
 #define _IOTSANTP_H_
 #include "iotsa.h"
 #include "iotsaApi.h"
-#include <WiFiUdp.h>
 
-const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
-
+// Time synchronization and timezone. The actual NTP client is the platform's
+// own (lwIP SNTP, started via configTime()/configTzTime()); this module only
+// holds the server name and the POSIX TZ description, and offers local-time
+// helpers on top of libc's localtime().
 class IotsaNtpMod : public IotsaModule {
 public:
   using IotsaModule::IotsaModule;
@@ -16,37 +17,25 @@ public:
   String info() override;
 #endif
 
-  unsigned long utcTime();
-  unsigned long localTime();
+  unsigned long utcTime();  // Seconds since 1-Jan-1970, UTC (unix time)
   int localSeconds();
   int localMinutes();
   int localHours();
   int localHours12();
   bool localIsPM();
-  String isoTime();
+  String isoTime();         // Local time, "YYYY-MM-DDTHH:MM:SS"
 
   String ntpServer;
 protected:
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
-#ifdef IOTSA_WITH_TIMEZONE
   String tzDescription;
   void parseTimezone(const String& newDesc);
-#else
-  int minutesWestFromUtc;
-  void _setupTimezone();
-#endif
   void configLoad() override;
   void configSave() override;
 #ifdef IOTSA_WITH_WEB
   void webHandler() override;
 #endif
-  WiFiUDP udp;
-  unsigned long nextNtpRequest; // When to send an NTP request
-  unsigned long lastMillis; // To detect millis() rollover
-  byte ntpPacket[NTP_PACKET_SIZE];
-  bool gotInitialSync = false;
-
 };
 
 #endif
