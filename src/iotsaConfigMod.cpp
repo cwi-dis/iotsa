@@ -359,7 +359,6 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   features.add("ble");
 #endif
   features.add("littlefs");
-  if (iotsaStatus.mdnsEnabled) features.add("mdns");
 
   return true;
 }

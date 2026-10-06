@@ -118,6 +118,7 @@ void IotsaWifiMod::_publishControllerState() {
 
 bool IotsaWifiMod::_wifiStartMDNS() {
   MDNS.end();
+  _mdnsStarted = false;
   if (!MDNS.begin(iotsaConfig.hostName.c_str())) {
     WCLOG("MDNS.begin(...) failed");
     return false;
@@ -152,7 +153,7 @@ bool IotsaWifiMod::_wifiStartMDNS() {
   }
  
   WCDEBUG("MDNS responder started");
-  iotsaStatus.mdnsEnabled = true;
+  _mdnsStarted = true;
   return true;
 }
 
@@ -330,7 +331,7 @@ void IotsaWifiMod::loop() {
   _publishControllerState();
 #ifndef ESP32
   // mDNS happens asynchronously on ESP32
-  if (iotsaStatus.mdnsEnabled) MDNS.update();
+  if (_mdnsStarted) MDNS.update();
 #endif
 }
 #endif // IOTSA_WITH_WIFI

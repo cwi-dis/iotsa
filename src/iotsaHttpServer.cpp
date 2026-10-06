@@ -12,13 +12,14 @@ public:
     server.begin();
   }
   void notFound() {
-    String newLoc = "https://";
-    if (!iotsaStatus.mdnsEnabled) {
-      newLoc += "192.168.4.1";
-    } else {
-      newLoc += iotsaConfig.hostName;
-      newLoc += ".local";
-    }
+    // Redirect to whatever name or address the client used to reach us (works
+    // for hostname.local, a bare IP, and the config AP's 192.168.4.1 alike),
+    // minus any ":port". hostname.local only if the client sent no Host.
+    String host = server.hostHeader();
+    int colon = host.lastIndexOf(':');
+    if (colon > host.lastIndexOf(']')) host = host.substring(0, colon);
+    if (host.length() == 0) host = iotsaConfig.hostName + ".local";
+    String newLoc = "https://" + host;
     newLoc += server.uri();
     // The web server only hands us the decoded arguments, not the raw query
     // string, so rebuild it (cwi-dis/iotsa#49). "plain" is the request body,

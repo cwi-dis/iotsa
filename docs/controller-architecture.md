@@ -23,7 +23,7 @@ concerns:
    `activityExtraWakeDuration`, `extendCurrentModeCallback`, `rebootAtMillis` /
    `requestReboot()` + the reboot check in `loop()`.
 4. **A read-mostly status board** -- `wifiEnabled`, `wifiStationConnected`,
-   `wifiApActive`, `mdnsEnabled`, `networkIsUp()`, plus `getStatusColor()`,
+   `wifiApActive`, `networkIsUp()`, plus `getStatusColor()`,
    `getBootReason()`, `printHeapSpace()`.
 
 Concerns 2 and 3 are actually *one* concern (see "The `IotsaController`" below). The
@@ -36,7 +36,7 @@ cross-object callback #106 exists to delete.
 | global | role | write pattern |
 |---|---|---|
 | `iotsaConfig` | **identity** -- `hostName`, cert, `configLoad/Save()`, plus the `iotsa_mode` predicates (`inConfigurationMode()` etc.) | rare, only in a maintenance window, by the config UI |
-| `iotsaStatus` | **status bus** -- `wifiStationConnected`, `wifiApActive`, `wifiEnabled`, `mdnsEnabled`, `currentMode`, `networkIsUp()`, `getBootReason()`, `getStatusColor()` | every tick, by the controllers |
+| `iotsaStatus` | **status bus** -- `wifiStationConnected`, `wifiApActive`, `wifiEnabled`, `currentMode`, `networkIsUp()`, `getBootReason()`, `getStatusColor()` | every tick, by the controllers |
 | `iotsaController` | **policy coordinator** -- see below | -- |
 | `app` | module registry + setup/loop | sketch-declared, not framework-declared |
 
@@ -598,6 +598,10 @@ Decisions:
    anything" question is [#237](https://github.com/cwi-dis/iotsa/issues/237)'s.
    *(Update, #176: the `/api/status` field was dropped -- see §E. Only the `features`
    entry on `/api/config` and the C++ member remain.)*
+   *(Update, #237: both removed. The ESP8266 `MDNS.update()` gate is a private
+   `IotsaWifiMod` member now, and the HTTP-to-HTTPS forwarder redirects to the
+   client's `Host` header instead of choosing between `hostname.local` and
+   `192.168.4.1`.)*
 5. **`modeTimeout` read-only mirror dropped from `/api/runmode`** -- it's a
    persisted knob, canonical on `/api/config`.
 6. Sleep / CPU-frequency block stays on `/api/runmode` (runmode owns sleep config).
@@ -638,10 +642,10 @@ no `IotsaStatusMod`.
   access point are two independent clauses -- config mode runs the AP alongside a working
   station -- so `WiFi connected; config network in use` is a normal combination.
 - **`networkIsUp` and `mdnsEnabled` are not exposed.** `networkIsUp()` is just
-  `wifiStationConnected` (same as `wifi.stationConnected`; the C++ helper stays for NTP
-  and the data logger). `mdnsEnabled` is only ever set `true`, never cleared, so it means
-  "WiFi has come up once", and it is [#237](https://github.com/cwi-dis/iotsa/issues/237)'s
-  candidate for deletion; it stays visible in the `features` list on `/api/config`.
+  `wifiStationConnected` (same as `wifi.stationConnected`; the C++ helper stays for the
+  data logger). `mdnsEnabled` was only ever set `true`, never cleared, so it meant
+  "WiFi has come up once"; it was removed entirely in
+  [#237](https://github.com/cwi-dis/iotsa/issues/237).
 - **Nesting applies to `/api/status` only.** Nothing reads named fields from it (the
   Python CLI dumps it generically), so regrouping was cheap. `/api/runmode` and the mode
   keys forwarded through `PUT /api/config` keep their flat names -- they are shared with

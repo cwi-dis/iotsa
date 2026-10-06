@@ -57,7 +57,6 @@ public:
   bool wifiApInUse = false;           // ...and a client is actually connected to it (published by IotsaWifiMod)
   bool wifiConfigured = false;        // an SSID is configured (published by IotsaWifiMod)
   bool wifiHunting = false;           // STA connect attempt failed, SDK/duty-cycle retry in progress (published by IotsaWifiMod)
-  bool mdnsEnabled = false;           // mDNS responder is running
   bool onUsbPower = false;            // running on USB power (published by IotsaBatteryMod; false if no VUSB sense)
 
   bool networkIsUp();                 // reachable over the configured WiFi network (STA has an IP)
