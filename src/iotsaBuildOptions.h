@@ -73,7 +73,7 @@
 #endif
 
 #ifdef IOTSA_WITHOUT_API
-#error IOTSA_WITHOUT_API has been removed (cwi-dis/iotsa#225): API handlers are always compiled. To leave out a transport use IOTSA_WITHOUT_REST or IOTSA_WITHOUT_HPS, or don't enable IOTSA_WITH_COAP.
+#error "IOTSA_WITHOUT_API has been removed (cwi-dis/iotsa#225): API handlers are always compiled. To leave out a transport use IOTSA_WITHOUT_REST or IOTSA_WITHOUT_HPS, or do not enable IOTSA_WITH_COAP."
 #endif
 // Always defined now. Kept only so that remaining `#ifdef IOTSA_WITH_API` guards
 // (downstream) still compile their code instead of silently dropping it; those
