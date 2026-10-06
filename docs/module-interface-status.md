@@ -192,9 +192,9 @@ same checks:
   round-tripped through a config file so they survive reboot.
 - Are all REST/web-writable fields also persisted in the config file — and vice versa, are all
   config-file fields also exposed via REST or web (so they can be changed without reflashing)?
-- Does any application code call `rtcMod.localHours()` / `rtcMod.localMinutes()` /
-  `rtcMod.isoTime()` directly? It should not — those methods return UTC, not local time. All
-  local-time access should go through `ntpMod`. (See cwi-dis/iotsa#104.)
+- Does any application code call `rtcMod.isoTime()` expecting local time? It returns UTC
+  (with a `Z` suffix); local-time access goes through `ntpMod`. `IotsaRtcMod`'s misleading
+  `local*()` methods were removed in cwi-dis/iotsa#104.
 - Does application code call `ntpMod.localHours()` / `ntpMod.localMinutes()` / `ntpMod.isoTime()`
   etc.? These wrappers date from when ESP8266 lacked a full POSIX time library. All current boards
   have `localtime()` / `strftime()` / `time()` available. Application code using the module

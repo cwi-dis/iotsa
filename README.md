@@ -637,6 +637,8 @@ Provides a user interface at `/ntp` and a REST interface at `/api/ntp`.
 
 Support for _DS1302_ realtime clock chip, which usually comes on a board with battery backup so it can run for years. Will set _libc_ clock from RTC shortly after boot, and periodically set RTC clock from the system clock. So, when used together with `iotsaNtp` this automatically uses the RTC time when no network is available, and resynchronizes the RTC when a network is available.
 
+The RTC keeps UTC, and `isoTime()` (also `/api/rtcconfig`) returns it as `YYYY-MM-DDTHH:MM:SSZ`. For local time use `iotsaNtp`, which owns the timezone. Declaration order relative to `iotsaNtp` doesn't matter.
+
 ### iotsaOta.h
 
 Allows Over-the-air reprogramming of a iotsa server. After ota-programming has been enabled the device will show up (for a few minutes) in the Arduino IDE, menu _Tools_ -> _Port_, under the _Network Ports_ section. Select it, and press the checkmark on your sketch to upload. Requires _IOTSA\_WITH\_HTTP_ or _IOTSA\_WITH\_HTTPS_.

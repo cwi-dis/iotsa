@@ -5,11 +5,28 @@
 #define UPDATE_INTERVAL 120000
 
 #include <time.h>
+
+// Seconds since the epoch for a broken-down UTC time -- what timegm() does, but
+// neither the ESP8266 nor the ESP32 C library has timegm(), and mktime()
+// interprets its argument as *local* time (cwi-dis/iotsa#104). Days-from-civil
+// algorithm from Howard Hinnant's "chrono-Compatible Low-Level Date Algorithms".
+static time_t utcTimeFromTm(const struct tm &tm) {
+  int y = tm.tm_year + 1900;
+  unsigned m = tm.tm_mon + 1;            // 1..12
+  y -= m <= 2;
+  const int era = (y >= 0 ? y : y - 399) / 400;
+  const unsigned yoe = (unsigned)(y - era * 400);                        // [0, 399]
+  const unsigned doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + tm.tm_mday - 1;  // [0, 365]
+  const unsigned doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;           // [0, 146096]
+  const long days = (long)era * 146097 + (long)doe - 719468;
+  return (time_t)days * 86400 + tm.tm_hour * 3600L + tm.tm_min * 60L + tm.tm_sec;
+}
+
 const char * IotsaRtcMod::isoTime()
 {
   static char buf[32];
   _updateCurrentTime();
-  sprintf(buf, "20%02d-%02d-%02dT%02d:%02d:%02d", 
+  sprintf(buf, "20%02d-%02d-%02dT%02d:%02d:%02dZ", 
     currentTime.year, 
     currentTime.month, 
     currentTime.day, 
@@ -41,35 +58,6 @@ bool IotsaRtcMod::setIsoTime(const char *time)
   return true;
 }
 
-int IotsaRtcMod::localSeconds()
-{
-  _updateCurrentTime();
-  return currentTime.second;
-}
-
-int IotsaRtcMod::localMinutes()
-{
-  _updateCurrentTime();
-  return currentTime.minute;
-}
-
-int IotsaRtcMod::localHours()
-{
-  _updateCurrentTime();
-  return currentTime.hour;
-}
-
-int IotsaRtcMod::localHours12()
-{
-  _updateCurrentTime();
-  return currentTime.hour % 12;
-}
-
-bool IotsaRtcMod::localIsPM()
-{
-  return localHours() >= 12;
-}
-
 void IotsaRtcMod::_updateCurrentTime() {
   uint32_t now = millis();
   if (currentTimeMillis == 0 || now < currentTimeMillis || now > currentTimeMillis + 1000) {
@@ -90,7 +78,7 @@ IotsaRtcMod::webHandler() {
   if (!ok) {
     message += "<p><em>Error setting RTC time</em></p>";
   }
-  message += "<p>Current RTC time is ";
+  message += "<p>Current RTC time (UTC) is ";
   message += isoTime();
   message += "<form method='get'>Set RTC time: <input name='isoTime' value='";
   message += isoTime();
@@ -100,7 +88,7 @@ IotsaRtcMod::webHandler() {
 }
 
 String IotsaRtcMod::info() {
-  String message = "<p>RTC time is ";
+  String message = "<p>RTC time (UTC) is ";
   message += isoTime();
 
   message += ". See <a href=\"/rtcconfig\">/rtcconfig</a> to change time configuration.</p>";
@@ -152,19 +140,18 @@ void IotsaRtcMod::_updateSysTime() {
     struct tm tm;
     memset((void *)&tm, 0, sizeof(tm));
     _updateCurrentTime();
-    tzset();
     tm.tm_year = currentTime.year + 2000 - 1900;
     tm.tm_mon = currentTime.month-1;
     tm.tm_mday = currentTime.day;
     tm.tm_hour = currentTime.hour;
     tm.tm_min = currentTime.minute;
     tm.tm_sec = currentTime.second;
-    time_t nowUtc = mktime(&tm);
+    time_t nowUtc = utcTimeFromTm(tm);
     struct timeval tv;
     tv.tv_sec = nowUtc;
     tv.tv_usec = 0;
     settimeofday(&tv, NULL);
-    IotsaSerial.printf("RTC: Initialized system UTC time %d-%d-%d %d:%d:%d\n", 1900+tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+    IotsaSerial.printf("RTC: Initialized system UTC time %d-%d-%d %d:%d:%d\n", 1900+tm.tm_year, tm.tm_mon+1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
   }
 }
 

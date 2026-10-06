@@ -19,14 +19,12 @@ public:
   String info() override;
 #endif
 
-  const char *isoTime();
-  bool setIsoTime(const char *time);
+  // The DS1302 keeps UTC. For local time, ask IotsaNtpMod (which owns the
+  // timezone): this module is a battery-backed backup for the system clock,
+  // seeding it at boot and saving it periodically (cwi-dis/iotsa#104).
+  const char *isoTime();  // "YYYY-MM-DDTHH:MM:SSZ"
+  bool setIsoTime(const char *time);  // UTC; a trailing "Z" is optional
   bool setIsoTime(String time) { return setIsoTime(time.c_str()); }
-  int localSeconds();
-  int localMinutes();
-  int localHours();
-  int localHours12();
-  bool localIsPM();
 
 protected:
   Ds1302 ds1302;
