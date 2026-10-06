@@ -300,34 +300,15 @@ String IotsaRunmodeMod::info() {
 // are harmless or confirmed at the device itself, which is also what BLE allows:
 // identify, postponeSleep, and requestedMode (a requested mode only takes effect
 // after a reset at the device). reboot, wifiDisabled, bleDisabled, the CPU clock
-// and the saved sleep settings need auth: over the network they could take the
-// device offline. The web page applies the same rules in webHandler().
-//
-// Stopgap: the REST transport asks this before the handler runs, so a PUT is
-// judged by peeking at its body through the HTTP-only app.server. Per-field
-// checks belong in the handler, once handlers can answer "denied" (#280, #284).
-#ifdef IOTSA_HAS_WEBSERVER
-static bool requestHasOnlyOpenFields(IotsaWebServer *server) {
-  JsonDocument doc;
-  if (deserializeJson(doc, server->arg("plain"))) return false;
-  JsonObject obj = doc.as<JsonObject>();
-  if (obj.isNull()) return false;
-  for (JsonPair kv : obj) {
-    const char *key = kv.key().c_str();
-    if (strcmp(key, "identify") != 0 && strcmp(key, "requestedMode") != 0 && strcmp(key, "postponeSleep") != 0) {
-      return false;
-    }
-  }
-  return true;
-}
-#endif
-
+// and the saved sleep settings need the "config" right. So the REST transport's
+// per-endpoint check is switched off here, and putHandler() checks the request
+// itself, before executing anything. The web page applies the same rules.
 bool IotsaRunmodeMod::needsAuthentication(const char *obj, IotsaApiOperation verb) {
-  if (verb == IOTSA_API_GET) return false;
-#ifdef IOTSA_HAS_WEBSERVER
-  if (verb == IOTSA_API_PUT && requestHasOnlyOpenFields(app.server)) return false;
-#endif
-  return IotsaModule::needsAuthentication(obj, verb);
+  return false;
+}
+
+static bool isOpenField(const char *key) {
+  return strcmp(key, "identify") == 0 || strcmp(key, "requestedMode") == 0 || strcmp(key, "postponeSleep") == 0;
 }
 
 bool IotsaRunmodeMod::getHandler(const char *path, JsonObject& reply) {
@@ -404,6 +385,14 @@ bool IotsaRunmodeMod::getHandler(const char *path, JsonObject& reply) {
 bool IotsaRunmodeMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
+  // Anything beyond the open fields needs the config right, and then the whole
+  // request is refused before anything is executed (cwi-dis/iotsa#284).
+  for (JsonPair kv : reqObj) {
+    if (!isOpenField(kv.key().c_str())) {
+      if (needsAuthentication("config")) return false;
+      break;
+    }
+  }
 
   bool wifiDisabled;
   if (getFromRequest<int>(reqObj, "wifiDisabled", wifiDisabled)) {

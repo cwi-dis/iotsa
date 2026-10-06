@@ -81,6 +81,10 @@ public:
   // setAuth(), getAuth() returns a provider that allows everything.
   void setAuth(IotsaAuthenticationProvider *auth) { _auth = auth; }
   IotsaAuthenticationProvider *getAuth();
+  // Set when an authentication check fails: the authenticator has then already
+  // sent its own response (e.g. 401), so the REST transport must not send another
+  // when the handler returns. Reset by the transport before each handler call.
+  bool requestDenied = false;
   void setup();
   void lateSetup();
   void loop();

@@ -252,11 +252,15 @@ void IotsaBaseModule::percentDecode(const String &src, String &dst) {
 }
 
 bool IotsaBaseModule::needsAuthentication(const char *object, IotsaApiOperation verb) {
-  return !app.getAuth()->allows(object, verb);
+  bool denied = !app.getAuth()->allows(object, verb);
+  if (denied) app.requestDenied = true;
+  return denied;
 }
 
 bool IotsaBaseModule::needsAuthentication(const char *right) {
-  return !app.getAuth()->allows(right);
+  bool denied = !app.getAuth()->allows(right);
+  if (denied) app.requestDenied = true;
+  return denied;
 }
 
 void IotsaBaseModule::lateSetup() {

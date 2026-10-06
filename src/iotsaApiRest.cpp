@@ -23,7 +23,9 @@ void IotsaApiServiceRest::_getHandlerWrapper(const char *path) {
     iotsaController.noteActivity();
     JsonDocument replyDocument;
     JsonObject reply = replyDocument.to<JsonObject>();
+    app.requestDenied = false;
     bool ok = provider->getHandler(path, reply);
+    if (app.requestDenied) return;  // the authenticator already responded (cwi-dis/iotsa#284)
     if (replyDocument.overflowed()) {
         server->send(413, "text/plain", "JSON document too big for memory");
         IFDEBUG IotsaSerial.println("-> ERR JSON document too big for memory");
@@ -55,7 +57,9 @@ void IotsaApiServiceRest::_putHandlerWrapper(const char *path) {
         return;
     }
     JsonObject request = requestDocument.as<JsonObject>();
+    app.requestDenied = false;
     bool ok = provider->putHandler(path, request, reply);
+    if (app.requestDenied) return;  // the authenticator already responded (cwi-dis/iotsa#284)
     if (replyDocument.overflowed()) {
         server->send(413, "text/plain", "JSON reply too big for memory");
         IFDEBUG IotsaSerial.println("-> ERR JSON reply too big for memory");
@@ -87,7 +91,9 @@ void IotsaApiServiceRest::_postHandlerWrapper(const char *path) {
         return;
     }
     JsonObject request = requestDocument.as<JsonObject>();
+    app.requestDenied = false;
     bool ok = provider->postHandler(path, request, reply);
+    if (app.requestDenied) return;  // the authenticator already responded (cwi-dis/iotsa#284)
     if (replyDocument.overflowed()) {
         server->send(413, "text/plain", "JSON document too big for memory");
         IFDEBUG IotsaSerial.println("-> ERR JSON document too big for memory");
