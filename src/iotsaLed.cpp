@@ -1,6 +1,14 @@
 #include "iotsaLed.h"
 #include "iotsaRunmode.h"   // IotsaRunmodeMod::instance()/addIdentifyCallback() (cwi-dis/iotsa#176)
 
+// A plain (non-NeoPixel) LED can only come from the board definition: the
+// explicit constructor always means a NeoPixel. Compile the PWM code only then,
+// because analogWrite() pulls the LEDC driver in, and its IRAM use overflowed
+// iram0 in already-tight ESP32 builds (BLE+CoAP+HTTPS, Arduino core 3.x).
+#if defined(IOTSA_PIN_LED) && !defined(IOTSA_LED_NEOPIXEL)
+#define IOTSA_PLAIN_STATUS_LED
+#endif
+
 // Status LED renderer (NeoPixel or plain LED): polls iotsaStatus.statusColor() every loop() call
 // (cwi-dis/iotsa#176 -- inverts the old push model, see IotsaStatus's own docs).
 // Any caller that wants to override the pixel temporarily -- identify(), or an
@@ -37,10 +45,13 @@ void IotsaLedMod::setup() {
   if (strip) {
     strip->begin();
     strip->show();
-  } else {
+  }
+#ifdef IOTSA_PLAIN_STATUS_LED
+  else {
     pinMode(pin, OUTPUT);
     _show(0);
   }
+#endif
   // Default identify() handler (cwi-dis/iotsa#176/#133): two full-intensity
   // flashes, via the pulse channel like any other transient signal. 300+300
   // twice = 1200ms. IotsaRunmodeMod is core-tier, ensure()d before any
@@ -68,6 +79,7 @@ void IotsaLedMod::_show(uint32_t colour) {
     strip->show();
     return;
   }
+#ifdef IOTSA_PLAIN_STATUS_LED
   // Plain LED: the brightest channel becomes the brightness. Status colours use
   // the dim 0x3f level, scaled up here to (nearly) full; pulses like identify
   // use 0xff and are capped.
@@ -75,6 +87,7 @@ void IotsaLedMod::_show(uint32_t colour) {
   uint32_t brightness = level * 4;
   if (brightness > 255) brightness = 255;
   analogWrite(pin, activeLow ? 255 - brightness : brightness);
+#endif
 }
 
 void IotsaLedMod::lateSetup() {
