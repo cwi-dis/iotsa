@@ -3,7 +3,7 @@
     "build_flags": [
       "-DIOTSA_WITH_BLE",
       "-DIOTSA_WITH_HTTPS",
-      "-DIOTSA_WIFI_DEBUG"
+      "-DIOTSA_DEBUG_WIFI"
     ],
     "ci": {
       "platformio": true,
@@ -16,7 +16,7 @@
       "_note": "BLE is ESP32-only (NimBLE isn't available for esp8266) -- omit IOTSA_WITH_BLE here.",
       "build_flags": [
         "-DIOTSA_WITH_HTTPS",
-        "-DIOTSA_WIFI_DEBUG"
+        "-DIOTSA_DEBUG_WIFI"
       ]
     },
     {

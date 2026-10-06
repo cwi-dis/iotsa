@@ -83,9 +83,11 @@ protected:
   // in the module list (it names itself "ota"). Was iotsaConfig.otaEnabled,
   // cwi-dis/iotsa#106.
   bool _otaAvailable() const;
-#ifdef IOTSA_HAS_SLEEP
   void configLoad() override;
   void configSave() override;
+#ifdef IOTSA_HAS_SLEEP
+  void _sleepConfigLoad();
+  void _sleepConfigSave();
 #endif
 #ifdef IOTSA_WITH_BLE
   // The BLE control service: read the current mode, request a mode for the next

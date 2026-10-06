@@ -10,7 +10,6 @@
 #include "iotsa.h"
 #include "iotsaConfigFile.h"
 #include "iotsaWifi.h"
-#include "iotsaWifiDebug.h"   // WCLOG/WCDEBUG (cwi-dis/iotsa#176)
 #ifdef ESP32
 #include <esp_wifi.h>
 #endif
@@ -88,27 +87,27 @@ void IotsaWifiMod::_publishControllerState() {
   // the status LED's slow-blink -- log every transition so a "why did the LED
   // just go dark/change rhythm" question can be answered from the console.
   if (staState != _lastStaState) {
-    WCDEBUG("staState %s -> %s (apActive=%d)", staStateName(_lastStaState), staStateName(staState), (int)apAct);
+    IOTSA_LOG_DEBUG_WIFI("iotsaWifi", "staState %s -> %s (apActive=%d)", staStateName(_lastStaState), staStateName(staState), (int)apAct);
     _lastStaState = staState;
   }
 
   // Edge-triggered: log the transition, (re)start mDNS.
   if (staConn != _lastStaConnected) {
     if (staConn) {
-      WCLOG("connected: %s, IP %s", ssid.c_str(), WiFi.localIP().toString().c_str());
+      IOTSA_LOG("iotsaWifi", "connected: %s, IP %s", ssid.c_str(), WiFi.localIP().toString().c_str());
     } else {
-      WCLOG("connection lost");
+      IOTSA_LOG("iotsaWifi", "connection lost");
     }
   }
   if (apAct != _lastApActive && apAct) {
-    WCLOG("AP up: config-%s, IP %s", iotsaConfig.hostName.c_str(), WiFi.softAPIP().toString().c_str());
+    IOTSA_LOG("iotsaWifi", "AP up: config-%s, IP %s", iotsaConfig.hostName.c_str(), WiFi.softAPIP().toString().c_str());
   }
   // Polled independently of the driver's apClientCountChanged event (cwi-dis/iotsa#176
   // diagnostic): if this never prints while a client is actually joined, the event
   // path isn't the problem -- the live WiFi.softAPgetStationNum() poll itself is.
   const bool apInUse = (apSt == IotsaWifiApState::InUse);
   if (apInUse != _lastApInUse) {
-    WCLOG("AP client %s (count=%d)", apInUse ? "joined" : "left/idle", WiFi.softAPgetStationNum());
+    IOTSA_LOG("iotsaWifi", "AP client %s (count=%d)", apInUse ? "joined" : "left/idle", WiFi.softAPgetStationNum());
     _lastApInUse = apInUse;
   }
   if ((staConn && !_lastStaConnected) || (apAct && !_lastApActive)) {
@@ -122,7 +121,7 @@ bool IotsaWifiMod::_wifiStartMDNS() {
   MDNS.end();
   _mdnsStarted = false;
   if (!MDNS.begin(iotsaConfig.hostName.c_str())) {
-    WCLOG("MDNS.begin(...) failed");
+    IOTSA_LOG("iotsaWifi", "MDNS.begin(...) failed");
     return false;
   }
 #if defined(IOTSA_WITH_HTTPS)
@@ -154,7 +153,7 @@ bool IotsaWifiMod::_wifiStartMDNS() {
     m = m->nextModule;
   }
  
-  WCDEBUG("MDNS responder started");
+  IOTSA_LOG_DEBUG_WIFI("iotsaWifi", "MDNS responder started");
   _mdnsStarted = true;
   return true;
 }
@@ -269,7 +268,7 @@ bool IotsaWifiMod::getHandler(const char *path, JsonObject& reply) {
 bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
   if (!iotsaConfigSettingsWritable()) {
-    WCDEBUG("wifiConfig write rejected, not in config mode");
+    IOTSA_LOG_DEBUG_WIFI("iotsaWifi", "wifiConfig write rejected, not in config mode");
     return false;
   }
   JsonObject reqObj = request.as<JsonObject>();
@@ -317,7 +316,7 @@ void IotsaWifiMod::configSave() {
   cf.put("ssidPassword", ssidPassword);
   cf.put("wifiPowerReduction", wifiPowerReduction);
   iotsaStatus.wifiConfigured = ssid.length() > 0;
-  WCDEBUG("saved wifi.cfg");
+  IOTSA_LOG_DEBUG_WIFI("iotsaWifi", "saved wifi.cfg");
   // Persist only. The old factory->beginConfigurationMode() side effect and the
   // wantWifiModeSwitchAtMillis poke are gone (cwi-dis/iotsa#106): the request
   // handler tells the controller explicitly via credentialsChanged().

@@ -33,10 +33,8 @@
 #define IFDEBUG if(0)
 #endif
 
-// Magic to allow logging to be kept in-core, if wanted, by using
-// IotsaSerial in stead of Serial.
-extern Print *iotsaOverrideSerial;
-#define IotsaSerial (*iotsaOverrideSerial)
+// IotsaSerial and the IOTSA_LOG* macros (cwi-dis/iotsa#182).
+#include "iotsaLog.h"
 
 class IotsaBaseModule;
 class IotsaConfigMod;

@@ -21,6 +21,7 @@
 // Initialize IotsaSerial (a define) to refer to the normal Serial.
 // Will be overridden if the iotsaLogger module is included.
 Print *iotsaOverrideSerial = &Serial;
+bool iotsaLogDebugEnabled = true;  // see iotsaLog.h; set from IotsaRunmodeMod's config
 
 IotsaApplication::IotsaApplication(const char *_title)
 : firstModule(NULL),

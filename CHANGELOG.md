@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `iotsaLog.h`: `IOTSA_LOG`, `IOTSA_LOG_DEBUG` and per-subsystem `IOTSA_LOG_DEBUG_<X>` macros; debug logging can be switched off per device (`debugLog` on `/api/runmode`) (#182)
 - `iotsa dfu installfs <dir>`: build a LittleFS image from a directory (sized from the live partition table) and flash it to the spiffs partition -- the write half of `dfu extractfs` (#191)
 - `iotsa dfu restart [seconds]`: reset the USB-attached device via the DTR/RTS auto-reset lines and boot from flash (no bootloader entry), optionally streaming the boot log
 - `iotsa dfu ports`: list candidate serial ports, USB-attached ones first
@@ -49,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `IOTSA_WIFI_DEBUG` is now `IOTSA_DEBUG_WIFI` (#182)
 - The status LED is created automatically from the board definition (`IOTSA_PIN_LED`, `IOTSA_LED_NEOPIXEL`, `IOTSA_LED_ACTIVE_LOW`, replacing `IOTSA_PIN_NEOPIXEL`), and can be a plain LED; `-DIOTSA_WITHOUT_STATUS_LED` opts out (#272)
 - The WiFi and OTA modules are created automatically; sketches no longer need to declare them. `-DIOTSA_WITHOUT_OTA` leaves OTA out (#85)
 - **Breaking:** modules no longer take an authenticator argument; an application sets one with `application.setAuth()`, used by every module (#284)

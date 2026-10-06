@@ -365,7 +365,7 @@ pattern. The BLE server's mode-switch timing moves onto the same primitive.
 
 Two separate things, often conflated in the current code:
 
-**Trace log -- verbose, compile-time opt-in.** Behind `IOTSA_WIFI_DEBUG` (matching the
+**Trace log -- verbose, compile-time opt-in.** Behind `IOTSA_DEBUG_WIFI` (was `IOTSA_WIFI_DEBUG`, renamed in #182; matching the
 existing `IOTSA_BLE_DEBUG` / `IOTSA_DEBUG_BLE_PRINT_ALL_CLIENTS` naming), the controller
 logs via `IotsaSerial` (so it also lands in the `IotsaLoggerMod` ring buffer when that
 module is present, retrievable over the network after a field failure). Lines are

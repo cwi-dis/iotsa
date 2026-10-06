@@ -1,8 +1,8 @@
 #include "iotsa.h"
 #include "iotsaRunmode.h"   // pulls in iotsaBLEServer.h too
 #include "iotsaFS.h"        // iotsaFS{Total,Used}Bytes() for /api/status
-#ifdef IOTSA_HAS_SLEEP
 #include "iotsaConfigFile.h"
+#ifdef IOTSA_HAS_SLEEP
 #ifdef ESP32
 #include <esp_wifi.h>
 #include <esp_bt.h>
@@ -34,8 +34,8 @@
 // the sleep with iotsaController.pause/resumeWatchdog().
 
 void IotsaRunmodeMod::setup() {
-#ifdef IOTSA_HAS_SLEEP
   configLoad();
+#ifdef IOTSA_HAS_SLEEP
 #ifdef ESP32
   iotsaController.sleep().didWakeFromSleep = (esp_sleep_get_wakeup_cause() != 0);
 #endif
@@ -157,6 +157,12 @@ void IotsaRunmodeMod::webHandler() {
         }
         message += ".</em></p>";
       }
+    } else if (action == "save-debug") {
+      iotsaLogDebugEnabled = api.webService->server->arg("debugLog") == "1";
+      configSave();
+      message += "<p><em>Debug logging ";
+      message += iotsaLogDebugEnabled ? "on" : "off";
+      message += ".</em></p>";
     } else if (action == "reboot") {
       iotsaController.requestReboot(IotsaController::REBOOT_DELAY_HTTP_MS);
       message += "<p><em>Rebooting in 2 seconds.</em></p>";
@@ -239,6 +245,11 @@ void IotsaRunmodeMod::webHandler() {
 #endif
   message += "</form>";
 
+  message += "<h2>Debug logging</h2><form method='post'>";
+  message += "<input type='radio' name='debugLog' value='1'" + String(iotsaLogDebugEnabled ? " checked" : "") + ">On ";
+  message += "<input type='radio' name='debugLog' value='0'" + String(iotsaLogDebugEnabled ? "" : " checked") + ">Off<br>";
+  message += "<input type='submit' name='action' value='save-debug'></form>";
+
 #ifdef IOTSA_HAS_SLEEP
   {
     IotsaSleepPolicy& sp = iotsaController.sleep();
@@ -311,6 +322,26 @@ static bool isOpenField(const char *key) {
   return strcmp(key, "identify") == 0 || strcmp(key, "requestedMode") == 0 || strcmp(key, "postponeSleep") == 0;
 }
 
+// Runmode's own settings: just the debug log switch (cwi-dis/iotsa#182), in
+// runmode.cfg. The sleep settings keep their own sleep.cfg.
+void IotsaRunmodeMod::configLoad() {
+  IotsaConfigFileLoad cf("/config/runmode.cfg");
+  int debugLog;
+  cf.get("debugLog", debugLog, 1);
+  iotsaLogDebugEnabled = debugLog != 0;
+#ifdef IOTSA_HAS_SLEEP
+  _sleepConfigLoad();
+#endif
+}
+
+void IotsaRunmodeMod::configSave() {
+  IotsaConfigFileSave cf("/config/runmode.cfg");
+  cf.put("debugLog", (int)iotsaLogDebugEnabled);
+#ifdef IOTSA_HAS_SLEEP
+  _sleepConfigSave();
+#endif
+}
+
 bool IotsaRunmodeMod::getHandler(const char *path, JsonObject& reply) {
   if (strcmp(path, "/api/status") == 0) {
     // Every-tick runtime observations -- the volatile counterpart of /api/config's
@@ -362,6 +393,7 @@ bool IotsaRunmodeMod::getHandler(const char *path, JsonObject& reply) {
   reply["bleDisabled"] = !iotsaController.bleRadioWanted();
 #endif
   reply["identifyAvailable"] = !_identifyCallbacks.empty();   // cwi-dis/iotsa#133
+  reply["debugLog"] = iotsaLogDebugEnabled;   // cwi-dis/iotsa#182
 #ifdef IOTSA_HAS_SLEEP
   IotsaSleepPolicy& sp = iotsaController.sleep();
   reply["sleepMode"] = (int)_sleepConfig.mode;
@@ -423,6 +455,10 @@ bool IotsaRunmodeMod::putHandler(const char *path, const JsonVariant& request, J
   }
   if (reqObj["identify"]) {
     _pendingIdentify = true;   // cwi-dis/iotsa#133; acted on in loop(), no auth
+    anyChanged = true;
+  }
+  if (getFromRequest<bool>(reqObj, "debugLog", iotsaLogDebugEnabled)) {
+    configSave();
     anyChanged = true;
   }
 #ifdef IOTSA_HAS_SLEEP
@@ -521,7 +557,7 @@ bool IotsaRunmodeMod::bleGetHandler(UUIDstring charUUID) {
 // cwi-dis/iotsa#106). _sleepConfig is this module's; decide() lives on IotsaSleepPolicy.
 // ---------------------------------------------------------------------------
 
-void IotsaRunmodeMod::configLoad() {
+void IotsaRunmodeMod::_sleepConfigLoad() {
   IotsaSleepPolicy& sp = iotsaController.sleep();
   IotsaConfigFileLoad cf("/config/sleep.cfg");
   int value;
@@ -547,7 +583,7 @@ void IotsaRunmodeMod::configLoad() {
   // noteAwake(). configLoad() runs once at setup() when it's already 0.)
 }
 
-void IotsaRunmodeMod::configSave() {
+void IotsaRunmodeMod::_sleepConfigSave() {
   IotsaSleepPolicy& sp = iotsaController.sleep();
   IotsaConfigFileSave cf("/config/sleep.cfg");
   cf.put("sleepMode", (int)_sleepConfig.mode);
