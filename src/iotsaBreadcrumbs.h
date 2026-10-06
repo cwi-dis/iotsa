@@ -38,7 +38,7 @@ enum IotsaBreadcrumbCode : uint8_t {
   // Events
   IOTSA_CRUMB_BOOT = 64,          // arg: platform reset reason
   IOTSA_CRUMB_IOTSA_WATCHDOG = 65,// iotsa's own watchdog fired (the platform reports a software reboot)
-  IOTSA_CRUMB_REBOOT = 66,        // a requested software reboot
+  IOTSA_CRUMB_REBOOT = 66,        // a software reboot; arg: 0 requested, 1 after OTA
   IOTSA_CRUMB_FACTORY_RESET = 67,
   // Application codes start here
   IOTSA_CRUMB_APP = 128

@@ -35,6 +35,7 @@ void otaOnProgress(unsigned int progress, unsigned int total) {
 
 void otaOnEnd() {
   IFDEBUG IotsaSerial.println("ota: download finished");
+  iotsaBreadcrumbs.addBreadcrumb(IOTSA_CRUMB_REBOOT, 1);   // ArduinoOTA restarts the device itself
 #ifdef IOTSA_WITH_BLE
   IotsaBLERadioArbiter::holdOffNewWork(false);
 #endif
