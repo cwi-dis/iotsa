@@ -18,9 +18,6 @@
 
 IotsaApplication application("BLE Ringer");
 
-#include "iotsaBLEServer.h"
-IotsaBLEServerMod bleServerMod(application);
-
 // The alert is shown on the board's status LED, which iotsa creates
 // automatically (cwi-dis/iotsa#272) -- e.g. esp32c3devkit's onboard NeoPixel.
 

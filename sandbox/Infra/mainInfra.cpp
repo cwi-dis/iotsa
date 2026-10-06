@@ -25,11 +25,6 @@ IotsaFilesBackupMod filesBackupMod(application);
 // The status LED (and iotsaStatus.statusColor()) is exercised too on boards
 // whose definition has one: iotsa creates it automatically (cwi-dis/iotsa#272).
 
-#ifdef IOTSA_WITH_BLE
-#include "iotsaBLEServer.h"
-IotsaBLEServerMod bleserverMod(application);
-#endif
-
 // The one and only application module.
 IotsaNothingMod nothingMod(application);
 

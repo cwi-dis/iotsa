@@ -56,11 +56,6 @@ IotsaFilesBackupMod filesBackupMod(application);
 IotsaBatteryMod batteryMod(application);
 #endif
 
-#include "iotsaBLEServer.h"
-#ifdef IOTSA_WITH_BLE
-IotsaBLEServerMod bleserverMod(application);
-#endif
-
 void setup(void){
   application.setAuth(authProvider);  // every module, the standard ones included, uses this
   application.setup();

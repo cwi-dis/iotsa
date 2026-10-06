@@ -35,10 +35,8 @@
 #include "iotsaInput.h"
 #include "iotsaSimple.h"
 #include "iotsaNothing.h"
-#include "iotsaBLEServer.h"
 #include "iotsaBLEClient.h"
 #include "iotsaBLEClientCollection.h"
-
 
 #ifndef IOTSA_PIN_BUTTON
 #define IOTSA_PIN_BUTTON 0 // GPIO0 is the "Boot" pin, wired to a pushbutton on most dev boards.
@@ -124,10 +122,10 @@ static String kitchenSinkSimpleInfo() {
 IotsaSimpleMod simpleMod(application, "/kitchensink", kitchenSinkSimpleHandler, kitchenSinkSimpleInfo);
 
 #ifdef IOTSA_WITH_BLE
-IotsaBLEServerMod bleServerMod(application);
 
 // Subclassed only to start scanning from boot and to exercise coordinateWithServer
-// (pauses/resumes bleServerMod's advertising around each scan) -- the same BLE
+// (pauses/resumes the BLE server's advertising around each scan; iotsa creates
+// the server automatically in BLE builds) -- the same BLE
 // server/client interplay flagged as unsolved in the #113 scoping discussion.
 // IotsaBLEClientCollectionMod (not the bare IotsaBLEClientMod), since
 // findUnknownDevices()/the devices-browsing REST/web page it exercises moved

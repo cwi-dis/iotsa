@@ -22,7 +22,6 @@
 
 #include "iotsa.h"
 #include "iotsaBattery.h"
-#include "iotsaBLEServer.h"
 #include "iotsaLedControlMod.h"
 
 #ifndef WITHOUT_BATTERY
@@ -44,15 +43,10 @@
 #endif
 #endif // ESP32
 
-
 IotsaApplication application("Iotsa LED Server");
 
 #ifdef WITH_BATTERY
 IotsaBatteryMod batteryMod(application);
-#endif
-
-#ifdef IOTSA_WITH_BLE
-IotsaBLEServerMod bleserverMod(application);
 #endif
 
 // The board's own status LED where it has one (NeoPixel or plain LED, from its
