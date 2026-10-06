@@ -38,7 +38,7 @@ const int nButton = sizeof(buttons) / sizeof(buttons[0]);
 callback buttonOk = []() { iotsaStatus.setStatusPulse(0x002000, 0, 0, 250, "button ok"); };
 callback buttonNotOk = []() { iotsaStatus.setStatusPulse(0x200000, 0, 0, 250, "button not ok"); };
 
-IotsaButtonMod buttonMod(application, buttons, nButton, NULL, buttonOk, buttonNotOk);
+IotsaButtonMod buttonMod(application, buttons, nButton, buttonOk, buttonNotOk);
 
 //
 // Boilerplate for iotsa server, with hooks to our code added.

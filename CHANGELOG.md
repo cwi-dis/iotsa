@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `/api/runmode` (reboot, radios, sleep settings) was unprotected in every app; it now uses the application's authenticator, with reads, `identify`, `postponeSleep` and `requestedMode` open (#284)
 - The CoAP server and its endpoints work when WiFi comes up after boot (e.g. `wifiDisabledOnBoot`), instead of never; HTTP, CoAP and OTA start once the network stack is up, not on a boot-time guess (#238, #239)
 - Changing the NTP server takes effect immediately instead of after a reboot (#283)
 - `IotsaRtcMod` seeds the system clock correctly regardless of timezone or declaration order relative to `IotsaNtpMod`; `isoTime()` now marks its UTC value with `Z` (#104)
@@ -48,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Breaking:** modules no longer take an authenticator argument; an application sets one with `application.setAuth()`, used by every module (#284)
 - The HTTP-to-HTTPS forwarder redirects to the host name or address the client used, instead of guessing between `hostname.local` and `192.168.4.1` (#237)
 - `min_spiffs.csv` is now the default partition layout for all 4MB ESP32 boards (esp32thing, esp32dev, pico32, esp32c3devkit); deployed devices on `default.csv` need one USB reflash to adopt it (#245)
 - The `IotsaConfig` god-object is split into three framework globals: `iotsaConfig` (persisted identity + knobs), `iotsaStatus` (runtime observations), and `iotsaController` (the mode/radio/sleep policy coordinator, composed of `IotsaModeMachine` + `IotsaRadioPolicy` + `IotsaSleepPolicy`). New core-tier `IotsaRunmodeMod` owns the mode-request / reboot / runtime-radio-toggle / sleep / identify control surface -- `/api/runmode`, a `/runmode` page, and a `6E5D…` BLE control service. `IotsaBatteryMod` shrinks to voltage/USB ADC. New read-only `/api/status`. Sleep/wake execution is gated by a new derived `IOTSA_HAS_SLEEP` flag (default on for BLE builds). Sleep config, `watchdogDuration` and the every-tick status keys moved between REST modules -- `iotsa restore` of a pre-upgrade backup drops the relocated keys (#242) (#106)

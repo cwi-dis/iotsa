@@ -58,8 +58,11 @@ typedef enum IotsaApiOperation {
   IOTSA_API_DELETE
 } IotsaApiOperation;
 
+class IotsaAuthenticationProvider;
+
 class IotsaApplication {
   friend class IotsaBaseModule;
+  friend class IotsaAuthMod;
   friend class IotsaConfigMod;
   friend class IotsaWifiMod;
   friend class IotsaHttpServiceMod;
@@ -72,6 +75,12 @@ public:
 
   void addMod(IotsaBaseModule *mod);
   void addModEarly(IotsaBaseModule *mod);
+  // The application's one authentication provider, used by every module, the
+  // standard ones included (cwi-dis/iotsa#85, #284). Call before setup(). With
+  // a stack (e.g. IotsaCapabilityMod over IotsaUserMod) pass the top. Without
+  // setAuth(), getAuth() returns a provider that allows everything.
+  void setAuth(IotsaAuthenticationProvider *auth) { _auth = auth; }
+  IotsaAuthenticationProvider *getAuth();
   void setup();
   void lateSetup();
   void loop();
@@ -97,7 +106,8 @@ protected:
   IotsaBaseModule *firstModule;
   IotsaBaseModule *firstEarlyModule;
   String title;
-  bool haveOTA;
+  IotsaAuthenticationProvider *_auth = nullptr;
+  bool _haveAuthModule = false;  // an IotsaAuthMod was constructed (for the setup() warning)
 };
 
 //
@@ -189,6 +199,10 @@ class IotsaApiProvider {
 public:
   IotsaApiProvider() {}
   virtual ~IotsaApiProvider() {}
+  // Asked by the transports before calling a handler: true means "refuse"
+  // (the auth provider has already sent its challenge, if any). Modules ask
+  // the application's provider; override to exempt specific paths.
+  virtual bool needsAuthentication(const char *obj, IotsaApiOperation verb) { return false; }
   virtual bool getHandler(const char *path, JsonObject& reply) { return false; }
   virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
   virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
@@ -231,9 +245,8 @@ class IotsaBaseModule : public IotsaApiProvider, public IotsaBLEProvider {
   friend class IotsaHttpServiceMod;
   friend class IotsaRunmodeMod;
 public:
-  IotsaBaseModule(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
+  IotsaBaseModule(IotsaApplication &_app, bool early=false)
   : app(_app),
-    auth(_auth),
     nextModule(NULL)
   {
     if (early) {
@@ -242,6 +255,11 @@ public:
       app.addMod(this);
     }
   }
+  // Modules no longer take an auth provider: the application has one, see
+  // IotsaApplication::setAuth() (cwi-dis/iotsa#284). Deleted rather than just
+  // removed, so old code passing one fails to compile instead of the pointer
+  // silently converting to `bool early`.
+  IotsaBaseModule(IotsaApplication &_app, IotsaAuthenticationProvider *_auth, bool early=false) = delete;
   IotsaBaseModule& operator=(const IotsaBaseModule& that) = delete;
 
   virtual void setup() = 0;
@@ -265,21 +283,25 @@ public:
   // chance to register with them during setup()/lateSetup() -- see cwi-dis/iotsa#113.
   virtual void lateSetupDone() {}
   virtual bool needsAuthentication(const char *right=NULL);
-  virtual bool needsAuthentication(const char *obj, IotsaApiOperation verb);
+  bool needsAuthentication(const char *obj, IotsaApiOperation verb) override;
   virtual void sleepWakeupNotification(bool sleep) {}
   // Whether this module exposes a REST/CoAP/HPS API (overridden by IotsaModule).
   virtual bool hasApi() const { return false; }
 
 protected:
   IotsaApplication &app;
-  IotsaAuthenticationProvider *auth;
   IotsaBaseModule *nextModule;
   String name;
 };
 
 class IotsaAuthMod : public IotsaBaseModule, public IotsaAuthenticationProvider {
 public:
-  using IotsaBaseModule::IotsaBaseModule;	// Inherit constructor
+  IotsaAuthMod(IotsaApplication &_app, bool early=false)
+  : IotsaBaseModule(_app, early)
+  {
+    _app._haveAuthModule = true;
+  }
+  IotsaAuthMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth, bool early=false) = delete;
 };
 
 class IotsaConfigFileLoad;

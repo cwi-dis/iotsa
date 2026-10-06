@@ -6,7 +6,7 @@ IotsaUserMod::IotsaUserMod(IotsaApplication &_app, const char *_username, const 
 :	IotsaAuthMod(_app),
   username(_username),
 	password(_password),
-	api(this, _app, this)
+	api(this, _app)
 {
 	configLoad();
 }

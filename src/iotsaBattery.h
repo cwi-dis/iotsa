@@ -13,7 +13,7 @@
 
 class IotsaBatteryMod : public IotsaModule {
 public:
-  IotsaBatteryMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL) : IotsaModule(_app, _auth, true) {}
+  IotsaBatteryMod(IotsaApplication &_app) : IotsaModule(_app, true) {}
 
   void setup() override;
   void lateSetup() override;

@@ -80,26 +80,26 @@
 
 IotsaApplication application("Iotsa KitchenSink Test Rig");
 
-// Multi-user auth, with capabilities chained on top. Both are exercised as the
-// authProvider for every other module below.
+// Multi-user auth, with capabilities chained on top. The top of that stack is the
+// application's auth provider (setAuth() in setup()), used by every module.
 IotsaMultiUserMod multiUserMod(application);
 IotsaCapabilityMod capabilityMod(application, multiUserMod);
 #define authProvider (&capabilityMod)
 
 #ifdef IOTSA_WITH_WIFI
-IotsaWifiMod wifiMod(application, authProvider);
+IotsaWifiMod wifiMod(application);
 #endif
 
-IotsaOtaMod otaMod(application, authProvider);
-IotsaBatteryMod batteryMod(application, authProvider);
-IotsaFilesMod filesMod(application, authProvider);
-IotsaFilesUploadMod filesUploadMod(application, authProvider);
-IotsaFilesBackupMod filesBackupMod(application, authProvider);
-IotsaNtpMod ntpMod(application, authProvider);
-IotsaRtcMod rtcMod(application, PIN_RTC_ENA, PIN_RTC_CLK, PIN_RTC_DAT, authProvider);
-IotsaLoggerMod loggerMod(application, authProvider);
-IotsaLedMod ledMod(application, IOTSA_PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800, (IotsaAuthMod *)&capabilityMod);
-IotsaNothingMod nothingMod(application, authProvider);
+IotsaOtaMod otaMod(application);
+IotsaBatteryMod batteryMod(application);
+IotsaFilesMod filesMod(application);
+IotsaFilesUploadMod filesUploadMod(application);
+IotsaFilesBackupMod filesBackupMod(application);
+IotsaNtpMod ntpMod(application);
+IotsaRtcMod rtcMod(application, PIN_RTC_ENA, PIN_RTC_CLK, PIN_RTC_DAT);
+IotsaLoggerMod loggerMod(application);
+IotsaLedMod ledMod(application, IOTSA_PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
+IotsaNothingMod nothingMod(application);
 
 // iotsaInput: a rotary encoder and a pushbutton (see examples/Input for pin meaning).
 RotaryEncoder encoder(IOTSA_PIN_ENCODER_A, IOTSA_PIN_ENCODER_B);
@@ -161,6 +161,7 @@ void setup(void) {
   IotsaBLEClientMod::coordinateWithServer = true;
 #endif
   button.setCallback(kitchenSinkButtonPressed);
+  application.setAuth(authProvider);  // every module, the standard ones included, uses this
   application.setup();
   application.lateSetup();
 }

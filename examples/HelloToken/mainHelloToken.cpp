@@ -35,17 +35,18 @@ IotsaUserMod myUserAuthenticator(application, "owner");  // Our authenticator mo
 //
 IotsaStaticTokenMod myTokenAuthenticator(application, myUserAuthenticator);
 
-IotsaWifiMod wifiMod(application, &myUserAuthenticator);  // The network configuration module (authenticated by user only)
+IotsaWifiMod wifiMod(application);  // The network configuration module
 
 #ifdef WITH_OTA
 #include "iotsaOta.h"
-IotsaOtaMod otaMod(application, &myUserAuthenticator);  // The over-the-air updater module (authenticated by user only)
+IotsaOtaMod otaMod(application);  // The over-the-air updater module
 #endif
 
-IotsaHelloMod helloMod(application, &myTokenAuthenticator); // Our hello module (authenticated by user or token)
+IotsaHelloMod helloMod(application); // Our hello module
 
 // Standard setup() method, hands off everything to the application framework
 void setup(void){
+  application.setAuth(&myTokenAuthenticator);  // every module, the standard ones included, uses this
   application.setup();
   application.lateSetup();
 }

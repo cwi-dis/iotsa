@@ -62,8 +62,10 @@ protected:
 class IotsaBLEServerMod : public IotsaModule, public IotsaSingletonModule<IotsaBLEServerMod> {
   friend class IotsaBleApiService;
 public:
-  IotsaBLEServerMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool _early=false)
-  : IotsaModule(_app, _auth, _early)
+  // See IotsaBaseModule: deleted so old code passing an auth provider fails to compile.
+  IotsaBLEServerMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth, bool _early=false) = delete;
+  IotsaBLEServerMod(IotsaApplication &_app, bool _early=false)
+  : IotsaModule(_app, _early)
   {
     claimSingleton(this);
   }

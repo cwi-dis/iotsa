@@ -19,7 +19,7 @@
 //
 class IotsaApiServiceWeb : public IotsaApiServiceProvider {
 public:
-  IotsaApiServiceWeb(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth, IotsaApiServiceProvider* _next=nullptr)
+  IotsaApiServiceWeb(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaApiServiceProvider* _next=nullptr)
   : IotsaApiServiceProvider(_next),
     // Init-list order mirrors declaration order (server before provider) to
     // avoid -Wreorder; neither initializer reads the other, so it's cosmetic.

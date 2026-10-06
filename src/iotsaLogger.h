@@ -9,7 +9,7 @@
 // also have a page) -- see cwi-dis/iotsa#211.
 class IotsaLoggerMod : public IotsaBaseModule {
 public:
-  IotsaLoggerMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL);
+  IotsaLoggerMod(IotsaApplication &_app);
   void setup() override;
   void lateSetup() override;
   void loop() override;

@@ -30,8 +30,8 @@
 //
 class IotsaRunmodeMod : public IotsaModule, public IotsaSingletonModule<IotsaRunmodeMod> {
 public:
-  IotsaRunmodeMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL)
-  : IotsaModule(_app, _auth, true)   // early: mode/reboot control belongs up before the app modules
+  IotsaRunmodeMod(IotsaApplication &_app)
+  : IotsaModule(_app, true)   // early: mode/reboot control belongs up before the app modules
   {
     claimSingleton(this);
   }
@@ -63,6 +63,10 @@ public:
   // happens. Scaffolding for cwi-dis/iotsa#133.
   typedef std::function<void(void)> IdentifyCallback;
   void addIdentifyCallback(IdentifyCallback cb) { _identifyCallbacks.push_back(cb); }
+  // Not everything here needs the application's auth provider, see the .cpp
+  // (cwi-dis/iotsa#284).
+  using IotsaModule::needsAuthentication;
+  bool needsAuthentication(const char *obj, IotsaApiOperation verb) override;
 protected:
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;

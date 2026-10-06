@@ -50,8 +50,8 @@ IotsaInputMod inputMod(application, inputs, 1);
 
 class BLEButtonMod : public IotsaModule {
 public:
-  BLEButtonMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL)
-  : IotsaModule(_app, _auth),
+  BLEButtonMod(IotsaApplication &_app)
+  : IotsaModule(_app),
     // Pass bleClientMod as owner right away: ringer.retarget() (called from
     // configLoad()/putHandler()/webHandler() below, all the way down in
     // IotsaBLEClientDevice) can then self-register on the very first real

@@ -22,18 +22,19 @@ IotsaApplication application("Iotsa Hello World Server with API and multiple use
 // Multi-user access module. Defaults to all access until users are added
 IotsaMultiUserMod myAuthenticator(application);  // Our authenticator module
 
-IotsaWifiMod wifiMod(application, &myAuthenticator);  // The network configuration module (authenticated)
+IotsaWifiMod wifiMod(application);  // The network configuration module (authenticated)
 
 #ifdef WITH_OTA
 #include "iotsaOta.h"
-IotsaOtaMod otaMod(application, &myAuthenticator);
+IotsaOtaMod otaMod(application);
 #endif
 
 // Instantiate the Hello module, and install it in the framework
-IotsaHelloMod helloMod(application, &myAuthenticator);
+IotsaHelloMod helloMod(application);
 
 // Standard setup() method, hands off most work to the application framework
 void setup(void){
+  application.setAuth(&myAuthenticator);  // every module, the standard ones included, uses this
   application.setup();
   application.lateSetup();
 }

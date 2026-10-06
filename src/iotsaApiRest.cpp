@@ -17,7 +17,7 @@ void IotsaApiServiceRest::setup(const char* path, bool get, bool put, bool post,
 }
 
 void IotsaApiServiceRest::_getHandlerWrapper(const char *path) {
-    if (auth && !auth->allows(path, IOTSA_API_GET)) return;
+    if (provider->needsAuthentication(path, IOTSA_API_GET)) return;
     IFDEBUG IotsaSerial.print("GET api ");
     IFDEBUG IotsaSerial.println(path);
     iotsaController.noteActivity();
@@ -41,7 +41,7 @@ void IotsaApiServiceRest::_getHandlerWrapper(const char *path) {
 }
 
 void IotsaApiServiceRest::_putHandlerWrapper(const char *path) {
-    if (auth && !auth->allows(path, IOTSA_API_PUT)) return;
+    if (provider->needsAuthentication(path, IOTSA_API_PUT)) return;
     IFDEBUG IotsaSerial.print("PUT api ");
     IFDEBUG IotsaSerial.println(path);
     iotsaController.noteActivity();
@@ -73,7 +73,7 @@ void IotsaApiServiceRest::_putHandlerWrapper(const char *path) {
 }
 
 void IotsaApiServiceRest::_postHandlerWrapper(const char *path) {
-    if (auth && !auth->allows(path, IOTSA_API_POST)) return;
+    if (provider->needsAuthentication(path, IOTSA_API_POST)) return;
     IFDEBUG IotsaSerial.print("POST api ");
     IFDEBUG IotsaSerial.println(path);
     iotsaController.noteActivity();

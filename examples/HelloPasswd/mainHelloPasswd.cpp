@@ -22,17 +22,18 @@
 //
 IotsaApplication application("Iotsa Hello World Server"); // The application framework
 IotsaStaticAuthMod myAuthenticator(application);  // Our authenticator module
-IotsaWifiMod wifiMod(application, &myAuthenticator);  // The network configuration module (authenticated)
+IotsaWifiMod wifiMod(application);  // The network configuration module (authenticated)
 
 #ifdef WITH_OTA
 #include "iotsaOta.h"
-IotsaOtaMod otaMod(application, &myAuthenticator);  // The over-the-air updater module (authenticated)
+IotsaOtaMod otaMod(application);  // The over-the-air updater module (authenticated)
 #endif
 
-IotsaHelloMod helloMod(application, &myAuthenticator); // Our hello module (authenticated)
+IotsaHelloMod helloMod(application); // Our hello module (authenticated)
 
 // Standard setup() method, hands off everything to the application framework
 void setup(void){
+  application.setAuth(&myAuthenticator);  // every module, the standard ones included, uses this
   application.setup();
   application.lateSetup();
 }

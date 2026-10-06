@@ -8,7 +8,7 @@
 #ifdef IOTSA_WITH_WIFI
 class IotsaWifiMod : public IotsaModule {
 public:
-  IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL);
+  IotsaWifiMod(IotsaApplication &_app);
 	void setup() override;
 	void lateSetup() override;
 	void loop() override;

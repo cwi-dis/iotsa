@@ -8,8 +8,8 @@
 // iotsaStatus.setStatusPulse(), which statusColor() already gives top
 // precedence, rather than a side-channel here (cwi-dis/iotsa#256).
 
-IotsaLedMod::IotsaLedMod(IotsaApplication &_app, int pin, neoPixelType t, IotsaAuthMod *_auth)
-:	IotsaModule(_app, _auth, true),
+IotsaLedMod::IotsaLedMod(IotsaApplication &_app, int pin, neoPixelType t)
+:	IotsaModule(_app, true),
 	strip(1, pin, t),
 	lastShownColor(0xffffffff)  // deliberately not a valid 0xRRGGBB tint, forces the first poll to render
 {

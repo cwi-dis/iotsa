@@ -442,15 +442,29 @@ Slightly more elaborate API examples are [Button](examples/Button/Button.ino) an
 
 ### iotsa.h
 
-This file declares the `IotsaApplication` and `IotsaMod` classes explained earlier. In addition it declares a class `IotsaAuthMod` which is a subclass of `IotsaMod` (so it has all the functionality of a normal module, like the handler) but it can be used as the _authenticator_ for another module. This allows the other module to use access control: it will only work after the user has provided a username/password combination, or pressed a certain button (probably key-operated) or any other means of authentication you can think of.
+This file declares the `IotsaApplication` and `IotsaMod` classes explained earlier. In addition it declares a class `IotsaAuthMod` which is a subclass of `IotsaMod` (so it has all the functionality of a normal module, like the handler) but it can be used as the application's _authenticator_. This gives the modules access control: they will only work after the user has provided a username/password combination, a capability token, or any other means of authentication you can think of.
 
 Here are the constructors of the three classes:
 
 ```
 IotsaApplication(const char *_title);
-IotsaMod(IotsaApplication &_app, IotsaAuthMod *_auth=NULL, bool early=false);
-IotsaAuthMod(IotsaApplication &_app, IotsaAuthMod *_auth=NULL, bool early=false);
+IotsaMod(IotsaApplication &_app, bool early=false);
+IotsaAuthMod(IotsaApplication &_app, bool early=false);
 ```
+
+An application has a single authenticator, used by every module, the standard ones (WiFi, OTA, configuration, runmode) included. Set it in `setup()`, before `application.setup()`:
+
+```
+IotsaUserMod myAuthenticator(application, "owner");
+...
+void setup() {
+  application.setAuth(&myAuthenticator);
+  application.setup();
+  ...
+}
+```
+
+With a stack of authenticators (e.g. `IotsaCapabilityMod` on top of `IotsaUserMod`) pass the top one. Without `setAuth()` everything is allowed. Modules used to take an authenticator as a constructor argument; that argument is gone, and passing one is a compile error (cwi-dis/iotsa#284).
 
 The optional `early` argument signifies that the module should be initialized early, this is generally used only by the WiFi module.
 

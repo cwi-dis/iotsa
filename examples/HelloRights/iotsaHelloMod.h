@@ -12,7 +12,7 @@
 //
 class IotsaHelloMod : public IotsaModule {
 public:
-  IotsaHelloMod(IotsaApplication &_app, IotsaAuthMod *_auth=NULL) : IotsaModule(_app, _auth, false) {}
+  IotsaHelloMod(IotsaApplication &_app) : IotsaModule(_app) {}
   void setup() override;
   void lateSetup() override;
   void loop() override;

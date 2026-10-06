@@ -250,7 +250,10 @@ see [#242](https://github.com/cwi-dis/iotsa/issues/242).
   / `reboot` as `[[deprecated]]` forwarders for one release (Python CLI still targets
   `/api/config`). Reuses the `config` auth right, not a new `runmode` one. The
   unauthenticated REST reboot/mode PUT was carried over verbatim -- to be fixed with
-  the permission-model work.
+  the permission-model work. *(Update, #284: runmode now uses the application's
+  authenticator (`IotsaApplication::setAuth()`). Reads, `identify`, `postponeSleep`
+  and `requestedMode` stay open; reboot, the radios, the CPU clock and the saved
+  sleep settings need the `config` right.)*
 - Radio-enablement policy moved into `IotsaController` -- step 2 of "Remaining work"
   below (`8d717ca` WiFi, `820a98e` BLE). `wifiRadioWanted()` / `bleRadioWanted()`
   compose a boot seed (`begin()` reads `!wifiDisabledOnBoot` / `!bleDisabledOnBoot`),

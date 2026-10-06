@@ -6,8 +6,10 @@
 
 class IotsaRtcMod : public IotsaModule {
 public:
-  IotsaRtcMod(IotsaApplication &_app, uint8_t pin_ena, uint8_t pin_clk, uint8_t pin_dat, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
-  : IotsaModule(_app, _auth, early),
+  // See IotsaBaseModule: deleted so old code passing an auth provider fails to compile.
+  IotsaRtcMod(IotsaApplication &_app, uint8_t pin_ena, uint8_t pin_clk, uint8_t pin_dat, IotsaAuthenticationProvider *_auth, bool early=false) = delete;
+  IotsaRtcMod(IotsaApplication &_app, uint8_t pin_ena, uint8_t pin_clk, uint8_t pin_dat, bool early=false)
+  : IotsaModule(_app, early),
     ds1302(pin_ena, pin_clk, pin_dat)
   {
 

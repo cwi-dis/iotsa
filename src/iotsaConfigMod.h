@@ -5,8 +5,8 @@
 
 class IotsaConfigMod : public IotsaModule, public IotsaSingletonModule<IotsaConfigMod> {
 public:
-  IotsaConfigMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL)
-  : IotsaModule(_app, _auth, true)
+  IotsaConfigMod(IotsaApplication &_app)
+  : IotsaModule(_app, true)
 #ifdef IOTSA_WITH_HTTPS
   , newCertificate(NULL),
   newCertificateLength(0),

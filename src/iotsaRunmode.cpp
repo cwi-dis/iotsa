@@ -131,7 +131,9 @@ void IotsaRunmodeMod::webHandler() {
     _pendingIdentify = true;
     message += "<p><em>Identifying.</em></p>";
   } else if (action != "") {
-    if (needsAuthentication("config")) return;
+    // Requesting a mode needs no auth either: it only takes effect after a reset
+    // at the device. Same rules as the REST API, see needsAuthentication().
+    if (action != "setmode" && needsAuthentication("config")) return;
     if (action == "setmode") {
       if (api.webService->server->hasArg("mode")) {
         String argValue = api.webService->server->arg("mode");
@@ -292,6 +294,41 @@ String IotsaRunmodeMod::info() {
   return message;
 }
 #endif // IOTSA_WITH_WEB
+
+// Which requests need the application's auth provider (cwi-dis/iotsa#284). Reads
+// are open (status and mode information, nothing secret). So are the writes that
+// are harmless or confirmed at the device itself, which is also what BLE allows:
+// identify, postponeSleep, and requestedMode (a requested mode only takes effect
+// after a reset at the device). reboot, wifiDisabled, bleDisabled, the CPU clock
+// and the saved sleep settings need auth: over the network they could take the
+// device offline. The web page applies the same rules in webHandler().
+//
+// Stopgap: the REST transport asks this before the handler runs, so a PUT is
+// judged by peeking at its body through the HTTP-only app.server. Per-field
+// checks belong in the handler, once handlers can answer "denied" (#280, #284).
+#ifdef IOTSA_HAS_WEBSERVER
+static bool requestHasOnlyOpenFields(IotsaWebServer *server) {
+  JsonDocument doc;
+  if (deserializeJson(doc, server->arg("plain"))) return false;
+  JsonObject obj = doc.as<JsonObject>();
+  if (obj.isNull()) return false;
+  for (JsonPair kv : obj) {
+    const char *key = kv.key().c_str();
+    if (strcmp(key, "identify") != 0 && strcmp(key, "requestedMode") != 0 && strcmp(key, "postponeSleep") != 0) {
+      return false;
+    }
+  }
+  return true;
+}
+#endif
+
+bool IotsaRunmodeMod::needsAuthentication(const char *obj, IotsaApiOperation verb) {
+  if (verb == IOTSA_API_GET) return false;
+#ifdef IOTSA_HAS_WEBSERVER
+  if (verb == IOTSA_API_PUT && requestHasOnlyOpenFields(app.server)) return false;
+#endif
+  return IotsaModule::needsAuthentication(obj, verb);
+}
 
 bool IotsaRunmodeMod::getHandler(const char *path, JsonObject& reply) {
   if (strcmp(path, "/api/status") == 0) {

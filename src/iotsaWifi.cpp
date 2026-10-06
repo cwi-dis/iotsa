@@ -33,17 +33,17 @@ static const char *staStateName(IotsaWifiStaState s) {
 // (boot default + runtime toggles + CONFIG/OTA forcing): iotsaController.wifiRadioWanted()
 // (cwi-dis/iotsa#106).
 
-IotsaWifiMod::IotsaWifiMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth)
-: IotsaModule(_app, _auth, true),
+IotsaWifiMod::IotsaWifiMod(IotsaApplication &_app)
+: IotsaModule(_app, true),
   ssid(""),
   ssidPassword("")
 {
   // IotsaConfigMod is core infrastructure, not a WiFi sub-object -- it used to be a
   // member here purely so it got created, which meant a WiFi-less build lost
   // /api/config entirely (cwi-dis/iotsa#195). Create it via the shared singleton
-  // instead, forwarding our auth provider; IotsaApplication::setup() also ensures
-  // it, so it exists even when there's no WiFi module at all.
-  IotsaConfigMod::ensure(_app, _auth);
+  // instead; IotsaApplication::setup() also ensures it, so it exists even when
+  // there's no WiFi module at all.
+  IotsaConfigMod::ensure(_app);
 }
 
 void IotsaWifiMod::setup() {

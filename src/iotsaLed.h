@@ -6,7 +6,7 @@
 
 class IotsaLedMod : public IotsaModule {
 public:
-  IotsaLedMod(IotsaApplication &_app, int pin, neoPixelType t=NEO_GRB + NEO_KHZ800, IotsaAuthMod *_auth=NULL);
+  IotsaLedMod(IotsaApplication &_app, int pin, neoPixelType t=NEO_GRB + NEO_KHZ800);
   void setup() override;
   void lateSetup() override;
   void loop() override;

@@ -45,8 +45,8 @@ IotsaLogPrinter::write(uint8_t ch) {
   return rv;
 };
 
-IotsaLoggerMod::IotsaLoggerMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth)
-: IotsaBaseModule(_app, _auth, true)
+IotsaLoggerMod::IotsaLoggerMod(IotsaApplication &_app)
+: IotsaBaseModule(_app, true)
 {
   iotsaOverrideSerial = &iotsaLogPrinter;
   iotsaOverrideSerial->println("iotsa logger enabled");

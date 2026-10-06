@@ -69,18 +69,18 @@ class IotsaApiServiceWeb;
 //
 class IotsaApiService : public IotsaApiServiceProvider {
 public:
-  IotsaApiService(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth) {
+  IotsaApiService(IotsaApiProvider* _provider, IotsaApplication &_app) {
   #ifdef IOTSA_WITH_WEB
-    next = webService = new IotsaApiServiceWeb(_provider, _app, _auth, next);
+    next = webService = new IotsaApiServiceWeb(_provider, _app, next);
   #endif
   #ifdef IOTSA_HAS_HPSSERVER
-    next = new IotsaApiServiceHps(_provider, _app, _auth, next);
+    next = new IotsaApiServiceHps(_provider, _app, next);
   #endif
   #ifdef IOTSA_HAS_COAPSERVER
-    next = new IotsaApiServiceCoap(_provider, _app, _auth, next);
+    next = new IotsaApiServiceCoap(_provider, _app, next);
   #endif
   #ifdef IOTSA_HAS_RESTSERVER
-    next = new IotsaApiServiceRest(_provider, _app, _auth, next);
+    next = new IotsaApiServiceRest(_provider, _app, next);
   #endif
   }
   void setup(const char* path, bool get=false, bool put=false, bool post=false, bool webPage=true) override {
@@ -91,10 +91,12 @@ public:
 
 class IotsaModule : public IotsaBaseModule {
 public:
-  IotsaModule(IotsaApplication &_app, IotsaAuthenticationProvider *_auth=NULL, bool early=false)
-  : IotsaBaseModule(_app, _auth, early),
-    api(this, _app, _auth)
+  IotsaModule(IotsaApplication &_app, bool early=false)
+  : IotsaBaseModule(_app, early),
+    api(this, _app)
   {}
+  // See IotsaBaseModule: deleted so old code passing an auth provider fails to compile.
+  IotsaModule(IotsaApplication &_app, IotsaAuthenticationProvider *_auth, bool early=false) = delete;
   virtual bool getHandler(const char *path, JsonObject& reply) override { return false; }
   virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
   virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }

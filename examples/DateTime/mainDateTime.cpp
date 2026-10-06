@@ -13,7 +13,6 @@
 IotsaApplication application("Iotsa DateTime Server");
 IotsaWifiMod wifiMod(application);
 
-#define authProvider NULL
 
 #ifdef WITH_RTC
 #define PIN_ENA 23
@@ -21,17 +20,17 @@ IotsaWifiMod wifiMod(application);
 #define PIN_DAT 22
 
 #include "iotsaRtc.h"
-IotsaRtcMod rtcMod(application, PIN_ENA, PIN_CLK, PIN_DAT, authProvider);
+IotsaRtcMod rtcMod(application, PIN_ENA, PIN_CLK, PIN_DAT);
 #endif
 
 #ifdef WITH_NTP
 #include "iotsaNtp.h"
-IotsaNtpMod ntpMod(application, authProvider);
+IotsaNtpMod ntpMod(application);
 #endif
 
 #ifdef WITH_OTA
 #include "iotsaOta.h"
-IotsaOtaMod otaMod(application, authProvider);
+IotsaOtaMod otaMod(application);
 #endif
 
 void setup(void){

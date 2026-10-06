@@ -22,8 +22,7 @@ Print *iotsaOverrideSerial = &Serial;
 IotsaApplication::IotsaApplication(const char *_title)
 : firstModule(NULL),
   firstEarlyModule(NULL),
-  title(_title),
-  haveOTA(false)
+  title(_title)
 {
   // Unlike the CoAP/HPS companion mods, the HTTP transport can't be created lazily
   // on first use by whichever module happens to need it -- several categories of
@@ -34,6 +33,19 @@ IotsaApplication::IotsaApplication(const char *_title)
 #ifdef IOTSA_HAS_WEBSERVER
   server = IotsaHttpServiceMod::ensure(*this)->server;
 #endif
+}
+
+// Default when the application has no auth provider: everything is allowed.
+class IotsaAllowAllAuth : public IotsaAuthenticationProvider {
+public:
+  bool allows(const char *right=NULL) override { return true; }
+  bool allows(const char *obj, IotsaApiOperation verb) override { return true; }
+};
+static IotsaAllowAllAuth iotsaAllowAllAuth;
+
+IotsaAuthenticationProvider *
+IotsaApplication::getAuth() {
+  return _auth ? _auth : &iotsaAllowAllAuth;
 }
 
 void
@@ -138,6 +150,12 @@ IotsaApplication::setup() {
 #endif
   IFDEBUG IotsaSerial.print("hostname: ");
   IFDEBUG IotsaSerial.println(iotsaConfig.hostName);
+  // Easy mistake when converting an old sketch (cwi-dis/iotsa#284): removing the
+  // auth argument from the module constructors without adding setAuth() leaves
+  // everything unprotected.
+  if (_haveAuthModule && _auth == nullptr) {
+    IotsaSerial.println("IOTSA: WARNING: authentication module present, but application.setAuth() not called: nothing is protected");
+  }
 }
 
 void
@@ -233,12 +251,12 @@ void IotsaBaseModule::percentDecode(const String &src, String &dst) {
     }
 }
 
-bool IotsaBaseModule::needsAuthentication(const char *object, IotsaApiOperation verb) { 
-  return auth ? !auth->allows(object, verb) : false; 
+bool IotsaBaseModule::needsAuthentication(const char *object, IotsaApiOperation verb) {
+  return !app.getAuth()->allows(object, verb);
 }
 
-bool IotsaBaseModule::needsAuthentication(const char *right) { 
-  return auth ? !auth->allows(right) : false; 
+bool IotsaBaseModule::needsAuthentication(const char *right) {
+  return !app.getAuth()->allows(right);
 }
 
 void IotsaBaseModule::lateSetup() {

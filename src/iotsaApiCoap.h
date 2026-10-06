@@ -7,9 +7,6 @@ class IotsaCoapServiceMod;
 class IotsaApiServiceCoap : public IotsaApiServiceProvider {
 public:
   IotsaApiServiceCoap(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaApiServiceProvider* _next=nullptr);
-  IotsaApiServiceCoap(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth, IotsaApiServiceProvider* _next=nullptr)
-  : IotsaApiServiceCoap(_provider, _app, _next)
-  {}
   void setup(const char* path, bool get=false, bool put=false, bool post=false, bool webPage=true) override;
   static void ensureServiceMod(IotsaApplication &app);
 private:

@@ -33,12 +33,12 @@ IotsaUserMod userMod(application);
 
 #ifdef WITH_NTP
 #include "iotsaNtp.h"
-IotsaNtpMod ntpMod(application, authProvider);
+IotsaNtpMod ntpMod(application);
 #endif
 
 #ifdef WITH_OTA
 #include "iotsaOta.h"
-IotsaOtaMod otaMod(application, authProvider);
+IotsaOtaMod otaMod(application);
 #endif
 
 #ifdef WITH_FILES
@@ -48,18 +48,18 @@ IotsaFilesMod filesMod(application);
 
 #ifdef WITH_FILESUPLOAD
 #include "iotsaFilesUpload.h"
-IotsaFilesUploadMod filesUploadMod(application, authProvider);
+IotsaFilesUploadMod filesUploadMod(application);
 #endif
 
 #ifdef WITH_FILESBACKUP
 #include "iotsaFilesBackup.h"
-IotsaFilesBackupMod filesBackupMod(application, authProvider);
+IotsaFilesBackupMod filesBackupMod(application);
 #endif
 
 #ifdef WITH_BATTERY
 #define PIN_DISABLE_SLEEP 0 // Define for pin on which low signal disables sleep
 #include "iotsaBattery.h"
-IotsaBatteryMod batteryMod(application, authProvider);
+IotsaBatteryMod batteryMod(application);
 #endif
 
 #include "iotsaBLEServer.h"
@@ -68,6 +68,7 @@ IotsaBLEServerMod bleserverMod(application);
 #endif
 
 void setup(void){
+  application.setAuth(authProvider);  // every module, the standard ones included, uses this
   application.setup();
   application.lateSetup();
 #ifdef PIN_DISABLE_SLEEP

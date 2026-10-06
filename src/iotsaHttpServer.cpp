@@ -61,7 +61,7 @@ static TinyForwardServer *singletonTFS;
 #endif // defined(IOTSA_HAS_FORWARDING_WEBSERVER)
 
 IotsaHttpServiceMod::IotsaHttpServiceMod(IotsaApplication &_app)
-: IotsaBaseModule(_app, nullptr, true)
+: IotsaBaseModule(_app, true)
 {
   claimSingleton(this);
 #ifdef IOTSA_HAS_WEBSERVER

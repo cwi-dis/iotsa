@@ -18,7 +18,6 @@ class IotsaHpsServiceEntryPoint {
    // own /api/-prefixed path rather than aliasing the caller's (possibly transient) pointer.
    String api_path;
    IotsaApiProvider *provider;
-   IotsaAuthenticationProvider* auth;
 };
 
 class IotsaHpsServiceMod : public IotsaBaseModule, public IotsaSingletonModule<IotsaHpsServiceMod> {
@@ -298,9 +297,8 @@ std::list<IotsaHpsServiceEntryPoint*> IotsaHpsServiceMod::getEntryPoints;
 std::list<IotsaHpsServiceEntryPoint*> IotsaHpsServiceMod::putEntryPoints;
 std::list<IotsaHpsServiceEntryPoint*> IotsaHpsServiceMod::postEntryPoints;
 
-IotsaApiServiceHps::IotsaApiServiceHps(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaAuthenticationProvider* _auth, IotsaApiServiceProvider* _next)
-: IotsaApiServiceProvider(_next),
-  auth(_auth)
+IotsaApiServiceHps::IotsaApiServiceHps(IotsaApiProvider* _provider, IotsaApplication &_app, IotsaApiServiceProvider* _next)
+: IotsaApiServiceProvider(_next)
 {
   ensureServiceMod(_app);
   provider = _provider;
@@ -316,7 +314,6 @@ void IotsaApiServiceHps::setup(const char* path, bool get, bool put, bool post, 
   IotsaHpsServiceEntryPoint *entry = new IotsaHpsServiceEntryPoint();
   entry->api_path = String("/api/") + path;
   entry->provider = provider;
-  entry->auth = auth;
   if (get) {
     IotsaHpsServiceMod::getEntryPoints.push_back(entry);
   }

@@ -21,8 +21,8 @@ typedef std::function<void(void)> callback;
 
 class IotsaButtonMod : IotsaModule {
 public:
-  IotsaButtonMod(IotsaApplication &_app, Button* _buttons, int _nButton, IotsaAuthMod *_auth=NULL, callback _successCallback=NULL, callback _failureCallback=NULL)
-  : IotsaModule(_app, _auth),
+  IotsaButtonMod(IotsaApplication &_app, Button* _buttons, int _nButton, callback _successCallback=NULL, callback _failureCallback=NULL)
+  : IotsaModule(_app),
     buttons(_buttons),
     nButton(_nButton),
     successCallback(_successCallback),
