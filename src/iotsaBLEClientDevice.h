@@ -154,6 +154,17 @@ protected:
   // user-configurable (cwi-dis/iotsa#263 decision 3); 0 = disconnect right
   // away. Capped by the owner's maxConnectionKeepOpen().
   uint32_t keepOpenMillis = 0;
+  // Connection interval we ask for on our links, in units of 1.25 ms: 7.5-15 ms
+  // instead of NimBLE's default 30-50 ms. doWork() blocks loop() for its GATT
+  // round trips (service and characteristic discovery, reads), and each costs
+  // at least one interval: measured on an identify, ~475 ms at the default,
+  // ~145 ms with these (cwi-dis/iotsa#274). The cost is more radio activity
+  // while a link is open (including the keepOpenMillis linger), on both sides.
+  // Fixed for now; if that ever becomes a problem (battery, WiFi coexistence,
+  // a peripheral that objects), make these configurable.
+  static constexpr uint16_t LINK_INTERVAL_MIN = 6;    // 7.5 ms
+  static constexpr uint16_t LINK_INTERVAL_MAX = 12;   // 15 ms
+  static constexpr uint16_t LINK_SUPERVISION_TIMEOUT = 400;  // 4 s, in units of 10 ms
   volatile LinkState linkState = LinkState::Idle;
   volatile bool workPending = false;
   uint32_t workDeadlineAtMillis = 0;
