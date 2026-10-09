@@ -5,15 +5,19 @@
 #include "iotsaBLE.h"
 #endif
 
-void otaOnStart() {
+void otaOnStart(IotsaApplication& app) {
   IFDEBUG IotsaSerial.println("ota: download started");
-  iotsaBreadcrumbs.setActivity(IOTSA_CRUMB_OTA);
 #ifdef IOTSA_WITH_BLE
   // Ask any BLE client work to hold off starting anything new for the
   // duration of the transfer (cwi-dis/iotsa#263) -- cleared in otaOnEnd()/
   // otaOnError(), whichever fires.
   IotsaBLERadioArbiter::holdOffNewWork(true);
 #endif
+  // The transfer holds loop() until it is done, so nothing renders the status
+  // during it. Show solid cyan now; it stays until the reboot (cwi-dis/iotsa#259).
+  iotsaStatus.setStatusPulse(IotsaStatus::COLOUR_CYAN, 0, 0, 2000, "OTA update in progress");
+  app.aboutToBlock();
+  iotsaBreadcrumbs.setActivity(IOTSA_CRUMB_OTA);
   iotsaController.feedWatchdog();
 }
 
@@ -59,7 +63,7 @@ void IotsaOtaMod::_startIfReady() {
   IotsaSerial.println("OTA-update enabled");
   ArduinoOTA.setPort(8266);
   ArduinoOTA.setHostname(iotsaConfig.hostName.c_str());
-  ArduinoOTA.onStart(otaOnStart);
+  ArduinoOTA.onStart([this]() { otaOnStart(app); });
   ArduinoOTA.onProgress(otaOnProgress);
   ArduinoOTA.onEnd(otaOnEnd);
   ArduinoOTA.onError(otaOnError);

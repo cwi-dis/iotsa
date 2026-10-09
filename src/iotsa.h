@@ -87,6 +87,12 @@ public:
   void setup();
   void lateSetup();
   void loop();
+  // Call just before deliberately holding loop() for a long time (an OTA
+  // transfer): runs one more pass over the modules' loop(), so e.g. status
+  // renderers show the latest state, which then stays visible while loop() is
+  // blocked (cwi-dis/iotsa#259). The module whose loop() is calling this is
+  // skipped. Does nothing when nested, or outside the loop task.
+  void aboutToBlock();
 #ifdef IOTSA_HAS_WEBSERVER
   // Convenience for app-level sketch code (e.g. tests/KitchenSink, examples/Hello,
   // examples/Log) that registers its own raw handler outside of any module method,
@@ -111,6 +117,13 @@ protected:
   String title;
   IotsaAuthenticationProvider *_auth = nullptr;
   bool _haveAuthModule = false;  // an IotsaAuthMod was constructed (for the setup() warning)
+private:
+  void _loopModules(IotsaBaseModule *skip);
+  IotsaBaseModule *_loopingModule = nullptr;  // whose loop() is running now
+  bool _inAboutToBlock = false;
+#ifdef ESP32
+  TaskHandle_t _loopTask = nullptr;
+#endif
 };
 
 //
