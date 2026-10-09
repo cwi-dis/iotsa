@@ -55,21 +55,6 @@ IotsaConfigMod::webHandler() {
       }
     }
   }
-#ifdef ESP32
-  if( api.webService->server->hasArg("watchdogDuration")) {
-    uint32_t newValue = api.webService->server->arg("watchdogDuration").toInt();
-    if (newValue != iotsaConfig.watchdogDuration) {
-      if (iotsaConfigSettingsWritable()) {
-        if (needsAuthentication("config")) return;
-        iotsaConfig.watchdogDuration = newValue;
-        iotsaController.rearmWatchdog();
-        anyChanged = true;
-      } else {
-        wrongMode = true;
-      }
-    }
-  }
-#endif
   // Mode requests + factory-reset moved to IotsaRunmodeMod / the /runmode page
   // (cwi-dis/iotsa#106).
 #ifdef IOTSA_WITH_HTTPS
@@ -241,11 +226,6 @@ IotsaConfigMod::webHandler() {
     message += "Configuration mode timeout: <input name='rebootTimeout' value='";
     message += String(iotsaController.modeTimeout());
     message += "'><br>";
-#ifdef ESP32
-    message += "Watchdog timer duration (ms, 0 = off): <input name='watchdogDuration' value='";
-    message += String(iotsaConfig.watchdogDuration);
-    message += "'><br>";
-#endif
 #ifdef IOTSA_WITH_HTTPS
     message += "HTTPS private key (PEM): <br><textarea name='httpsKey' rows='8' cols='60'></textarea><br>";
     message += "HTTPS certificate (PEM): <br><textarea name='httpsCertificate' rows='8' cols='60'></textarea><br>";
@@ -307,9 +287,6 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   // keys and forwards them (the new-CLI-to-old-board compat surface that stays).
   reply["hostName"] = iotsaConfig.hostName;
   reply["modeTimeout"] = iotsaController.modeTimeout();
-#ifdef ESP32
-  reply["watchdogDuration"] = iotsaConfig.watchdogDuration;
-#endif
   reply["wifiDisabledOnBoot"] = iotsaConfig.wifiDisabledOnBoot;
 #ifdef IOTSA_WITH_BLE
   reply["bleDisabledOnBoot"] = iotsaConfig.bleDisabledOnBoot;
@@ -420,12 +397,6 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   }
 #endif
   { int t; if (getFromRequest<int>(reqObj, "modeTimeout", t)) { iotsaController.setModeTimeout(t); anyChanged = true; } }
-#ifdef ESP32
-  if (getFromRequest<int>(reqObj, "watchdogDuration", iotsaConfig.watchdogDuration)) {
-    iotsaController.rearmWatchdog();
-    anyChanged = true;
-  }
-#endif
 
 #ifdef IOTSA_WITH_HTTPS
   // Set parameter defaultCert to true to remove any key/certificate

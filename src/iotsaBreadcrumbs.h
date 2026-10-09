@@ -37,7 +37,7 @@ enum IotsaBreadcrumbCode : uint8_t {
   IOTSA_CRUMB_SLEEP = 7,          // going to sleep
   // Events
   IOTSA_CRUMB_BOOT = 64,          // arg: platform reset reason
-  IOTSA_CRUMB_IOTSA_WATCHDOG = 65,// iotsa's own watchdog fired (the platform reports a software reboot)
+  // 65 was iotsaWatchdog, for the old timer watchdog (removed in cwi-dis/iotsa#244)
   IOTSA_CRUMB_REBOOT = 66,        // a software reboot; arg: 0 requested, 1 after OTA
   IOTSA_CRUMB_FACTORY_RESET = 67,
   // Application codes start here
@@ -61,7 +61,6 @@ public:
   void addBreadcrumb(uint8_t code, uint8_t arg = 0);
   uint32_t activity();                             // raw activity word, for IotsaActivityScope
   void restoreActivity(uint32_t word);             // code and arg of word, current uptime
-  bool bootedByIotsaWatchdog() { return _iotsaWatchdog; }
   // Copy the ring, oldest first, into entries (RING_SIZE long). Returns the count.
   int events(uint32_t *entries);
   static uint8_t entryCode(uint32_t entry) { return entry >> 24; }
@@ -70,11 +69,7 @@ public:
   static const char *codeName(uint8_t code);       // nullptr for unknown and application codes
 private:
   void _append(uint32_t entry);
-  bool _iotsaWatchdog = false;
 };
-
-// Called from iotsa's watchdog interrupt, just before it restarts the device.
-void iotsaBreadcrumbsMarkIotsaWatchdog();
 
 extern IotsaBreadcrumbs iotsaBreadcrumbs;
 

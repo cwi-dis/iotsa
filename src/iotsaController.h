@@ -30,15 +30,17 @@ public:
   static constexpr uint32_t REBOOT_DELAY_HTTP_MS = 2000;  // after an HTTP/web response
   static constexpr uint32_t REBOOT_DELAY_BLE_MS  = 1000;  // after a BLE write-ack (cwi-dis/iotsa#130)
 
-#ifdef ESP32
-  // Configurable hardware watchdog (reboot on hang). Duration is the persisted
-  // iotsaConfig.watchdogDuration knob (config.cfg, edited via /config). begin()
-  // arms it, tick() feeds it. pause/resume bracket a sleep. Decoupled from
-  // IOTSA_HAS_SLEEP (cwi-dis/iotsa#106 step 5d; was IotsaRunmodeMod / IotsaBatteryMod).
-  void rearmWatchdog();    // (re)configure from iotsaConfig.watchdogDuration; safe any time
-  void pauseWatchdog();    // stop feeding + disable -- before sleeping
-  void resumeWatchdog();   // re-enable after a pause
-#endif
+  // Watchdog (cwi-dis/iotsa#244): restart the device when loop() hangs. Always on,
+  // opt out with -DIOTSA_WITHOUT_WATCHDOG. On ESP32 it is ESP-IDF's task watchdog
+  // on the loop task, WATCHDOG_SECONDS, subscribed in begin() and fed by tick().
+  // On ESP8266 it is the core's own (~3 s software, ~6-8 s hardware), which is
+  // also fed by every yield()/delay() and can't be configured or switched off.
+  // Long work that iotsa does knowingly calls feedWatchdog() (from the loop task
+  // only); pause/resume bracket a sleep.
+  static constexpr uint32_t WATCHDOG_SECONDS = 15;
+  void feedWatchdog();
+  void pauseWatchdog();
+  void resumeWatchdog();
 
   // ---- radio-enablement policy (_radio) ----
   void setWifiRadioEnabled(bool on) { _radio.setWifiEnabled(on); }
@@ -64,22 +66,12 @@ public:
   // push its auto-expiry out. The two concerns are deliberately separate.
   void extendCurrentMode() {
     _sleep.noteActivity();
-#ifdef ESP32
-    // Feed iotsa's own hardware-timer watchdog (s_watchdog in
-    // iotsaController.cpp), normally only fed from tick() in the main loop.
-    // extendCurrentMode() is called every OTA chunk (otaOnProgress()), which
-    // is exactly the case tick() can't run for: ArduinoOTA.handle() blocks
-    // the whole loop() for the duration of the transfer (cwi-dis/iotsa#259).
-    // Without this, any OTA transfer longer than watchdogDuration trips the
-    // watchdog and reboots mid-transfer -- confirmed live on lissabonController
-    // 2026-09-26, `control`, rc watchdogDuration=10000ms, transfer aborted at
-    // 26% with "assert failed: xQueueSemaphoreTake". The `#ifndef ESP32`
-    // branch below already did the equivalent for ESP8266's own watchdog;
-    // this one was simply missing.
-    _feedWatchdog();
-#else
-    ESP.wdtFeed();
-#endif
+    // Feed the watchdog: extendCurrentMode() is called for every OTA chunk, and
+    // ArduinoOTA.handle() blocks the whole loop() for the duration of the
+    // transfer, so tick() can't (cwi-dis/iotsa#259). Without this an OTA longer
+    // than the watchdog reboots mid-transfer -- seen on lissabonController
+    // 2026-09-26, transfer aborted at 26%.
+    feedWatchdog();
     _modes.extendWindow();
   }
   void allowRCMDescription(const char *desc) { _modes.allowRCMDescription(desc); }
@@ -104,9 +96,7 @@ public:
   IotsaRadioPolicy& radio() { return _radio; }
 
 private:
-#ifdef ESP32
-  void _feedWatchdog();
-#endif
+  void _startWatchdog();
   uint32_t _rebootAtMillis = 0;
   IotsaModeMachine _modes;
   IotsaRadioPolicy _radio;
