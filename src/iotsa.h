@@ -4,6 +4,7 @@
 #include "iotsaVersion.h"
 #include "iotsaBuildOptions.h"
 #include <Print.h>
+#include <functional>
 
 // How long a maintenance mode (config / OTA) stays open before auto-expiring, in
 // seconds. Seeds IotsaController::_modeTimeout; config.cfg's "rebootTimeout" key
@@ -93,6 +94,18 @@ public:
   // blocked (cwi-dis/iotsa#259). The module whose loop() is calling this is
   // skipped. Does nothing when nested, or outside the loop task.
   void aboutToBlock();
+  // Code that runs outside the loop task (NimBLE callbacks, other tasks) must
+  // not touch module state: it latches a volatile, or hands the work to the
+  // loop task with one of these (cwi-dis/iotsa#236).
+  // postToLoop(): run fn in the loop task at the start of the next loop()
+  // pass, return immediately. false if the queue is full (fn is dropped).
+  // runInLoop(): the same, but wait until fn has run, at most timeoutMs.
+  // false on timeout, and then fn is guaranteed never to run, so fn may
+  // capture the caller's locals by reference. Called from the loop task
+  // itself, both just call fn. On ESP8266 there are no other tasks.
+  static bool postToLoop(std::function<void()> fn);
+  static bool runInLoop(std::function<void()> fn, uint32_t timeoutMs);
+  static bool inLoopTask();
 #ifdef IOTSA_HAS_WEBSERVER
   // Convenience for app-level sketch code (e.g. tests/KitchenSink, examples/Hello,
   // examples/Log) that registers its own raw handler outside of any module method,
@@ -121,9 +134,7 @@ private:
   void _loopModules(IotsaBaseModule *skip);
   IotsaBaseModule *_loopingModule = nullptr;  // whose loop() is running now
   bool _inAboutToBlock = false;
-#ifdef ESP32
-  TaskHandle_t _loopTask = nullptr;
-#endif
+  static void _runPosted();
 };
 
 //
@@ -240,8 +251,12 @@ public:
   typedef const char * UUIDstring;
 
   virtual ~IotsaBLEProvider() {}
+  // Both run in the loop task (cwi-dis/iotsa#236), see IotsaBLECharacteristicCallbacks.
   virtual bool blePutHandler(UUIDstring charUUID) { return false; }
   virtual bool bleGetHandler(UUIDstring charUUID) { return false; }
+  // A write whose blePutHandler() was skipped because loop() didn't get to it in
+  // time. Called on the NimBLE host task: only latch something.
+  virtual void blePutTimedOut(UUIDstring charUUID) {}
 };
 
 // Base for every iotsa module -- deliberately lenient (setup()/loop() are the

@@ -9,10 +9,13 @@
 //   blockLoopEvery: N   busy-wait N ms on every loop() pass (0 stops it)
 //   blockHandler: N     busy-wait N ms inside the PUT handler itself, before
 //                       replying. Which task that blocks depends on the
-//                       transport: the loop() task via REST, the NimBLE host
-//                       task via HPS.
-//   blockBle: N         busy-wait N ms in the callback of the next write to the
-//                       BLE "trigger" characteristic (the NimBLE host task)
+//                       transport: the loop() task via REST, and since
+//                       cwi-dis/iotsa#236 also via HPS.
+//   blockBle: N         busy-wait N ms in the handler of the next write to the
+//                       BLE "trigger" characteristic. Since cwi-dis/iotsa#236
+//                       BLE handlers run in the loop task, so this blocks
+//                       loop(), and the NimBLE host task waits for it (and
+//                       gives up after 3 s).
 //   replySize: N        GET /api/fault includes a "filler" string of N bytes
 //   payload: "..."      any (large) string: the reply reports its length
 //   crash: 1            write through a null pointer in the next loop()

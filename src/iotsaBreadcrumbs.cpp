@@ -111,6 +111,7 @@ const char *IotsaBreadcrumbs::codeName(uint8_t code) {
     case IOTSA_CRUMB_OTA: return "ota";
     case IOTSA_CRUMB_BLE_CALLBACK: return "bleCallback";
     case IOTSA_CRUMB_SLEEP: return "sleep";
+    case IOTSA_CRUMB_POSTED: return "posted";
     case IOTSA_CRUMB_BOOT: return "boot";
     case IOTSA_CRUMB_REBOOT: return "reboot";
     case IOTSA_CRUMB_FACTORY_RESET: return "factoryReset";

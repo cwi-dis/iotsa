@@ -588,7 +588,12 @@ bool IotsaBLEClientDevice::get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, ui
 static BleNotificationCallback _staticCallback;
 
 static void _staticCallbackCaller(NimBLERemoteCharacteristic* pBLERemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
-  if (_staticCallback) _staticCallback(pData, length);
+  // NimBLE host task: call the application's callback from the loop task (cwi-dis/iotsa#236).
+  if (!_staticCallback) return;
+  std::vector<uint8_t> data(pData, pData + length);
+  IotsaApplication::postToLoop([data]() mutable {
+    if (_staticCallback) _staticCallback(data.data(), data.size());
+  });
 }
 
 bool IotsaBLEClientDevice::getAsNotification(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, BleNotificationCallback callback) {

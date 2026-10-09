@@ -288,6 +288,14 @@ void IotsaBLEClientMod::loop() {
 }
 
 void IotsaBLEClientMod::onResult(const NimBLEAdvertisedDevice *advertisedDevice) {
+  // NimBLE host task: the device maps and the callbacks belong to the loop
+  // task, so hand it a copy (cwi-dis/iotsa#236). If the queue is full the
+  // advertisement is dropped; the device advertises again.
+  NimBLEAdvertisedDevice copy(*advertisedDevice);
+  IotsaApplication::postToLoop([this, copy]() { _handleAdvertisement(&copy); });
+}
+
+void IotsaBLEClientMod::_handleAdvertisement(const NimBLEAdvertisedDevice *advertisedDevice) {
 #ifdef IOTSA_DEBUG_BLE_PRINT_ALL_CLIENTS
   IotsaSerial.printf("BLEClientMod::onResult(%s, RSSI: %d)\n", advertisedDevice->toString().c_str(), advertisedDevice->getRSSI());
 #endif

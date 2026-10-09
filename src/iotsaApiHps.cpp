@@ -87,7 +87,7 @@ protected:
   bool curReplyIsChunked = false;
   size_t curBodyReadOffset = 0;
   HPSControl curControl;
-  uint16_t curHttpStatus;
+  volatile uint16_t curHttpStatus;
   HPSDataStatus curDataStatus;
 
   static std::list<IotsaHpsServiceEntryPoint*> getEntryPoints;
@@ -135,6 +135,16 @@ protected:
 
     IotsaSerial.printf("IotsaHpsServiceMod: ble: write unknown uuid %s\n", charUUID);
     return false;
+  }
+
+  // The request never ran (loop() was held up too long): don't let the client
+  // read the previous request's status as this one's.
+  void blePutTimedOut(UUIDstring charUUID) override {
+    if (charUUID != IotsaApiServiceHps::controlPointUUID) return;
+    curHttpStatus = 503;
+    // Also the characteristic itself, in case the status read times out too.
+    uint8_t data[3] = { 503 & 0xff, 503 >> 8, (uint8_t)HPSDataStatus::EMPTY };
+    bleApi.set(IotsaApiServiceHps::statusUUID, data, 3);
   }
 
   bool bleGetHandler(UUIDstring charUUID) override {
