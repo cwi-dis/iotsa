@@ -165,6 +165,7 @@ bool IotsaBLEClientDevice::connect() {
     // 6000 is only a fallback for the (should-never-happen) case of a
     // connection created without going through addDevice().
     pClient->setConnectTimeout(owner ? owner->getConnectTimeoutMillis() : 6000);
+    pClient->setConnectionParams(LINK_INTERVAL_MIN, LINK_INTERVAL_MAX, 0, LINK_SUPERVISION_TIMEOUT);
     pClient->setClientCallbacks(&connCallbacks, false); // false: we own connCallbacks, don't delete it
   }
   if (pClient->isConnected()) {
@@ -368,6 +369,7 @@ bool IotsaBLEClientDevice::_startAsyncConnect() {
       return false;
     }
     pClient->setConnectTimeout(owner ? owner->getConnectTimeoutMillis() : 6000);
+    pClient->setConnectionParams(LINK_INTERVAL_MIN, LINK_INTERVAL_MAX, 0, LINK_SUPERVISION_TIMEOUT);
     pClient->setClientCallbacks(&connCallbacks, false);
   }
   if (owner && !owner->tryAcquireConnectSlot()) return false;
