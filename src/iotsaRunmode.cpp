@@ -29,7 +29,7 @@
 // (persisted to sleep.cfg); IotsaSleepPolicy::decide() borrows it (cwi-dis/iotsa#106).
 
 #define SLEEP_DEBUG if(0)
-// The hardware watchdog moved to IotsaController (cwi-dis/iotsa#106 step 5d) --
+// The watchdog lives in IotsaController (cwi-dis/iotsa#106 step 5d, #244) --
 // it's a device-lifecycle concern, not sleep-coupled. _sleepTick() just brackets
 // the sleep with iotsaController.pause/resumeWatchdog().
 
@@ -659,9 +659,6 @@ void IotsaRunmodeMod::_sleepTick() {
   if (d.mode == IOTSA_SLEEP_NONE) return;
 
   // Committed to sleeping in some form.
-#ifdef ESP32
-  iotsaController.pauseWatchdog();
-#endif
   if (_sleepConfig.disableWiFiOnSleep && iotsaStatus.wifiEnabled) {
     static bool haveDisabledWiFi = false;
     if (!haveDisabledWiFi) {
@@ -674,6 +671,9 @@ void IotsaRunmodeMod::_sleepTick() {
   }
   IFDEBUG IotsaSerial.printf("Going to sleep at %u for %u mode %d\n", (unsigned)millis(), (unsigned)d.durationMs, (int)d.mode);
   iotsaBreadcrumbs.setActivity(IOTSA_CRUMB_SLEEP, (uint8_t)d.mode);
+  // Only now: the WiFi shutdown above returns to loop() first, and used to
+  // leave the watchdog paused (cwi-dis/iotsa#244).
+  iotsaController.pauseWatchdog();
   _notifySleepWakeup(true);
 #ifdef ESP32
   if (_cpuFrequencySleep != 0) {
@@ -691,9 +691,7 @@ void IotsaRunmodeMod::_sleepTick() {
     delay(d.durationMs);
     sp.didWakeFromSleep = true;
     sp.millisAtWakeup = 0;   // re-arm the wake window next tick
-#ifdef ESP32
     iotsaController.resumeWatchdog();
-#endif
     _notifySleepWakeup(false);
     return;
   }

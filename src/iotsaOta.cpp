@@ -5,12 +5,6 @@
 #include "iotsaBLE.h"
 #endif
 
-#ifdef ESP32
-#define optFeedWatchdog()
-#else
-#define optFeedWatchdog() ESP.wdtFeed()
-#endif
-
 void otaOnStart() {
   IFDEBUG IotsaSerial.println("ota: download started");
   iotsaBreadcrumbs.setActivity(IOTSA_CRUMB_OTA);
@@ -20,7 +14,7 @@ void otaOnStart() {
   // otaOnError(), whichever fires.
   IotsaBLERadioArbiter::holdOffNewWork(true);
 #endif
-  optFeedWatchdog();
+  iotsaController.feedWatchdog();
 }
 
 void otaOnProgress(unsigned int progress, unsigned int total) {
@@ -30,7 +24,7 @@ void otaOnProgress(unsigned int progress, unsigned int total) {
   iotsaBreadcrumbs.setActivity(IOTSA_CRUMB_OTA);
   iotsaController.extendCurrentMode();
   iotsaStatus.setStatusPulse(IotsaStatus::COLOUR_CYAN, 0, 0, 2000, "OTA update in progress");  // re-armed per chunk (cwi-dis/iotsa#176)
-  optFeedWatchdog();
+  iotsaController.feedWatchdog();
 }
 
 void otaOnEnd() {
@@ -39,7 +33,7 @@ void otaOnEnd() {
 #ifdef IOTSA_WITH_BLE
   IotsaBLERadioArbiter::holdOffNewWork(false);
 #endif
-  optFeedWatchdog();
+  iotsaController.feedWatchdog();
 }
 
 void otaOnError(int error) {
@@ -47,7 +41,7 @@ void otaOnError(int error) {
 #ifdef IOTSA_WITH_BLE
   IotsaBLERadioArbiter::holdOffNewWork(false);
 #endif
-  optFeedWatchdog();
+  iotsaController.feedWatchdog();
 }
 
 void IotsaOtaMod::setup() {

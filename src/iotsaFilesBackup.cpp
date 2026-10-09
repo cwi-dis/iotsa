@@ -120,6 +120,7 @@ IotsaFilesBackupMod::handler() {
 	  	}
 	  	app.server->sendContent_P(buf, curLen);
 	  	fileSize -= curLen;
+	  	iotsaController.feedWatchdog();   // a large file over a slow link takes long (cwi-dis/iotsa#244)
 	  	yield();
 	}
 	fp.close();

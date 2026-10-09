@@ -117,9 +117,6 @@ const char* IotsaStatus::bootReasonName(uint8_t raw) {
 }
 
 const char* IotsaStatus::getBootReason() {
-  // iotsa's own watchdog restarts the device in software, so the platform calls
-  // that a software reboot. The breadcrumbs know better (cwi-dis/iotsa#276).
-  if (iotsaBreadcrumbs.bootedByIotsaWatchdog()) return "iotsaWatchdog";
   return bootReasonName(rawBootReason());
 }
 

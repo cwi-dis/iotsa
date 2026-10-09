@@ -164,9 +164,6 @@ IotsaApplication::setup() {
   for (m=firstModule; m; m=m->nextModule) {
   	m->setup();
   }
-#ifndef ESP32
-  ESP.wdtEnable(WDTO_120MS);
-#endif
   IFDEBUG IotsaSerial.print("hostname: ");
   IFDEBUG IotsaSerial.println(iotsaConfig.hostName);
   // Easy mistake when converting an old sketch (cwi-dis/iotsa#284): removing the

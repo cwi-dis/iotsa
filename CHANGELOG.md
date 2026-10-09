@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Breadcrumbs: what the device was doing before a watchdog reset, crash or reboot survives in RTC memory and shows on `/api/status`; `bootCause` reports `iotsaWatchdog` for iotsa's own watchdog (#276)
+- Breadcrumbs: what the device was doing before a watchdog reset, crash or reboot survives in RTC memory and shows on `/api/status` (#276)
 - `tests/Fault`: a test sketch whose module deliberately blocks `loop()`, a handler or a BLE callback, sends huge replies or crashes, on request (#285)
 - `iotsaLog.h`: `IOTSA_LOG`, `IOTSA_LOG_DEBUG` and per-subsystem `IOTSA_LOG_DEBUG_<X>` macros; debug logging can be switched off per device (`debugLog` on `/api/runmode`) (#182)
 - `iotsa dfu installfs <dir>`: build a LittleFS image from a directory (sized from the live partition table) and flash it to the spiffs partition -- the write half of `dfu extractfs` (#191)
@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- ESP32: the watchdog is now always on (ESP-IDF task watchdog on the loop task, 15 s); it used to be off unless `watchdogDuration` was set, and reset via the interrupt watchdog. `watchdogDuration` is removed; opt out with `IOTSA_WITHOUT_WATCHDOG` (#244)
+- The watchdog stayed paused after a sleep that first had to switch WiFi off (#244)
 - `/api/runmode` (reboot, radios, sleep settings) was unprotected in every app; it now uses the application's authenticator, with reads, `identify`, `postponeSleep` and `requestedMode` open (#284)
 - The CoAP server and its endpoints work when WiFi comes up after boot (e.g. `wifiDisabledOnBoot`), instead of never; HTTP, CoAP and OTA start once the network stack is up, not on a boot-time guess (#238, #239)
 - Changing the NTP server takes effect immediately instead of after a reboot (#283)

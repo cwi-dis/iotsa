@@ -177,7 +177,7 @@ firmware upgrade:
 | key(s) | was on | now on |
 |---|---|---|
 | `sleepMode` / `sleepDuration` / `wakeDuration` / `bootExtraWakeDuration` / `activityExtraWakeDuration` / `disableSleepOnWiFi` / `disableWiFiOnSleep` / `disableSleepOnUSBPower` / `cpuFrequencyBoot` / `cpuFrequencySleep` | `/api/battery` | `/api/runmode` |
-| `watchdogDuration` | `/api/battery` | `/api/config` |
+| `watchdogDuration` | `/api/battery` | `/api/config`; removed in #244 (fixed duration) |
 | `bootCause` / `uptime` / `fsTotalBytes` / `fsUsedBytes` / `privateWifi` / `mdnsEnabled` | `/api/config` | `/api/status` (the one-release `/api/config` mirror was dropped in #243 step D) |
 | `currentMode` / `currentModeTimeout` / `requestedMode` / `requestedModeTimeout` / `wifiDisabled` / `bleDisabled` | `/api/config` GET mirror | `/api/runmode` (GET); `/api/config` PUT still forwards them. Mirror dropped in #243 step D |
 
@@ -503,6 +503,16 @@ under `IOTSA_HAS_SLEEP` -- those *are* sleep-coupled. Open sub-decision: the
 `watchdogDuration` edit UI -- keep it on `/runmode` (writes the `iotsaConfig`
 field + re-arms), or move it to `/config` next to `rebootTimeout` (makes it
 config-mode-only to edit -- a behaviour change).
+
+**Superseded by #244 (2026-10):** the `hw_timer_t` + ISR was a copy of Arduino-ESP32's
+`WatchdogTimer` example, and `esp_restart()` from the ISR ended in the interrupt
+watchdog (reset reason `interruptWatchdog`). Now the ESP32 uses ESP-IDF's task
+watchdog on the loop task: always on, `IotsaController::WATCHDOG_SECONDS` (15 s),
+subscribed in `begin()`, fed by `tick()`; opt out with `-DIOTSA_WITHOUT_WATCHDOG`.
+`watchdogDuration` is gone. `feedWatchdog()` / `pauseWatchdog()` / `resumeWatchdog()`
+are cross-platform (on ESP8266 the core's own ~3 s watchdog stays, fed by every
+`yield()`/`delay()`); `feedWatchdog()` is for long work iotsa does knowingly (OTA,
+backup), pause/resume bracket sleep and factory reset.
 
 ### 5e. `/api/status` (smell 15) -- separable
 

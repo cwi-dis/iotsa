@@ -9,7 +9,7 @@ bool iotsaBreadcrumbsEnabled = true;
 
 //
 // Storage: 32 words of RTC memory.
-//   [0]      header: 16-bit magic, 8-bit flags, 8-bit index of the next ring write
+//   [0]      header: 16-bit magic, 8 bits spare, 8-bit index of the next ring write
 //   [1]      activity word
 //   [2..31]  event ring
 //
@@ -27,7 +27,6 @@ static RTC_NOINIT_ATTR uint32_t s_rtcWords[32];
 #endif
 
 static constexpr uint32_t MAGIC = 0xb5c7;
-static constexpr uint32_t FLAG_IOTSA_WATCHDOG = 0x01;
 static constexpr int HEADER = 0;
 static constexpr int ACTIVITY = 1;
 static constexpr int RING = 2;
@@ -57,11 +56,6 @@ void IotsaBreadcrumbs::begin() {
       } else {
         IOTSA_LOG("iotsaBreadcrumbs", "before this reset: code %u %u, uptime %u s", entryCode(previous), entryArg(previous), (unsigned)entryUptime(previous));
       }
-    }
-    if ((header >> 8) & FLAG_IOTSA_WATCHDOG) {
-      _iotsaWatchdog = true;
-      RTC_WORDS[HEADER] = RTC_WORDS[HEADER] & ~(FLAG_IOTSA_WATCHDOG << 8);
-      _append(makeEntry(IOTSA_CRUMB_IOTSA_WATCHDOG, 0));
     }
   }
   _append(makeEntry(IOTSA_CRUMB_BOOT, cause));
@@ -118,19 +112,8 @@ const char *IotsaBreadcrumbs::codeName(uint8_t code) {
     case IOTSA_CRUMB_BLE_CALLBACK: return "bleCallback";
     case IOTSA_CRUMB_SLEEP: return "sleep";
     case IOTSA_CRUMB_BOOT: return "boot";
-    case IOTSA_CRUMB_IOTSA_WATCHDOG: return "iotsaWatchdog";
     case IOTSA_CRUMB_REBOOT: return "reboot";
     case IOTSA_CRUMB_FACTORY_RESET: return "factoryReset";
     default: return nullptr;
   }
 }
-
-#ifdef ESP32
-void IRAM_ATTR iotsaBreadcrumbsMarkIotsaWatchdog() {
-  RTC_WORDS[HEADER] = RTC_WORDS[HEADER] | (FLAG_IOTSA_WATCHDOG << 8);
-}
-#else
-void iotsaBreadcrumbsMarkIotsaWatchdog() {
-  RTC_WORDS[HEADER] = RTC_WORDS[HEADER] | (FLAG_IOTSA_WATCHDOG << 8);
-}
-#endif

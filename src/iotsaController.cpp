@@ -1,7 +1,7 @@
 #include "iotsa.h"
 #include "iotsaController.h"
-#if defined(ESP32) && ESP_ARDUINO_VERSION_MAJOR > 2
-#include "rom/ets_sys.h"   // ets_printf, for the watchdog ISR
+#ifdef ESP32
+#include <esp_task_wdt.h>
 #endif
 
 //
@@ -11,68 +11,81 @@ IotsaController iotsaController;
 
 // The mode machine and radio/sleep policy moved into their own objects
 // (cwi-dis/iotsa#106 step 5a). IotsaController is now: seed + tick the
-// sub-policies, the deferred-reboot timer, and the hardware watchdog (5d).
+// sub-policies, the deferred-reboot timer, and the watchdog (5d, cwi-dis/iotsa#244).
 
-#ifdef ESP32
-// One hardware-timer watchdog, module-static (only IotsaController touches it).
-static hw_timer_t *s_watchdog = nullptr;
+#if defined(ESP32) && !defined(IOTSA_WITHOUT_WATCHDOG)
+// ESP-IDF's task watchdog, on the loop task. The Arduino core has already
+// initialised it (5 s, panic on, watching the idle task(s)); we only change the
+// timeout and subscribe the loop task. On a timeout ESP-IDF panics: the reset
+// reason is ESP_RST_TASK_WDT and the serial log names the task.
+static TaskHandle_t s_watchdogTask = nullptr;   // the loop task, once subscribed
+static bool s_watchdogPaused = false;
 
-static void IRAM_ATTR watchdogFired() {
-  iotsaBreadcrumbsMarkIotsaWatchdog();
-  ets_printf("iotsa watchdog reboot");
-  esp_restart();
-}
-
-void IotsaController::rearmWatchdog() {
-  uint32_t ms = iotsaConfig.watchdogDuration;
-  if (s_watchdog) {
-#if ESP_ARDUINO_VERSION_MAJOR <= 2
-    timerAlarmDisable(s_watchdog);
-    timerDetachInterrupt(s_watchdog);
-#else
-    timerDetachInterrupt(s_watchdog);
+void IotsaController::_startWatchdog() {
+#if ESP_IDF_VERSION_MAJOR >= 5
+  esp_task_wdt_config_t config = {
+    .timeout_ms = WATCHDOG_SECONDS * 1000,
+    .idle_core_mask = 0,
+    .trigger_panic = true,
+  };
+#if CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
+  config.idle_core_mask |= 1 << 0;
 #endif
-    timerEnd(s_watchdog);
-    s_watchdog = nullptr;
+#if CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
+  config.idle_core_mask |= 1 << 1;
+#endif
+  if (esp_task_wdt_reconfigure(&config) != ESP_OK) esp_task_wdt_init(&config);
+#else
+  // ESP-IDF 4: init on an initialised watchdog only changes timeout and panic.
+  esp_task_wdt_init(WATCHDOG_SECONDS, true);
+#endif
+  TaskHandle_t self = xTaskGetCurrentTaskHandle();
+  if (esp_task_wdt_add(self) == ESP_OK) {
+    s_watchdogTask = self;
+    IOTSA_LOG("iotsaController", "watchdog %u s", (unsigned)WATCHDOG_SECONDS);
+  } else {
+    IOTSA_LOG("iotsaController", "watchdog could not be started");
   }
-  if (ms == 0) return;
-#if ESP_ARDUINO_VERSION_MAJOR <= 2
-  s_watchdog = timerBegin(0, 80, true);                 // 80 -> 1 MHz (1 tick = 1 us)
-  timerAttachInterrupt(s_watchdog, &watchdogFired, true);
-  timerAlarmWrite(s_watchdog, ms * 1000, false);
-  timerAlarmEnable(s_watchdog);
-#else
-  s_watchdog = timerBegin(1000000);                     // 1 MHz
-  timerAttachInterrupt(s_watchdog, &watchdogFired);
-  timerAlarm(s_watchdog, ms * 1000, true, 0);
-#endif
-  IFDEBUG IotsaSerial.printf("iotsaController: watchdog %u ms\n", (unsigned)ms);
 }
 
-void IotsaController::_feedWatchdog() {
-  if (s_watchdog) timerWrite(s_watchdog, 0);
+void IotsaController::feedWatchdog() {
+  // Only the subscribed task can feed it (and a feed from e.g. the NimBLE task
+  // shouldn't count anyway: it's loop() we're watching).
+  if (s_watchdogTask && !s_watchdogPaused && xTaskGetCurrentTaskHandle() == s_watchdogTask) {
+    esp_task_wdt_reset();
+  }
 }
 
 void IotsaController::pauseWatchdog() {
-  if (!s_watchdog) return;
-#if ESP_ARDUINO_VERSION_MAJOR <= 2
-  timerAlarmDisable(s_watchdog);
-#else
-  timerDetachInterrupt(s_watchdog);
-#endif
+  if (!s_watchdogTask || s_watchdogPaused) return;
+  esp_task_wdt_delete(s_watchdogTask);
+  s_watchdogPaused = true;
 }
 
 void IotsaController::resumeWatchdog() {
-  if (!s_watchdog) return;
-  timerWrite(s_watchdog, 0);
-#if ESP_ARDUINO_VERSION_MAJOR <= 2
-  timerAlarmEnable(s_watchdog);
-#else
-  timerAttachInterrupt(s_watchdog, &watchdogFired);
-  timerAlarm(s_watchdog, iotsaConfig.watchdogDuration * 1000, true, 0);
-#endif
+  if (!s_watchdogTask || !s_watchdogPaused) return;
+  esp_task_wdt_add(s_watchdogTask);
+  s_watchdogPaused = false;
 }
-#endif // ESP32
+
+#elif !defined(ESP32)
+// ESP8266: the core's watchdog is on from boot, fed by every return from
+// loop(), yield() and delay(), and can't be switched off: stopping only the
+// software one would let the hardware one fire after ~6 s instead of ~3 s. So
+// IOTSA_WITHOUT_WATCHDOG has no effect here. Sleep is either deep sleep (a
+// reset) or delay(), so pause/resume have nothing to do.
+void IotsaController::_startWatchdog() {}
+void IotsaController::feedWatchdog() { ESP.wdtFeed(); }
+void IotsaController::pauseWatchdog() {}
+void IotsaController::resumeWatchdog() {}
+
+#else
+// ESP32 with IOTSA_WITHOUT_WATCHDOG.
+void IotsaController::_startWatchdog() {}
+void IotsaController::feedWatchdog() {}
+void IotsaController::pauseWatchdog() {}
+void IotsaController::resumeWatchdog() {}
+#endif
 
 void IotsaController::begin() {
   _radio.seedFromBootPolicy(
@@ -84,15 +97,11 @@ void IotsaController::begin() {
 #endif
   );
   _modes.begin(iotsaStatus.wasHardwareReset());
-#ifdef ESP32
-  rearmWatchdog();
-#endif
+  _startWatchdog();
 }
 
 void IotsaController::tick() {
-#ifdef ESP32
-  _feedWatchdog();
-#endif
+  feedWatchdog();
   if (_rebootAtMillis && millis() > _rebootAtMillis) {
     IFDEBUG IotsaSerial.println("Software requested reboot.");
     iotsaBreadcrumbs.addBreadcrumb(IOTSA_CRUMB_REBOOT);

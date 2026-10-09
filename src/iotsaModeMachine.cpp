@@ -99,6 +99,7 @@ const char *IotsaModeMachine::modeName(iotsa_mode mode) const {
 void IotsaModeMachine::factoryReset() {
   IFDEBUG IotsaSerial.println("configurationMode: Factory-reset");
   iotsaBreadcrumbs.addBreadcrumb(IOTSA_CRUMB_FACTORY_RESET);
+  iotsaController.pauseWatchdog();   // format() can take long, and we reboot anyway
   delay(1000);
   IFDEBUG IotsaSerial.println("Formatting " IOTSA_FS_NAME "...");
   IOTSA_FS.format();
