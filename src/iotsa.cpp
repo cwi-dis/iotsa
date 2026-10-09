@@ -23,6 +23,10 @@
 Print *iotsaOverrideSerial = &Serial;
 bool iotsaLogDebugEnabled = true;  // see iotsaLog.h; set from IotsaRunmodeMod's config
 
+#ifdef ESP32
+static TaskHandle_t s_loopTask = nullptr;   // set in setup(), which runs in the loop task
+#endif
+
 IotsaApplication::IotsaApplication(const char *_title)
 : firstModule(NULL),
   firstEarlyModule(NULL),
@@ -72,7 +76,7 @@ IotsaApplication::setup() {
   Serial.begin(IOTSA_SERIAL_SPEED);
   iotsaBreadcrumbs.begin();
 #ifdef ESP32
-  _loopTask = xTaskGetCurrentTaskHandle();
+  s_loopTask = xTaskGetCurrentTaskHandle();
 #endif
   IFDEBUG IotsaSerial.println("Serial opened");
   // Always shown, not IFDEBUG-gated: "which firmware is this, exactly" is the first
@@ -197,6 +201,133 @@ IotsaApplication::lateSetup() {
   }
 }
 
+//
+// Work handed to the loop task from other tasks (cwi-dis/iotsa#236). One queue,
+// drained at the start of every loop() pass. A runInLoop() caller waits on its
+// entry's semaphore; on a timeout it removes the entry if it hasn't started,
+// or keeps waiting if it has (fn may reference the caller's stack).
+//
+#ifdef ESP32
+#include <deque>
+#include <mutex>
+#endif
+
+struct IotsaPostedWork {
+  std::function<void()> fn;
+#ifdef ESP32
+  SemaphoreHandle_t done = nullptr;   // runInLoop() only: the waiter owns the entry
+  bool started = false;
+#endif
+};
+
+static constexpr size_t POSTED_QUEUE_MAX = 32;
+#ifdef ESP32
+static std::deque<IotsaPostedWork *> s_posted;
+static std::mutex s_postedMutex;
+#else
+static std::vector<IotsaPostedWork *> s_posted;
+#endif
+
+bool
+IotsaApplication::inLoopTask() {
+#ifdef ESP32
+  return s_loopTask != nullptr && xTaskGetCurrentTaskHandle() == s_loopTask;
+#else
+  return true;
+#endif
+}
+
+bool
+IotsaApplication::postToLoop(std::function<void()> fn) {
+#ifdef ESP32
+  std::lock_guard<std::mutex> lock(s_postedMutex);
+#endif
+  if (s_posted.size() >= POSTED_QUEUE_MAX) return false;
+  IotsaPostedWork *w = new IotsaPostedWork;
+  w->fn = std::move(fn);
+  s_posted.push_back(w);
+  return true;
+}
+
+bool
+IotsaApplication::runInLoop(std::function<void()> fn, uint32_t timeoutMs) {
+#ifdef ESP32
+  if (inLoopTask() || s_loopTask == nullptr) {
+    fn();
+    return true;
+  }
+  IotsaPostedWork *w = new IotsaPostedWork;
+  w->fn = std::move(fn);
+  w->done = xSemaphoreCreateBinary();
+  {
+    std::lock_guard<std::mutex> lock(s_postedMutex);
+    if (s_posted.size() >= POSTED_QUEUE_MAX) {
+      vSemaphoreDelete(w->done);
+      delete w;
+      return false;
+    }
+    s_posted.push_back(w);
+  }
+  bool ok = xSemaphoreTake(w->done, pdMS_TO_TICKS(timeoutMs)) == pdTRUE;
+  if (!ok) {
+    std::unique_lock<std::mutex> lock(s_postedMutex);
+    if (!w->started) {
+      for (auto it = s_posted.begin(); it != s_posted.end(); ++it) {
+        if (*it == w) { s_posted.erase(it); break; }
+      }
+      lock.unlock();
+      vSemaphoreDelete(w->done);
+      delete w;
+      return false;
+    }
+    // Already running: it must finish before we may return.
+    lock.unlock();
+    xSemaphoreTake(w->done, portMAX_DELAY);
+  }
+  vSemaphoreDelete(w->done);
+  delete w;
+  return true;
+#else
+  fn();
+  return true;
+#endif
+}
+
+void
+IotsaApplication::_runPosted() {
+  // Only what is queued now: work posted while draining waits for the next pass.
+  size_t count;
+  {
+#ifdef ESP32
+    std::lock_guard<std::mutex> lock(s_postedMutex);
+#endif
+    count = s_posted.size();
+  }
+  while (count-- > 0) {
+    IotsaPostedWork *w;
+    {
+#ifdef ESP32
+      std::lock_guard<std::mutex> lock(s_postedMutex);
+#endif
+      if (s_posted.empty()) return;
+      w = s_posted.front();
+      s_posted.erase(s_posted.begin());
+#ifdef ESP32
+      w->started = true;
+#endif
+    }
+    iotsaBreadcrumbs.setActivity(IOTSA_CRUMB_POSTED);
+    w->fn();
+#ifdef ESP32
+    if (w->done) {
+      xSemaphoreGive(w->done);   // the waiter deletes w; don't touch it any more
+      continue;
+    }
+#endif
+    delete w;
+  }
+}
+
 void
 IotsaApplication::_loopModules(IotsaBaseModule *skip) {
   IotsaBaseModule *m;
@@ -218,9 +349,7 @@ IotsaApplication::_loopModules(IotsaBaseModule *skip) {
 void
 IotsaApplication::aboutToBlock() {
   if (_inAboutToBlock) return;
-#ifdef ESP32
-  if (xTaskGetCurrentTaskHandle() != _loopTask) return;
-#endif
+  if (!inLoopTask()) return;
   _inAboutToBlock = true;
   IotsaBaseModule *caller = _loopingModule;
   uint32_t activity = iotsaBreadcrumbs.activity();
@@ -234,6 +363,7 @@ IotsaApplication::aboutToBlock() {
 void
 IotsaApplication::loop() {
   iotsaController.tick();
+  _runPosted();
   _loopModules(nullptr);
   _loopingModule = nullptr;
   iotsaBreadcrumbs.setActivity(IOTSA_CRUMB_CORE);

@@ -35,6 +35,7 @@ enum IotsaBreadcrumbCode : uint8_t {
   IOTSA_CRUMB_OTA = 5,            // an OTA transfer is running
   IOTSA_CRUMB_BLE_CALLBACK = 6,   // arg: 1 read, 2 write (NimBLE host task)
   IOTSA_CRUMB_SLEEP = 7,          // going to sleep
+  IOTSA_CRUMB_POSTED = 8,         // work handed to the loop task by another task (postToLoop/runInLoop)
   // Events
   IOTSA_CRUMB_BOOT = 64,          // arg: platform reset reason
   // 65 was iotsaWatchdog, for the old timer watchdog (removed in cwi-dis/iotsa#244)

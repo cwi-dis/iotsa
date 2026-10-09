@@ -50,19 +50,35 @@ public:
     api(_api)
   {}
 
+  // We're on the NimBLE host task. The module's handler runs in the loop task
+  // instead, so it can touch module state like any other code (cwi-dis/iotsa#236);
+  // this task waits for it, because a read must return the value now and an HPS
+  // client reads the status right after its write. If loop() is held up (e.g.
+  // by a BLE client's doWork(), which in turn waits for this task) the handler
+  // is skipped after HANDLER_TIMEOUT_MS: a read then returns the previous value.
+  static constexpr uint32_t HANDLER_TIMEOUT_MS = 3000;
 	void onRead(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override {
     IotsaActivityScope activity(IOTSA_CRUMB_BLE_CALLBACK, 1);
     IFBLEDEBUG IotsaSerial.printf("BLE char onRead %s\n", pCharacteristic->getUUID().toString().c_str());
-    iotsaController.noteActivity();
     IotsaBLEServerMod::_notePeerActivity(connInfo.getConnHandle());
-    api->bleGetHandler(charUUID);
+    bool ok = IotsaApplication::runInLoop([this]() {
+      iotsaController.noteActivity();
+      api->bleGetHandler(charUUID);
+    }, HANDLER_TIMEOUT_MS);
+    if (!ok) IotsaSerial.printf("iotsaBLEServer: read of %s timed out\n", charUUID);
   }
 	void onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override {
     IotsaActivityScope activity(IOTSA_CRUMB_BLE_CALLBACK, 2);
     IFBLEDEBUG IotsaSerial.printf("BLE char onWrite %s\n", pCharacteristic->getUUID().toString().c_str());
-    iotsaController.noteActivity();
     IotsaBLEServerMod::_notePeerActivity(connInfo.getConnHandle());
-    api->blePutHandler(charUUID);
+    bool ok = IotsaApplication::runInLoop([this]() {
+      iotsaController.noteActivity();
+      api->blePutHandler(charUUID);
+    }, HANDLER_TIMEOUT_MS);
+    if (!ok) {
+      IotsaSerial.printf("iotsaBLEServer: write of %s timed out, ignored\n", charUUID);
+      api->blePutTimedOut(charUUID);
+    }
   }
 	void onStatus(NimBLECharacteristic* pCharacteristic, uint32_t code) {
     iotsaController.noteActivity();

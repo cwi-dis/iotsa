@@ -150,6 +150,31 @@ controller.
 - **`IotsaWifiMod`** -- unchanged from the `wifi-controller-design.md` outcome: thin
   glue over `IotsaWifiDriver` + `IotsaWifiController`.
 
+## Execution contexts (#236, #279)
+
+All module code (`setup()`, `loop()`, the API handlers, the BLE handlers) runs in the
+**loop task**, and may touch module state freely. Code that runs anywhere else must not:
+
+| Context | Examples | What it may do |
+|---|---|---|
+| NimBLE host task | BLE server connect/disconnect, client connect/disconnect, scan results, notifications | latch a `volatile`, or `IotsaApplication::postToLoop()` / `runInLoop()` |
+| WiFi event task (ESP32) / SDK callback (ESP8266) | `iotsaWifiDriver` events | latch a `volatile` |
+| interrupts | the old timer watchdog (gone since #244) | latch a `volatile` |
+
+- **`postToLoop(fn)`** queues `fn` for the start of the next `loop()` pass and returns at once
+  (scan results, client notifications). The queue is bounded; `false` means dropped.
+- **`runInLoop(fn, timeoutMs)`** waits until `fn` has run. On a timeout `fn` never runs, so it
+  may capture the caller's locals by reference. `IotsaBLECharacteristicCallbacks` uses it for
+  every module's `bleGetHandler()`/`blePutHandler()` (HPS included), so no module sees the
+  NimBLE task. A skipped write calls `blePutTimedOut()` on the NimBLE task (HPS answers 503).
+- **Deadlock note:** on a device that is BLE client and server, `loop()` may itself wait for
+  the NimBLE task (a client's `doWork()`); a BLE handler then waits for the timeout (3 s) and
+  is skipped, nothing hangs.
+- **Holding `loop()`:** the watchdog (#244) restarts the device after 15 s.
+  `IotsaApplication::aboutToBlock()` gives everyone one more pass before a deliberate long hold
+  (OTA, #259). Outbound HTTP (`IotsaRequest::send()`) can hold it ~10 s; a BLE client's
+  `doWork()` ~150 ms (#274, #287).
+
 ## Transition strategy
 
 Cross-version compatibility is worth carrying **only for the REST `/api/config` mode

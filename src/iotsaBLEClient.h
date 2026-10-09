@@ -12,6 +12,7 @@
 #include <map>
 #include <atomic>
 
+// Called from the loop task (cwi-dis/iotsa#236).
 typedef std::function<void(const NimBLEAdvertisedDevice&)> BleDeviceFoundCallback;
 typedef const char *UUIDString;
 
@@ -125,7 +126,8 @@ protected:
   // IotsaBLEClientCollectionMod's own config field, cwi-dis/iotsa#264).
   virtual void loadScanConfig();
   virtual void saveScanConfig();
-  void onResult(const NimBLEAdvertisedDevice *advertisedDevice);
+  void onResult(const NimBLEAdvertisedDevice *advertisedDevice);   // NimBLE host task
+  void _handleAdvertisement(const NimBLEAdvertisedDevice *advertisedDevice);   // loop task
   // Called from onResult() for an advertisement that doesn't match any known
   // device (by name or address) -- i.e. a candidate this class itself has no
   // opinion on. Default: ignore it entirely. IotsaBLEClientCollectionMod
