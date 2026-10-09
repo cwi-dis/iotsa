@@ -71,6 +71,9 @@ IotsaApplication::setup() {
   // But this means the serial port cannot be used for other things.
   Serial.begin(IOTSA_SERIAL_SPEED);
   iotsaBreadcrumbs.begin();
+#ifdef ESP32
+  _loopTask = xTaskGetCurrentTaskHandle();
+#endif
   IFDEBUG IotsaSerial.println("Serial opened");
   // Always shown, not IFDEBUG-gated: "which firmware is this, exactly" is the first
   // thing you want on a cold boot, not something to enable after the fact.
@@ -195,18 +198,44 @@ IotsaApplication::lateSetup() {
 }
 
 void
-IotsaApplication::loop() {
-  iotsaController.tick();
+IotsaApplication::_loopModules(IotsaBaseModule *skip) {
   IotsaBaseModule *m;
   uint8_t index = 0;
-  for (m=firstEarlyModule; m; m=m->nextModule) {
-    iotsaBreadcrumbs.setActivity(IOTSA_CRUMB_LOOP, index++);
+  for (m=firstEarlyModule; m; m=m->nextModule, index++) {
+    if (m == skip) continue;
+    iotsaBreadcrumbs.setActivity(IOTSA_CRUMB_LOOP, index);
+    _loopingModule = m;
   	m->loop();
   }
-  for (m=firstModule; m; m=m->nextModule) {
-    iotsaBreadcrumbs.setActivity(IOTSA_CRUMB_LOOP, index++);
+  for (m=firstModule; m; m=m->nextModule, index++) {
+    if (m == skip) continue;
+    iotsaBreadcrumbs.setActivity(IOTSA_CRUMB_LOOP, index);
+    _loopingModule = m;
   	m->loop();
   }
+}
+
+void
+IotsaApplication::aboutToBlock() {
+  if (_inAboutToBlock) return;
+#ifdef ESP32
+  if (xTaskGetCurrentTaskHandle() != _loopTask) return;
+#endif
+  _inAboutToBlock = true;
+  IotsaBaseModule *caller = _loopingModule;
+  uint32_t activity = iotsaBreadcrumbs.activity();
+  iotsaController.tick();
+  _loopModules(caller);
+  _loopingModule = caller;
+  iotsaBreadcrumbs.restoreActivity(activity);
+  _inAboutToBlock = false;
+}
+
+void
+IotsaApplication::loop() {
+  iotsaController.tick();
+  _loopModules(nullptr);
+  _loopingModule = nullptr;
   iotsaBreadcrumbs.setActivity(IOTSA_CRUMB_CORE);
 #ifdef ESP32
   {

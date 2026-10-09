@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The status LED froze during an OTA transfer; it now shows solid cyan for the whole transfer (`IotsaApplication::aboutToBlock()`) (#259)
 - ESP32: the watchdog is now always on (ESP-IDF task watchdog on the loop task, 15 s); it used to be off unless `watchdogDuration` was set, and reset via the interrupt watchdog. `watchdogDuration` is removed; opt out with `IOTSA_WITHOUT_WATCHDOG` (#244)
 - The watchdog stayed paused after a sleep that first had to switch WiFi off (#244)
 - `/api/runmode` (reboot, radios, sleep settings) was unprotected in every app; it now uses the application's authenticator, with reads, `identify`, `postponeSleep` and `requestedMode` open (#284)
