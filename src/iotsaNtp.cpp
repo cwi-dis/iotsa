@@ -128,7 +128,7 @@ bool IotsaNtpMod::putHandler(const char *path, const JsonVariant& request, JsonO
     configSave();
   }
   checkUnhandled(reqObj);
-  return anyChanged;
+  return true;
 }
 
 void IotsaNtpMod::lateSetup() {

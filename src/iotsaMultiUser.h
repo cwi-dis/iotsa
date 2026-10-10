@@ -21,8 +21,8 @@ public:
   void formHandler_TD(String& message, bool includeConfig) override;
   bool formHandler_args(IotsaWebServer *server, const String& name, bool includeConfig) override;
 #endif
-  void getHandler(JsonObject& reply) override;
-  bool putHandler(const JsonVariant& request) override;
+  bool getHandler(JsonObject& reply) override;
+  bool putHandler(const JsonVariant& request, JsonObject& reply) override;
 };
 
 class IotsaMultiUserMod : public IotsaAuthMod {

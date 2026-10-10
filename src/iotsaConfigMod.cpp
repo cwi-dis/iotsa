@@ -342,7 +342,6 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
 
 bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
-  bool radioModeChanged = false;
 
   JsonObject reqObj = request.as<JsonObject>();
   // First look for arguments that are also valid in normal mode.
@@ -352,37 +351,47 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
   bool wifiDisabled;
   if (getFromRequest<int>(reqObj, "wifiDisabled", wifiDisabled)) {
     iotsaController.setWifiRadioEnabled(!wifiDisabled);  // cwi-dis/iotsa#106
-    radioModeChanged = true;
   }
 #ifdef IOTSA_WITH_BLE
   bool bleDisabled;
   if (getFromRequest<int>(reqObj, "bleDisabled", bleDisabled)) {
     iotsaController.setBleRadioEnabled(!bleDisabled);  // cwi-dis/iotsa#106
-    radioModeChanged = true;
   }
 #endif
   int reqModeInt;
   if (getFromRequest<int>(reqObj, "requestedMode", reqModeInt)) {
     // requestMode() writes the pending-mode mailbox itself (cwi-dis/iotsa#106), so no
     // configSave() is needed here even though the early return below skips it.
+    if (reqModeInt < IOTSA_MODE_NORMAL || reqModeInt > IOTSA_MODE_FACTORY_RESET) return apiError(400, "requestedMode: no such mode");
     iotsaController.requestMode(iotsa_mode(reqModeInt));
-    anyChanged = iotsaController.requestedMode() != iotsa_mode(0);
-    if (anyChanged) {
+    if (iotsaController.requestedMode() != iotsa_mode(0)) {
       reply["requestedMode"] = int(iotsaController.requestedMode());
       reply["requestedModeTimeout"] = (iotsaController.requestedModeEndTime() - millis())/1000;
       reply["needsReboot"] = true;
     }
   }
+  bool reboot = false;
+  getFromRequest<bool>(reqObj, "reboot", reboot);   // backward-compat forwarder: /api/runmode is canonical (cwi-dis/iotsa#106)
   if (!iotsaConfigSettingsWritable()) {
-    if (checkUnhandled(reqObj)) {
-      IotsaSerial.println("Unhandled IotsaApi parameters, not in config mode");
+    // The fields below need configuration mode: say so, rather than silently
+    // dropping them (cwi-dis/iotsa#280). Anything else is reported as ignored.
+    static const char *configModeFields[] = {
+      "hostName", "wifiDisabledOnBoot", "bleDisabledOnBoot", "modeTimeout",
+      "defaultCert", "httpsKey", "httpsCertificate"
+    };
+    String needConfig;
+    for (const char *f : configModeFields) {
+      if (reqObj[f].isNull()) continue;
+      if (needConfig.length()) needConfig += ", ";
+      needConfig += f;
     }
-    if (reqObj["reboot"]) {
-      // Backward-compat forwarder: /api/runmode is canonical (cwi-dis/iotsa#106).
-      iotsaController.requestReboot(IotsaController::REBOOT_DELAY_HTTP_MS);
-      anyChanged = true;
+    if (needConfig.length()) {
+      needConfig += ": need configuration mode";
+      return apiError(409, needConfig.c_str());
     }
-    return anyChanged||radioModeChanged;
+    if (reboot) iotsaController.requestReboot(IotsaController::REBOOT_DELAY_HTTP_MS);
+    checkUnhandled(reqObj);
+    return true;
   }
   if (getFromRequest<const char *>(reqObj, "hostName", iotsaConfig.hostName)) {
     anyChanged = true;
@@ -417,8 +426,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
       b64Value += strlen(head);
       *tailPos = '\0';
     } else {
-      IFDEBUG IotsaSerial.println("req httpsKey not PEM");
-      b64Value = "";
+      return apiError(400, "httpsKey: not a PEM RSA private key");
     }
     int b64len = strlen(b64Value);
     IFDEBUG IotsaSerial.println("req has httpsKey");
@@ -430,10 +438,11 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
         newKeyLength = decodedLen;
         anyChanged = true;
       } else {
-        IFDEBUG IotsaSerial.println("could not decode httpsKey");
+        free(tmpValue);
+        return apiError(400, "httpsKey: could not decode");
       }
     } else {
-      IFDEBUG IotsaSerial.println("httpsKey malloc failed");
+      return apiError(500, "httpsKey: out of memory");
     }
   }
   // Allow setting of https certificate as PEM. Note that using POST with file upload will
@@ -450,8 +459,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
       b64Value += strlen(head);
       *tailPos = '\0';
     } else {
-      IFDEBUG IotsaSerial.println("req httpsCertificate not PEM");
-      b64Value = "";
+      return apiError(400, "httpsCertificate: not a PEM certificate");
     }
     int b64len = strlen(b64Value);
     IFDEBUG IotsaSerial.println("req has httpsCertificate");
@@ -463,10 +471,11 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
         newCertificateLength = decodedLen;
         anyChanged = true;
       } else {
-        IFDEBUG IotsaSerial.println("could not decode httpsCertificate");
+        free(tmpValue);
+        return apiError(400, "httpsCertificate: could not decode");
       }
     } else {
-      IFDEBUG IotsaSerial.println("httpsCertificate malloc failed");
+      return apiError(500, "httpsCertificate: out of memory");
     }
   }
 #endif // IOTSA_WITH_HTTPS
@@ -475,15 +484,9 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
     iotsaController.extendCurrentMode();   // an edit happened -> keep the window open (5c)
     iotsaStatus.setStatusPulse(IotsaStatus::COLOUR_MAGENTA, 0, 0, 2000, "Settings saved");  // cwi-dis/iotsa#176
   }
-  if (reqObj["reboot"]) {
-    // Backward-compat forwarder: /api/runmode is canonical (cwi-dis/iotsa#106).
-    iotsaController.requestReboot(IotsaController::REBOOT_DELAY_HTTP_MS);
-    anyChanged = true;
-  }
-  if (checkUnhandled(reqObj)) {
-    IotsaSerial.println("Unhandled IotsaApi parameters");
-  }
-  return anyChanged||radioModeChanged;
+  if (reboot) iotsaController.requestReboot(IotsaController::REBOOT_DELAY_HTTP_MS);
+  checkUnhandled(reqObj);
+  return true;
 }
 #if defined(IOTSA_HAS_WEBSERVER)
 // Raw multipart upload, not a rendered page -- needs only an HTTP transport, not

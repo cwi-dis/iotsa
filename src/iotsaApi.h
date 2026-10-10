@@ -7,8 +7,11 @@ class IotsaApiModObject : public IotsaModObject {
 public:
   virtual ~IotsaApiModObject() {}
 
-  virtual void getHandler(JsonObject& reply) = 0;
-  virtual bool putHandler(const JsonVariant& request) = 0;
+  // The same shape and rules as the module handlers, minus the path
+  // (cwi-dis/iotsa#280): return false (after apiError() if you can say why) on
+  // failure, true otherwise, also when nothing changed.
+  virtual bool getHandler(JsonObject& reply) = 0;
+  virtual bool putHandler(const JsonVariant& request, JsonObject& reply) = 0;
   template <typename JT, typename CT>  bool getFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
     return iotsaGetFromRequest<JT>(reqObj, name, var);
   }

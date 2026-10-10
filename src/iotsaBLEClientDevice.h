@@ -81,7 +81,7 @@ public:
   // numConnectCalls, numConnectSkipped, numConnectAttempts, numConnectFailed,
   // numConnectSucceeded, numConnectionOpen, numConnectionFailed,
   // numConnectionClosedLocally, lastDisconnectReason, lastDisconnectMillisAgo.
-  void getHandler(JsonObject& reply) override;
+  bool getHandler(JsonObject& reply) override;
   // f_name is the usual per-instance config-key/form-field prefix (e.g.
   // "dimmer3"), matching every other IotsaModObject implementation's
   // convention (see e.g. IotsaRequest). Persists/reports/renders name +
@@ -92,7 +92,7 @@ public:
   // Renaming via REST: {"name": "<newName>"}. Nothing else about this
   // object is meaningfully settable from outside (address is discovered,
   // not configured).
-  bool putHandler(const JsonVariant& request) override;
+  bool putHandler(const JsonVariant& request, JsonObject& reply) override;
 #ifdef IOTSA_WITH_WEB
   // Shows a found/connected status line always; the editable name field
   // only when includeConfig (renaming isn't a day-to-day control).

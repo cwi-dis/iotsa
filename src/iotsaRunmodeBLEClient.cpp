@@ -70,16 +70,19 @@ void IotsaRunmodeBLEClient::workAbandoned() {
   pendingCommand = PendingCommand::None;
 }
 
-bool IotsaRunmodeBLEClient::putHandler(const JsonVariant& request) {
-  bool any = IotsaBLEClientDevice::putHandler(request);
-  if (!request.is<JsonObject>()) return any;
+bool IotsaRunmodeBLEClient::putHandler(const JsonVariant& request, JsonObject& reply) {
+  if (!IotsaBLEClientDevice::putHandler(request, reply)) return false;
   const JsonObject& reqObj = request.as<JsonObject>();
-  if (reqObj["identify"] | 0) any |= queueIdentify();
-  if (reqObj["reboot"] | 0) any |= queueReboot();
-  if (reqObj["promoteMode"] | 0) any |= queuePromoteMode();
+  // One command at a time: queueCommand() refuses while one is pending.
+  bool ok = true;
+  bool flag;
+  if (getFromRequest<bool>(reqObj, "identify", flag) && flag) ok &= queueIdentify();
+  if (getFromRequest<bool>(reqObj, "reboot", flag) && flag) ok &= queueReboot();
+  if (getFromRequest<bool>(reqObj, "promoteMode", flag) && flag) ok &= queuePromoteMode();
   bool wifiDisabled;
-  if (getFromRequest<bool>(reqObj, "setWifiDisabled", wifiDisabled)) any |= queueSetWifiDisabled(wifiDisabled);
-  return any;
+  if (getFromRequest<bool>(reqObj, "setWifiDisabled", wifiDisabled)) ok &= queueSetWifiDisabled(wifiDisabled);
+  if (!ok) return apiError(409, "busy: a command for this device is still pending");
+  return true;
 }
 
 #ifdef IOTSA_WITH_WEB

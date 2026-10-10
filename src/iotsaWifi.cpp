@@ -269,7 +269,7 @@ bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, Json
   bool anyChanged = false;
   if (!iotsaConfigSettingsWritable()) {
     IOTSA_LOG_DEBUG_WIFI("iotsaWifi", "wifiConfig write rejected, not in config mode");
-    return false;
+    return apiError(409, "not in configuration mode");
   }
   JsonObject reqObj = request.as<JsonObject>();
   if (getFromRequest<const char *>(reqObj, "ssid", ssid)) {
@@ -286,7 +286,7 @@ bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, Json
   // to ask for a reboot; /api/config keeps it as a backward-compat forwarder.
   // A WiFi credential change takes effect live, so nothing here needs a reboot.
   checkUnhandled(reqObj);
-  return anyChanged;
+  return true;
 }
 
 void IotsaWifiMod::lateSetup() {

@@ -91,37 +91,39 @@ bool IotsaBLEClientCollectionMod::getHandler(const char *path, JsonObject& reply
 }
 
 bool IotsaBLEClientCollectionMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
-  bool anyChanged = IotsaBLEClientMod::putHandler(path, request, reply);
+  if (!IotsaBLEClientMod::putHandler(path, request, reply)) return false;
   JsonObject reqObj = request.as<JsonObject>();
   if (getFromRequest<int>(reqObj, "scan_unknown_duration", scanUnknownDurationMillis)) {
     saveScanConfig();
   }
-  if (reqObj["scanUnknown"]|0) {
+  bool scanUnknown;
+  if (getFromRequest<bool>(reqObj, "scanUnknown", scanUnknown) && scanUnknown) {
     startScanUnknown();
   }
   // Known-devices management (cwi-dis/iotsa#264): add/remove by name, or
   // route a sub-object keyed by an existing device's name to that device's
   // own putHandler() (e.g. renaming, via its cwi-dis/iotsa#268 surface).
-  bool deviceChanged = false;
   String addName;
   if (getFromRequest<String>(reqObj, "add", addName) && addName != "") {
-    if (addDeviceByName(addName.c_str())) deviceChanged = true;
+    addDeviceByName(addName.c_str());
   }
   String removeName;
   if (getFromRequest<String>(reqObj, "remove", removeName) && removeName != "") {
-    if (removeDeviceByName(removeName.c_str())) deviceChanged = true;
+    if (!removeDeviceByName(removeName.c_str())) return apiError(404, "remove: no such device");
   }
   // Snapshot first: a device's own putHandler() may call retarget(), which
   // re-keys `devices` -- mutating a std::map while iterating it directly
   // would be undefined behavior.
   std::vector<std::pair<std::string, IotsaBLEClientDevice*>> snapshot(devices.begin(), devices.end());
   for (auto& kv : snapshot) {
-    JsonVariant devRequest = reqObj[String(kv.first.c_str())];
-    if (devRequest && kv.second->putHandler(devRequest)) {
-      deviceChanged = true;
-    }
+    String key(kv.first.c_str());
+    JsonVariant devRequest = reqObj[key];
+    if (devRequest.isNull()) continue;
+    if (!kv.second->putHandler(devRequest, reply)) return false;
+    reqObj.remove(key);
   }
-  return anyChanged || deviceChanged;
+  checkUnhandled(reqObj);
+  return true;
 }
 
 #ifdef IOTSA_WITH_WEB
