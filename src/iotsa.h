@@ -5,6 +5,7 @@
 #include "iotsaBuildOptions.h"
 #include <Print.h>
 #include <functional>
+#include <vector>
 
 // How long a maintenance mode (config / OTA) stays open before auto-expiring, in
 // seconds. Seeds IotsaController::_modeTimeout; config.cfg's "rebootTimeout" key
@@ -81,10 +82,6 @@ public:
   // setAuth(), getAuth() returns a provider that allows everything.
   void setAuth(IotsaAuthenticationProvider *auth) { _auth = auth; }
   IotsaAuthenticationProvider *getAuth();
-  // Set when an authentication check fails: the authenticator has then already
-  // sent its own response (e.g. 401), so the REST transport must not send another
-  // when the handler returns. Reset by the transport before each handler call.
-  bool requestDenied = false;
   void setup();
   void lateSetup();
   void loop();
@@ -193,27 +190,65 @@ public:
 };
 
 // Fetch field `name` from an API request into `var`, if it has JSON type JT.
+//
+// Outcome of the API request being handled (cwi-dis/iotsa#280). A handler that
+// fails calls iotsaApiError() (or the apiError() member) and returns false; the
+// transport turns that into a status code and a {"iotsa_api_error": "..."} body,
+// the same over REST, HPS and CoAP. Fields a handler didn't use are reported in
+// the reply as "iotsa_api_ignored" (see checkUnhandled()). All handlers run in the
+// loop task, one request at a time (#236), so one global is enough.
+//
+struct IotsaApiResult {
+  const char *transport = "";
+  const char *method = "";
+  String path;
+  int status = 0;                  // 0: no error recorded
+  String message;
+  bool authResponded = false;      // the auth provider already sent its own reply (REST)
+  std::vector<String> wrongType;   // fields present with the wrong type
+  std::vector<String> ignored;     // fields the handler didn't use
+};
+extern IotsaApiResult iotsaApiResult;
+// Record an error for the request being handled. Always returns false, so a
+// handler can `return iotsaApiError(409, "not in configuration mode");`.
+bool iotsaApiError(int status, const char *message);
+// Called by the transports around a request: begin resets the result and logs the
+// request, end decides the status, fills body (the reply, or the error) and logs
+// the outcome. ok is the handler's return value.
+void iotsaApiBegin(const char *transport, const char *method, const char *path);
+int iotsaApiEnd(bool ok, JsonDocument& replyDocument, String& body);
+void _iotsaApiNoteType(const char *name, bool rightType);
+
 // The single implementation behind every getFromRequest() member (#261).
 // A bool target accepts both a JSON bool and a JSON integer, whatever JT
-// says, so both `true` and `1` work for every boolean field.
+// says, so both `true` and `1` work for every boolean field. A field that is
+// present with the wrong type makes the request fail with 400 (#280), unless a
+// later getFromRequest() of the same field (with another type) succeeds.
 template <typename JT, typename CT> bool iotsaGetFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
   // Not via a JsonVariantConst: CT can be a mutable JsonArray/JsonObject.
-  if (!reqObj[name].is<JT>()) return false;
+  if (reqObj[name].isNull()) return false;
+  if (!reqObj[name].is<JT>()) {
+    _iotsaApiNoteType(name, false);
+    return false;
+  }
+  _iotsaApiNoteType(name, true);
   var = reqObj[name].as<CT>();
   return true;
 }
 
 template <typename JT> bool iotsaGetFromRequest(const JsonObject& reqObj, const char *name, bool& var) {
   JsonVariantConst v = reqObj[name];
+  if (v.isNull()) return false;
   if (v.is<bool>()) {
     var = v.as<bool>();
-    return true;
-  }
-  if (v.is<int>()) {
+  } else if (v.is<int>()) {
     var = (v.as<int>() != 0);
-    return true;
+  } else {
+    _iotsaApiNoteType(name, false);
+    return false;
   }
-  return false;
+  _iotsaApiNoteType(name, true);
+  return true;
 }
 
 //
@@ -240,6 +275,7 @@ public:
   template <typename JT, typename CT>  bool getFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
     return iotsaGetFromRequest<JT>(reqObj, name, var);
   }
+  static bool apiError(int status, const char *message) { return iotsaApiError(status, message); }
 };
 
 //

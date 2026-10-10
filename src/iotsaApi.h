@@ -12,6 +12,7 @@ public:
   template <typename JT, typename CT>  bool getFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
     return iotsaGetFromRequest<JT>(reqObj, name, var);
   }
+  static bool apiError(int status, const char *message) { return iotsaApiError(status, message); }
 };
 
 class IotsaApiServiceProvider {
@@ -110,11 +111,13 @@ protected:
     reqObj.remove(name);
     return true;
   }
+  // Reports the fields still in reqObj (the ones getFromRequest() didn't consume)
+  // as "iotsa_api_ignored" in the reply (cwi-dis/iotsa#280). Returns true if any.
   bool checkUnhandled(const JsonObject& reqObj) {
     bool rv = false;
     for (JsonPair kv : reqObj) {
       rv = true;
-      IFDEBUG IotsaSerial.printf("Unhandled IotsaApi parameter: %s\n", kv.key().c_str());
+      iotsaApiResult.ignored.push_back(kv.key().c_str());
     }
     return rv;
   }
