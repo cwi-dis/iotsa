@@ -25,12 +25,12 @@ bool IotsaHelloMod::getHandler(const char *path, JsonObject& reply) {
 }
 
 bool IotsaHelloMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
-  JsonVariant arg = request["greeting"];
-  if (arg.is<const char*>()) {
-    greeting = arg.as<String>();
-    return true;
-  }
-  return false;
+  JsonObject reqObj = request.as<JsonObject>();
+  getFromRequest<const char *>(reqObj, "greeting", greeting);
+  // Anything else in the request is reported back as "iotsa_api_ignored".
+  checkUnhandled(reqObj);
+  // Success, also when nothing changed. On an error, return apiError(status, "why").
+  return true;
 }
 
 void IotsaHelloMod::lateSetup() {
