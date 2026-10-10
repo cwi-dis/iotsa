@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `IotsaConfigFileLoad::get()` returns whether the key was present (#39)
 - Breadcrumbs: what the device was doing before a watchdog reset, crash or reboot survives in RTC memory and shows on `/api/status` (#276)
 - `tests/Fault`: a test sketch whose module deliberately blocks `loop()`, a handler or a BLE callback, sends huge replies or crashes, on request (#285)
 - `iotsaLog.h`: `IOTSA_LOG`, `IOTSA_LOG_DEBUG` and per-subsystem `IOTSA_LOG_DEBUG_<X>` macros; debug logging can be switched off per device (`debugLog` on `/api/runmode`) (#182)

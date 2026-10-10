@@ -19,59 +19,66 @@ IotsaConfigFileLoad::~IotsaConfigFileLoad() {
   fp.close();
 }
 
-void IotsaConfigFileLoad::get(String name, int &value, int def) {
+bool IotsaConfigFileLoad::get(String name, int &value, int def) {
   String sValue;
   String sDef = String(def);
-  get(name, sValue, sDef);
+  bool found = get(name, sValue, sDef);
   value = sValue.toInt();
+  return found;
 }
 
-void IotsaConfigFileLoad::get(String name, uint32_t &value, uint32_t def) {
+bool IotsaConfigFileLoad::get(String name, uint32_t &value, uint32_t def) {
   String sValue;
   String sDef = String(def);
-  get(name, sValue, sDef);
+  bool found = get(name, sValue, sDef);
   value = (uint32_t)sValue.toInt();
+  return found;
 }
 
-void IotsaConfigFileLoad::get(String name, uint16_t &value, uint16_t def) {
+bool IotsaConfigFileLoad::get(String name, uint16_t &value, uint16_t def) {
   int iDef = (int)def;
   int iValue;
-  get(name, iValue, iDef);
+  bool found = get(name, iValue, iDef);
   value = (uint16_t)iValue;
+  return found;
 }
 
-void IotsaConfigFileLoad::get(String name, uint8_t &value, uint8_t def) {
+bool IotsaConfigFileLoad::get(String name, uint8_t &value, uint8_t def) {
   int iDef = (int)def;
   int iValue;
-  get(name, iValue, iDef);
+  bool found = get(name, iValue, iDef);
   value = (uint8_t)iValue;
+  return found;
 }
 
-void IotsaConfigFileLoad::get(String name, bool &value, bool def) {
+bool IotsaConfigFileLoad::get(String name, bool &value, bool def) {
   int iDef = (int)def;
   int iValue;
-  get(name, iValue, iDef);
+  bool found = get(name, iValue, iDef);
   value = (bool)iValue;
+  return found;
 }
 
-void IotsaConfigFileLoad::get(String name, float &value, float def) {
+bool IotsaConfigFileLoad::get(String name, float &value, float def) {
   String sValue;
   String sDef = String(def);
-  get(name, sValue, sDef);
+  bool found = get(name, sValue, sDef);
   value = sValue.toFloat();
+  return found;
 }
 
-void IotsaConfigFileLoad::get(String name, String &value, const String &def) {
-  get(name, value, def.c_str());
+bool IotsaConfigFileLoad::get(String name, String &value, const String &def) {
+  return get(name, value, def.c_str());
 }
 
-void IotsaConfigFileLoad::get(String name, std::string &value, const std::string &def) {
+bool IotsaConfigFileLoad::get(String name, std::string &value, const std::string &def) {
   String sValue;
-  get(name, sValue, def.c_str());
+  bool found = get(name, sValue, def.c_str());
   value = sValue.c_str();
+  return found;
 }
 
-void IotsaConfigFileLoad::get(String name, String &value, const char *def) {
+bool IotsaConfigFileLoad::get(String name, String &value, const char *def) {
   fp.seek(0, SeekSet);
   while (fp.available()) {
     String configName = fp.readStringUntil('=');
@@ -85,12 +92,13 @@ void IotsaConfigFileLoad::get(String name, String &value, const char *def) {
       IFDEBUG IotsaSerial.print("cfload: found ");
       IFDEBUG IotsaSerial.println(name);
       value = configValue;
-      return;
+      return true;
     }
   }
   IFDEBUG IotsaSerial.print("cfload: did not find ");
   IFDEBUG IotsaSerial.println(name);
   value = String(def);
+  return false;
 }
 
 IotsaConfigFileSave::IotsaConfigFileSave(String filename) {
