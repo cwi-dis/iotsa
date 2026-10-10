@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- API errors say why: handlers `return apiError(status, "why")` (404, 409 not in configuration mode, ...), replies `{"iotsa_api_error": ...}` over REST/HPS/CoAP; unused fields are reported as `iotsa_api_ignored`, the CLI prints both (#280)
 - `IotsaConfigFileLoad::get()` returns whether the key was present (#39)
 - Breadcrumbs: what the device was doing before a watchdog reset, crash or reboot survives in RTC memory and shows on `/api/status` (#276)
 - `tests/Fault`: a test sketch whose module deliberately blocks `loop()`, a handler or a BLE callback, sends huge replies or crashes, on request (#285)
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A PUT that changed nothing answered 400; setting `scan_interval`/`scan_window` over REST set them to 0; BLE could not be re-enabled over REST (`isEnabled`) (#280)
 - BLE handlers (including the whole REST API over HPS), scan results and notifications ran on the NimBLE task, racing with `loop()`; they now run in the loop task (`IotsaApplication::postToLoop()`/`runInLoop()`) (#236)
 - BLE client links use a 7.5-15 ms connection interval instead of 30-50 ms: `doWork()` holds `loop()` about 3x shorter (#274)
 - The status LED froze during an OTA transfer; it now shows solid cyan for the whole transfer (`IotsaApplication::aboutToBlock()`) (#259)
@@ -58,6 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `IotsaApiModObject` handlers have the module handlers' shape: `bool getHandler(reply)`, `bool putHandler(request, reply)` (hard break) (#280)
 - `IOTSA_WIFI_DEBUG` is now `IOTSA_DEBUG_WIFI` (#182)
 - The status LED is created automatically from the board definition (`IOTSA_PIN_LED`, `IOTSA_LED_NEOPIXEL`, `IOTSA_LED_ACTIVE_LOW`, replacing `IOTSA_PIN_NEOPIXEL`), and can be a plain LED; `-DIOTSA_WITHOUT_STATUS_LED` opts out (#272)
 - The WiFi and OTA modules are created automatically; sketches no longer need to declare them. `-DIOTSA_WITHOUT_OTA` leaves OTA out (#85)

@@ -175,6 +175,27 @@ All module code (`setup()`, `loop()`, the API handlers, the BLE handlers) runs i
   (OTA, #259). Outbound HTTP (`IotsaRequest::send()`) can hold it ~10 s; a BLE client's
   `doWork()` ~150 ms (#274, #287).
 
+## API results (#280)
+
+Module handlers (`get`/`put`/`postHandler(path, ...)`) and sub-object handlers
+(`IotsaApiModObject`: `getHandler(reply)`, `putHandler(request, reply)`) return `bool`:
+
+- **`true` on success**, also when nothing changed.
+- **On failure `return apiError(status, "why")`**. A bare `false` is a 400 "bad request".
+  Statuses: 400 the request is wrong, 401/403 authentication / not allowed, 404 no such path
+  or object, 409 wrong mode (e.g. "not in configuration mode"), 413 too big, 500 internal,
+  503 busy.
+- **A field with the wrong type** is a 400 automatically: `getFromRequest()` notes it (a later
+  successful `getFromRequest()` of the same field, with another type, cancels it).
+- **Unused fields** are not an error: a module that calls `checkUnhandled(reqObj)` gets them
+  listed as `"iotsa_api_ignored": [...]` in the reply (restoring an old backup keeps working;
+  the CLI warns). Sub-objects don't report them yet.
+- **Error replies** are `{"iotsa_api_error": "<message>"}`, with the status, over REST, HPS
+  and CoAP alike (CoAP: 409 -> 4.09). The CLI prints the message.
+
+The transports share `iotsaApiBegin()` / `iotsaApiEnd()` (`iotsaApi.cpp`), which also log
+every request in two lines (#182): `iotsaApi: rest: PUT /api/config` and `... -> 409 ...`.
+
 ## Transition strategy
 
 Cross-version compatibility is worth carrying **only for the REST `/api/config` mode
