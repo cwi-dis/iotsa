@@ -75,10 +75,9 @@
 #ifdef IOTSA_WITHOUT_API
 #error "IOTSA_WITHOUT_API has been removed (cwi-dis/iotsa#225): API handlers are always compiled. To leave out a transport use IOTSA_WITHOUT_REST or IOTSA_WITHOUT_HPS, or do not enable IOTSA_WITH_COAP."
 #endif
-// Always defined now. Kept only so that remaining `#ifdef IOTSA_WITH_API` guards
-// (downstream) still compile their code instead of silently dropping it; those
-// guards should go (cwi-dis/iotsa#225), after which this define can be removed.
-#define IOTSA_WITH_API
+// IOTSA_WITH_API is gone too: no code in iotsa or its downstream repos tests it
+// any more (cwi-dis/iotsa#225). Code that still has `#ifdef IOTSA_WITH_API`
+// guards would now silently leave out its API handlers.
 
 // ---- Stage 3: default-off WITH flags (opt in directly; nothing here defines them) ----
 
