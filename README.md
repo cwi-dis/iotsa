@@ -174,6 +174,16 @@ example/test builds honest for that board. (Sharing `iotsa-board-traits.ini`/`io
 with those repos directly, instead of copying choices out of them by hand, is still an
 open idea -- see #222.)
 
+**Careful with `pio pkg install`/`pio pkg update -l <library>`** (in iotsa and in
+downstream repos alike). Unless you add `--no-save`, PlatformIO saves the library into
+the env's own `lib_deps` and rewrites the whole `platformio.ini`. With this layout,
+where envs inherit `lib_deps` (and much else) through `extends` from shared sections,
+that new env-level `lib_deps` *replaces* the inherited list: other libraries (e.g.
+Adafruit GFX, NeoPixelBus in lissabon) silently disappear from the build. To get the
+newest iotsa `develop` into a project, delete `.pio/libdeps/<env>/iotsa` and let the next
+`pio run` fetch it, or use `--no-save`. After any `pio pkg` command, check `git status`
+for modified `platformio.ini` files.
+
 ### Both Arduino IDE and PlatformIO
 
 On reboot, the board will first initialize the LittleFS flash filesystem (if needed) and then create a WiFi network with a name similar to _config-iotsa1234_. Connect a device to that network and visit <http://192.168.4.1>. Configure your device name (at <http://192.168.4.1/config>) and WiFi name and password (at <http://192.168.4.1/wificonfig>), and after reboot the iotsa board should connect to your network and be visible as <http://yourdevicename.local>.
