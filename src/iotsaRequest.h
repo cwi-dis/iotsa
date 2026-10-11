@@ -26,8 +26,8 @@ public:
   void formHandler_TD(String& message, bool includeConfig) override;
   bool formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig) override;
 #endif
-  void getHandler(JsonObject& reply) override;
-  bool putHandler(const JsonVariant& request) override;
+  bool getHandler(JsonObject& reply) override;
+  bool putHandler(const JsonVariant& request, JsonObject& reply) override;
   String url;
   String sslInfo; // PEM root CA cert for https:// urls (both ESP32 and ESP8266)
   String credentials;

@@ -221,28 +221,20 @@ bool IotsaRequest::send(const char *query, String *responseBody) {
   return rv;
 }
 
-void IotsaRequest::getHandler(JsonObject& reply) {
+bool IotsaRequest::getHandler(JsonObject& reply) {
   reply["url"] = url;
   reply[SSL_INFO_NAME] = sslInfo;
   reply["hasCredentials"] = credentials != "";
   reply["hasToken"] = token != "";
+  return true;
 }
 
-bool IotsaRequest::putHandler(const JsonVariant& request) {
-  if (!request.is<JsonObject>()) return false;
-  bool any = false;
+bool IotsaRequest::putHandler(const JsonVariant& request, JsonObject& reply) {
+  if (!request.is<JsonObject>()) return apiError(400, "expected an object");
   const JsonObject& reqObj = request.as<JsonObject>();
-  if (getFromRequest<const char *>(reqObj, "url", url)) {
-    any = true;
-  }
-  if (getFromRequest<const char *>(reqObj, SSL_INFO_NAME, sslInfo)) {
-    any = true;
-  }
-  if (getFromRequest<const char *>(reqObj, "credentials", credentials)) {
-    any = true;
-  }
-  if (getFromRequest<const char *>(reqObj, "token", token)) {
-    any = true;
-  }
-  return any;
+  getFromRequest<const char *>(reqObj, "url", url);
+  getFromRequest<const char *>(reqObj, SSL_INFO_NAME, sslInfo);
+  getFromRequest<const char *>(reqObj, "credentials", credentials);
+  getFromRequest<const char *>(reqObj, "token", token);
+  return true;
 }

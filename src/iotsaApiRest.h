@@ -19,8 +19,6 @@ private:
   IotsaApiProvider* provider; 
   IotsaApplication& app;
   IotsaWebServer* server;
-  void _getHandlerWrapper(const char *path);
-  void _putHandlerWrapper(const char *path);
-  void _postHandlerWrapper(const char *path);
+  void _handle(IotsaApiOperation verb, const char *path);
 };
 #endif

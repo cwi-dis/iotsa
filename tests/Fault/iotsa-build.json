@@ -9,20 +9,25 @@
   "variants": [
     {
       "board": "vanilla_esp8266",
-      "_note": "No BLE on ESP8266: only the loop/handler/size/crash faults."
+      "_note": "No BLE on ESP8266: only the loop/handler/size/crash faults.",
+      "build_flags": [
+        "-DIOTSA_WITH_COAP"
+      ]
     },
     {
       "board": "vanilla_esp32",
       "build_flags": [
         "-DIOTSA_WITH_BLE",
-        "-DIOTSA_DEBUG_BLE"
+        "-DIOTSA_DEBUG_BLE",
+        "-DIOTSA_WITH_COAP"
       ]
     },
     {
       "board": "vanilla_esp32c3",
       "build_flags": [
         "-DIOTSA_WITH_BLE",
-        "-DIOTSA_DEBUG_BLE"
+        "-DIOTSA_DEBUG_BLE",
+        "-DIOTSA_WITH_COAP"
       ]
     }
   ]

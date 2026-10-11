@@ -44,7 +44,7 @@ public:
   // Adds name/bleAddress/rssi/lastSeenMillisAgo to reply (the last two only if
   // we've ever actually seen an advertisement). Subclasses extend this
   // (calling it first) to add their own fields.
-  virtual void getHandler(JsonObject& reply);
+  virtual bool getHandler(JsonObject& reply);
 protected:
   // Never portMAX_DELAY: bounds how long any caller (including loop()) can
   // possibly wait on bleAddressMutex, so a stuck holder degrades to a skipped

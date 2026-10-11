@@ -63,7 +63,7 @@ bool IotsaBLEDeviceInfo::receivedAdvertisement(const NimBLEAdvertisedDevice& _de
   return changed;
 }
 
-void IotsaBLEDeviceInfo::getHandler(JsonObject& reply) {
+bool IotsaBLEDeviceInfo::getHandler(JsonObject& reply) {
   reply["name"] = bleName;
   std::string addr = getAddress();
   if (addr != "") reply["address"] = String(addr.c_str()); // REST field name unchanged by the bleAddress rename -- wire API, not internal naming
@@ -71,6 +71,7 @@ void IotsaBLEDeviceInfo::getHandler(JsonObject& reply) {
     reply["rssi"] = rssi;
     reply["lastSeenMillisAgo"] = millis() - lastSeenAtMillis;
   }
+  return true;
 }
 
 #endif // IOTSA_WITH_BLE

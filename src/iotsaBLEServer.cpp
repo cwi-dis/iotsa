@@ -336,7 +336,9 @@ bool IotsaBLEServerMod::putHandler(const char *path, const JsonVariant& request,
   bool newEnabled = isEnabled;
   if (getFromRequest<int>(reqObj, "isEnabled", newEnabled) && newEnabled != isEnabled) {
     anyChanged = true;
-    isEnabled = request["isEnabled"];
+    // (Used to read request["isEnabled"] again here, after getFromRequest()
+    // had consumed it, so BLE could never be switched back on.)
+    isEnabled = newEnabled;
     iotsaController.requestReboot(REBOOT_DELAY_BLE_REINIT_MS);
   }
   if (getFromRequest<int>(reqObj, "adv_min", adv_min)) anyChanged = true;
@@ -345,7 +347,7 @@ bool IotsaBLEServerMod::putHandler(const char *path, const JsonVariant& request,
   if (getFromRequest<int>(reqObj, "idle_timeout", idle_timeout)) anyChanged = true;
   if (anyChanged) configSave();
   checkUnhandled(reqObj);
-  return anyChanged;
+  return true;
 }
 
 void IotsaBLEServerMod::lateSetup() {

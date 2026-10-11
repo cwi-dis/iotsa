@@ -107,14 +107,13 @@ bool IotsaRtcMod::getHandler(const char *path, JsonObject& reply) {
 }
 
 bool IotsaRtcMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
-  bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
   const char *time = nullptr;
   if (getFromRequest<const char *>(reqObj, "isoTime", time)) {
-    anyChanged = setIsoTime(time);
+    if (!setIsoTime(time)) return apiError(400, "isoTime: not an ISO 8601 time");
   }
   checkUnhandled(reqObj);
-  return anyChanged;
+  return true;
 }
 
 void IotsaRtcMod::lateSetup() {

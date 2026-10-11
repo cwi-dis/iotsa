@@ -445,13 +445,12 @@ bool IotsaRunmodeMod::getHandler(const char *path, JsonObject& reply) {
 }
 
 bool IotsaRunmodeMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
-  bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
   // Anything beyond the open fields needs the config right, and then the whole
   // request is refused before anything is executed (cwi-dis/iotsa#284).
   for (JsonPair kv : reqObj) {
     if (!isOpenField(kv.key().c_str())) {
-      if (needsAuthentication("config")) return false;
+      if (needsAuthentication("config")) return apiError(401, "needs the config right");
       break;
     }
   }
@@ -459,17 +458,16 @@ bool IotsaRunmodeMod::putHandler(const char *path, const JsonVariant& request, J
   bool wifiDisabled;
   if (getFromRequest<int>(reqObj, "wifiDisabled", wifiDisabled)) {
     iotsaController.setWifiRadioEnabled(!wifiDisabled);
-    anyChanged = true;
   }
 #ifdef IOTSA_WITH_BLE
   bool bleDisabled;
   if (getFromRequest<int>(reqObj, "bleDisabled", bleDisabled)) {
     iotsaController.setBleRadioEnabled(!bleDisabled);
-    anyChanged = true;
   }
 #endif
   int reqModeInt;
   if (getFromRequest<int>(reqObj, "requestedMode", reqModeInt)) {
+    if (reqModeInt < IOTSA_MODE_NORMAL || reqModeInt > IOTSA_MODE_FACTORY_RESET) return apiError(400, "requestedMode: no such mode");
     // requestMode() writes the pending-mode mailbox itself (cwi-dis/iotsa#106).
     iotsaController.requestMode(iotsa_mode(reqModeInt));
     if (iotsaController.requestedMode() != iotsa_mode(0)) {
@@ -477,27 +475,23 @@ bool IotsaRunmodeMod::putHandler(const char *path, const JsonVariant& request, J
       reply["requestedModeTimeout"] = (iotsaController.requestedModeEndTime() - millis())/1000;
       reply["needsReboot"] = true;
     }
-    anyChanged = true;
   }
-  if (reqObj["reboot"]) {
+  bool flag;
+  if (getFromRequest<bool>(reqObj, "reboot", flag) && flag) {
     iotsaController.requestReboot(IotsaController::REBOOT_DELAY_HTTP_MS);
-    anyChanged = true;
   }
-  if (reqObj["identify"]) {
+  if (getFromRequest<bool>(reqObj, "identify", flag) && flag) {
     _pendingIdentify = true;   // cwi-dis/iotsa#133; acted on in loop(), no auth
-    anyChanged = true;
   }
   if (getFromRequest<bool>(reqObj, "debugLog", iotsaLogDebugEnabled)) {
     configSave();
-    anyChanged = true;
   }
 #ifdef IOTSA_HAS_SLEEP
   IotsaSleepPolicy& sp = iotsaController.sleep();
   bool sleepChanged = false;
   int intValue;
-  if (reqObj["postponeSleep"].is<int>()) {
-    iotsaController.postponeSleep(reqObj["postponeSleep"].as<int>());
-    anyChanged = true;
+  if (getFromRequest<int>(reqObj, "postponeSleep", intValue)) {
+    iotsaController.postponeSleep(intValue);
   }
   if (getFromRequest<int>(reqObj, "sleepMode", intValue))              { _sleepConfig.mode = (IotsaSleepMode)intValue; sleepChanged = true; }
   if (getFromRequest<int>(reqObj, "sleepDuration", _sleepConfig.sleepDuration))  { sleepChanged = true; }
@@ -513,15 +507,12 @@ bool IotsaRunmodeMod::putHandler(const char *path, const JsonVariant& request, J
   if (getFromRequest<int>(reqObj, "cpuFrequency", intValue)) {
     setCpuFrequencyMhz(intValue);
     IFDEBUG IotsaSerial.printf("Set CPU frequency to %d MHz\n", intValue);
-    anyChanged = true;
   }
 #endif
-  if (sleepChanged) { configSave(); anyChanged = true; }
+  if (sleepChanged) configSave();
 #endif // IOTSA_HAS_SLEEP
-  if (checkUnhandled(reqObj)) {
-    IotsaSerial.println("Unhandled IotsaApi parameters for /api/runmode");
-  }
-  return anyChanged;
+  checkUnhandled(reqObj);
+  return true;
 }
 
 #ifdef IOTSA_WITH_BLE

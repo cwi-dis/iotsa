@@ -43,7 +43,7 @@ public:
   bool queueReboot();
   bool queuePromoteMode();
   bool queueSetWifiDisabled(bool disabled);
-  bool putHandler(const JsonVariant& request) override;
+  bool putHandler(const JsonVariant& request, JsonObject& reply) override;
 #ifdef IOTSA_WITH_WEB
   void formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) override;
   bool formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig) override;

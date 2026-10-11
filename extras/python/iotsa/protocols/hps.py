@@ -5,7 +5,7 @@ import urllib.parse
 import urllib.request
 import json as jsonmod
 
-from .abstract import IotsaAbstractProtocolHandler
+from .abstract import IotsaAbstractProtocolHandler, apiErrorMessage, checkApiReply
 from ..consts import VERBOSE, IotsaError, HpsError
 from ..ble import BLE
 
@@ -105,7 +105,14 @@ class IotsaHPSProtocolHandler(IotsaAbstractProtocolHandler):
         if VERBOSE:
             print(f"HPS HTTP Status={httpStatus}, dataStatus=0x{dataStatus:x}")
         if httpStatus != 200:
-            raise HpsError(f"hps://{self.bleServer}{endpoint}: HPS status code {httpStatus}")
+            # The error body says why (cwi-dis/iotsa#280); older firmware sends none.
+            msg = None
+            try:
+                errBytes = self.client.getStreamed("hpsBody") if self.chunking else self.client.get("hpsBody")
+                msg = apiErrorMessage(errBytes)
+            except Exception:
+                pass
+            raise HpsError(f"hps://{self.bleServer}{endpoint}: HPS status code {httpStatus}" + (f": {msg}" if msg else ""))
         if dataStatus != 0 and dataStatus != 0x04:
             raise HpsError(f"hps://{self.bleServer}{endpoint}: HPS data status=0x{dataStatus:x}")
         if self.chunking:
@@ -118,7 +125,7 @@ class IotsaHPSProtocolHandler(IotsaAbstractProtocolHandler):
             return None
         if VERBOSE:
             print(f"HPS {method} returned {rvBytes}")
-        return jsonmod.loads(rvBytes)
+        return checkApiReply(jsonmod.loads(rvBytes), f"{method} {endpoint}")
 
     def get(self, endpoint, json=None):
         return self.request("GET", endpoint, json=json)

@@ -8,15 +8,17 @@ public:
   IotsaConfigFileLoad(String filename);
   IotsaConfigFileLoad(const char *filename);
   ~IotsaConfigFileLoad();
-  void get(String name, int &value, int def);
-  void get(String name, uint32_t &value, uint32_t def);
-  void get(String name, uint16_t &value, uint16_t def);
-  void get(String name, uint8_t &value, uint8_t def);
-  void get(String name, bool &value, bool def);
-  void get(String name, float &value, float def);
-  void get(String name, String &value, const char *def);
-  void get(String name, String &value, const String &def);
-  void get(String name, std::string &value, const std::string &def);
+  // Each get() returns whether the key was present; if not, value is set to def
+  // (cwi-dis/iotsa#39). That allows falling back to an older key name.
+  bool get(String name, int &value, int def);
+  bool get(String name, uint32_t &value, uint32_t def);
+  bool get(String name, uint16_t &value, uint16_t def);
+  bool get(String name, uint8_t &value, uint8_t def);
+  bool get(String name, bool &value, bool def);
+  bool get(String name, float &value, float def);
+  bool get(String name, String &value, const char *def);
+  bool get(String name, String &value, const String &def);
+  bool get(String name, std::string &value, const std::string &def);
 protected:
   File fp;
 };

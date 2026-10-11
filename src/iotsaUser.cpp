@@ -103,19 +103,19 @@ bool IotsaUserMod::getHandler(const char *path, JsonObject& reply) {
 
 bool IotsaUserMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   // PUT to /api/users is equivalent to POST /api/users/0 (because of iotsaControl issues)
-  if (strcmp(path, "/api/users") != 0) return false;
+  if (strcmp(path, "/api/users") != 0) return apiError(404, "not found");
   return putHandler("/api/users/0", request, reply);
 }
 
 bool IotsaUserMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
-  if (strcmp(path, "/api/users/0") != 0) return false;
-  if (!iotsaController.inConfigurationMode()) return false;
+  if (strcmp(path, "/api/users/0") != 0) return apiError(404, "not found");
+  if (!iotsaController.inConfigurationMode()) return apiError(409, "not in configuration mode");
   bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
   // Check old password, if a password has been set.
   if (password) {
     String old = reqObj["old_password"].as<String>();
-    if (old != password) return false;
+    if (old != password) return apiError(403, "wrong old_password");
   }
   if (getFromRequest<const char *>(reqObj, "username", username)) {
     anyChanged = true;
@@ -124,7 +124,7 @@ bool IotsaUserMod::putHandler(const char *path, const JsonVariant& request, Json
     anyChanged = true;
   }
   if (anyChanged) configSave();
-  return anyChanged;
+  return true;
 }
 
 void IotsaUserMod::setup() {

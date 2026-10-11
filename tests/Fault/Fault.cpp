@@ -139,30 +139,27 @@ bool IotsaFaultMod::getHandler(const char *path, JsonObject& reply) {
 bool IotsaFaultMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   reply["millisStart"] = millis();
   JsonObject reqObj = request.as<JsonObject>();
-  bool any = false;
   uint32_t blockHandler = 0;
-  if (getFromRequest<int>(reqObj, "blockLoop", _blockLoopOnce)) any = true;
-  if (getFromRequest<int>(reqObj, "blockLoopEvery", _blockLoopEvery)) any = true;
+  getFromRequest<int>(reqObj, "blockLoop", _blockLoopOnce);
+  getFromRequest<int>(reqObj, "blockLoopEvery", _blockLoopEvery);
   uint32_t ble;
-  if (getFromRequest<int>(reqObj, "blockBle", ble)) { _blockBle = ble; any = true; }
-  if (getFromRequest<int>(reqObj, "replySize", _replySize)) any = true;
-  if (getFromRequest<bool>(reqObj, "crash", _crash)) any = true;
-  if (getFromRequest<bool>(reqObj, "breadcrumbs", iotsaBreadcrumbsEnabled)) any = true;
+  if (getFromRequest<int>(reqObj, "blockBle", ble)) _blockBle = ble;
+  getFromRequest<int>(reqObj, "replySize", _replySize);
+  getFromRequest<bool>(reqObj, "crash", _crash);
+  getFromRequest<bool>(reqObj, "breadcrumbs", iotsaBreadcrumbsEnabled);
   const char *payload = nullptr;
   if (getFromRequest<const char *>(reqObj, "payload", payload)) {
     reply["payloadLength"] = payload ? strlen(payload) : 0;
-    any = true;
   }
   if (getFromRequest<int>(reqObj, "blockHandler", blockHandler)) {
     IotsaActivityScope activity(CRUMB_BLOCK_HANDLER);
     IOTSA_LOG("fault", "handler block %lu ms start, millis=%lu", (unsigned long)blockHandler, (unsigned long)millis());
     busyWait(blockHandler);
     IOTSA_LOG("fault", "handler block end, millis=%lu", (unsigned long)millis());
-    any = true;
   }
   checkUnhandled(reqObj);
   reply["millisEnd"] = millis();
-  return any;
+  return true;
 }
 
 #ifdef IOTSA_WITH_BLE

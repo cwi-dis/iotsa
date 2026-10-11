@@ -207,9 +207,8 @@ protected:
 
   int _processRequest(HPSControl command, bool chunking) {
     IotsaActivityScope activity(IOTSA_CRUMB_REQUEST, IOTSA_CRUMB_HPS);
-    IFDEBUG IotsaSerial.printf("HPS 0x%02x %s chunking=%d\n", (int)command, curUrl.c_str(), (int)chunking);
-    // Every reply generated from here on (including the early-return error paths
-    // below) is read back under this request's chunking mode.
+    // Every reply generated from here on (including the error replies) is read
+    // back under this request's chunking mode.
     curReplyIsChunked = chunking;
     curBodyReadOffset = 0;
     // The request body itself: the full chunked accumulation if the client asked for
@@ -219,65 +218,49 @@ protected:
     bool cmd_get = command == HPSControl::GET;
     bool cmd_put = command == HPSControl::PUT;
     bool cmd_post = command == HPSControl::POST;
-    if (!cmd_get && !cmd_put && !cmd_post) {
-      IotsaSerial.printf("IotsaHpsServiceMod: bad command 0x%02x\n", command);
-      curDataStatus = HPSDataStatus::EMPTY;
-      curBody = "";
-      return 400;
-    }
     const char *url_c = curUrl.c_str();
-    IotsaApiProvider* provider = nullptr;
-    std::list<IotsaHpsServiceEntryPoint *>&epList =
-      (cmd_get ? getEntryPoints :
-      cmd_put ? putEntryPoints :
-                postEntryPoints);
-    for(IotsaHpsServiceEntryPoint* ep : epList) {
-      if (ep->api_path == url_c) {
-        provider = ep->provider;
-      }
-    }
-    if (provider == nullptr) {
-      IotsaSerial.printf("IotsaHpsServiceMod: no api provider for command 0x%x url %s\n", command, url_c);
-      curDataStatus = HPSDataStatus::EMPTY;
-      curBody = "";
-      return 404;
-    }
-    // xxxjson
-    ArduinoJson::JsonDocument request_doc;
-    ArduinoJson::deserializeJson(request_doc, requestBody.c_str());
-    if (request_doc.overflowed()) {
-      IotsaSerial.println("IotsaHpsServiceMod: request too large");
-      curDataStatus = HPSDataStatus::EMPTY;
-      curBody = "";
-      return 413;
-    }
-    ArduinoJson::JsonObject request = request_doc.as<JsonObject>();
+    // One request = one iotsaApiBegin()/iotsaApiEnd() pair, like REST and CoAP (cwi-dis/iotsa#280).
+    iotsaApiBegin("hps", cmd_get ? "GET" : cmd_put ? "PUT" : cmd_post ? "POST" : "?", url_c);
     ArduinoJson::JsonDocument reply_doc;
     ArduinoJson::JsonObject reply = reply_doc.to<JsonObject>();
     bool ok = false;
-    if (cmd_get) {
-      ok = provider->getHandler(url_c, reply);
-    } else
-    if (cmd_put) {
-      ok = provider->putHandler(url_c, request, reply);
-    } else
-    if (cmd_post) {
-      ok = provider->postHandler(url_c, request, reply);
-    } 
-    if (!ok) {
-      IotsaSerial.printf("IotsaHpsServiceMod: bad request \"%s\"\n", url_c);
-      curDataStatus = HPSDataStatus::EMPTY;
-      curBody = "";
-      return 400;
+    IotsaApiProvider* provider = nullptr;
+    if (cmd_get || cmd_put || cmd_post) {
+      std::list<IotsaHpsServiceEntryPoint *>&epList =
+        (cmd_get ? getEntryPoints :
+        cmd_put ? putEntryPoints :
+                  postEntryPoints);
+      for(IotsaHpsServiceEntryPoint* ep : epList) {
+        if (ep->api_path == url_c) {
+          provider = ep->provider;
+        }
+      }
     }
-    if (reply_doc.overflowed()) {
-      IotsaSerial.println("IotsaHpsServiceMod: reply too large");
-      curDataStatus = HPSDataStatus::EMPTY;
-      curBody = "";
-      return 413;
+    if (!cmd_get && !cmd_put && !cmd_post) {
+      iotsaApiError(400, "bad HPS command");
+    } else if (provider == nullptr) {
+      iotsaApiError(404, "not found");
+    } else {
+      ArduinoJson::JsonDocument request_doc;
+      DeserializationError err = ArduinoJson::deserializeJson(request_doc, requestBody.c_str());
+      if (err == DeserializationError::NoMemory || request_doc.overflowed()) {
+        iotsaApiError(413, "request too big");
+      } else if (err && err != DeserializationError::EmptyInput) {
+        iotsaApiError(400, "invalid JSON");
+      } else {
+        ArduinoJson::JsonObject request = request_doc.as<JsonObject>();
+        if (cmd_get) {
+          ok = provider->getHandler(url_c, reply);
+        } else if (cmd_put) {
+          ok = provider->putHandler(url_c, request, reply);
+        } else {
+          ok = provider->postHandler(url_c, request, reply);
+        }
+      }
     }
-    curBody = "";
-    serializeJson(reply_doc, curBody);
+    String body;
+    int status = iotsaApiEnd(ok, reply_doc, body);
+    curBody = body.c_str();
     // A chunking-enabled client reads the reply back over several chunked reads (see
     // bleGetHandler's bodyUUID case), so there's nothing to truncate here; a
     // non-chunking client only ever does a single read, so it's still bound to the
@@ -295,12 +278,13 @@ protected:
     IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: reply(%d, status=0x%x): %s\n", curBody.size(), (int)curDataStatus, curBody.c_str());
     // We don't do reply headers for now.
     // Set the statusUUID data. This will send a notification or indication if it was requested.
+    curHttpStatus = status;
     uint8_t data[3];
     data[0] = curHttpStatus & 0xff;
     data[1] = (curHttpStatus >> 8) & 0xff;
     data[2] = (uint8_t)curDataStatus;
     bleApi.set(IotsaApiServiceHps::statusUUID, data, 3);
-    return 200;
+    return status;
   }
 };
 

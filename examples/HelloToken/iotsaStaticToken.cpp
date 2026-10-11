@@ -47,23 +47,18 @@ bool IotsaStaticTokenObject::formHandler_args(IotsaWebServer *server, const Stri
 
 #endif // IOTSA_WITH_WEB
 
-void IotsaStaticTokenObject::getHandler(JsonObject& reply) {
+bool IotsaStaticTokenObject::getHandler(JsonObject& reply) {
   reply["token"] = token;
   reply["rights"] = rights;
+  return true;
 }
 
-bool IotsaStaticTokenObject::putHandler(const JsonVariant& request) {
-  bool anyChanged;
+bool IotsaStaticTokenObject::putHandler(const JsonVariant& request, JsonObject& reply) {
+  if (!request.is<JsonObject>()) return apiError(400, "expected an object");
   JsonObject reqObj = request.as<JsonObject>();
-  if (reqObj["token"].is<const char *>()) {
-    token = reqObj["token"].as<String>();
-    anyChanged = true;
-  }
-  if (reqObj["rights"].is<const char *>()) {
-    rights = reqObj["rights"].as<String>();
-    anyChanged = true;
-  }
-  return anyChanged;
+  getFromRequest<String>(reqObj, "token", token);
+  getFromRequest<String>(reqObj, "rights", rights);
+  return true;
 }
 
 IotsaStaticTokenMod::IotsaStaticTokenMod(IotsaApplication &_app, IotsaAuthenticationProvider &_chain)

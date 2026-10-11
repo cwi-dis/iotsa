@@ -53,7 +53,7 @@ bool IotsaAlarmMod::putHandler(const char *path, const JsonVariant& request, Jso
     JsonObject reqObj = request.as<JsonObject>();
     dur = reqObj["alarm"];
   } else {
-    return false;
+    return apiError(400, "expected a duration, or {\"alarm\": duration}");
   }
   if (dur) {
     alarmEndTime = millis() + dur*100;

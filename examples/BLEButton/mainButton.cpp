@@ -118,7 +118,7 @@ bool BLEButtonMod::getHandler(const char *path, JsonObject& reply) {
 }
 
 bool BLEButtonMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
-  if (ringer.putHandler(request)) {
+  if (ringer.putHandler(request, reply)) {
     configSave();
     return true;
   }

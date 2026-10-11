@@ -5,7 +5,7 @@ import json as jsonmod
 import coapthon.client.helperclient
 import coapthon.defines
 
-from .abstract import IotsaAbstractProtocolHandler
+from .abstract import IotsaAbstractProtocolHandler, apiErrorMessage, checkApiReply
 from ..consts import CoapError, VERBOSE
 
 class IotsaCOAPProtocolHandler(IotsaAbstractProtocolHandler):
@@ -59,7 +59,8 @@ class IotsaCOAPProtocolHandler(IotsaAbstractProtocolHandler):
                 codeName = codeName.name
             else:
                 codeName = "unknown"
-            raise CoapError("%d.%02d %s" % (codeMajor, codeMinor, codeName))
+            msg = apiErrorMessage(reply.payload) if reply.payload else None
+            raise CoapError("%d.%02d %s" % (codeMajor, codeMinor, codeName) + (": %s" % msg if msg else ""))
 
     def get(self, endpoint, json=None):
         assert json is None
@@ -73,7 +74,7 @@ class IotsaCOAPProtocolHandler(IotsaAbstractProtocolHandler):
         self._raiseIfError(rv)
         if VERBOSE:
             print("COAP GET returned", rv.code, len(rv.payload), repr(rv.payload))
-        return jsonmod.loads(rv.payload)
+        return checkApiReply(jsonmod.loads(rv.payload), endpoint)
 
     def put(self, endpoint, json=None):
         assert json is not None
@@ -90,7 +91,7 @@ class IotsaCOAPProtocolHandler(IotsaAbstractProtocolHandler):
         self._raiseIfError(rv)
         if VERBOSE:
             print("COAP PUT returned", rv.code, repr(rv.payload))
-        return jsonmod.loads(rv.payload)
+        return checkApiReply(jsonmod.loads(rv.payload), endpoint)
 
     def post(self, endpoint, json=None, files=None):
         assert json is not None
@@ -108,7 +109,7 @@ class IotsaCOAPProtocolHandler(IotsaAbstractProtocolHandler):
         self._raiseIfError(rv)
         if VERBOSE:
             print("COAP POST returned", rv.code, repr(rv.payload))
-        return jsonmod.loads(rv.payload)
+        return checkApiReply(jsonmod.loads(rv.payload), endpoint)
 
     def request(self, method, endpoint, json=None, files=None, retryCount=5):
         assert False, "Only get/put/post implemented for COAP, not request()"

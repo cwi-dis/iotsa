@@ -9,107 +9,40 @@ void IotsaApiServiceRest::setup(const char* path, bool get, bool put, bool post,
     // call) its own permanent copy rather than relying on the caller's path to persist.
     String *fullPath = new String(String("/api/") + path);
     const char *p = fullPath->c_str();
-    if (get) server->on(p, HTTP_GET, std::bind(&IotsaApiServiceRest::_getHandlerWrapper, this, p));
-    if (put) server->on(p, HTTP_PUT, std::bind(&IotsaApiServiceRest::_putHandlerWrapper, this, p));
-    if (post) server->on(p, HTTP_POST, std::bind(&IotsaApiServiceRest::_postHandlerWrapper, this, p));
+    if (get) server->on(p, HTTP_GET, std::bind(&IotsaApiServiceRest::_handle, this, IOTSA_API_GET, p));
+    if (put) server->on(p, HTTP_PUT, std::bind(&IotsaApiServiceRest::_handle, this, IOTSA_API_PUT, p));
+    if (post) server->on(p, HTTP_POST, std::bind(&IotsaApiServiceRest::_handle, this, IOTSA_API_POST, p));
     // webPage is Web-only; REST ignores it and just forwards it down the chain.
     if (next) next->setup(path, get, put, post, webPage);
 }
 
-void IotsaApiServiceRest::_getHandlerWrapper(const char *path) {
+void IotsaApiServiceRest::_handle(IotsaApiOperation verb, const char *path) {
     IotsaActivityScope activity(IOTSA_CRUMB_REQUEST, IOTSA_CRUMB_REST);
-    if (provider->needsAuthentication(path, IOTSA_API_GET)) return;
-    IFDEBUG IotsaSerial.print("GET api ");
-    IFDEBUG IotsaSerial.println(path);
-    iotsaController.noteActivity();
+    iotsaApiBegin("rest", verb == IOTSA_API_GET ? "GET" : verb == IOTSA_API_PUT ? "PUT" : "POST", path);
     JsonDocument replyDocument;
     JsonObject reply = replyDocument.to<JsonObject>();
-    app.requestDenied = false;
-    bool ok = provider->getHandler(path, reply);
-    if (app.requestDenied) return;  // the authenticator already responded (cwi-dis/iotsa#284)
-    if (replyDocument.overflowed()) {
-        server->send(413, "text/plain", "JSON document too big for memory");
-        IFDEBUG IotsaSerial.println("-> ERR JSON document too big for memory");
-        return;
+    bool ok = false;
+    if (!provider->needsAuthentication(path, verb)) {
+        iotsaController.noteActivity();
+        if (verb == IOTSA_API_GET) {
+            ok = provider->getHandler(path, reply);
+        } else {
+            JsonDocument requestDocument;
+            DeserializationError err = deserializeJson(requestDocument, server->arg("plain"));
+            if (err == DeserializationError::NoMemory || requestDocument.overflowed()) {
+                iotsaApiError(413, "request too big");
+            } else if (err && err != DeserializationError::EmptyInput) {
+                iotsaApiError(400, "invalid JSON");
+            } else {
+                JsonObject request = requestDocument.as<JsonObject>();
+                ok = verb == IOTSA_API_PUT ? provider->putHandler(path, request, reply) : provider->postHandler(path, request, reply);
+            }
+        }
     }
-    if (ok) {
-        String replyData;
-        serializeJson(replyDocument, replyData);
-        server->send(200, "application/json", replyData);
-        IFDEBUG IotsaSerial.println("-> OK");
-    } else {
-        server->send(400, "text/plain", "\"bad request\"");
-        IFDEBUG IotsaSerial.println("-> ERR bad request");
-    }
-}
-
-void IotsaApiServiceRest::_putHandlerWrapper(const char *path) {
-    IotsaActivityScope activity(IOTSA_CRUMB_REQUEST, IOTSA_CRUMB_REST);
-    if (provider->needsAuthentication(path, IOTSA_API_PUT)) return;
-    IFDEBUG IotsaSerial.print("PUT api ");
-    IFDEBUG IotsaSerial.println(path);
-    iotsaController.noteActivity();
-    JsonDocument replyDocument;
-    JsonObject reply = replyDocument.to<JsonObject>();
-    JsonDocument requestDocument;
-    deserializeJson(requestDocument, server->arg("plain"));
-    if (requestDocument.overflowed()) {
-        server->send(413, "text/plain", "JSON request too big for memory");
-        IFDEBUG IotsaSerial.println("-> ERR JSON request too big for memory");
-        return;
-    }
-    JsonObject request = requestDocument.as<JsonObject>();
-    app.requestDenied = false;
-    bool ok = provider->putHandler(path, request, reply);
-    if (app.requestDenied) return;  // the authenticator already responded (cwi-dis/iotsa#284)
-    if (replyDocument.overflowed()) {
-        server->send(413, "text/plain", "JSON reply too big for memory");
-        IFDEBUG IotsaSerial.println("-> ERR JSON reply too big for memory");
-        return;
-    }
-    if (ok) {
-        String replyData;
-        serializeJson(replyDocument, replyData);
-        server->send(200, "application/json", replyData);
-        IFDEBUG IotsaSerial.println("-> OK");
-    } else {
-        server->send(400, "text/plain", "\"bad request\"");
-        IFDEBUG IotsaSerial.println("-> ERR bad request");
-    }
-}
-
-void IotsaApiServiceRest::_postHandlerWrapper(const char *path) {
-    IotsaActivityScope activity(IOTSA_CRUMB_REQUEST, IOTSA_CRUMB_REST);
-    if (provider->needsAuthentication(path, IOTSA_API_POST)) return;
-    IFDEBUG IotsaSerial.print("POST api ");
-    IFDEBUG IotsaSerial.println(path);
-    iotsaController.noteActivity();
-    JsonDocument replyDocument;
-    JsonObject reply = replyDocument.to<JsonObject>();
-    JsonDocument requestDocument;
-    deserializeJson(requestDocument, server->arg("plain"));
-    if (requestDocument.overflowed()) {
-        server->send(413, "text/plain", "JSON document too big for memory");
-        IFDEBUG IotsaSerial.println("-> ERR JSON document too big for memory");
-        return;
-    }
-    JsonObject request = requestDocument.as<JsonObject>();
-    app.requestDenied = false;
-    bool ok = provider->postHandler(path, request, reply);
-    if (app.requestDenied) return;  // the authenticator already responded (cwi-dis/iotsa#284)
-    if (replyDocument.overflowed()) {
-        server->send(413, "text/plain", "JSON document too big for memory");
-        IFDEBUG IotsaSerial.println("-> ERR JSON document too big for memory");
-        return;
-    }
-    if (ok) {
-        String replyData;
-        serializeJson(replyDocument, replyData);
-        server->send(200, "application/json", replyData);
-        IFDEBUG IotsaSerial.println("-> OK");
-    } else {
-        server->send(400, "text/plain", "\"bad request\"");
-        IFDEBUG IotsaSerial.println("-> ERR");
-    }
+    String body;
+    int status = iotsaApiEnd(ok, replyDocument, body);
+    // A refusing authenticator has already sent its own reply (a 401 challenge).
+    if (iotsaApiResult.authResponded) return;
+    server->send(status, "application/json", body);
 }
 #endif // IOTSA_HAS_RESTSERVER

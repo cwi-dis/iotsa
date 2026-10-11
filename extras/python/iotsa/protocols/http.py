@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 import requests
 
 from ..consts import VERBOSE
-from .abstract import IotsaAbstractProtocolHandler
+from .abstract import IotsaAbstractProtocolHandler, apiErrorMessage, checkApiReply
 
 # We disable warnings about invalid certificates: we expect them and they provide no meaningful information
 import urllib3
@@ -88,8 +88,13 @@ class IotsaRESTProtocolHandler(IotsaAbstractProtocolHandler):
             print("Note: received redirect when accessing", url)
         if VERBOSE:
             print("<<<< status=%s reply=%s" % (r.status_code, r.text))
+        if r.status_code >= 400:
+            msg = apiErrorMessage(r.text)
+            if msg:
+                # Still an HTTPError (callers check e.response.status_code), with the device's reason.
+                raise requests.exceptions.HTTPError(f"{r.status_code} {msg} ({method} {url})", response=r)
         r.raise_for_status()
         if r.text and r.text[0] == "{":
-            return r.json()
+            return checkApiReply(r.json(), f"{method} {endpoint}")
         return None
 

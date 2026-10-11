@@ -95,12 +95,12 @@ bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
 bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
-  if (pinVBat >= 0 && reqObj["correctionVBat"].is<float>()) {
-    correctionVBat = reqObj["correctionVBat"];
+  if (pinVBat >= 0 && getFromRequest<float>(reqObj, "correctionVBat", correctionVBat)) {
     anyChanged = true;
   }
   if (anyChanged) configSave();
-  return anyChanged;
+  checkUnhandled(reqObj);
+  return true;
 }
 
 #ifdef IOTSA_WITH_BLE

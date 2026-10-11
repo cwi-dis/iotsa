@@ -432,13 +432,13 @@ void IotsaBaseModule::percentDecode(const String &src, String &dst) {
 
 bool IotsaBaseModule::needsAuthentication(const char *object, IotsaApiOperation verb) {
   bool denied = !app.getAuth()->allows(object, verb);
-  if (denied) app.requestDenied = true;
+  if (denied) iotsaApiResult.authResponded = true;
   return denied;
 }
 
 bool IotsaBaseModule::needsAuthentication(const char *right) {
   bool denied = !app.getAuth()->allows(right);
-  if (denied) app.requestDenied = true;
+  if (denied) iotsaApiResult.authResponded = true;
   return denied;
 }
 

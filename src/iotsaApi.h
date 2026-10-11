@@ -7,11 +7,15 @@ class IotsaApiModObject : public IotsaModObject {
 public:
   virtual ~IotsaApiModObject() {}
 
-  virtual void getHandler(JsonObject& reply) = 0;
-  virtual bool putHandler(const JsonVariant& request) = 0;
+  // The same shape and rules as the module handlers, minus the path
+  // (cwi-dis/iotsa#280): return false (after apiError() if you can say why) on
+  // failure, true otherwise, also when nothing changed.
+  virtual bool getHandler(JsonObject& reply) = 0;
+  virtual bool putHandler(const JsonVariant& request, JsonObject& reply) = 0;
   template <typename JT, typename CT>  bool getFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
     return iotsaGetFromRequest<JT>(reqObj, name, var);
   }
+  static bool apiError(int status, const char *message) { return iotsaApiError(status, message); }
 };
 
 class IotsaApiServiceProvider {
@@ -110,11 +114,13 @@ protected:
     reqObj.remove(name);
     return true;
   }
+  // Reports the fields still in reqObj (the ones getFromRequest() didn't consume)
+  // as "iotsa_api_ignored" in the reply (cwi-dis/iotsa#280). Returns true if any.
   bool checkUnhandled(const JsonObject& reqObj) {
     bool rv = false;
     for (JsonPair kv : reqObj) {
       rv = true;
-      IFDEBUG IotsaSerial.printf("Unhandled IotsaApi parameter: %s\n", kv.key().c_str());
+      iotsaApiResult.ignored.push_back(kv.key().c_str());
     }
     return rv;
   }

@@ -65,14 +65,10 @@ bool IotsaBLEClientMod::getHandler(const char *path, JsonObject& reply) {
 bool IotsaBLEClientMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
   bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
-  if (getFromRequest<int>(reqObj, "scan_interval", scan_interval)) {
-    scan_interval = reqObj["scan_interval"];
-    anyChanged = true;
-  }
-  if (getFromRequest<int>(reqObj, "scan_window", scan_window)) {
-    scan_window = reqObj["scan_window"];
-    anyChanged = true;
-  }
+  // (These used to read the field a second time after getFromRequest() had
+  // consumed it, which set them to 0.)
+  if (getFromRequest<int>(reqObj, "scan_interval", scan_interval)) anyChanged = true;
+  if (getFromRequest<int>(reqObj, "scan_window", scan_window)) anyChanged = true;
   if (getFromRequest<int>(reqObj, "scan_duration_discovery", scanDurationDiscoveryMillis)) anyChanged = true;
   if (getFromRequest<int>(reqObj, "scan_cooldown_discovery", scanCooldownDiscoveryMillis)) anyChanged = true;
   if (getFromRequest<int>(reqObj, "connect_settle_time", connectSettleTimeMillis)) anyChanged = true;
@@ -81,7 +77,8 @@ bool IotsaBLEClientMod::putHandler(const char *path, const JsonVariant& request,
     saveScanConfig();
     setupScanner();
   }
-  return anyChanged;
+  // No checkUnhandled() here: subclasses handle more fields after calling this.
+  return true;
 }
 
 bool IotsaBLEClientMod::isScanning() {

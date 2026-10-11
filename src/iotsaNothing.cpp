@@ -43,7 +43,7 @@ bool IotsaNothingMod::putHandler(const char *path, const JsonVariant& request, J
   }
   if (anyChanged) configSave();
   checkUnhandled(reqObj);
-  return anyChanged;
+  return true;
 }
 
 void IotsaNothingMod::lateSetup() {

@@ -45,88 +45,40 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
     IotsaSerial.print("messageid "); IotsaSerial.println(int(pkt.messageid));
     IotsaSerial.print("optionnum "); IotsaSerial.println(int(pkt.optionnum));
 #endif
+    // One request = one iotsaApiBegin()/iotsaApiEnd() pair, like REST and HPS (cwi-dis/iotsa#280).
+    const char *method = pkt.code == COAP_GET ? "GET" : pkt.code == COAP_PUT ? "PUT" : pkt.code == COAP_POST ? "POST" : "?";
+    iotsaApiBegin("coap", method, path.c_str());
     bool ok = false;
-    String replyData;
-    // Handle requests, after chaing that type (get/put/post) is supported.
-    if (pkt.code == COAP_GET) {
-        IFDEBUG IotsaSerial.print("COAP-GET api ");
-        IFDEBUG IotsaSerial.println(path);
-        ok = get;
-        if (ok) {
-            JsonDocument replyDocument;
-            JsonObject reply = replyDocument.to<JsonObject>();
-            ok = provider->getHandler(path.c_str(), reply);
-            if (ok) {
-                serializeJson(replyDocument, replyData);
-            }
-        }
-    } else
-    if (pkt.code == COAP_PUT) {
-        IFDEBUG IotsaSerial.print("COAP-PUT api ");
-        IFDEBUG IotsaSerial.println(path);
-        ok = put;
-        // xxxjack Should look through pkt.options looking for mimetype=application/json
-        if (ok) {
-            char dataBuffer[pkt.payloadlen+1];
-            memcpy(dataBuffer, pkt.payload, pkt.payloadlen);
-            dataBuffer[pkt.payloadlen] = 0;
-#ifdef COAP_PROTOCOL_DEBUG
-            IotsaSerial.print("payload "); IotsaSerial.println(dataBuffer);
-#endif
-            JsonDocument requestDocument;
-            deserializeJson(requestDocument, dataBuffer);
-            JsonDocument replyDocument;
-            JsonObject request = requestDocument.as<JsonObject>();
-            JsonObject reply = replyDocument.to<JsonObject>();
-
-            ok = provider->putHandler(path.c_str(), request, reply);
-            if (ok) {
-                serializeJson(replyDocument, replyData);
-            }
-        }
-    } else
-    if (pkt.code == COAP_POST) {
-        IFDEBUG IotsaSerial.print("COAP-POST api ");
-        IFDEBUG IotsaSerial.println(path);
-        ok = post;
-        // xxxjack Should look through pkt.options looking for mimetype=application/json
-        if (ok) {
-            char dataBuffer[pkt.payloadlen+1];
-            memcpy(dataBuffer, pkt.payload, pkt.payloadlen);
-            dataBuffer[pkt.payloadlen] = 0;
-#ifdef COAP_PROTOCOL_DEBUG
-            IotsaSerial.print("payload "); IotsaSerial.println(dataBuffer);
-#endif
-            JsonDocument requestDocument;
-            deserializeJson(requestDocument, dataBuffer);
-            JsonDocument replyDocument;
-            JsonObject request = requestDocument.as<JsonObject>();
-            JsonObject reply = replyDocument.to<JsonObject>();
-            ok = provider->postHandler(path.c_str(), request, reply);
-            if (ok) {
-                serializeJson(replyDocument, replyData);
-            }
-        }
+    JsonDocument replyDocument;
+    JsonObject reply = replyDocument.to<JsonObject>();
+    bool allowed = (pkt.code == COAP_GET && get) || (pkt.code == COAP_PUT && put) || (pkt.code == COAP_POST && post);
+    if (!allowed) {
+        iotsaApiError(405, "method not allowed");
+    } else if (pkt.code == COAP_GET) {
+        ok = provider->getHandler(path.c_str(), reply);
     } else {
-        IFDEBUG IotsaSerial.print("COAP-UNKNOWN ");
-        IFDEBUG IotsaSerial.println(int(pkt.code));
-    }
-    // Send reply, either a JSON datastructure or an error.
-    if (ok) {
-#ifdef COAP_PROTOCOL_DEBUG
-        IotsaSerial.print("replyData "); IotsaSerial.println(replyData);
-        IotsaSerial.print("replyLen "); IotsaSerial.println(replyData.length());
-#endif
-        int messageid = coap->sendResponse(ip, port, pkt.messageid, replyData.c_str(), replyData.length(), COAP_CONTENT, COAP_APPLICATION_JSON, pkt.token, pkt.tokenlen);
-        if (messageid) {
-            IFDEBUG IotsaSerial.println("-> OK");
+        // xxxjack Should look through pkt.options looking for mimetype=application/json
+        char dataBuffer[pkt.payloadlen+1];
+        memcpy(dataBuffer, pkt.payload, pkt.payloadlen);
+        dataBuffer[pkt.payloadlen] = 0;
+        JsonDocument requestDocument;
+        DeserializationError err = deserializeJson(requestDocument, dataBuffer);
+        if (err == DeserializationError::NoMemory || requestDocument.overflowed()) {
+            iotsaApiError(413, "request too big");
+        } else if (err && err != DeserializationError::EmptyInput) {
+            iotsaApiError(400, "invalid JSON");
         } else {
-            coap->sendResponse(ip, port, pkt.messageid, NULL, 0, COAP_INTERNAL_SERVER_ERROR, COAP_NONE, pkt.token, pkt.tokenlen);
-            IotsaSerial.println("-> COAP sendResponse error");
+            JsonObject request = requestDocument.as<JsonObject>();
+            ok = pkt.code == COAP_PUT ? provider->putHandler(path.c_str(), request, reply) : provider->postHandler(path.c_str(), request, reply);
         }
-    } else {
-        coap->sendResponse(ip, port, pkt.messageid, NULL, 0, COAP_BAD_REQUEST, COAP_NONE, pkt.token, pkt.tokenlen);
-        IFDEBUG IotsaSerial.println("-> ERR");
+    }
+    String body;
+    int status = iotsaApiEnd(ok, replyDocument, body);
+    // CoAP codes are class.detail, the same numbers as HTTP: 404 -> 4.04, 409 -> 4.09.
+    COAP_RESPONSE_CODE code = status == 200 ? COAP_CONTENT : (COAP_RESPONSE_CODE)RESPONSE_CODE(status / 100, status % 100);
+    if (!coap->sendResponse(ip, port, pkt.messageid, body.c_str(), body.length(), code, COAP_APPLICATION_JSON, pkt.token, pkt.tokenlen)) {
+        coap->sendResponse(ip, port, pkt.messageid, NULL, 0, COAP_INTERNAL_SERVER_ERROR, COAP_NONE, pkt.token, pkt.tokenlen);
+        IotsaSerial.println("-> COAP sendResponse error");
     }
 #if 0
     // xxxjack no idea why this was added:

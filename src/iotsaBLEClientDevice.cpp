@@ -412,7 +412,7 @@ void IotsaBLEClientDevice::endLinger() {
   if (linkState == LinkState::Lingering && !workPending) _closeLink();
 }
 
-void IotsaBLEClientDevice::getHandler(JsonObject& reply) {
+bool IotsaBLEClientDevice::getHandler(JsonObject& reply) {
   IotsaBLEDeviceInfo::getHandler(reply);
   if (lastConnectAttemptAtMillis != 0) {
     reply["lastConnectAttemptMillisAgo"] = millis() - lastConnectAttemptAtMillis;
@@ -437,6 +437,7 @@ void IotsaBLEClientDevice::getHandler(JsonObject& reply) {
   if (lastWorkStatus) reply["lastWorkStatus"] = lastWorkStatus;
   reply["lastWorkMillis"] = lastWorkMillis;
   reply["maxWorkMillis"] = maxWorkMillis;
+  return true;
 }
 
 bool IotsaBLEClientDevice::retarget(const std::string& newName) {
@@ -470,14 +471,14 @@ void IotsaBLEClientDevice::configSave(IotsaConfigFileSave& cf, const String& f_n
   if (addr != "") cf.put(f_name + ".address", addr);
 }
 
-bool IotsaBLEClientDevice::putHandler(const JsonVariant& request) {
-  if (!request.is<JsonObject>()) return false;
+bool IotsaBLEClientDevice::putHandler(const JsonVariant& request, JsonObject& reply) {
+  if (!request.is<JsonObject>()) return apiError(400, "expected an object");
   const JsonObject& reqObj = request.as<JsonObject>();
   String newName;
   if (getFromRequest<String>(reqObj, "name", newName)) {
-    return retarget(std::string(newName.c_str()));
+    retarget(std::string(newName.c_str()));
   }
-  return false;
+  return true;
 }
 
 #ifdef IOTSA_WITH_WEB
