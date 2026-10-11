@@ -30,7 +30,7 @@ public:
   using IotsaModule::IotsaModule;
   virtual ~IotsaBLEClientMod() {}
   virtual bool getHandler(const char *path, JsonObject& reply) override;
-  virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+  virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
   virtual void setup() override;
   virtual void lateSetup() override;
   virtual void loop() override;

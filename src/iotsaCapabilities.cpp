@@ -130,7 +130,7 @@ bool IotsaCapabilityMod::getHandler(const char *path, JsonObject& reply) {
   return true;
 }
 
-bool IotsaCapabilityMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+bool IotsaCapabilityMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   if (strcmp(path, "/api/capabilities") != 0) return apiError(404, "not found");
   if (!iotsaController.inConfigurationMode()) return apiError(409, "not in configuration mode");
   bool anyChanged = false;
@@ -143,11 +143,12 @@ bool IotsaCapabilityMod::putHandler(const char *path, const JsonVariant& request
   }
   if (anyChanged) {
     configSave();
+    if (changed) *changed = true;
   }
   return true;
 }
 
-bool IotsaCapabilityMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+bool IotsaCapabilityMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   return false;
 }
 

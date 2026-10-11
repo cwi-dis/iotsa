@@ -229,12 +229,14 @@ bool IotsaRequest::getHandler(JsonObject& reply) {
   return true;
 }
 
-bool IotsaRequest::putHandler(const JsonVariant& request, JsonObject& reply) {
+bool IotsaRequest::putHandler(const JsonVariant& request, JsonObject& reply, bool *changed) {
   if (!request.is<JsonObject>()) return apiError(400, "expected an object");
   const JsonObject& reqObj = request.as<JsonObject>();
-  getFromRequest<const char *>(reqObj, "url", url);
-  getFromRequest<const char *>(reqObj, SSL_INFO_NAME, sslInfo);
-  getFromRequest<const char *>(reqObj, "credentials", credentials);
-  getFromRequest<const char *>(reqObj, "token", token);
+  bool any = false;
+  any |= getFromRequest<const char *>(reqObj, "url", url);
+  any |= getFromRequest<const char *>(reqObj, SSL_INFO_NAME, sslInfo);
+  any |= getFromRequest<const char *>(reqObj, "credentials", credentials);
+  any |= getFromRequest<const char *>(reqObj, "token", token);
+  if (any && changed) *changed = true;
   return true;
 }

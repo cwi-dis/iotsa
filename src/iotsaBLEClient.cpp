@@ -62,7 +62,7 @@ bool IotsaBLEClientMod::getHandler(const char *path, JsonObject& reply) {
   return true;
 }
 
-bool IotsaBLEClientMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+bool IotsaBLEClientMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
   // (These used to read the field a second time after getFromRequest() had
@@ -76,6 +76,7 @@ bool IotsaBLEClientMod::putHandler(const char *path, const JsonVariant& request,
   if (anyChanged) {
     saveScanConfig();
     setupScanner();
+    if (changed) *changed = true;
   }
   // No checkUnhandled() here: subclasses handle more fields after calling this.
   return true;

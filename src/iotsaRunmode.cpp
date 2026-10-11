@@ -444,7 +444,7 @@ bool IotsaRunmodeMod::getHandler(const char *path, JsonObject& reply) {
   return true;
 }
 
-bool IotsaRunmodeMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+bool IotsaRunmodeMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   JsonObject reqObj = request.as<JsonObject>();
   // Anything beyond the open fields needs the config right, and then the whole
   // request is refused before anything is executed (cwi-dis/iotsa#284).
@@ -485,6 +485,7 @@ bool IotsaRunmodeMod::putHandler(const char *path, const JsonVariant& request, J
   }
   if (getFromRequest<bool>(reqObj, "debugLog", iotsaLogDebugEnabled)) {
     configSave();
+    if (changed) *changed = true;
   }
 #ifdef IOTSA_HAS_SLEEP
   IotsaSleepPolicy& sp = iotsaController.sleep();
@@ -509,7 +510,10 @@ bool IotsaRunmodeMod::putHandler(const char *path, const JsonVariant& request, J
     IFDEBUG IotsaSerial.printf("Set CPU frequency to %d MHz\n", intValue);
   }
 #endif
-  if (sleepChanged) configSave();
+  if (sleepChanged) {
+    configSave();
+    if (changed) *changed = true;
+  }
 #endif // IOTSA_HAS_SLEEP
   checkUnhandled(reqObj);
   return true;

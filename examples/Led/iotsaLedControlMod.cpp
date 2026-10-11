@@ -72,7 +72,7 @@ String IotsaLedControlMod::info() {
 }
 #endif // IOTSA_WITH_WEB
 
-bool IotsaLedControlMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+bool IotsaLedControlMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   uint32_t _rgb = request["rgb"]|0xffffff;
   uint32_t _onDuration = request["onDuration"]|0;
   uint32_t _offDuration = request["offDuration"]|0;

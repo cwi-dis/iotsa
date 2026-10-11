@@ -92,7 +92,7 @@ public:
   // Renaming via REST: {"name": "<newName>"}. Nothing else about this
   // object is meaningfully settable from outside (address is discovered,
   // not configured).
-  bool putHandler(const JsonVariant& request, JsonObject& reply) override;
+  bool putHandler(const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
 #ifdef IOTSA_WITH_WEB
   // Shows a found/connected status line always; the editable name field
   // only when includeConfig (renaming isn't a day-to-day control).

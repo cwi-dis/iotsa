@@ -53,11 +53,13 @@ bool IotsaStaticTokenObject::getHandler(JsonObject& reply) {
   return true;
 }
 
-bool IotsaStaticTokenObject::putHandler(const JsonVariant& request, JsonObject& reply) {
+bool IotsaStaticTokenObject::putHandler(const JsonVariant& request, JsonObject& reply, bool *changed) {
   if (!request.is<JsonObject>()) return apiError(400, "expected an object");
   JsonObject reqObj = request.as<JsonObject>();
-  getFromRequest<String>(reqObj, "token", token);
-  getFromRequest<String>(reqObj, "rights", rights);
+  bool any = false;
+  any |= getFromRequest<String>(reqObj, "token", token);
+  any |= getFromRequest<String>(reqObj, "rights", rights);
+  if (any && changed) *changed = true;
   return true;
 }
 

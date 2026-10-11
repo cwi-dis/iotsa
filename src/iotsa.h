@@ -264,9 +264,12 @@ public:
   // (the auth provider has already sent its challenge, if any). Modules ask
   // the application's provider; override to exempt specific paths.
   virtual bool needsAuthentication(const char *obj, IotsaApiOperation verb) { return false; }
+  // put/post: return true on success (also when nothing changed), else false
+  // after apiError() (cwi-dis/iotsa#280). changed, if given, is set to true (never
+  // to false) when state changed that needs saving; the transports don't pass it.
   virtual bool getHandler(const char *path, JsonObject& reply) { return false; }
-  virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
-  virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) { return false; }
+  virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) { return false; }
+  virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) { return false; }
   // Web page handler, invoked by IotsaApiServiceWeb for modules that opt in (see
   // cwi-dis/iotsa#213) -- structurally different from the JSON get/put/post handlers
   // above: no path argument (a module has at most one page), reads its own arguments

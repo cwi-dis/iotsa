@@ -9,9 +9,10 @@ public:
 
   // The same shape and rules as the module handlers, minus the path
   // (cwi-dis/iotsa#280): return false (after apiError() if you can say why) on
-  // failure, true otherwise, also when nothing changed.
+  // failure, true otherwise, also when nothing changed. changed, if given, is
+  // set to true (never to false) when state changed that needs saving.
   virtual bool getHandler(JsonObject& reply) = 0;
-  virtual bool putHandler(const JsonVariant& request, JsonObject& reply) = 0;
+  virtual bool putHandler(const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) = 0;
   template <typename JT, typename CT>  bool getFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
     return iotsaGetFromRequest<JT>(reqObj, name, var);
   }
@@ -100,8 +101,8 @@ public:
   // See IotsaBaseModule: deleted so old code passing an auth provider fails to compile.
   IotsaModule(IotsaApplication &_app, IotsaAuthenticationProvider *_auth, bool early=false) = delete;
   virtual bool getHandler(const char *path, JsonObject& reply) override { return false; }
-  virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
-  virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) override { return false; }
+  virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override { return false; }
+  virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override { return false; }
   bool hasApi() const override { return true; }
 protected:
   // Like the other getFromRequest() copies, but also removes a consumed field,

@@ -57,7 +57,7 @@ public:
   void configSave();
 protected:
   bool getHandler(const char *path, JsonObject& reply) override;
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
 #ifdef IOTSA_WITH_WEB
   void webHandler() override;
 #endif
@@ -117,12 +117,14 @@ bool BLEButtonMod::getHandler(const char *path, JsonObject& reply) {
   return true;
 }
 
-bool BLEButtonMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
-  if (ringer.putHandler(request, reply)) {
+bool BLEButtonMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
+  bool ringerChanged = false;
+  if (!ringer.putHandler(request, reply, &ringerChanged)) return false;
+  if (ringerChanged) {
     configSave();
-    return true;
+    if (changed) *changed = true;
   }
-  return false;
+  return true;
 }
 
 void BLEButtonMod::configLoad() {

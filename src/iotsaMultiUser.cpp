@@ -65,16 +65,18 @@ bool IotsaUser::getHandler(JsonObject& reply) {
   return true;
 }
 
-bool IotsaUser::putHandler(const JsonVariant& request, JsonObject& reply) {
+bool IotsaUser::putHandler(const JsonVariant& request, JsonObject& reply, bool *changed) {
   if (!request.is<JsonObject>()) return apiError(400, "expected an object");
   JsonObject reqObj = request.as<JsonObject>();
   if (password) {
     String old = reqObj["old_password"].as<String>();
     if (old != password) return apiError(403, "wrong old_password");
   }
-  getFromRequest<const char *>(reqObj, "username", username);
-  getFromRequest<const char *>(reqObj, "password", password);
-  getFromRequest<const char *>(reqObj, "rights", rights);
+  bool any = false;
+  any |= getFromRequest<const char *>(reqObj, "username", username);
+  any |= getFromRequest<const char *>(reqObj, "password", password);
+  any |= getFromRequest<const char *>(reqObj, "rights", rights);
+  if (any && changed) *changed = true;
   return true;
 }
 
@@ -166,7 +168,7 @@ bool IotsaMultiUserMod::getHandler(const char *path, JsonObject& reply) {
   return false;
 }
 
-bool IotsaMultiUserMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+bool IotsaMultiUserMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   if (strncmp(path, "/api/users/", 11) != 0) return apiError(404, "not found");
   if (!iotsaController.inConfigurationMode()) return apiError(409, "not in configuration mode");
   // xxxjack should also check access rights? Maybe in stead of configurationMode?
@@ -176,11 +178,15 @@ bool IotsaMultiUserMod::putHandler(const char *path, const JsonVariant& request,
   if (idx < 0 || idx >= (int)users.size()) return apiError(404, "no such user");
 
   IotsaUser& u = users[idx];
-  if (!u.putHandler(request, reply)) return false;
-  configSave();
+  bool userChanged = false;
+  if (!u.putHandler(request, reply, &userChanged)) return false;
+  if (userChanged) {
+    configSave();
+    if (changed) *changed = true;
+  }
   return true;
 }
-bool IotsaMultiUserMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+bool IotsaMultiUserMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   if (strcmp(path, "/api/users") != 0) return apiError(404, "not found");
   if (!iotsaController.inConfigurationMode()) return apiError(409, "not in configuration mode");
   IotsaUser newUser;
@@ -188,6 +194,7 @@ bool IotsaMultiUserMod::postHandler(const char *path, const JsonVariant& request
   if (newUser.username == "") return apiError(400, "username missing");
   _addUser(newUser);
   configSave();
+  if (changed) *changed = true;
   return true;
 }
 

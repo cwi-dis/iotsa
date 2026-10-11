@@ -181,6 +181,10 @@ Module handlers (`get`/`put`/`postHandler(path, ...)`) and sub-object handlers
 (`IotsaApiModObject`: `getHandler(reply)`, `putHandler(request, reply)`) return `bool`:
 
 - **`true` on success**, also when nothing changed.
+- **Optional output `bool *changed = nullptr`** on every put/post handler (module and
+  sub-object): set to `true` (never to `false`) when state changed that needs saving. The
+  transports don't pass it; a module calling another handler (a parent class's, or its
+  sub-objects') passes its own flag and decides from it whether to `configSave()`.
 - **On failure `return apiError(status, "why")`**. A bare `false` is a 400 "bad request".
   Statuses: 400 the request is wrong, 401/403 authentication / not allowed, 404 no such path
   or object, 409 wrong mode (e.g. "not in configuration mode"), 413 too big, 500 internal,

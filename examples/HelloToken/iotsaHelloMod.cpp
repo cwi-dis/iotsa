@@ -27,7 +27,7 @@ bool IotsaHelloMod::getHandler(const char *path, JsonObject& reply) {
   return true;
 }
 
-bool IotsaHelloMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+bool IotsaHelloMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   JsonObject reqObj = request.as<JsonObject>();
   getFromRequest<const char *>(reqObj, "greeting", greeting);
   // Anything else in the request is reported back as "iotsa_api_ignored".

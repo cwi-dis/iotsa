@@ -101,13 +101,13 @@ bool IotsaUserMod::getHandler(const char *path, JsonObject& reply) {
   return false;
 }
 
-bool IotsaUserMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+bool IotsaUserMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   // PUT to /api/users is equivalent to POST /api/users/0 (because of iotsaControl issues)
   if (strcmp(path, "/api/users") != 0) return apiError(404, "not found");
-  return putHandler("/api/users/0", request, reply);
+  return putHandler("/api/users/0", request, reply, changed);
 }
 
-bool IotsaUserMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+bool IotsaUserMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   if (strcmp(path, "/api/users/0") != 0) return apiError(404, "not found");
   if (!iotsaController.inConfigurationMode()) return apiError(409, "not in configuration mode");
   bool anyChanged = false;
@@ -123,7 +123,7 @@ bool IotsaUserMod::putHandler(const char *path, const JsonVariant& request, Json
   if (getFromRequest<const char *>(reqObj, "password", password)) {
     anyChanged = true;
   }
-  if (anyChanged) configSave();
+  if (anyChanged) { configSave(); if (changed) *changed = true; }
   return true;
 }
 

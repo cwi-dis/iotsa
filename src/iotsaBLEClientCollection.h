@@ -21,7 +21,7 @@ class IotsaBLEClientCollectionMod : public IotsaBLEClientMod {
 public:
   using IotsaBLEClientMod::IotsaBLEClientMod;
   virtual bool getHandler(const char *path, JsonObject& reply) override;
-  virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+  virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
   virtual void loop() override;
 #ifdef IOTSA_WITH_WEB
   virtual String formHandler_field_perdevice(const char *deviceName);

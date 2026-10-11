@@ -114,7 +114,7 @@ bool IotsaNtpMod::getHandler(const char *path, JsonObject& reply) {
   return true;
 }
 
-bool IotsaNtpMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+bool IotsaNtpMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
   if (getFromRequest<const char *>(reqObj, "ntpServer", ntpServer)) {
@@ -126,6 +126,7 @@ bool IotsaNtpMod::putHandler(const char *path, const JsonVariant& request, JsonO
   if (anyChanged) {
     parseTimezone(tzDescription);  // also restarts SNTP, so a new server takes effect now
     configSave();
+    if (changed) *changed = true;
   }
   checkUnhandled(reqObj);
   return true;

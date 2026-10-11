@@ -115,7 +115,7 @@ protected:
   // is acted on once (cwi-dis/iotsa#106). Starts true; lateSetupDone() resyncs it.
   bool _lastBleRadioWanted = true;
   bool getHandler(const char *path, JsonObject& reply) override;
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
   void configLoad() override;
   void configSave() override;
 #ifdef IOTSA_WITH_WEB

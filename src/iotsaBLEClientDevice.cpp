@@ -471,12 +471,12 @@ void IotsaBLEClientDevice::configSave(IotsaConfigFileSave& cf, const String& f_n
   if (addr != "") cf.put(f_name + ".address", addr);
 }
 
-bool IotsaBLEClientDevice::putHandler(const JsonVariant& request, JsonObject& reply) {
+bool IotsaBLEClientDevice::putHandler(const JsonVariant& request, JsonObject& reply, bool *changed) {
   if (!request.is<JsonObject>()) return apiError(400, "expected an object");
   const JsonObject& reqObj = request.as<JsonObject>();
   String newName;
   if (getFromRequest<String>(reqObj, "name", newName)) {
-    retarget(std::string(newName.c_str()));
+    if (retarget(std::string(newName.c_str())) && changed) *changed = true;
   }
   return true;
 }

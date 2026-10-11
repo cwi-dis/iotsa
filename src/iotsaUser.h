@@ -15,8 +15,8 @@ public:
   bool allows(const char *right=NULL) override;
   bool allows(const char *obj, IotsaApiOperation verb) override { return allows("api");}
   bool getHandler(const char *path, JsonObject& reply) override;
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
-  bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
+  bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
 protected:
   void configLoad() override;
   void configSave() override;

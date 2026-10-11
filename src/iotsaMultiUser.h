@@ -22,7 +22,7 @@ public:
   bool formHandler_args(IotsaWebServer *server, const String& name, bool includeConfig) override;
 #endif
   bool getHandler(JsonObject& reply) override;
-  bool putHandler(const JsonVariant& request, JsonObject& reply) override;
+  bool putHandler(const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
 };
 
 class IotsaMultiUserMod : public IotsaAuthMod {
@@ -37,8 +37,8 @@ public:
   bool allows(const char *right=NULL) override;
   bool allows(const char *obj, IotsaApiOperation verb) override;
   bool getHandler(const char *path, JsonObject& reply) override;
-  bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+  bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
 protected:
   void configLoad() override;
   void configSave() override;

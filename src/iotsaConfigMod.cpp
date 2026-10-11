@@ -340,7 +340,7 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   return true;
 }
 
-bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   bool anyChanged = false;
 
   JsonObject reqObj = request.as<JsonObject>();
@@ -481,6 +481,7 @@ bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, Js
 #endif // IOTSA_WITH_HTTPS
   if (anyChanged) {
     configSave();
+    if (changed) *changed = true;
     iotsaController.extendCurrentMode();   // an edit happened -> keep the window open (5c)
     iotsaStatus.setStatusPulse(IotsaStatus::COLOUR_MAGENTA, 0, 0, 2000, "Settings saved");  // cwi-dis/iotsa#176
   }

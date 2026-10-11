@@ -36,8 +36,8 @@ public:
   bool allows(const char *obj, IotsaApiOperation verb) override;
   bool allows(const char *right) override;
   bool getHandler(const char *path, JsonObject& reply) override;
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
-  bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
+  bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
 protected:
   void loadCapabilitiesFromRequest();
   void configLoad() override;

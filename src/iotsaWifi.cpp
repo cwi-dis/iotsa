@@ -265,7 +265,7 @@ bool IotsaWifiMod::getHandler(const char *path, JsonObject& reply) {
   return true;
 }
 
-bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   bool anyChanged = false;
   if (!iotsaConfigSettingsWritable()) {
     IOTSA_LOG_DEBUG_WIFI("iotsaWifi", "wifiConfig write rejected, not in config mode");
@@ -281,7 +281,7 @@ bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, Json
   if (getFromRequest<bool>(reqObj, "wifiPowerReduction", wifiPowerReduction)) {
     anyChanged = true;
   }
-  if (anyChanged) configSave();
+  if (anyChanged) { configSave(); if (changed) *changed = true; }
   // No `reboot` key here (cwi-dis/iotsa#106): /api/runmode is the canonical place
   // to ask for a reboot; /api/config keeps it as a backward-compat forwarder.
   // A WiFi credential change takes effect live, so nothing here needs a reboot.

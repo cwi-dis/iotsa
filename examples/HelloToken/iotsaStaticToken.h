@@ -18,7 +18,7 @@ public:
   bool formHandler_args(IotsaWebServer *server, const String& name, bool includeConfig) override;
 #endif
   bool getHandler(JsonObject& reply) override;
-  bool putHandler(const JsonVariant& request, JsonObject& reply) override;
+  bool putHandler(const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
 };
 
 class IotsaStaticTokenMod : public IotsaAuthMod {

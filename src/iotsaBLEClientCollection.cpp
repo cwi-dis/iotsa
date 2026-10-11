@@ -90,8 +90,8 @@ bool IotsaBLEClientCollectionMod::getHandler(const char *path, JsonObject& reply
   return rv;
 }
 
-bool IotsaBLEClientCollectionMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
-  if (!IotsaBLEClientMod::putHandler(path, request, reply)) return false;
+bool IotsaBLEClientCollectionMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
+  if (!IotsaBLEClientMod::putHandler(path, request, reply, changed)) return false;
   JsonObject reqObj = request.as<JsonObject>();
   if (getFromRequest<int>(reqObj, "scan_unknown_duration", scanUnknownDurationMillis)) {
     saveScanConfig();
@@ -119,7 +119,7 @@ bool IotsaBLEClientCollectionMod::putHandler(const char *path, const JsonVariant
     String key(kv.first.c_str());
     JsonVariant devRequest = reqObj[key];
     if (devRequest.isNull()) continue;
-    if (!kv.second->putHandler(devRequest, reply)) return false;
+    if (!kv.second->putHandler(devRequest, reply, changed)) return false;
     reqObj.remove(key);
   }
   checkUnhandled(reqObj);

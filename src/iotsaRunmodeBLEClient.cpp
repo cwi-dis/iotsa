@@ -70,8 +70,8 @@ void IotsaRunmodeBLEClient::workAbandoned() {
   pendingCommand = PendingCommand::None;
 }
 
-bool IotsaRunmodeBLEClient::putHandler(const JsonVariant& request, JsonObject& reply) {
-  if (!IotsaBLEClientDevice::putHandler(request, reply)) return false;
+bool IotsaRunmodeBLEClient::putHandler(const JsonVariant& request, JsonObject& reply, bool *changed) {
+  if (!IotsaBLEClientDevice::putHandler(request, reply, changed)) return false;
   const JsonObject& reqObj = request.as<JsonObject>();
   // One command at a time: queueCommand() refuses while one is pending.
   bool ok = true;

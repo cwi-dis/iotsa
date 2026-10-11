@@ -35,13 +35,13 @@ bool IotsaNothingMod::getHandler(const char *path, JsonObject& reply) {
   return true;
 }
 
-bool IotsaNothingMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+bool IotsaNothingMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
   if (getFromRequest<const char *>(reqObj, "argument", argument)) {
     anyChanged = true;
   }
-  if (anyChanged) configSave();
+  if (anyChanged) { configSave(); if (changed) *changed = true; }
   checkUnhandled(reqObj);
   return true;
 }

@@ -65,7 +65,7 @@ public:
 #endif
 protected:
   bool getHandler(const char *path, JsonObject& reply) override;
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply) override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
   uint32_t _blockLoopOnce = 0;
   uint32_t _blockLoopEvery = 0;
   volatile uint32_t _blockBle = 0;
@@ -136,7 +136,7 @@ bool IotsaFaultMod::getHandler(const char *path, JsonObject& reply) {
   return true;
 }
 
-bool IotsaFaultMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+bool IotsaFaultMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   reply["millisStart"] = millis();
   JsonObject reqObj = request.as<JsonObject>();
   uint32_t blockHandler = 0;

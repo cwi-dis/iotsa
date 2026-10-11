@@ -45,7 +45,7 @@ bool IotsaAlarmMod::getHandler(const char *path, JsonObject& reply) {
   return true;
 }
 
-bool IotsaAlarmMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+bool IotsaAlarmMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   int dur = 0;
   if (request.is<int>()) {
     dur = request.as<int>();

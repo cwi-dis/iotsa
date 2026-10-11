@@ -172,7 +172,7 @@ bool IotsaButtonMod::getHandler(const char *path, JsonObject& reply) {
   return true;
 }
 
-bool IotsaButtonMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+bool IotsaButtonMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   bool anyChanged = false;
   if (strcmp(path, "/api/buttons") == 0) {
       if (!request.is<JsonArray>()) {
@@ -181,9 +181,7 @@ bool IotsaButtonMod::putHandler(const char *path, const JsonVariant& request, Js
       const JsonArray all = request.as<JsonArray>();
       for (int i=0; i<nButton; i++) {
           const JsonVariant r = all[i];
-          if (buttons[i].req.putHandler(r, reply)) {
-              anyChanged = true;
-          }
+          if (!buttons[i].req.putHandler(r, reply, &anyChanged)) return false;
           const JsonObject reqObj = r.as<JsonObject>();
           if (getFromRequest<int>(reqObj, "onPress", buttons[i].sendOnPress)) {
             anyChanged = true;
@@ -198,9 +196,7 @@ bool IotsaButtonMod::putHandler(const char *path, const JsonVariant& request, Js
       int idx = num.toInt();
       if (idx < 0 || idx >= nButton) return apiError(404, "no such button");
       Button *b = buttons + idx;
-      if (b->req.putHandler(request, reply)) {
-        anyChanged = true;
-      }
+      if (!b->req.putHandler(request, reply, &anyChanged)) return false;
       const JsonObject reqObj = request.as<JsonObject>();
       if (getFromRequest<int>(reqObj, "onPress", buttons[idx].sendOnPress)) {
         anyChanged = true;
@@ -210,7 +206,7 @@ bool IotsaButtonMod::putHandler(const char *path, const JsonVariant& request, Js
       }
   }
   // xxxjack cannot use checkUnhandled() because of the array of buttons
-  if (anyChanged) configSave();
+  if (anyChanged) { configSave(); if (changed) *changed = true; }
   return true;
 }
 

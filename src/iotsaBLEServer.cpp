@@ -330,7 +330,7 @@ bool IotsaBLEServerMod::getHandler(const char *path, JsonObject& reply) {
   return true;
 }
 
-bool IotsaBLEServerMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+bool IotsaBLEServerMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   JsonObject reqObj = request.as<JsonObject>();
   bool anyChanged = false;
   bool newEnabled = isEnabled;
@@ -345,7 +345,7 @@ bool IotsaBLEServerMod::putHandler(const char *path, const JsonVariant& request,
   if (getFromRequest<int>(reqObj, "adv_max", adv_max)) anyChanged = true;
   if (getFromRequest<int>(reqObj, "tx_power_dbm", tx_power_dbm)) anyChanged = true;
   if (getFromRequest<int>(reqObj, "idle_timeout", idle_timeout)) anyChanged = true;
-  if (anyChanged) configSave();
+  if (anyChanged) { configSave(); if (changed) *changed = true; }
   checkUnhandled(reqObj);
   return true;
 }

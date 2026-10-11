@@ -92,13 +92,13 @@ bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
   return true;
 }
 
-bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
+bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
   if (pinVBat >= 0 && getFromRequest<float>(reqObj, "correctionVBat", correctionVBat)) {
     anyChanged = true;
   }
-  if (anyChanged) configSave();
+  if (anyChanged) { configSave(); if (changed) *changed = true; }
   checkUnhandled(reqObj);
   return true;
 }
