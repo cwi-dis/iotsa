@@ -4,8 +4,9 @@
 
 #include <string>
 
-IotsaConfigFileLoad::IotsaConfigFileLoad(String filename) {
-  IotsaConfigFileLoad(filename.c_str());
+IotsaConfigFileLoad::IotsaConfigFileLoad(String filename)
+: IotsaConfigFileLoad(filename.c_str())
+{
 }
 
 IotsaConfigFileLoad::IotsaConfigFileLoad(const char *filename) {
@@ -101,8 +102,9 @@ bool IotsaConfigFileLoad::get(String name, String &value, const char *def) {
   return false;
 }
 
-IotsaConfigFileSave::IotsaConfigFileSave(String filename) {
-  IotsaConfigFileSave(filename.c_str());
+IotsaConfigFileSave::IotsaConfigFileSave(String filename)
+: IotsaConfigFileSave(filename.c_str())
+{
 }
 
 IotsaConfigFileSave::IotsaConfigFileSave(const char *filename) {

@@ -2,7 +2,6 @@
 #include "iotsaBLEClient.h"
 #ifdef IOTSA_WITH_BLE
 #include "iotsaConfigFile.h"
-#include "iotsaRunmodeBLEClient.h"
 
 //
 // IotsaBLEClientMod is intended to be used as a base class
@@ -14,8 +13,17 @@ const int SCAN_START_RETRY_MS = 1000; // How long to wait before retrying start 
 
 bool IotsaBLEClientMod::coordinateWithServer = false;
 
-void IotsaBLEClientMod::loadScanConfig() {
+void IotsaBLEClientMod::loadClientConfig() {
   IotsaConfigFileLoad cf("/config/bleclient.cfg");
+  clientConfigLoad(cf);
+}
+
+void IotsaBLEClientMod::saveClientConfig() {
+  IotsaConfigFileSave cf("/config/bleclient.cfg");
+  clientConfigSave(cf);
+}
+
+void IotsaBLEClientMod::clientConfigLoad(IotsaConfigFileLoad& cf) {
   cf.get("scan_interval", scan_interval, scan_interval);
   cf.get("scan_window", scan_window, scan_window);
   cf.get("scan_duration_discovery", scanDurationDiscoveryMillis, scanDurationDiscoveryMillis);
@@ -24,8 +32,7 @@ void IotsaBLEClientMod::loadScanConfig() {
   cf.get("connect_timeout", connectTimeoutMillis, connectTimeoutMillis);
 }
 
-void IotsaBLEClientMod::saveScanConfig() {
-  IotsaConfigFileSave cf("/config/bleclient.cfg");
+void IotsaBLEClientMod::clientConfigSave(IotsaConfigFileSave& cf) {
   cf.put("scan_interval", scan_interval);
   cf.put("scan_window", scan_window);
   cf.put("scan_duration_discovery", scanDurationDiscoveryMillis);
@@ -36,7 +43,7 @@ void IotsaBLEClientMod::saveScanConfig() {
 
 void IotsaBLEClientMod::setup() {
   IFDEBUG IotsaSerial.println("BLEClientmod::setup()");
-  loadScanConfig();
+  loadClientConfig();
   iotsaBLE_ensureInitialized();
   setupScanner();
 }
@@ -74,7 +81,7 @@ bool IotsaBLEClientMod::putHandler(const char *path, const JsonVariant& request,
   if (getFromRequest<int>(reqObj, "connect_settle_time", connectSettleTimeMillis)) anyChanged = true;
   if (getFromRequest<int>(reqObj, "connect_timeout", connectTimeoutMillis)) anyChanged = true;
   if (anyChanged) {
-    saveScanConfig();
+    saveClientConfig();
     setupScanner();
     if (changed) *changed = true;
   }
@@ -105,7 +112,7 @@ bool IotsaBLEClientMod::mayOpenLink() {
 bool IotsaBLEClientMod::needsDiscovery() {
   // We need active discovery if any known device has never been matched by
   // name yet (no address at all), or a known device just failed a connect
-  // attempt and needs reconfirming. (IotsaBLEClientCollectionMod adds "or
+  // attempt and needs reconfirming. (IotsaBLEClientManagerMod adds "or
   // we're hunting for unknown devices" on top of this.)
   for (auto it: devices) {
     if (it.second->available() && !it.second->needsRescan) continue;
@@ -137,6 +144,8 @@ void IotsaBLEClientMod::updateScanning() {
         IotsaSerial.printf("%s ", it.second->getName().c_str());
       }
     }
+    const char *other = otherDiscoveryReason();
+    if (other) IotsaSerial.printf("(%s)", other);
     IotsaSerial.println();
   }
   startScanning();
@@ -185,6 +194,7 @@ void IotsaBLEClientMod::stopScanning() {
   } else {
     IFDEBUG IotsaSerial.println("IotsaBLEClientMod.stopScanning: BLE scan stop");
     scanner->stop();
+    scanStoppedAtMillis = millis();
     scanner = NULL;
     scanningMod = NULL;
     IotsaBLERadioArbiter::endActivity(IotsaBLERadioArbiter::ACTIVITY_SCAN);
@@ -319,6 +329,7 @@ void IotsaBLEClientMod::_handleAdvertisement(const NimBLEAdvertisedDevice *adver
       if (changed) {
         devicesByAddress[advertisedDevice->getAddress().toString()] = dev;
         IFDEBUG IotsaSerial.printf("BLEClientMod: advertisement update byname for %s\n", deviceName.c_str());
+        onDeviceAddressChanged(dev);
         if (knownDeviceCallback) knownDeviceCallback(*advertisedDevice);
       }
       shouldUpdateScanAtMillis = millis(); // We may have found what we were looking for
@@ -350,17 +361,10 @@ IotsaBLEClientDevice* IotsaBLEClientMod::addDevice(std::string id, IotsaBLEClien
   shouldUpdateScanAtMillis = millis(); // We probably want to scan for the new device
   auto it = devices.find(id);
   if (it == devices.end()) {
-    // Device with this ID doesn't exist yet. Add it. If the caller didn't
-    // hand us an already-constructed one, default to a plain
-    // IotsaRunmodeBLEClient (a superset of IotsaBLEClientDevice, no
-    // behavior change for existing callers that only use the base
-    // interface) so every connection this mod hands out can also do the
-    // generic runmode commands (identify/reboot/etc.), not just app-specific
-    // get/set.
-    IotsaBLEClientDevice* dev = device ? device : new IotsaRunmodeBLEClient(id);
-    dev->owner = this;
-    devices[id] = dev;
-    return dev;
+    if (device == nullptr) return nullptr;
+    device->owner = this;
+    devices[id] = device;
+    return device;
   }
   return it->second;
 }
@@ -375,7 +379,7 @@ IotsaBLEClientDevice* IotsaBLEClientMod::getDevice(std::string id) {
 
 void IotsaBLEClientMod::noteKnownAddress(std::string id, std::string address) {
   if (address == "") return;
-  IotsaBLEClientDevice *dev = addDevice(id);
+  IotsaBLEClientDevice *dev = getDevice(id);
   if (dev == NULL) return;
   dev->setKnownAddress(address);
   devicesByAddress[address] = dev;
@@ -398,9 +402,5 @@ void IotsaBLEClientMod::delDevice(std::string id) {
     if (address != "") devicesByAddress.erase(address);
     devices.erase(it);
   }
-#if 0
-  // xxxjack bad idea to save config stright away
-  saveScanConfig();
-#endif
 }
 #endif // IOTSA_WITH_BLE

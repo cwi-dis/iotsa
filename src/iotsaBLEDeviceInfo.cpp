@@ -68,7 +68,9 @@ bool IotsaBLEDeviceInfo::getHandler(JsonObject& reply) {
   std::string addr = getAddress();
   if (addr != "") reply["address"] = String(addr.c_str()); // REST field name unchanged by the bleAddress rename -- wire API, not internal naming
   if (lastSeenAtMillis != 0) {
-    reply["rssi"] = rssi;
+    // rssi only comes from advertisements; a device can also be seen by
+    // connecting to it (IotsaBLEClientDevice), then there's no rssi yet.
+    if (rssi != 0) reply["rssi"] = rssi;
     reply["lastSeenMillisAgo"] = millis() - lastSeenAtMillis;
   }
   return true;
