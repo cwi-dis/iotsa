@@ -154,6 +154,10 @@ protected:
   // currently no reason to scan at all. IotsaBLEClientManagerMod
   // overrides this to also return true while hunting for unknown devices.
   virtual bool needsDiscovery();
+  // For the "BLE scan for:" debug line: a reason to scan other than the
+  // devices listed there (whatever a subclass adds to needsDiscovery()), or
+  // nullptr.
+  virtual const char *otherDiscoveryReason() { return nullptr; }
   static IotsaBLEClientMod *scanningMod;
   int scan_interval = 155;
   int scan_window = 151;

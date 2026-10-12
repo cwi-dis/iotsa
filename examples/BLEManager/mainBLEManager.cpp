@@ -50,9 +50,9 @@ BLEManagerMod bleClientMod(application);
 void setup(void) {
   application.setup();
   application.lateSetup();
-  // Scan for unknown (iotsa) devices continuously, so an operator can see
-  // what's nearby before deciding what to add by name.
-  bleClientMod.findUnknownDevices(true);
+  // Not scanning for unknown devices continuously (that kept the radio
+  // scanning forever): an operator starts a session with scanUnknown, on the
+  // web page or over REST, to see what's nearby before adding it by name.
 }
 
 void loop(void) {

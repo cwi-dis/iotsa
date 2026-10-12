@@ -63,6 +63,7 @@ protected:
   // The devices added through "add", see addDeviceByName().
   IotsaBLEClientCollection collection{*this};
   virtual bool needsDiscovery() override;
+  const char *otherDiscoveryReason() override { return scanForUnknownClients ? "unknown devices" : nullptr; }
   void onUnknownDeviceSeen(const NimBLEAdvertisedDevice* advertisedDevice, const std::string& deviceName) override;
   void startScanUnknown();
   // Gates entry into unknownDevices (and unknownDeviceCallback) -- i.e. "is

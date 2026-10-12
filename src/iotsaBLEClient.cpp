@@ -144,6 +144,8 @@ void IotsaBLEClientMod::updateScanning() {
         IotsaSerial.printf("%s ", it.second->getName().c_str());
       }
     }
+    const char *other = otherDiscoveryReason();
+    if (other) IotsaSerial.printf("(%s)", other);
     IotsaSerial.println();
   }
   startScanning();
