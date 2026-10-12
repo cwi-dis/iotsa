@@ -80,9 +80,8 @@ protected:
   // seen in passing.
   std::map<std::string, IotsaBLEDeviceInfo*> unknownDevices;
   // Named devices the scanner saw that isInterestingUnknownDevice() turned
-  // down, newest first, so a human can see what is around and why it isn't
-  // recognized (e.g. a lissabon dimmer on old firmware advertising another
-  // service). Identified by address. At most UNRECOGNIZED_MAX: once full, the
+  // down, newest first, so a human can see what is around (e.g. a lissabon
+  // dimmer on old firmware, close by: high RSSI). Identified by address. At most UNRECOGNIZED_MAX: once full, the
   // least recently seen entry is reused, so after warm-up there are no more
   // allocations. Nameless advertisements are ignored, like everywhere else.
   // Should get its own endpoint, cwi-dis/iotsa#217.
@@ -92,7 +91,6 @@ protected:
     char name[25];
     int8_t rssi;
     uint32_t lastSeenAtMillis;
-    NimBLEUUID service;   // first advertised service UUID, if any
   };
   std::list<UnrecognizedDevice> unrecognizedDevices;
   void _noteUnrecognized(const NimBLEAdvertisedDevice* advertisedDevice, const std::string& deviceName);

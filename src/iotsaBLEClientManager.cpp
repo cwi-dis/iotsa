@@ -53,10 +53,8 @@ void IotsaBLEClientManagerMod::_noteUnrecognized(const NimBLEAdvertisedDevice* a
     unrecognizedDevices.splice(unrecognizedDevices.begin(), unrecognizedDevices, it);
   } else if ((int)unrecognizedDevices.size() < UNRECOGNIZED_MAX) {
     unrecognizedDevices.emplace_front();
-    unrecognizedDevices.front().service = NimBLEUUID();
   } else {
     unrecognizedDevices.splice(unrecognizedDevices.begin(), unrecognizedDevices, std::prev(unrecognizedDevices.end()));
-    unrecognizedDevices.front().service = NimBLEUUID();
   }
   UnrecognizedDevice& entry = unrecognizedDevices.front();
   entry.address = address;
@@ -64,8 +62,6 @@ void IotsaBLEClientManagerMod::_noteUnrecognized(const NimBLEAdvertisedDevice* a
   entry.name[sizeof(entry.name) - 1] = '\0';
   entry.rssi = advertisedDevice->getRSSI();
   entry.lastSeenAtMillis = millis();
-  // Not every advertisement carries the service list: keep the last one seen.
-  if (advertisedDevice->getServiceUUIDCount() > 0) entry.service = advertisedDevice->getServiceUUID(0);
 }
 
 void IotsaBLEClientManagerMod::startScanUnknown() {
@@ -116,7 +112,6 @@ bool IotsaBLEClientManagerMod::getHandler(const char *path, JsonObject& reply) {
       e["name"] = entry.name;
       e["lastSeenSecondsAgo"] = (now - entry.lastSeenAtMillis) / 1000;
       e["rssi"] = entry.rssi;
-      if (entry.service.bitSize() != 0) e["service"] = entry.service.toString();
     }
   }
   // Known devices (cwi-dis/iotsa#264), each reported via its own getHandler()
@@ -226,12 +221,10 @@ void IotsaBLEClientManagerMod::formHandler_fields(String& message, const String&
   if (unrecognizedDevices.size() == 0) {
     message += "<p>None seen recently.</p>";
   } else {
-    message += "<table><tr><th>Address</th><th>Name</th><th>Seconds ago</th><th>RSSI</th><th>First service</th></tr>";
+    message += "<table><tr><th>Address</th><th>Name</th><th>Seconds ago</th><th>RSSI</th></tr>";
     uint32_t now = millis();
     for (auto& entry : unrecognizedDevices) {
-      message += "<tr><td>" + String(entry.address.toString().c_str()) + "</td><td>" + htmlEncode(entry.name) + "</td><td>" + String((now - entry.lastSeenAtMillis) / 1000) + "</td><td>" + String(entry.rssi) + "</td><td>";
-      if (entry.service.bitSize() != 0) message += entry.service.toString().c_str();
-      message += "</td></tr>";
+      message += "<tr><td>" + String(entry.address.toString().c_str()) + "</td><td>" + htmlEncode(entry.name) + "</td><td>" + String((now - entry.lastSeenAtMillis) / 1000) + "</td><td>" + String(entry.rssi) + "</td></tr>";
     }
     message += "</table>";
   }
