@@ -1,18 +1,19 @@
 //
-// iotsa BLE device controller: discover, add, rename, and remove any number
+// iotsa BLE device manager: discover, add, rename, and remove any number
 // of other iotsa devices reachable over BLE, entirely through
-// IotsaBLEClientCollectionMod's own REST/web surface -- no app-specific
+// IotsaBLEClientManagerMod's own REST/web surface -- no app-specific
 // protocol code needed at all. Unlike the fully-generic collection mod
 // itself, this filters candidates to iotsa devices specifically (anything
 // advertising the universal runmode service every iotsa device compiles in
 // unconditionally), so "Available Unknown/new devices" only ever shows
 // other iotsa devices, not every random BLE gadget nearby.
 //
-// Each added device defaults to a plain IotsaRunmodeBLEClient
-// (IotsaBLEClientMod::addDevice()'s own default), which now also exposes
+// Each added device is a plain IotsaRunmodeBLEClient (the default factory of
+// the manager's IotsaBLEClientCollection), and is remembered across reboots
+// (cwi-dis/iotsa#286). It also exposes
 // identify/reboot/promoteMode/setWifiDisabled as queueable commands via its
 // own REST/web surface (IotsaRunmodeBLEClient::queueIdentify() & friends,
-// serviced every tick by IotsaBLEClientCollectionMod::loop()) -- so this is
+// serviced every tick by IotsaBLEClientMod::loop()) -- so this is
 // a real "WiFi/REST to BLE-only iotsa device" bridge/gateway, the mirror
 // image of HPS (cwi-dis/iotsa#267).
 //
@@ -25,14 +26,14 @@
 //
 #include "iotsa.h"
 
-IotsaApplication application("iotsa BLE Controller");
+IotsaApplication application("iotsa BLE Manager");
 
-#include "iotsaBLEClientCollection.h"
+#include "iotsaBLEClientManager.h"
 #include "iotsaRunmodeBLEClient.h"
 
-class BLEControllerMod : public IotsaBLEClientCollectionMod {
+class BLEManagerMod : public IotsaBLEClientManagerMod {
 public:
-  using IotsaBLEClientCollectionMod::IotsaBLEClientCollectionMod;
+  using IotsaBLEClientManagerMod::IotsaBLEClientManagerMod;
 protected:
   // Only surface other iotsa devices as "unknown/addable" candidates --
   // every iotsa device compiles IotsaRunmodeMod in unconditionally, so this
@@ -43,7 +44,7 @@ protected:
   }
 };
 
-BLEControllerMod bleClientMod(application);
+BLEManagerMod bleClientMod(application);
 
 void setup(void) {
   application.setup();

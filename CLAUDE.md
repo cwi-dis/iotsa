@@ -113,7 +113,7 @@ committed generated file is stale.
 - `Led`, `Light` — LED control / BLE
 - `Button`, `Input`, `Ringer` — input handling
 - `Log`, `Temperature`, `DateTime` — logging and sensors
-- `BLEController`, `BLEButton`, `BLERinger` — BLE device-to-device communication:
+- `BLEManager`, `BLEButton`, `BLERinger` — BLE device-to-device communication:
   a central that manages and controls other iotsa devices, and a button/ringer
   pair (Immediate Alert Service)
 - `sandbox/Infra` — minimal scaffold for infrastructure/transport work; not in the

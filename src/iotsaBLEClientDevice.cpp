@@ -61,6 +61,9 @@ void IotsaBLEClientDevice::ConnCallbacks::onDisconnect(NimBLEClient* pClient, in
 }
 
 IotsaBLEClientDevice::~IotsaBLEClientDevice() {
+  // The registry doesn't own us, so we take ourselves out of it: otherwise it
+  // keeps a dangling pointer, reachable by the next matching advertisement.
+  if (owner && bleName != "" && owner->getDevice(bleName) == this) owner->delDevice(bleName);
   release();
 }
 

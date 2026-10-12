@@ -20,11 +20,16 @@ typedef const char *UUIDString;
 // device registry -- the minimum any BLE-central consumer needs, whether it
 // tracks one device (examples/BLEButton) or many. Deliberately does NOT
 // include a human-facing "browse/manage known and unknown devices" REST/web
-// surface, or unknown-device discovery -- that's IotsaBLEClientCollectionMod
-// (iotsaBLEClientCollection.h), which subclasses this. Split out
+// surface, or unknown-device discovery -- that's IotsaBLEClientManagerMod
+// (iotsaBLEClientManager.h), which subclasses this. Split out
 // cwi-dis/iotsa#264: found while asking why examples/BLEButton -- which only
 // ever needs a reference to its single ringer -- had to carry a whole
 // "collection" class at all.
+//
+// The registry doesn't own its devices (cwi-dis/iotsa#286): whoever
+// constructs a device owns it and deletes it, and a device unregisters
+// itself when it is deleted. IotsaBLEClientCollection is the owner for
+// devices that are added and removed at runtime.
 class IotsaBLEClientMod : public IotsaModule, public NimBLEScanCallbacks {
 public:
   using IotsaModule::IotsaModule;
@@ -38,24 +43,18 @@ public:
   // Interfaces for use by subclasses (or other classes with a reference)
   // to control which BLE devices are known by this class
   //
-  // Registers `id` as a known device. If `device` is null (the common
-  // case), this mod constructs a plain IotsaRunmodeBLEClient itself -- fine
-  // for any caller that doesn't need its own subclass. If `device` is given,
-  // it's already fully constructed by the caller (e.g. Lissabon::DimmerBLEClient
-  // passing itself, via its IotsaRunmodeBLEClient base) and this mod just
-  // starts tracking it -- necessary whenever the caller's own constructor
-  // needs more than just an id (DimmerBLEClient's does), or needs the id
-  // known before this mod could construct anything (this mod's constructor
-  // path requires the id upfront; DimmerBLEClient gets its name later, via
-  // setName()).
-  IotsaBLEClientDevice* addDevice(std::string id, IotsaBLEClientDevice* device = nullptr);
-  IotsaBLEClientDevice* addDevice(String id, IotsaBLEClientDevice* device = nullptr) { return addDevice(std::string(id.c_str()), device); }
+  // Registers `device` under `id`. The caller keeps ownership. Returns the
+  // device registered under `id`, which is a different one if `id` was
+  // already taken.
+  IotsaBLEClientDevice* addDevice(std::string id, IotsaBLEClientDevice* device);
+  IotsaBLEClientDevice* addDevice(String id, IotsaBLEClientDevice* device) { return addDevice(std::string(id.c_str()), device); }
   IotsaBLEClientDevice* getDevice(std::string id);
   IotsaBLEClientDevice* getDevice(String id) { return getDevice(std::string(id.c_str())); }
   void delDevice(std::string id);
   void delDevice(String id) { delDevice(std::string(id.c_str())); }
   // Seed a known device's persisted address, so it can be found/connected
   // to directly without waiting for (or requiring) a matching advertisement.
+  // Does nothing if no device is registered under `id`.
   void noteKnownAddress(std::string id, std::string address);
   void noteKnownAddress(String id, String address) { noteKnownAddress(std::string(id.c_str()), std::string(address.c_str())); }
   bool canConnect();
@@ -111,26 +110,32 @@ public:
   //
   static bool coordinateWithServer;
 protected:
-  // These are all the known devices (known by the application, not by this module)
+  // These are all the known devices (known by the application, not by this
+  // module). Not owned, see the class comment.
   std::map<std::string, IotsaBLEClientDevice*> devices;
   // These are all known devices by address
   std::map<std::string, IotsaBLEClientDevice *>devicesByAddress;
 protected:
-  // Named distinctly from "configLoad"/"configSave" (not just "virtual"), on
-  // purpose: a subclass meant to be used as an app's own module (e.g.
-  // LissabonControllerMod, LissabonRemoteMod) already has its own, unrelated
-  // IotsaModule-level configLoad()/configSave() for its own app config --
-  // same name, same signature, would otherwise silently become an
-  // unintended override of *this* class's scan-tuning persistence the
-  // moment either became virtual (found while adding
-  // IotsaBLEClientCollectionMod's own config field, cwi-dis/iotsa#264).
-  virtual void loadScanConfig();
-  virtual void saveScanConfig();
+  // Load and save /config/bleclient.cfg. One open of the file each: a
+  // subclass adds its own keys by overriding clientConfigLoad()/
+  // clientConfigSave() and calling the base version, never by opening the
+  // file a second time (that truncated the base class's keys,
+  // cwi-dis/iotsa#286).
+  // Named distinctly from "configLoad"/"configSave" on purpose: a subclass
+  // meant to be used as an app's own module (e.g. LissabonControllerMod,
+  // LissabonRemoteMod) already has its own, unrelated IotsaModule-level
+  // configLoad()/configSave() for its own app config -- same name, same
+  // signature, would otherwise silently become an unintended override of
+  // *this* class's persistence (cwi-dis/iotsa#264).
+  void loadClientConfig();
+  void saveClientConfig();
+  virtual void clientConfigLoad(IotsaConfigFileLoad& cf);
+  virtual void clientConfigSave(IotsaConfigFileSave& cf);
   void onResult(const NimBLEAdvertisedDevice *advertisedDevice);   // NimBLE host task
   void _handleAdvertisement(const NimBLEAdvertisedDevice *advertisedDevice);   // loop task
   // Called from onResult() for an advertisement that doesn't match any known
   // device (by name or address) -- i.e. a candidate this class itself has no
-  // opinion on. Default: ignore it entirely. IotsaBLEClientCollectionMod
+  // opinion on. Default: ignore it entirely. IotsaBLEClientManagerMod
   // overrides this to populate its unknownDevices listing (subject to its
   // own isInterestingUnknownDevice() filter).
   virtual void onUnknownDeviceSeen(const NimBLEAdvertisedDevice* advertisedDevice, const std::string& deviceName) {}
@@ -146,7 +151,7 @@ protected:
   // failed a connect attempt and needs reconfirming (see
   // IotsaBLEClientDevice::needsRescan) -- and, with scanOnlyForPendingWork,
   // only if that device also has work pending. False means there is
-  // currently no reason to scan at all. IotsaBLEClientCollectionMod
+  // currently no reason to scan at all. IotsaBLEClientManagerMod
   // overrides this to also return true while hunting for unknown devices.
   virtual bool needsDiscovery();
   static IotsaBLEClientMod *scanningMod;

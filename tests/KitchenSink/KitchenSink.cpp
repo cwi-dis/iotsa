@@ -36,7 +36,7 @@
 #include "iotsaSimple.h"
 #include "iotsaNothing.h"
 #include "iotsaBLEClient.h"
-#include "iotsaBLEClientCollection.h"
+#include "iotsaBLEClientManager.h"
 
 #ifndef IOTSA_PIN_BUTTON
 #define IOTSA_PIN_BUTTON 0 // GPIO0 is the "Boot" pin, wired to a pushbutton on most dev boards.
@@ -127,14 +127,14 @@ IotsaSimpleMod simpleMod(application, "/kitchensink", kitchenSinkSimpleHandler, 
 // (pauses/resumes the BLE server's advertising around each scan; iotsa creates
 // the server automatically in BLE builds) -- the same BLE
 // server/client interplay flagged as unsolved in the #113 scoping discussion.
-// IotsaBLEClientCollectionMod (not the bare IotsaBLEClientMod), since
+// IotsaBLEClientManagerMod (not the bare IotsaBLEClientMod), since
 // findUnknownDevices()/the devices-browsing REST/web page it exercises moved
 // there (cwi-dis/iotsa#264).
-class KitchenSinkBLEClientMod : public IotsaBLEClientCollectionMod {
+class KitchenSinkBLEClientMod : public IotsaBLEClientManagerMod {
 public:
-  using IotsaBLEClientCollectionMod::IotsaBLEClientCollectionMod;
+  using IotsaBLEClientManagerMod::IotsaBLEClientManagerMod;
   void setup() override {
-    IotsaBLEClientCollectionMod::setup();
+    IotsaBLEClientManagerMod::setup();
     findUnknownDevices(true);
   }
 };

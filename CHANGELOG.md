@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- BLE client manager: devices added with `add` are remembered across reboots, and saving no longer wipes the scan and connect settings (#286)
 - A PUT that changed nothing answered 400; setting `scan_interval`/`scan_window` over REST set them to 0; BLE could not be re-enabled over REST (`isEnabled`) (#280)
 - BLE handlers (including the whole REST API over HPS), scan results and notifications ran on the NimBLE task, racing with `loop()`; they now run in the loop task (`IotsaApplication::postToLoop()`/`runInLoop()`) (#236)
 - BLE client links use a 7.5-15 ms connection interval instead of 30-50 ms: `doWork()` holds `loop()` about 3x shorter (#274)
@@ -60,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `IotsaBLEClientCollectionMod` is now `IotsaBLEClientManagerMod` (`iotsaBLEClientManager.h`), the example `BLEController` is now `BLEManager`; the device registry no longer creates or owns devices (#286)
 - `IotsaApiModObject` handlers have the module handlers' shape: `bool getHandler(reply)`, `bool putHandler(request, reply, bool *changed = nullptr)`; module `put`/`postHandler` also get the optional `changed` output (hard break) (#280)
 - `IOTSA_WIFI_DEBUG` is now `IOTSA_DEBUG_WIFI` (#182)
 - The status LED is created automatically from the board definition (`IOTSA_PIN_LED`, `IOTSA_LED_NEOPIXEL`, `IOTSA_LED_ACTIVE_LOW`, replacing `IOTSA_PIN_NEOPIXEL`), and can be a plain LED; `-DIOTSA_WITHOUT_STATUS_LED` opts out (#272)
