@@ -146,7 +146,7 @@ public:
     Searching,    // work pending, a scan is looking for it
     NotFound,     // looked for it, gave up before it was seen
     Remembered,   // address known (from config), not seen since boot
-    Seen          // advertised since boot (lastSeenMillisAgo says when)
+    Seen          // advertised or connected to since boot (lastSeenMillisAgo says when)
   };
   Presence getPresence();
   static const char *presenceName(Presence p);   // REST: "unknown", "searching", ...
@@ -200,6 +200,7 @@ protected:
   void _runWork();
   bool _startAsyncConnect();
   void _connectFailed(int rc);
+  void _noteConnected();
   void _closeLink();
 protected:
   // Set at construction time (the optional _owner constructor argument) or

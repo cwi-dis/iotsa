@@ -196,7 +196,7 @@ bool IotsaBLEClientDevice::connect() {
   uint32_t elapsedMs = millis() - t0;
   if (rv) {
     numConnectSucceeded++;
-    needsRescan = false;
+    _noteConnected();
   } else {
     numConnectFailed++;
     IotsaSerial.printf("IotsaBLEClientDevice::connect(%s): failed after %ums, rc=%d (%s)\n",
@@ -291,7 +291,7 @@ void IotsaBLEClientDevice::service() {
       return; // work stays pending: retried until its deadline
     }
     numConnectSucceeded++;
-    needsRescan = false;
+    _noteConnected();
     linkState = LinkState::Lingering; // connected; the work runs below
     lingerUntilMillis = now;
   }
@@ -415,6 +415,14 @@ void IotsaBLEClientDevice::_closeLink() {
 
 void IotsaBLEClientDevice::endLinger() {
   if (linkState == LinkState::Lingering && !workPending) _closeLink();
+}
+
+void IotsaBLEClientDevice::_noteConnected() {
+  // A connect is better proof that the device is there than an
+  // advertisement: count it as seen (rssi stays from the last advertisement).
+  needsRescan = false;
+  searchGaveUp = false;
+  lastSeenAtMillis = millis();
 }
 
 IotsaBLEClientDevice::Presence IotsaBLEClientDevice::getPresence() {
