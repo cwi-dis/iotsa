@@ -45,6 +45,12 @@ void IotsaBLEClientManagerMod::onUnknownDeviceSeen(const NimBLEAdvertisedDevice*
   if (unknownDeviceCallback) unknownDeviceCallback(*advertisedDevice);
 }
 
+void IotsaBLEClientManagerMod::onDeviceAddressChanged(IotsaBLEClientDevice* device) {
+  // Ours are saved with their address: at most one flash write per device,
+  // plus one whenever its address changes.
+  if (collection.find(device->getName()) == device) saveClientConfig();
+}
+
 void IotsaBLEClientManagerMod::_noteUnrecognized(const NimBLEAdvertisedDevice* advertisedDevice, const std::string& deviceName) {
   const NimBLEAddress& address = advertisedDevice->getAddress();
   auto it = unrecognizedDevices.begin();

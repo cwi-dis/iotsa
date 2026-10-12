@@ -329,6 +329,7 @@ void IotsaBLEClientMod::_handleAdvertisement(const NimBLEAdvertisedDevice *adver
       if (changed) {
         devicesByAddress[advertisedDevice->getAddress().toString()] = dev;
         IFDEBUG IotsaSerial.printf("BLEClientMod: advertisement update byname for %s\n", deviceName.c_str());
+        onDeviceAddressChanged(dev);
         if (knownDeviceCallback) knownDeviceCallback(*advertisedDevice);
       }
       shouldUpdateScanAtMillis = millis(); // We may have found what we were looking for

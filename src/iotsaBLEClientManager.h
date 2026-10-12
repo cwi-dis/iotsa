@@ -65,6 +65,7 @@ protected:
   virtual bool needsDiscovery() override;
   const char *otherDiscoveryReason() override { return scanForUnknownClients ? "unknown devices" : nullptr; }
   void onUnknownDeviceSeen(const NimBLEAdvertisedDevice* advertisedDevice, const std::string& deviceName) override;
+  void onDeviceAddressChanged(IotsaBLEClientDevice* device) override;
   void startScanUnknown();
   // Gates entry into unknownDevices (and unknownDeviceCallback) -- i.e. "is
   // this advertisement worth treating as a candidate for this collection at

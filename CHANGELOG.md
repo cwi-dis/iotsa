@@ -62,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- BLE client devices report `presence` (unknown, searching, notFound, remembered, seen) instead of `found`, which said "not found" for a device nobody had looked for yet (#286)
 - `IotsaBLEClientCollectionMod` is now `IotsaBLEClientManagerMod` (`iotsaBLEClientManager.h`), the example `BLEController` is now `BLEManager`; the device registry no longer creates or owns devices (#286)
 - `IotsaApiModObject` handlers have the module handlers' shape: `bool getHandler(reply)`, `bool putHandler(request, reply, bool *changed = nullptr)`; module `put`/`postHandler` also get the optional `changed` output (hard break) (#280)
 - `IOTSA_WIFI_DEBUG` is now `IOTSA_DEBUG_WIFI` (#182)

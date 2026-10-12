@@ -139,6 +139,10 @@ protected:
   // overrides this to populate its unknownDevices listing (subject to its
   // own isInterestingUnknownDevice() filter).
   virtual void onUnknownDeviceSeen(const NimBLEAdvertisedDevice* advertisedDevice, const std::string& deviceName) {}
+  // A known device was seen at a new address (including its first one).
+  // Loop task. IotsaBLEClientManagerMod saves it, so the next boot can
+  // connect without a scan.
+  virtual void onDeviceAddressChanged(IotsaBLEClientDevice* device) {}
   void onScanEnd(const NimBLEScanResults& scanResults, int reason) override;
   void setupScanner();
   void updateScanning();

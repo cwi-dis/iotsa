@@ -88,6 +88,7 @@ bool IotsaBLEClientDevice::receivedAdvertisement(const NimBLEAdvertisedDevice& _
   // Seeing this device advertise at all reconfirms it's reachable, regardless
   // of whether its bleAddress happened to change.
   needsRescan = false;
+  searchGaveUp = false;
   // disconnect() only touches pClient, not bleAddress/bleAddressValid -- fine to
   // call after the base class has released bleAddressMutex, and keeps
   // disconnect() (which talks to the BLE stack) from ever running while
@@ -309,6 +310,7 @@ void IotsaBLEClientDevice::service() {
   }
   if ((int32_t)(now - workDeadlineAtMillis) >= 0) {
     workPending = false;
+    if (linkState == LinkState::WaitingForAddress) searchGaveUp = true;
     lastWorkStatus = "gave up: device not reachable";
     IotsaSerial.printf("IotsaBLEClientDevice(%s): %s\n", bleName.c_str(), lastWorkStatus);
     workAbandoned();
@@ -415,6 +417,24 @@ void IotsaBLEClientDevice::endLinger() {
   if (linkState == LinkState::Lingering && !workPending) _closeLink();
 }
 
+IotsaBLEClientDevice::Presence IotsaBLEClientDevice::getPresence() {
+  if (linkState == LinkState::WaitingForAddress) return Presence::Searching;
+  if (searchGaveUp) return Presence::NotFound;
+  if (lastSeenAtMillis != 0) return Presence::Seen;
+  if (available()) return Presence::Remembered;
+  return Presence::Unknown;
+}
+
+const char *IotsaBLEClientDevice::presenceName(Presence p) {
+  static const char *names[] = {"unknown", "searching", "notFound", "remembered", "seen"};
+  return names[(int)p];
+}
+
+const char *IotsaBLEClientDevice::presenceText(Presence p) {
+  static const char *texts[] = {"address not known yet", "looking for it", "not found", "address remembered, not seen yet", "seen"};
+  return texts[(int)p];
+}
+
 bool IotsaBLEClientDevice::getHandler(JsonObject& reply) {
   IotsaBLEDeviceInfo::getHandler(reply);
   if (lastConnectAttemptAtMillis != 0) {
@@ -432,7 +452,7 @@ bool IotsaBLEClientDevice::getHandler(JsonObject& reply) {
     reply["lastDisconnectReason"] = NimBLEUtils::returnCodeToString(lastDisconnectReason);
     reply["lastDisconnectMillisAgo"] = millis() - lastDisconnectAtMillis;
   }
-  reply["found"] = available();
+  reply["presence"] = presenceName(getPresence());
   reply["connected"] = isConnected();
   static const char *linkStateNames[] = {"idle", "waitingForAddress", "waitingForRadio", "connecting", "lingering"};
   reply["linkState"] = linkStateNames[(int)linkState];
@@ -448,6 +468,8 @@ bool IotsaBLEClientDevice::retarget(const std::string& newName) {
   if (owner && bleName != "") owner->delDevice(bleName);
   setKnownName(newName);
   clearDevice(); // old address/connection state doesn't apply to the new target
+  lastSeenAtMillis = 0;
+  searchGaveUp = false;
   if (owner && bleName != "") owner->addDevice(bleName, this);
   return true;
 }
@@ -490,11 +512,13 @@ void IotsaBLEClientDevice::formHandler_fields(String& message, const String& tex
   if (includeConfig) {
     message += "BLE device name: <input name='" + f_name + ".name' value='" + String(bleName.c_str()) + "'><br>";
   }
+  const char *presence = presenceText(getPresence());
   if (available()) {
-    message += "BLE address " + String(getAddress().c_str());
-    message += isConnected() ? " (connected)" : " (found, not connected)";
+    message += "BLE address " + String(getAddress().c_str()) + " (" + presence;
+    if (isConnected()) message += ", connected";
+    message += ")";
   } else {
-    message += "<em>not found</em>";
+    message += "<em>" + String(presence) + "</em>";
   }
   message += "<br>";
 }
@@ -505,7 +529,7 @@ void IotsaBLEClientDevice::formHandler_TD(String& message, bool includeConfig) {
     message += String(getAddress().c_str());
     message += isConnected() ? " (connected)" : "";
   } else {
-    message += "<em>not found</em>";
+    message += "<em>" + String(presenceText(getPresence())) + "</em>";
   }
   message += "</td>";
 }

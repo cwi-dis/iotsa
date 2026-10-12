@@ -135,6 +135,22 @@ public:
   // cwi-dis/iotsa#263), so it can later move to a worker task unchanged.
   void service();
   LinkState getLinkState() { return linkState; }
+  //
+  // Where we stand on finding this device, for humans (cwi-dis/iotsa#286).
+  // available() only says whether an address is known, which made "not
+  // found" mean "never looked for" too, and "found" mean "address
+  // remembered from config" too.
+  //
+  enum class Presence : uint8_t {
+    Unknown,      // no address, and nobody has looked for it yet
+    Searching,    // work pending, a scan is looking for it
+    NotFound,     // looked for it, gave up before it was seen
+    Remembered,   // address known (from config), not seen since boot
+    Seen          // advertised since boot (lastSeenMillisAgo says when)
+  };
+  Presence getPresence();
+  static const char *presenceName(Presence p);   // REST: "unknown", "searching", ...
+  static const char *presenceText(Presence p);   // web page
   // Outcome of the most recent work: "done", "failed", "gave up: ...", or
   // nullptr if there hasn't been any yet.
   const char *getLastWorkStatus() { return lastWorkStatus; }
@@ -253,6 +269,9 @@ protected:
   // to be asleep), so it must not force a costly rediscovery-by-name scan.
   // Consulted by IotsaBLEClientMod::needsDiscovery() to trigger a rescan.
   bool needsRescan = false;
+  // Set when pending work is given up on while waiting for the address,
+  // cleared when the device is seen: getPresence()'s NotFound.
+  bool searchGaveUp = false;
   // NimBLE host-stack reason code from the most recent onDisconnect(), or -1
   // if none seen yet. Distinguishes "connect succeeded, then something went
   // wrong later" from a plain failed connect attempt (which never reaches
