@@ -190,6 +190,7 @@ protected:
   int maxOpenClientConnections = 1;
   bool scanOnlyForPendingWork = true;
   uint32_t scanStartedAtMillis = 0;
+  uint32_t scanStoppedAtMillis = 0;   // 0: no scan has run yet
   uint32_t shouldUpdateScanAtMillis = 0;
   // Only loop() (and the functions it calls: startScanning/stopScanning) may
   // write this. Cross-task scan/connect exclusion no longer reads it (that's

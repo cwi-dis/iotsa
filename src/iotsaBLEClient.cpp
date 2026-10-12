@@ -192,6 +192,7 @@ void IotsaBLEClientMod::stopScanning() {
   } else {
     IFDEBUG IotsaSerial.println("IotsaBLEClientMod.stopScanning: BLE scan stop");
     scanner->stop();
+    scanStoppedAtMillis = millis();
     scanner = NULL;
     scanningMod = NULL;
     IotsaBLERadioArbiter::endActivity(IotsaBLERadioArbiter::ACTIVITY_SCAN);

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- BLE client manager lists the 32 most recent named BLE devices its filter turned down (`unrecognized`: address, name, RSSI, first service, seconds ago), to see why a device isn't recognized (#286)
 - API errors say why: handlers `return apiError(status, "why")` (404, 409 not in configuration mode, ...), replies `{"iotsa_api_error": ...}` over REST/HPS/CoAP; unused fields are reported as `iotsa_api_ignored`, the CLI prints both (#280)
 - `IotsaConfigFileLoad::get()` returns whether the key was present (#39)
 - Breadcrumbs: what the device was doing before a watchdog reset, crash or reboot survives in RTC memory and shows on `/api/status` (#276)

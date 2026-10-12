@@ -2,6 +2,7 @@
 #ifdef IOTSA_WITH_BLE
 #include "iotsaConfigFile.h"
 #include <vector>
+#include <string.h>
 
 void IotsaBLEClientManagerMod::clientConfigLoad(IotsaConfigFileLoad& cf) {
   IotsaBLEClientMod::clientConfigLoad(cf);
@@ -28,7 +29,10 @@ void IotsaBLEClientManagerMod::loop() {
 }
 
 void IotsaBLEClientManagerMod::onUnknownDeviceSeen(const NimBLEAdvertisedDevice* advertisedDevice, const std::string& deviceName) {
-  if (!isInterestingUnknownDevice(advertisedDevice)) return;
+  if (!isInterestingUnknownDevice(advertisedDevice)) {
+    _noteUnrecognized(advertisedDevice, deviceName);
+    return;
+  }
   IotsaBLEDeviceInfo *devInfo;
   auto it3 = unknownDevices.find(deviceName);
   if (it3 == unknownDevices.end()) {
@@ -39,6 +43,29 @@ void IotsaBLEClientManagerMod::onUnknownDeviceSeen(const NimBLEAdvertisedDevice*
   }
   devInfo->receivedAdvertisement(*advertisedDevice);
   if (unknownDeviceCallback) unknownDeviceCallback(*advertisedDevice);
+}
+
+void IotsaBLEClientManagerMod::_noteUnrecognized(const NimBLEAdvertisedDevice* advertisedDevice, const std::string& deviceName) {
+  const NimBLEAddress& address = advertisedDevice->getAddress();
+  auto it = unrecognizedDevices.begin();
+  while (it != unrecognizedDevices.end() && !(it->address == address)) ++it;
+  if (it != unrecognizedDevices.end()) {
+    unrecognizedDevices.splice(unrecognizedDevices.begin(), unrecognizedDevices, it);
+  } else if ((int)unrecognizedDevices.size() < UNRECOGNIZED_MAX) {
+    unrecognizedDevices.emplace_front();
+    unrecognizedDevices.front().service = NimBLEUUID();
+  } else {
+    unrecognizedDevices.splice(unrecognizedDevices.begin(), unrecognizedDevices, std::prev(unrecognizedDevices.end()));
+    unrecognizedDevices.front().service = NimBLEUUID();
+  }
+  UnrecognizedDevice& entry = unrecognizedDevices.front();
+  entry.address = address;
+  strncpy(entry.name, deviceName.c_str(), sizeof(entry.name) - 1);
+  entry.name[sizeof(entry.name) - 1] = '\0';
+  entry.rssi = advertisedDevice->getRSSI();
+  entry.lastSeenAtMillis = millis();
+  // Not every advertisement carries the service list: keep the last one seen.
+  if (advertisedDevice->getServiceUUIDCount() > 0) entry.service = advertisedDevice->getServiceUUID(0);
 }
 
 void IotsaBLEClientManagerMod::startScanUnknown() {
@@ -78,6 +105,20 @@ bool IotsaBLEClientManagerMod::getHandler(const char *path, JsonObject& reply) {
     }
   }
   reply["scanUnknown"] = (char *)NULL;
+  reply["scanning"] = isScanning();
+  if (!isScanning() && scanStoppedAtMillis != 0) reply["lastScanSecondsAgo"] = (millis() - scanStoppedAtMillis) / 1000;
+  if (unrecognizedDevices.size()) {
+    JsonArray unrecognizedReply = reply["unrecognized"].to<JsonArray>();
+    uint32_t now = millis();
+    for (auto& entry : unrecognizedDevices) {
+      JsonObject e = unrecognizedReply.add<JsonObject>();
+      e["address"] = entry.address.toString();
+      e["name"] = entry.name;
+      e["lastSeenSecondsAgo"] = (now - entry.lastSeenAtMillis) / 1000;
+      e["rssi"] = entry.rssi;
+      if (entry.service.bitSize() != 0) e["service"] = entry.service.toString();
+    }
+  }
   // Known devices (cwi-dis/iotsa#264), each reported via its own getHandler()
   // -- name/address/found/connected/connect-stats, from cwi-dis/iotsa#268.
   if (devices.size()) {
@@ -181,10 +222,24 @@ void IotsaBLEClientManagerMod::formHandler_fields(String& message, const String&
     }
     message += "</ul>";
   }
+  message += "<h2>Recent unrecognized BLE devices</h2>";
+  if (unrecognizedDevices.size() == 0) {
+    message += "<p>None seen recently.</p>";
+  } else {
+    message += "<table><tr><th>Address</th><th>Name</th><th>Seconds ago</th><th>RSSI</th><th>First service</th></tr>";
+    uint32_t now = millis();
+    for (auto& entry : unrecognizedDevices) {
+      message += "<tr><td>" + String(entry.address.toString().c_str()) + "</td><td>" + htmlEncode(entry.name) + "</td><td>" + String((now - entry.lastSeenAtMillis) / 1000) + "</td><td>" + String(entry.rssi) + "</td><td>";
+      if (entry.service.bitSize() != 0) message += entry.service.toString().c_str();
+      message += "</td></tr>";
+    }
+    message += "</table>";
+  }
 }
 
 String IotsaBLEClientManagerMod::formHandler_field_perdevice(const char *deviceName) {
-  return String(deviceName);
+  // Advertised names come from anyone nearby.
+  return htmlEncode(deviceName);
 }
 
 bool IotsaBLEClientManagerMod::formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig) {
