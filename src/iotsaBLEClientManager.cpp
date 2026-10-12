@@ -141,7 +141,7 @@ void IotsaBLEClientManagerMod::webHandler() {
   if (anyChanged) saveClientConfig();
   String message = "<html><head><title>BLE Devices</title></head><body><h1>BLE Devices</h1>";
 
-  formHandler_fields(message, "BLE devices", "bledevice", true);
+  formHandler_fields(message, devicesLabel(), "bledevice", true);
 
   message += "<form method='get'><input type='submit' name='refresh' value='Refresh'></form>";
   message += "</body></html>";
@@ -154,9 +154,9 @@ void IotsaBLEClientManagerMod::formHandler_fields(String& message, const String&
   // each device already knows how to render its own name/found/connected
   // status and (if includeConfig) an editable name field, via its own
   // IotsaApiModObject surface (cwi-dis/iotsa#268). This mod just lists them.
-  message += "<h2>Known " + text + " devices</h2>";
+  message += "<h2>Known " + text + "</h2>";
   if (devices.size() == 0) {
-    message += "<p>No known devices yet.</p>";
+    message += "<p>No known " + text + " yet.</p>";
   } else {
     for (auto it : devices) {
       String name(it.first.c_str());
@@ -169,11 +169,11 @@ void IotsaBLEClientManagerMod::formHandler_fields(String& message, const String&
   if (includeConfig) {
     message += "<form method='get'>Add device by name: <input name='add'><input type='submit' value='Add'></form>";
   }
-  message += "<h2>Available Unknown/new " + text + " devices</h2>";
+  message += "<h2>Unknown " + text + "</h2>";
   message += "<form method='get'><input type='submit' name='scanUnknown' value='Scan for " + String(scanUnknownDurationMillis/1000) + " seconds'></form>";
   message += "<form method='get'><input type='submit' name='refresh' value='Refresh'></form>";
   if (unknownDevices.size() == 0) {
-    message += "<p>No unassigned BLE dimmer devices seen recently.</p>";
+    message += "<p>No unknown " + text + " seen recently.</p>";
   } else {
     message += "<ul>";
     for (auto it: unknownDevices) {

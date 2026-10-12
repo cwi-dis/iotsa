@@ -35,6 +35,7 @@ class BLEManagerMod : public IotsaBLEClientManagerMod {
 public:
   using IotsaBLEClientManagerMod::IotsaBLEClientManagerMod;
 protected:
+  const char *devicesLabel() override { return "iotsa BLE devices"; }
   // Only surface other iotsa devices as "unknown/addable" candidates --
   // every iotsa device compiles IotsaRunmodeMod in unconditionally, so this
   // is the generic recognition signal (same one

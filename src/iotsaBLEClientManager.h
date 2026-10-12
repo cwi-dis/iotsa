@@ -31,7 +31,10 @@ public:
   virtual void loop() override;
 #ifdef IOTSA_WITH_WEB
   virtual String formHandler_field_perdevice(const char *deviceName);
+  // text: what the devices are called, plural, used in the headings ("Known
+  // <text>", "Unknown <text>"). webHandler() passes devicesLabel().
   virtual void formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig);
+  virtual const char *devicesLabel() { return "BLE devices"; }
   virtual void webHandler() override;
   virtual bool formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig);
   virtual String info() override {
