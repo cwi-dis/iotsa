@@ -7,20 +7,15 @@ void IotsaAlarmMod::setup() {
 #ifdef IOTSA_WITH_WEB
 void IotsaAlarmMod::webHandler() {
 
-  String msg;
-  for (uint8_t i=0; i<api.webService->server->args(); i++){
-    if (api.webService->server->argName(i) == "alarm") {
-      const char *arg = api.webService->server->arg(i).c_str();
-      if (arg && *arg) {
-        int dur = atoi(api.webService->server->arg(i).c_str());
-        if (dur) {
-          alarmEndTime = millis() + dur*100;
-          IotsaSerial.println("alarm on");
-          digitalWrite(PIN_ALARM, HIGH);
-        } else {
-          alarmEndTime = 0;
-        }
-      }
+  // An empty field (the form submitted without a value) changes nothing.
+  if (api.webService->server->hasArg("alarm") && api.webService->server->arg("alarm") != "") {
+    int dur = api.webService->server->arg("alarm").toInt();
+    if (dur) {
+      alarmEndTime = millis() + dur*100;
+      IotsaSerial.println("alarm on");
+      digitalWrite(PIN_ALARM, HIGH);
+    } else {
+      alarmEndTime = 0;
     }
   }
   String message = "<html><head><title>Alarm Server</title></head><body><h1>Alarm Server</h1>";
