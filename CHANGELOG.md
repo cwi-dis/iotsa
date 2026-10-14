@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Web pages: editing a user (multi-user) was lost and `/api/users/N` never matched; checkboxes for `wifiPowerReduction`, `wifiDisabledOnBoot`/`bleDisabledOnBoot` and BLE `isEnabled` could only be set one way; any WiFi form submit cleared the WiFi password (#183)
+- Web pages: multi-user "Change" added a duplicate user (and could wipe the password), edits were lost, and `/api/users/N` never matched; checkboxes for `wifiPowerReduction`, `wifiDisabledOnBoot`/`bleDisabledOnBoot` and BLE `isEnabled` could only be set one way; any WiFi form submit cleared the WiFi password (#183)
 - BLE client manager: devices added with `add` are remembered across reboots, and saving no longer wipes the scan and connect settings (#286)
 - A PUT that changed nothing answered 400; setting `scan_interval`/`scan_window` over REST set them to 0; BLE could not be re-enabled over REST (`isEnabled`) (#280)
 - BLE handlers (including the whole REST API over HPS), scan results and notifications ran on the NimBLE task, racing with `loop()`; they now run in the loop task (`IotsaApplication::postToLoop()`/`runInLoop()`) (#236)

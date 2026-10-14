@@ -36,13 +36,14 @@ void IotsaUser::formHandler_TD(String& message, bool includeConfig) {
   message += "</td><td>";
   message += IotsaBaseModule::htmlEncode(rights);
   message += "</td><td><form method='get'>";
-  message += "<form method='get'>";
-  message += "<input type='hidden' name='command' value='add'>";
+  message += "<input type='hidden' name='command' value='change'>";
   message += "<input type='hidden' name='username' value='";
   message += IotsaBaseModule::htmlEncode(username);
   message += "'>";
   message += "<input name='password' type='password'><br>";
-  message += "<input name='rights'><br>";
+  message += "<input name='rights' value='";
+  message += IotsaBaseModule::htmlEncode(rights);
+  message += "'><br>";
   message += "<input type='submit' value='Change'>";
   message += "</form></td>";
 }
@@ -50,7 +51,8 @@ void IotsaUser::formHandler_TD(String& message, bool includeConfig) {
 bool IotsaUser::formHandler_args(IotsaWebServer *server, const String& name, bool includeConfig) {
   // name=="" for IotsaUser
   username = server->arg("username");
-  password = server->arg("password");
+  // An empty password field means: leave the password as it is.
+  if (server->arg("password") != "") password = server->arg("password");
   rights = server->arg("rights");
   return true;
 }
@@ -200,9 +202,9 @@ bool IotsaMultiUserMod::postHandler(const char *path, const JsonVariant& request
 
 int IotsaMultiUserMod::_addUser(IotsaUser& newUser) {
   int oldLength = users.size();
-  users.push_back(newUser);
   String bareName = String("users/")+String(oldLength);
   newUser.apiEndpoint = String("/api/") + bareName;
+  users.push_back(newUser);
   // webPage=false: webHandler() doesn't distinguish by path, so a page here would
   // just duplicate "users" -- see cwi-dis/iotsa#217.
   api.setup(bareName.c_str(), true, true, false, false);
