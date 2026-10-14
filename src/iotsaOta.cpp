@@ -94,7 +94,7 @@ String IotsaOtaMod::info() {
     }
     rv += ".</p>";
   } else {
-    rv = "<p>Over the air (OTA) programming possible, visit <a href=\"/config\">/config</a> to enable.</p>";
+    rv = "<p>Over the air (OTA) programming possible, visit <a href=\"/runmode\">/runmode</a> to enable.</p>";
   }
   return rv;
 }

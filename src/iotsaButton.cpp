@@ -89,7 +89,7 @@ void IotsaButtonMod::webHandler() {
   }
   if (any) configSave();
 
-  String message = "<html><head><title>LCD Server Buttons</title></head><body><h1>LCD Server Buttons</h1>";
+  String message = "<html><head><title>Buttons</title></head><body><h1>Buttons</h1>";
   for (int i=0; i<nButton; i++) {
     message += "<p>Button " + String(i+1) + ": ";
     if (buttons[i].buttonState) message += "on"; else message += "off";

@@ -231,13 +231,15 @@ IotsaConfigMod::webHandler() {
     message += "HTTPS certificate (PEM): <br><textarea name='httpsCertificate' rows='8' cols='60'></textarea><br>";
 #endif
   }
+  // The hidden field after each checkbox sends 0 when it is unchecked; arg()
+  // returns the first value, so a checked box wins.
   message += "<input name='wifiDisabledOnBoot' type='checkbox' value='1'";
   if (iotsaConfig.wifiDisabledOnBoot) message += " checked";
-  message += "> Wifi disabled on boot.<br>";
+  message += "><input name='wifiDisabledOnBoot' type='hidden' value='0'> Wifi disabled on boot.<br>";
 #ifdef IOTSA_WITH_BLE
   message += "<input name='bleDisabledOnBoot' type='checkbox' value='1'";
   if (iotsaConfig.bleDisabledOnBoot) message += " checked";
-  message += "> BLE disabled on boot.<br>";
+  message += "><input name='bleDisabledOnBoot' type='hidden' value='0'> BLE disabled on boot.<br>";
 #endif
   message += "<input type='submit'></form>";
   message += "<p>Mode requests (configuration / OTA / factory-reset) moved to <a href=\"/runmode\">/runmode</a>.</p>";

@@ -164,15 +164,20 @@ IotsaWifiMod::webHandler() {
   bool wrongMode = false;
   if (needsAuthentication("config")) return;
   bool anyChanged = false;
-  if( api.webService->server->hasArg("ssid")) {
+  // The form always sends both fields. Only a changed network counts, and an
+  // empty password only when the network changes too (an open network);
+  // otherwise it is just the empty password field.
+  bool ssidChanged = false;
+  if( api.webService->server->hasArg("ssid") && api.webService->server->arg("ssid") != ssid) {
     if (iotsaConfigSettingsWritable()) {
       ssid = api.webService->server->arg("ssid");
+      ssidChanged = true;
       anyChanged = true;
     } else {
       wrongMode = true;
     }
   }
-  if( api.webService->server->hasArg("ssidPassword")) {
+  if( api.webService->server->hasArg("ssidPassword") && (ssidChanged || api.webService->server->arg("ssidPassword") != "")) {
     if (iotsaConfigSettingsWritable()) {
       ssidPassword = api.webService->server->arg("ssidPassword");
       anyChanged = true;
@@ -211,9 +216,11 @@ IotsaWifiMod::webHandler() {
   message += "<form method='get'>Network: <input name='ssid' value='";
   message += htmlEncode(ssid);
   message += "'><br>Password: <input type='password' name='ssidPassword'>";
-  message += "<br>WiFi Power Reduction: <input type='checkbox' name='wifiPowerReduction'";
+  // The hidden field after the checkbox sends 0 when it is unchecked; arg()
+  // returns the first value, so a checked box wins.
+  message += "<br>WiFi Power Reduction: <input type='checkbox' name='wifiPowerReduction' value='1'";
   if (wifiPowerReduction) message += " checked";
-  message += "><br> (work around issue on some esp32c3 boards)<br>";
+  message += "><input type='hidden' name='wifiPowerReduction' value='0'><br> (work around issue on some esp32c3 boards)<br>";
   message += "<br><input type='submit'>";
   message += "</form>";
   if (iotsaConfigSettingsWritable()) {

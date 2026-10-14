@@ -102,7 +102,7 @@ IotsaMultiUserMod::webHandler() {
     if (needsAuthentication("users")) return;
     String username = api.webService->server->arg("username");
     bool ok = false;
-    for (auto u: users) {
+    for (auto& u: users) {
       if (u.username == username) {
         if (u.formHandler_args(api.webService->server, "", true)) {
           ok = true;
@@ -218,7 +218,7 @@ void IotsaMultiUserMod::lateSetup() {
   api.setup("users", true, false, true);
   name = "users";
   int idx = 0;
-  for(auto u: users) {
+  for(auto& u: users) {
     String bareName = String("users/")+String(idx++);
     u.apiEndpoint = String("/api/") + bareName;
     // webPage=false: webHandler() doesn't distinguish by path, so a page here would

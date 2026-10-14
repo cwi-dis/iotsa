@@ -121,7 +121,9 @@ IotsaBLEServerMod::webHandler() {
   
   String message = "<html><head><title>BLE Server module</title></head><body><h1>BLE Server module</h1>";
   message += "<form method='get'>";
-  message += "BLE Enabled: <input type='text' name='isEnabled' value='" + String((int)isEnabled) + "'><br>";
+  // The hidden field after the checkbox sends 0 when it is unchecked; arg()
+  // returns the first value, so a checked box wins.
+  message += "<input type='checkbox' name='isEnabled' value='1'" + String(isEnabled ? " checked" : "") + "><input type='hidden' name='isEnabled' value='0'> BLE enabled<br>";
   message += "Advertising interval (min): <input type='text' name='adv_min' value='" + String(adv_min) + "'> (default: -1, unit: 0.625ms, range: 32..16384)<br>";
   message += "Advertising interval (max): <input type='text' name='adv_max' value='" + String(adv_max) + "'> (default: -1, unit: 0.625ms, range: 32..16384)<br>";
   message += "Transmit power level: <input type='text' name='tx_power_dbm' value='" + String(tx_power_dbm) + "'> (raw dBm; -1: leave at hardware default; valid range is chip-dependent, e.g. -12..+9 on classic ESP32, -24..+21 on ESP32-C3/S3/C6)<br>";

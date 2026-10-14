@@ -15,6 +15,7 @@ IotsaUserMod::IotsaUserMod(IotsaApplication &_app, const char *_username, const 
 void
 IotsaUserMod::webHandler() {
   bool anyChanged = false;
+  bool passwordAttempted = false;
   bool passwordChanged = false;
   bool oldPasswordCorrect = false;
   bool newPasswordsMatch = false;
@@ -36,12 +37,17 @@ IotsaUserMod::webHandler() {
     String pw1 = api.webService->server->arg("password");
     String pw2 = api.webService->server->arg("again");
     String old = api.webService->server->arg("old");
-    oldPasswordCorrect = (old == password);
-    newPasswordsMatch = (pw1 == pw2);
-    if (oldPasswordCorrect && newPasswordsMatch) {
-      password = pw1;
-      passwordChanged = true;
-      anyChanged = true;
+    // The form always sends the password fields. Typing an old password with
+    // empty new ones clears the password.
+    passwordAttempted = pw1 != "" || pw2 != "" || old != "";
+    if (passwordAttempted) {
+      oldPasswordCorrect = (old == password);
+      newPasswordsMatch = (pw1 == pw2);
+      if (oldPasswordCorrect && newPasswordsMatch) {
+        password = pw1;
+        passwordChanged = true;
+        anyChanged = true;
+      }
     }
   }
   if (anyChanged && newUsername != "") {
@@ -50,23 +56,21 @@ IotsaUserMod::webHandler() {
   if (anyChanged) configSave();
   
   String message = "<html><head><title>Edit users and passwords</title></head><body><h1>Edit users and passwords</h1>";
-  if (anyChanged && !passwordChanged) {
-  	message += "<p><em>Username changed.</em></p>";
-  } else if (passwordChanged && anyChanged) {
+  if (passwordChanged) {
   	message += "<p><em>Password has been changed.</em></p>";
-  } else if (passwordChanged && !oldPasswordCorrect) {
+  } else if (passwordAttempted && !oldPasswordCorrect) {
   	message += "<p><em>Old password incorrect.</em></p>";
-  } else if (passwordChanged && !newPasswordsMatch) {
+  } else if (passwordAttempted && !newPasswordsMatch) {
   	message += "<p><em>Passwords do not match, not changed.</em></p>";
+  } else if (anyChanged) {
+  	message += "<p><em>Username changed.</em></p>";
   }
   	
   message += "<form method='get'>Username: <input name='username' value='";
   message += htmlEncode(username);
   message += "'>";
   if (password != "") {
-    message += "<br>Old Password: <input type='password' name='old' value=''";
-    message += "";
-    message += "'>";
+    message += "<br>Old Password: <input type='password' name='old' value=''>";
   }
   message += "<br>New Password: <input type='password' name='password' value='";
   message += "";
