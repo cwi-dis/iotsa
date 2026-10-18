@@ -25,7 +25,7 @@ void IotsaUser::formHandler_args(IotsaWebContext& ctx) {
 
 void IotsaUser::formHandler_fields(IotsaWebContext& ctx) {
   ctx.field("Username", "username", username, IotsaWebContext::ConfigModeOnly);
-  ctx.password("Password", "password", IotsaWebContext::ConfigModeOnly, "empty: unchanged");
+  ctx.password("Password", "password", IotsaWebContext::ConfigModeOnly, username == "" ? "empty: no password" : "empty: unchanged");
   ctx.field("Rights", "rights", rights, IotsaWebContext::ConfigModeOnly, "* for all, or /right/right/");
 }
 #endif

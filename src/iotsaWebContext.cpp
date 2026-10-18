@@ -436,22 +436,35 @@ void IotsaWebCollection::formHandler_args(IotsaWebContext& ctx) {
     ctx.error("This page was out of date, nothing changed. Reload it and try again.");
     return;
   }
+  // The buttons are read with text(): checked (auth, mode) but only a change
+  // once the add or remove actually happened.
+  String button;
   if (_ops & Remove) {
     for (int i = 0; i < size(); i++) {
       IotsaWebContext::Scope s(ctx, key(i));
-      if (ctx.action("remove", _kind)) {
+      if (ctx.text("remove", button, _kind)) {
         // The indices shift: nothing else in this request.
-        if (remove(i)) _version++;
+        if (remove(i)) {
+          _version++;
+          ctx.changed(_kind);
+        }
         return;
       }
     }
   }
   if (_ops & Add) {
     IotsaWebContext::Scope s(ctx, "new");
-    if (ctx.action("add", _kind)) {
+    if (ctx.text("add", button, _kind)) {
       withExample([&](IotsaModObject& obj) {
+        // Filling in the example isn't a change by itself: only if it is added.
+        bool configBefore = ctx.configChanged, stateBefore = ctx.stateChanged;
         obj.formHandler_args(ctx);
-        if (add(obj, ctx)) _version++;
+        ctx.configChanged = configBefore;
+        ctx.stateChanged = stateBefore;
+        if (add(obj, ctx)) {
+          _version++;
+          ctx.changed(_kind);
+        }
       });
       return;
     }
