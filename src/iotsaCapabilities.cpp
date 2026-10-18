@@ -75,7 +75,6 @@ bool IotsaCapability::allows(const char *_obj, IotsaApiOperation verb) {
 IotsaCapabilityMod::IotsaCapabilityMod(IotsaApplication &_app, IotsaAuthenticationProvider& _chain)
 :	IotsaAuthMod(_app),
   capabilities(NULL),
-  api(this, _app),
   chain(_chain),
   trustedIssuer(""),
   issuerKey("")

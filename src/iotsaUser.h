@@ -25,7 +25,6 @@ protected:
 #endif
   String username;
   String password;
-  IotsaApiService api;
 };
 
 #endif

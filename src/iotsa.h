@@ -371,16 +371,6 @@ protected:
   String name;
 };
 
-class IotsaAuthMod : public IotsaBaseModule, public IotsaAuthenticationProvider {
-public:
-  IotsaAuthMod(IotsaApplication &_app, bool early=false)
-  : IotsaBaseModule(_app, early)
-  {
-    _app._haveAuthModule = true;
-  }
-  IotsaAuthMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth, bool early=false) = delete;
-};
-
 class IotsaConfigFileLoad;
 class IotsaConfigFileSave;
 

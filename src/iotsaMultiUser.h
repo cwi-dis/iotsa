@@ -48,7 +48,6 @@ protected:
   std::vector<IotsaUser> users;
   int _addUser(IotsaUser& newUser);
   // _delUser(int) not implemented, because of /api/users/<num> which would change
-  IotsaApiService api;
 };
 
 #endif

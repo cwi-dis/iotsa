@@ -140,4 +140,17 @@ protected:
   IotsaApiService api;
 };
 
+// An authentication provider is a module with an API (its users, its
+// capabilities), so it is an IotsaModule: it gets the shared api and the
+// default web page (cwi-dis/iotsa#183).
+class IotsaAuthMod : public IotsaModule, public IotsaAuthenticationProvider {
+public:
+  IotsaAuthMod(IotsaApplication &_app, bool early=false)
+  : IotsaModule(_app, early)
+  {
+    _app._haveAuthModule = true;
+  }
+  IotsaAuthMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth, bool early=false) = delete;
+};
+
 #endif // _IOTSAAPI_H_

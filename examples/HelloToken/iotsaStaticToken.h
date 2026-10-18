@@ -1,6 +1,7 @@
 #ifndef _IOTSASTATICTOKEN_H_
 #define _IOTSASTATICTOKEN_H_
 #include "iotsa.h"
+#include "iotsaApi.h"
 
 class IotsaStaticTokenObject : IotsaApiModObject {
 public:

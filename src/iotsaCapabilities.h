@@ -46,7 +46,6 @@ protected:
   void webHandler() override;
 #endif
   IotsaCapability *capabilities;
-  IotsaApiService api;
   IotsaAuthenticationProvider &chain;
   String trustedIssuer;
   String issuerKey;

@@ -2,6 +2,7 @@
 #define _IOTSASTATICAUTHMOD_H_
 
 #include "iotsa.h"
+#include "iotsaApi.h"
 
 //
 // Authentication class. Requires username/password to match before allowing changing of
