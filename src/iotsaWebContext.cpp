@@ -107,6 +107,14 @@ bool IotsaWebContext::action(const char *name) {
   return true;
 }
 
+bool IotsaWebContext::text(const char *name, String& value, FieldKind kind) {
+  String raw;
+  if (!_present(name, raw) || raw == "") return false;
+  if (!_mayChange(kind)) return false;
+  value = raw;
+  return true;
+}
+
 bool IotsaWebContext::confirmedAction(const char *name) {
   String value;
   if (!_present(name, value)) return false;
@@ -240,6 +248,10 @@ void IotsaWebContext::_closeForm() {
   Group g = _forms.back();
   _forms.pop_back();
   String heading = IotsaBaseModule::htmlEncode(g.heading);
+  if (g.html.length() == 0) {
+    // Nothing in it (all fields hidden outside configuration mode): no heading either.
+    return;
+  }
   if (!g.editable) {
     // Nothing to submit: no form, no button.
     if (heading.length()) _out() += "<h3>" + heading + "</h3>\n";

@@ -61,6 +61,11 @@ public:
   bool choice(const char *name, int& field, int count, FieldKind kind = Config);
   // A button without fields (identify, reboot, remove): present and allowed.
   bool action(const char *name);
+  // Input the module converts itself (a PEM key): present, non-empty and allowed.
+  // Only reads it into value: call changed() once the converted result is a change.
+  bool text(const char *name, String& value, FieldKind kind = Config);
+  // Mark a change the module made itself (see text()).
+  void changed(FieldKind kind) { _changed(kind); }
   // A button that needs its "I am sure" box ticked (factory reset, remove all).
   bool confirmedAction(const char *name);
 
