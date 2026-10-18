@@ -3,21 +3,15 @@
 #include "iotsaConfigFile.h"
 
 #ifdef IOTSA_WITH_WEB
-void
-IotsaNothingMod::webHandler() {
-  bool anyChanged = false;
-  if( api.webService->server->hasArg("argument")) {
-    if (needsAuthentication()) return;
-    argument = api.webService->server->arg("argument");
-    anyChanged = true;
-  }
-  if (anyChanged) configSave();
+void IotsaNothingMod::formHandler_args(IotsaWebContext& ctx) {
+  ctx.arg("argument", argument);
+}
 
-  String message = "<html><head><title>Boilerplate module</title></head><body><h1>Boilerplate module</h1>";
-  message += "<form method='get'>Argument: <input name='argument' value='";
-  message += htmlEncode(argument);
-  message += "'><br><input type='submit'></form>";
-  api.webService->server->send(200, "text/html", message);
+void IotsaNothingMod::formHandler_fields(IotsaWebContext& ctx) {
+  if (ctx.section == IotsaWebContext::Configuration) {
+    IotsaWebContext::Form form(ctx);
+    ctx.field("Argument", "argument", argument);
+  }
 }
 
 String IotsaNothingMod::info() {
