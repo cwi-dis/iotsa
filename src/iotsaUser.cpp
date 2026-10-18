@@ -11,72 +11,39 @@ IotsaUserMod::IotsaUserMod(IotsaApplication &_app, const char *_username, const 
 }
 
 #ifdef IOTSA_WITH_WEB
-void
-IotsaUserMod::webHandler() {
-  bool anyChanged = false;
-  bool passwordAttempted = false;
-  bool passwordChanged = false;
-  bool oldPasswordCorrect = false;
-  bool newPasswordsMatch = false;
-  String newUsername;
-  
-  if( api.webService->server->hasArg("username")) {
-    newUsername = api.webService->server->arg("username");
-    if (newUsername == username) {
-      // No change, really.
-      newUsername = "";
-      anyChanged = false;
-    } else {
-      if (needsAuthentication("users")) return;
-      anyChanged = true;
-    }
+void IotsaUserMod::formHandler_args(IotsaWebContext& ctx) {
+  ctx.needsRight("users");
+  ctx.arg("username", username);
+  // Changing the password needs no login: knowing the old one is the proof.
+  // The form always sends the three fields; typing the old password with empty
+  // new ones clears the password.
+  ctx.needsRight(IOTSA_RIGHT_NONE);
+  String newPassword, again, old;
+  bool attempted = ctx.text("password", newPassword);
+  attempted |= ctx.text("again", again);
+  attempted |= ctx.text("old", old);
+  if (!attempted) return;
+  if (old != password) {
+    ctx.error("Old password incorrect.");
+  } else if (newPassword != again) {
+    ctx.error("Passwords do not match, not changed.");
+  } else {
+    password = newPassword;
+    ctx.changed(IotsaWebContext::Config);
+    ctx.feedback(password == "" ? "Password cleared." : "Password changed.");
   }
-  if( api.webService->server->hasArg("password")) {
-    // password authentication is checked later.
-    String pw1 = api.webService->server->arg("password");
-    String pw2 = api.webService->server->arg("again");
-    String old = api.webService->server->arg("old");
-    // The form always sends the password fields. Typing an old password with
-    // empty new ones clears the password.
-    passwordAttempted = pw1 != "" || pw2 != "" || old != "";
-    if (passwordAttempted) {
-      oldPasswordCorrect = (old == password);
-      newPasswordsMatch = (pw1 == pw2);
-      if (oldPasswordCorrect && newPasswordsMatch) {
-        password = pw1;
-        passwordChanged = true;
-        anyChanged = true;
-      }
-    }
+}
+
+void IotsaUserMod::formHandler_fields(IotsaWebContext& ctx) {
+  if (ctx.section == IotsaWebContext::Everyday) {
+    ctx.status("Username/password protection", "", (username == "" || password == "") ? "not enabled" : "enabled");
+    return;
   }
-  if (anyChanged && newUsername != "") {
-  	username = newUsername;
-  }
-  if (anyChanged) configSave();
-  
-  String message = "<html><head><title>Edit users and passwords</title></head><body><h1>Edit users and passwords</h1>";
-  if (passwordChanged) {
-  	message += "<p><em>Password has been changed.</em></p>";
-  } else if (passwordAttempted && !oldPasswordCorrect) {
-  	message += "<p><em>Old password incorrect.</em></p>";
-  } else if (passwordAttempted && !newPasswordsMatch) {
-  	message += "<p><em>Passwords do not match, not changed.</em></p>";
-  } else if (anyChanged) {
-  	message += "<p><em>Username changed.</em></p>";
-  }
-  	
-  message += "<form method='get'>Username: <input name='username' value='";
-  message += htmlEncode(username);
-  message += "'>";
-  if (password != "") {
-    message += "<br>Old Password: <input type='password' name='old' value=''>";
-  }
-  message += "<br>New Password: <input type='password' name='password' value='";
-  message += "";
-  message += "'><br>Repeat New Password: <input type='password' name='again' value='";
-  message += "";
-  message += "'><br><input type='submit'></form>";
-  api.webService->server->send(200, "text/html", message);
+  IotsaWebContext::Form form(ctx);
+  ctx.field("Username", "username", username);
+  if (password != "") ctx.password("Old password", "old");
+  ctx.password("New password", "password", IotsaWebContext::Config, "old password and empty new ones: no password");
+  ctx.password("Repeat new password", "again");
 }
 
 String IotsaUserMod::info() {
