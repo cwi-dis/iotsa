@@ -31,7 +31,9 @@ private:
   void configLoad() override;
   void configSave() override;
 #ifdef IOTSA_WITH_WEB
-  void webHandler() override;
+  String webTitle() override { return "Iotsa configuration"; }
+  void formHandler_args(IotsaWebContext& ctx) override;
+  void formHandler_fields(IotsaWebContext& ctx) override;
 #endif
 #ifdef IOTSA_WITH_HTTPS
   const uint8_t* newCertificate;
