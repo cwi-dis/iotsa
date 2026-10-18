@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Web pages: `IotsaWebContext` and a default `webHandler()`; a module writes `formHandler_args(ctx)`/`formHandler_fields(ctx)`, the framework builds the page and saves the settings. NTP is the first page that uses it (#183, #292)
 - BLE client manager lists the 32 most recent named BLE devices its filter turned down (`unrecognized`: address, name, RSSI, seconds ago), e.g. a device on old firmware (#286)
 - API errors say why: handlers `return apiError(status, "why")` (404, 409 not in configuration mode, ...), replies `{"iotsa_api_error": ...}` over REST/HPS/CoAP; unused fields are reported as `iotsa_api_ignored`, the CLI prints both (#280)
 - `IotsaConfigFileLoad::get()` returns whether the key was present (#39)

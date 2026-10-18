@@ -10,6 +10,7 @@ void IotsaApiServiceWeb::setup(const char* path, bool get, bool put, bool post, 
     if (get && webPage) {
         // Leaked deliberately: server->on() and the bound wrapper need this to
         // outlive this call, same reasoning as IotsaApiServiceRest.
+        if (pagePath.length() == 0) pagePath = path;
         String *fullPath = new String(String("/") + path);
         // GET and POST explicitly: a page doesn't distinguish them (cwi-dis/iotsa#183),
         // and on(path, handler) without a method only means "any method" on the
@@ -24,5 +25,26 @@ void IotsaApiServiceWeb::setup(const char* path, bool get, bool put, bool post, 
 
 void IotsaApiServiceWeb::_webHandlerWrapper() {
     provider->webHandler();
+}
+
+void IotsaModule::webHandler() {
+    IotsaWebContext ctx(*this, api.webService->server, "/api/" + api.webService->pagePath);
+    formHandler_args(ctx);
+    if (ctx.responded) return;
+    if (ctx.configChanged) {
+        configSave();
+        iotsaController.extendCurrentMode();
+        iotsaStatus.setStatusPulse(IotsaStatus::COLOUR_MAGENTA, 0, 0, 2000, "Settings saved");  // cwi-dis/iotsa#176
+        ctx.feedback("Settings saved.");
+    } else if (ctx.stateChanged) {
+        ctx.feedback("Done.");
+    }
+    ctx.section = IotsaWebContext::Everyday;
+    formHandler_fields(ctx);
+    String everyday = ctx.takeOutput();
+    ctx.section = IotsaWebContext::Configuration;
+    formHandler_fields(ctx);
+    String configuration = ctx.takeOutput();
+    ctx.sendPage(webTitle(), everyday, configuration);
 }
 #endif // IOTSA_WITH_WEB

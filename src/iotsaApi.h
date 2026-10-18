@@ -52,6 +52,7 @@ class IotsaApiServiceWeb;
 #endif
 #ifdef IOTSA_WITH_WEB
 #include "iotsaApiWeb.h"
+#include "iotsaWebContext.h"
 #endif
 
 //
@@ -104,6 +105,17 @@ public:
   virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override { return false; }
   virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override { return false; }
   bool hasApi() const override { return true; }
+#ifdef IOTSA_WITH_WEB
+  // The default page (cwi-dis/iotsa#183): formHandler_args() handles the
+  // arguments, the framework saves the configuration when a Config field
+  // changed, then formHandler_fields() is called once per section (day-to-day,
+  // configuration) to fill the page. Override webHandler() itself only for a
+  // page that doesn't fit (streaming, a text interface).
+  void webHandler() override;
+  virtual String webTitle() { return name; }
+  virtual void formHandler_args(IotsaWebContext& ctx) {}
+  virtual void formHandler_fields(IotsaWebContext& ctx) {}
+#endif
 protected:
   // Like the other getFromRequest() copies, but also removes a consumed field,
   // so checkUnhandled() can report whatever is left over.

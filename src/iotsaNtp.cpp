@@ -53,44 +53,24 @@ String IotsaNtpMod::isoTime()
 }
 
 #ifdef IOTSA_WITH_WEB
-void
-IotsaNtpMod::webHandler() {
-  bool anyChanged = false;
-  if( api.webService->server->hasArg("ntpServer")) {
-    if (needsAuthentication("ntp")) return;
-    ntpServer = api.webService->server->arg("ntpServer");
-    anyChanged = true;
-  }
-  if (api.webService->server->hasArg("tzDescription")) {
-    if (needsAuthentication("ntp")) return;
-    tzDescription = api.webService->server->arg("tzDescription");
-    anyChanged = true;
-  }
-  if (anyChanged) {
+void IotsaNtpMod::formHandler_args(IotsaWebContext& ctx) {
+  ctx.needsRight("ntp");
+  bool changed = ctx.arg("ntpServer", ntpServer);
+  changed |= ctx.arg("tzDescription", tzDescription);
+  if (changed) {
     parseTimezone(tzDescription);  // also restarts SNTP, so a new server takes effect now
-    configSave();
   }
-  
-  String message = "<html><head><title>NTP Client Settings</title></head><body><h1>NTP Client Settings</h1>";
-  message += "<p>Current UTC time is ";
-  message += String(utcTime());
-  message += ".<br>Current local time is ";
-  message += String(localHours());
-  message += ":";
-  message += String(localMinutes());
-  message += ":";
-  message += String(localSeconds());
-  message += " or ";
-  message += isoTime();
-  message += ".</p>";
-  message += "<form method='get'>NTP server: <input name='ntpServer' value='";
-  message += htmlEncode(ntpServer);
-  message += "'><br>";
-  message += "Timezone change information: <input name='tzDescription' value='";
-  message += htmlEncode(tzDescription);
-  message += "'><br>(format: unix TZ)<br>";
-  message += "<input type='submit'></form>";
-  api.webService->server->send(200, "text/html", message);
+}
+
+void IotsaNtpMod::formHandler_fields(IotsaWebContext& ctx) {
+  if (ctx.section == IotsaWebContext::Everyday) {
+    ctx.status("UTC time", "", String(utcTime()));
+    ctx.status("Local time", "", isoTime());
+  } else {
+    IotsaWebContext::Form form(ctx);
+    ctx.field("NTP server", "ntpServer", ntpServer);
+    ctx.field("Timezone", "tzDescription", tzDescription, IotsaWebContext::Config, "POSIX TZ, for example CET-1CEST,M3.5.0,M10.5.0/3");
+  }
 }
 
 String IotsaNtpMod::info() {

@@ -35,6 +35,9 @@ public:
   // `api.webService` link (e.g. `api.webService->server`) instead of holding a
   // `server` field of their own -- see cwi-dis/iotsa#211.
   IotsaWebServer* server;
+  // The first path that got a page: the REST path ("/api/" + pagePath) is what
+  // IotsaWebContext checks auth against (cwi-dis/iotsa#183).
+  String pagePath;
 private:
   IotsaApiProvider* provider;
   void _webHandlerWrapper();
