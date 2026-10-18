@@ -208,6 +208,8 @@ class IotsaDevice:
             rv = ("https", False)
             klass._ProtocolCache[(ipAddress, port)] = rv
             return rv
+        finally:
+            ph.close()  # don't keep its connection: the device may have room for one TLS session (cwi-dis/iotsa#293)
 
         protocol = "http"
         url = "%s://%s" % (protocol, ipAddress)
@@ -225,6 +227,8 @@ class IotsaDevice:
             rv = ("http", False)
             klass._ProtocolCache[(ipAddress, port)] = rv
             return rv
+        finally:
+            ph.close()
 
         protocol = "coap"
         noverify = True
