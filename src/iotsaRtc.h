@@ -38,7 +38,9 @@ protected:
   void configLoad() override;
   void configSave() override;
 #ifdef IOTSA_WITH_WEB
-  void webHandler() override;
+  String webTitle() override { return "Realtime Clock Settings"; }
+  void formHandler_args(IotsaWebContext& ctx) override;
+  void formHandler_fields(IotsaWebContext& ctx) override;
 #endif
   void _updateSysTime();
   void _updateFromSysTime();

@@ -67,24 +67,22 @@ void IotsaRtcMod::_updateCurrentTime() {
 }
 
 #ifdef IOTSA_WITH_WEB
-void
-IotsaRtcMod::webHandler() {
-  bool ok = true;
-  if( api.webService->server->hasArg("isoTime")) {
-    if (needsAuthentication("rtc")) return;
-    ok = setIsoTime(api.webService->server->arg("isoTime"));
+void IotsaRtcMod::formHandler_args(IotsaWebContext& ctx) {
+  ctx.needsRight("rtc");
+  String time;
+  if (ctx.arg("isoTime", time, IotsaWebContext::Live)) {
+    if (!setIsoTime(time)) ctx.error("Not an ISO 8601 time: " + time);
   }
-  String message = "<html><head><title>Realtime Clock Settings</title></head><body><h1>Realtime Clock Settings</h1>";
-  if (!ok) {
-    message += "<p><em>Error setting RTC time</em></p>";
+}
+
+void IotsaRtcMod::formHandler_fields(IotsaWebContext& ctx) {
+  if (ctx.section == IotsaWebContext::Everyday) {
+    ctx.status("RTC time (UTC)", "isoTime", isoTime());
+  } else {
+    // Empty, not the current time: that would be stale by the time it is sent.
+    IotsaWebContext::Form form(ctx, "Set");
+    ctx.field("Set RTC time", "isoTime", "", IotsaWebContext::Live, "UTC, YYYY-MM-DDTHH:MM:SS");
   }
-  message += "<p>Current RTC time (UTC) is ";
-  message += isoTime();
-  message += "<form method='get'>Set RTC time: <input name='isoTime' value='";
-  message += isoTime();
-  message += "'><br>";
-  message += "<input type='submit'></form>";
-  api.webService->server->send(200, "text/html", message);
 }
 
 String IotsaRtcMod::info() {
