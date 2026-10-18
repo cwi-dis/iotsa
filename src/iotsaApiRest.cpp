@@ -18,6 +18,7 @@ void IotsaApiServiceRest::setup(const char* path, bool get, bool put, bool post,
 
 void IotsaApiServiceRest::_handle(IotsaApiOperation verb, const char *path) {
     IotsaActivityScope activity(IOTSA_CRUMB_REQUEST, IOTSA_CRUMB_REST);
+    iotsaNoKeepAlive(server);
     iotsaApiBegin("rest", verb == IOTSA_API_GET ? "GET" : verb == IOTSA_API_PUT ? "PUT" : "POST", path);
     JsonDocument replyDocument;
     JsonObject reply = replyDocument.to<JsonObject>();

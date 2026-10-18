@@ -1,3 +1,4 @@
+import ssl
 import time
 from typing import Optional, Tuple
 import requests
@@ -33,9 +34,12 @@ class IotsaRESTProtocolHandler(IotsaAbstractProtocolHandler):
         self.noverify = noverify
         self.bearer = bearer
         self.auth = auth
+        # One session per device, so a keep-alive connection is reused: a TLS
+        # handshake takes seconds on an ESP32-C3 (cwi-dis/iotsa#293).
+        self.session = requests.Session()
 
     def close(self):
-        pass
+        self.session.close()
 
     def get(self, endpoint, json=None):
         return self.request("GET", endpoint, json=json)
@@ -65,7 +69,7 @@ class IotsaRESTProtocolHandler(IotsaAbstractProtocolHandler):
                 print(">>>>", json)
         while True:
             try:
-                r = requests.request(
+                r = self.session.request(
                     method,
                     url,
                     auth=self.auth,
@@ -74,10 +78,16 @@ class IotsaRESTProtocolHandler(IotsaAbstractProtocolHandler):
                     headers=headers,
                     files=files,
                 )
-            except requests.exceptions.SSLError:
-                raise
-            except requests.exceptions.ConnectionError:
+            except requests.exceptions.ConnectionError as e:
+                # A rejected certificate won't get better. Other errors, also an
+                # SSLError from a handshake the device broke off (out of memory,
+                # cwi-dis/iotsa#293), or a reused connection the device closed
+                # just as we sent, are worth a retry.
+                if _isCertificateError(e):
+                    raise
                 if retryCount > 0:
+                    if VERBOSE:
+                        print("REST %s %s: %s, retrying" % (method, url, e))
                     retryCount -= 1
                     time.sleep(2)
                 else:
@@ -98,3 +108,21 @@ class IotsaRESTProtocolHandler(IotsaAbstractProtocolHandler):
             return checkApiReply(r.json(), f"{method} {endpoint}")
         return None
 
+
+
+def _isCertificateError(e: BaseException) -> bool:
+    """True if a certificate verification failure is somewhere in the exception chain"""
+    seen = set()
+    stack = [e]
+    while stack:
+        e = stack.pop()
+        if e is None or id(e) in seen:
+            continue
+        seen.add(id(e))
+        if isinstance(e, ssl.SSLCertVerificationError):
+            return True
+        stack.extend([e.__cause__, e.__context__] + [a for a in getattr(e, "args", ()) if isinstance(a, BaseException)])
+        reason = getattr(e, "reason", None)
+        if isinstance(reason, BaseException):
+            stack.append(reason)
+    return False

@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- HTTPS on a memory-tight ESP32 (C3 with BLE): every second request failed, the server kept an idle connection's TLS session for 20 s; iotsa now answers `Connection: close` (#293)
 - Web pages accept POST over HTTPS too (the compat server registered GET only, jackjansen/esp32_idf5_https_server_compat#6)
 - KitchenSink and the DateTime example: the RTC only on the classic ESP32; on the C3 its clock pin was the console's TX pin (garbled console)
 - Web pages: multi-user "Change" added a duplicate user (and could wipe the password), edits were lost, and `/api/users/N` never matched; checkboxes for `wifiPowerReduction`, `wifiDisabledOnBoot`/`bleDisabledOnBoot` and BLE `isEnabled` could only be set one way; any WiFi form submit cleared the WiFi password (#183)
@@ -68,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `IotsaAuthMod` is an `IotsaModule`: `users` and `capabilities` are listed as modules with an API, so backups include them (restoring an older backup needs `--force` or a fresh backup) (#183)
+- CLI: one HTTP(S) session per device (reuses the connection when the device allows keep-alive) and retries a TLS handshake the device broke off (#293)
 - BLE client devices report `presence` (unknown, searching, notFound, remembered, seen) instead of `found`, which said "not found" for a device nobody had looked for yet (#286)
 - `IotsaBLEClientCollectionMod` is now `IotsaBLEClientManagerMod` (`iotsaBLEClientManager.h`), the example `BLEController` is now `BLEManager`; the device registry no longer creates or owns devices (#286)
 - `IotsaApiModObject` handlers have the module handlers' shape: `bool getHandler(reply)`, `bool putHandler(request, reply, bool *changed = nullptr)`; module `put`/`postHandler` also get the optional `changed` output (hard break) (#280)
