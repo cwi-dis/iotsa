@@ -57,7 +57,8 @@ bool IotsaWebContext::_mayChange(FieldKind kind) {
 }
 
 void IotsaWebContext::_setRule(AuthRule rule, const char *right) {
-  if (rule == _rule && (rule != NamedRight || strcmp(right, _right) == 0)) return;
+  bool sameRight = right == _right || (right && _right && strcmp(right, _right) == 0);
+  if (rule == _rule && (rule != NamedRight || sameRight)) return;
   _rule = rule;
   _right = right;
   // A refusal has already answered the request, so only a successful (or not
