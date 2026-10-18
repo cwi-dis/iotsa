@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- KitchenSink and the DateTime example: the RTC only on the classic ESP32; on the C3 its clock pin was the console's TX pin (garbled console)
 - Web pages: multi-user "Change" added a duplicate user (and could wipe the password), edits were lost, and `/api/users/N` never matched; checkboxes for `wifiPowerReduction`, `wifiDisabledOnBoot`/`bleDisabledOnBoot` and BLE `isEnabled` could only be set one way; any WiFi form submit cleared the WiFi password (#183)
 - BLE client manager: devices added with `add` are remembered across reboots, and saving no longer wipes the scan and connect settings (#286)
 - A PUT that changed nothing answered 400; setting `scan_interval`/`scan_window` over REST set them to 0; BLE could not be re-enabled over REST (`isEnabled`) (#280)

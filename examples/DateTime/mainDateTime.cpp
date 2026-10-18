@@ -5,7 +5,12 @@
 #include <Arduino.h>
 #include "iotsa.h"
 
-#define WITH_RTC    // Enable Realtime Clock support
+// Realtime Clock support. The pins below only exist on the classic ESP32: on the
+// ESP8266, C3 and S3 they don't, and on the C3 GPIO21 is the console's TX pin.
+// Pick pins for your own board to use it there.
+#ifdef CONFIG_IDF_TARGET_ESP32
+#define WITH_RTC
+#endif
 #define WITH_NTP    // Use network time protocol to synchronize the clock.
 
 IotsaApplication application("Iotsa DateTime Server");

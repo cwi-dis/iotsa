@@ -64,12 +64,15 @@
 #endif
 #endif // ESP32
 
-// Real-time clock pins (DS1302). Pin numbers aren't hardware-verified for every board
-// here -- see examples/DateTime, which uses the same defaults across all its boards
-// including nodemcuv2/esp32c3devkit -- this rig only cares that it compiles/links.
+// Real-time clock pins (DS1302), same as examples/DateTime. Only on the classic
+// ESP32: the ESP8266, C3 and S3 don't have these pins, and on the C3 GPIO21 is the
+// console's TX pin (the RTC clock on it turned the console into garbage).
+#ifdef CONFIG_IDF_TARGET_ESP32
+#define WITH_RTC
 #define PIN_RTC_ENA 23
 #define PIN_RTC_CLK 21
 #define PIN_RTC_DAT 22
+#endif
 
 IotsaApplication application("Iotsa KitchenSink Test Rig");
 
@@ -84,7 +87,9 @@ IotsaFilesMod filesMod(application);
 IotsaFilesUploadMod filesUploadMod(application);
 IotsaFilesBackupMod filesBackupMod(application);
 IotsaNtpMod ntpMod(application);
+#ifdef WITH_RTC
 IotsaRtcMod rtcMod(application, PIN_RTC_ENA, PIN_RTC_CLK, PIN_RTC_DAT);
+#endif
 IotsaLoggerMod loggerMod(application);
 // Declared explicitly (rather than auto-created) so the module is exercised on
 // every board: the board's own status LED where it has one, else a NeoPixel on 15.
@@ -96,9 +101,14 @@ IotsaLedMod ledMod(application, 15, NEO_GRB + NEO_KHZ800);
 IotsaNothingMod nothingMod(application);
 
 // iotsaInput: a rotary encoder and a pushbutton (see examples/Input for pin meaning).
-RotaryEncoder encoder(IOTSA_PIN_ENCODER_A, IOTSA_PIN_ENCODER_B);
+// No encoder on the C3: it has no GPIO14.
 Button button(IOTSA_PIN_BUTTON, true, true, true);
+#ifdef CONFIG_IDF_TARGET_ESP32C3
+Input* inputs[] = { &button };
+#else
+RotaryEncoder encoder(IOTSA_PIN_ENCODER_A, IOTSA_PIN_ENCODER_B);
 Input* inputs[] = { &button, &encoder };
+#endif
 IotsaInputMod inputMod(application, inputs, sizeof(inputs)/sizeof(inputs[0]));
 
 // IotsaRequest: nothing else in examples/ or tests/ instantiates it (IotsaButtonMod,
