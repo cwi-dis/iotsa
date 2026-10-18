@@ -74,10 +74,10 @@ void IotsaWebContext::_changed(FieldKind kind) {
   }
 }
 
-bool IotsaWebContext::password(const char *name, String& field, FieldKind kind) {
+bool IotsaWebContext::password(const char *name, String& field, FieldKind kind, bool allowEmpty) {
   String value;
   if (!_present(name, value)) return false;
-  if (value == "" || value == field) return false;
+  if ((value == "" && !allowEmpty) || value == field) return false;
   if (!_mayChange(kind)) return false;
   field = value;
   _changed(kind);
@@ -198,7 +198,8 @@ String IotsaWebContext::_scoped(const char *name) const {
 //
 
 bool IotsaWebContext::editable(FieldKind kind) const {
-  if (kind == ConfigModeOnly) return iotsaController.inConfigurationMode();
+  if (kind == ConfigModeOnly) return iotsaConfigSettingsWritable();
+  if (kind == ConfigModeStrict) return iotsaController.inConfigurationMode();
   return true;
 }
 
@@ -307,6 +308,15 @@ void IotsaWebContext::password(const IotsaWebLabel& label, const char *name, Fie
   line += "<input type='password' name='" + _scoped(name) + "' value=''>";
   if (hint) line += String(" <small>") + IotsaBaseModule::htmlEncode(hint) + "</small>";
   line += "</label>\n";
+  _out() += line;
+}
+
+void IotsaWebContext::textarea(const IotsaWebLabel& label, const char *name, FieldKind kind, const char *hint) {
+  if (!editable(kind)) return;
+  _markEditable(true);
+  String line = "<label>" + IotsaBaseModule::htmlEncode(label.text) + ":";
+  if (hint) line += String(" <small>") + IotsaBaseModule::htmlEncode(hint) + "</small>";
+  line += "<br><textarea name='" + _scoped(name) + "' rows='6' cols='64'></textarea></label>\n";
   _out() += line;
 }
 

@@ -30,7 +30,9 @@ public:
   enum FieldKind {
     Live,           // state, not saved (alarm, LED, isOn)
     Config,         // saved
-    ConfigModeOnly  // saved, only writable in configuration mode (hostName, ssid)
+    ConfigModeOnly, // saved, only writable in configuration mode or on a factory-fresh
+                    // device's own AP, iotsaConfigSettingsWritable() (hostName, ssid)
+    ConfigModeStrict // saved, only writable in configuration mode (trust anchors)
   };
 
   // If the argument is present and differs from field: check auth (once per
@@ -52,8 +54,9 @@ public:
   }
   // A checkbox (written by checkbox() on the get side, with its hidden 0).
   bool checkbox(const char *name, bool& field, FieldKind kind = Config) { return arg(name, field, kind); }
-  // A password: an empty one means "leave unchanged".
-  bool password(const char *name, String& field, FieldKind kind = Config);
+  // A password: an empty one means "leave unchanged", unless allowEmpty (an
+  // open network, but only together with a new network name).
+  bool password(const char *name, String& field, FieldKind kind = Config, bool allowEmpty = false);
   // One of count choices, 0..count-1 (written by choice() on the get side).
   bool choice(const char *name, int& field, int count, FieldKind kind = Config);
   // A button without fields (identify, reboot, remove): present and allowed.
@@ -132,6 +135,8 @@ public:
   void checkbox(const IotsaWebLabel& label, const char *name, bool value, FieldKind kind = Config, const char *hint = nullptr);
   // Never prefilled.
   void password(const IotsaWebLabel& label, const char *name, FieldKind kind = Config, const char *hint = nullptr);
+  // A multi-line text field (a PEM key), never prefilled; makes the form POST.
+  void textarea(const IotsaWebLabel& label, const char *name, FieldKind kind = Config, const char *hint = nullptr);
   // A <select> of count options; value is the index.
   void choice(const IotsaWebLabel& label, const char *name, int value, const char * const *options, int count, FieldKind kind = Config);
   // A button sending name=value. Inside a Form it is part of that form (and
