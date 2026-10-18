@@ -23,6 +23,7 @@ void IotsaApiServiceWeb::setup(const char* path, bool get, bool put, bool post, 
 }
 
 void IotsaApiServiceWeb::_webHandlerWrapper() {
+    iotsaNoKeepAlive(server);
     provider->webHandler();
 }
 #endif // IOTSA_WITH_WEB

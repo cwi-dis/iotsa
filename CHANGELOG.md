@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- HTTPS on a memory-tight ESP32 (C3 with BLE): every second request failed, the server kept an idle connection's TLS session for 20 s; iotsa now answers `Connection: close` (#293)
 - Web pages accept POST over HTTPS too (the compat server registered GET only, jackjansen/esp32_idf5_https_server_compat#6)
 - KitchenSink and the DateTime example: the RTC only on the classic ESP32; on the C3 its clock pin was the console's TX pin (garbled console)
 - Web pages: multi-user "Change" added a duplicate user (and could wipe the password), edits were lost, and `/api/users/N` never matched; checkboxes for `wifiPowerReduction`, `wifiDisabledOnBoot`/`bleDisabledOnBoot` and BLE `isEnabled` could only be set one way; any WiFi form submit cleared the WiFi password (#183)
