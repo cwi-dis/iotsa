@@ -437,6 +437,7 @@ bool IotsaBaseModule::needsAuthentication(const char *object, IotsaApiOperation 
 }
 
 bool IotsaBaseModule::needsAuthentication(const char *right) {
+  if (right && strcmp(right, IOTSA_RIGHT_NONE) == 0) return false;
   bool denied = !app.getAuth()->allows(right);
   if (denied) iotsaApiResult.authResponded = true;
   return denied;

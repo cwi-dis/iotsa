@@ -36,7 +36,7 @@ void IotsaModule::webHandler() {
         iotsaController.extendCurrentMode();
         iotsaStatus.setStatusPulse(IotsaStatus::COLOUR_MAGENTA, 0, 0, 2000, "Settings saved");  // cwi-dis/iotsa#176
         ctx.feedback("Settings saved.");
-    } else if (ctx.stateChanged) {
+    } else if (ctx.stateChanged && !ctx.hasFeedback()) {
         ctx.feedback("Done.");
     }
     ctx.section = IotsaWebContext::Everyday;

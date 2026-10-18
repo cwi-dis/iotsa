@@ -10,6 +10,7 @@ static const char *_pageStyle =
   "small{color:#666}\n"
   ".error{color:#b00}\n"
   "fieldset{margin:0.5em 0}\n"
+  "form.button{display:inline-block;margin:0.2em 0.5em 0.2em 0}\n"
   "table{border-collapse:collapse}\n"
   "th,td{border:1px solid #888;padding:0.2em 0.5em}\n";
 
@@ -37,7 +38,7 @@ bool IotsaWebContext::_mayChange(FieldKind kind) {
   if (!_authChecked) {
     _authChecked = true;
     // Both send their own challenge when they refuse.
-    if (_right) {
+    if (_rule == NamedRight) {
       _authOk = !_mod.needsAuthentication(_right);
     } else {
       _authOk = !_mod.needsAuthentication(_apiPath.c_str(), IOTSA_API_PUT);
@@ -53,6 +54,15 @@ bool IotsaWebContext::_mayChange(FieldKind kind) {
     return false;
   }
   return true;
+}
+
+void IotsaWebContext::_setRule(AuthRule rule, const char *right) {
+  if (rule == _rule && (rule != NamedRight || strcmp(right, _right) == 0)) return;
+  _rule = rule;
+  _right = right;
+  // A refusal has already answered the request, so only a successful (or not
+  // yet done) check is redone for the new rule.
+  if (_authOk || !_authChecked) _authChecked = false;
 }
 
 void IotsaWebContext::_changed(FieldKind kind) {
@@ -73,10 +83,40 @@ bool IotsaWebContext::password(const char *name, String& field, FieldKind kind) 
   return true;
 }
 
+bool IotsaWebContext::choice(const char *name, int& field, int count, FieldKind kind) {
+  String value;
+  if (!_present(name, value)) return false;
+  int newValue;
+  if (!_parse(value, newValue) || newValue < 0 || newValue >= count) {
+    error(String("Invalid value for ") + _scoped(name) + ".");
+    return false;
+  }
+  if (newValue == field) return false;
+  if (!_mayChange(kind)) return false;
+  field = newValue;
+  _changed(kind);
+  return true;
+}
+
 bool IotsaWebContext::action(const char *name) {
   String value;
   if (!_present(name, value)) return false;
-  return _mayChange(Live);
+  if (!_mayChange(Live)) return false;
+  stateChanged = true;
+  return true;
+}
+
+bool IotsaWebContext::confirmedAction(const char *name) {
+  String value;
+  if (!_present(name, value)) return false;
+  String sure;
+  if (!_present((String(name) + ".sure").c_str(), sure) || sure != "1") {
+    error("Not done: tick \"I am sure\" first.");
+    return false;
+  }
+  if (!_mayChange(Live)) return false;
+  stateChanged = true;
+  return true;
 }
 
 void IotsaWebContext::feedback(const String& text) {
@@ -171,20 +211,22 @@ IotsaWebContext& IotsaWebContext::operator<<(const String& html) {
   return *this;
 }
 
-void IotsaWebContext::_markEditable(bool post) {
+void IotsaWebContext::_markEditable(bool post, bool field) {
   // An editable field makes the outermost form, which is the one that is
   // written as a <form>, editable too.
   for (auto& f : _forms) {
     f.editable = true;
+    if (field) f.hasFields = true;
     if (post) f.post = true;
   }
 }
 
-IotsaWebContext::Form::Form(IotsaWebContext& ctx, const IotsaWebLabel& submitLabel)
+IotsaWebContext::Form::Form(IotsaWebContext& ctx, const IotsaWebLabel& submitLabel, const IotsaWebLabel& heading)
 : _ctx(ctx)
 {
   Group g;
   g.submitLabel = submitLabel.text;
+  g.heading = heading.text;
   _ctx._forms.push_back(g);
 }
 
@@ -195,16 +237,23 @@ IotsaWebContext::Form::~Form() {
 void IotsaWebContext::_closeForm() {
   Group g = _forms.back();
   _forms.pop_back();
+  String heading = IotsaBaseModule::htmlEncode(g.heading);
   if (!g.editable) {
     // Nothing to submit: no form, no button.
+    if (heading.length()) _out() += "<h3>" + heading + "</h3>\n";
     _out() += g.html;
   } else if (!_forms.empty()) {
     // A form is already open: become part of it.
-    _out() += "<fieldset>\n" + g.html + "</fieldset>\n";
+    _out() += "<fieldset>\n";
+    if (heading.length()) _out() += "<legend>" + heading + "</legend>\n";
+    _out() += g.html + "</fieldset>\n";
   } else {
+    if (heading.length()) _out() += "<h3>" + heading + "</h3>\n";
     _out() += String("<form method='") + (g.post ? "post" : "get") + "'>\n";
     _out() += g.html;
-    _out() += "<button type='submit'>" + IotsaBaseModule::htmlEncode(g.submitLabel) + "</button>\n";
+    if (g.hasFields) {
+      _out() += "<button type='submit'>" + IotsaBaseModule::htmlEncode(g.submitLabel) + "</button>\n";
+    }
     _out() += "</form>\n";
   }
 }
@@ -258,6 +307,43 @@ void IotsaWebContext::password(const IotsaWebLabel& label, const char *name, Fie
   if (hint) line += String(" <small>") + IotsaBaseModule::htmlEncode(hint) + "</small>";
   line += "</label>\n";
   _out() += line;
+}
+
+void IotsaWebContext::choice(const IotsaWebLabel& label, const char *name, int value, const char * const *options, int count, FieldKind kind) {
+  if (!editable(kind)) {
+    status(label, name, (value >= 0 && value < count) ? options[value] : String(value));
+    return;
+  }
+  _markEditable(false);
+  String line = "<label>" + IotsaBaseModule::htmlEncode(label.text) + ": <select name='" + _scoped(name) + "'>";
+  for (int i = 0; i < count; i++) {
+    line += "<option value='" + String(i) + "'" + (i == value ? " selected" : "") + ">" + IotsaBaseModule::htmlEncode(options[i]) + "</option>";
+  }
+  line += "</select></label>\n";
+  _out() += line;
+}
+
+void IotsaWebContext::button(const char *name, const IotsaWebLabel& label, const char *value, FieldKind kind) {
+  if (!editable(kind)) return;
+  String html = "<button type='submit' name='" + _scoped(name) + "' value='" + IotsaBaseModule::htmlEncode(value) + "'>" + IotsaBaseModule::htmlEncode(label.text) + "</button>";
+  if (_forms.empty()) {
+    _out() += "<form method='post' class='button'>" + html + "</form>\n";
+  } else {
+    _markEditable(true, false);
+    _out() += html + "\n";
+  }
+}
+
+void IotsaWebContext::confirmedButton(const char *name, const IotsaWebLabel& label, FieldKind kind) {
+  if (!editable(kind)) return;
+  String html = "<label><input type='checkbox' name='" + _scoped(name) + ".sure' value='1'> I am sure</label>";
+  html += "<button type='submit' name='" + _scoped(name) + "' value='1'>" + IotsaBaseModule::htmlEncode(label.text) + "</button>";
+  if (_forms.empty()) {
+    _out() += "<form method='post' class='button'>" + html + "</form>\n";
+  } else {
+    _markEditable(true, false);
+    _out() += html + "\n";
+  }
 }
 
 String IotsaWebContext::takeOutput() {

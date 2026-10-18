@@ -54,18 +54,25 @@ public:
   bool checkbox(const char *name, bool& field, FieldKind kind = Config) { return arg(name, field, kind); }
   // A password: an empty one means "leave unchanged".
   bool password(const char *name, String& field, FieldKind kind = Config);
+  // One of count choices, 0..count-1 (written by choice() on the get side).
+  bool choice(const char *name, int& field, int count, FieldKind kind = Config);
   // A button without fields (identify, reboot, remove): present and allowed.
   bool action(const char *name);
+  // A button that needs its "I am sure" box ticked (factory reset, remove all).
+  bool confirmedAction(const char *name);
 
   // Changes on this page need this named right (as in IotsaMultiUserMod),
   // instead of the REST rule (PUT on the module's API path). Checked lazily, at
   // the first change, so just viewing the page needs no right. Both kinds of
-  // check exist until cwi-dis/iotsa#284 decides between them.
-  void needsRight(const char *right) { _right = right; }
+  // check exist until cwi-dis/iotsa#284 decides between them. Can change
+  // halfway through formHandler_args(): the calls after it use the new right.
+  // IOTSA_RIGHT_NONE: the changes after it need no right at all.
+  void needsRight(const char *right) { _setRule(NamedRight, right); }
 
   // Lines shown at the top of the page.
   void feedback(const String& text);
   void error(const String& text);
+  bool hasFeedback() const { return !_feedback.empty(); }
   // Answer the request yourself (plain text, 404): the framework sends nothing more.
   void respond(int code, const char *type, const String& body);
 
@@ -98,10 +105,13 @@ public:
   // A group of fields that wants to be a form, with a submit button. Written as
   // a <form> unless a form is already open, then as a <fieldset> inside it. No
   // form and no button when nothing in it is editable. POST when it contains a
-  // password (cwi-dis/iotsa#183), otherwise GET.
+  // password (cwi-dis/iotsa#183) or a button (an action is not idempotent, a
+  // reload shouldn't repeat it), otherwise GET. The submit button is only
+  // there when the group has fields. The heading becomes an <h3> (or the
+  // fieldset's legend).
   class Form {
   public:
-    Form(IotsaWebContext& ctx, const IotsaWebLabel& submitLabel = "Save");
+    Form(IotsaWebContext& ctx, const IotsaWebLabel& submitLabel = "Save", const IotsaWebLabel& heading = "");
     ~Form();
   private:
     IotsaWebContext& _ctx;
@@ -122,6 +132,13 @@ public:
   void checkbox(const IotsaWebLabel& label, const char *name, bool value, FieldKind kind = Config, const char *hint = nullptr);
   // Never prefilled.
   void password(const IotsaWebLabel& label, const char *name, FieldKind kind = Config, const char *hint = nullptr);
+  // A <select> of count options; value is the index.
+  void choice(const IotsaWebLabel& label, const char *name, int value, const char * const *options, int count, FieldKind kind = Config);
+  // A button sending name=value. Inside a Form it is part of that form (and
+  // sends its fields too), otherwise it gets a small form of its own.
+  void button(const char *name, const IotsaWebLabel& label, const char *value = "1", FieldKind kind = Live);
+  // A button with an "I am sure" box, for confirmedAction().
+  void confirmedButton(const char *name, const IotsaWebLabel& label, FieldKind kind = Live);
   // Raw HTML, not escaped.
   IotsaWebContext& operator<<(const String& html);
 
@@ -133,9 +150,12 @@ private:
   struct Group {
     String html;
     String submitLabel;
-    bool editable = false;
+    String heading;
+    bool editable = false;   // something can be submitted: write a form
+    bool hasFields = false;  // ... and it needs a submit button
     bool post = false;
   };
+  enum AuthRule { RestRule, NamedRight };
 
   bool _present(const char *name, String& value);
   bool _mayChange(FieldKind kind);
@@ -143,7 +163,8 @@ private:
   void _field(const IotsaWebLabel& label, const char *name, const String& value, const char *type, FieldKind kind, const char *hint);
   String _scoped(const char *name) const;
   String& _out();
-  void _markEditable(bool post);
+  void _markEditable(bool post, bool field = true);
+  void _setRule(AuthRule rule, const char *right);
   void _closeForm();
 
   static bool _parse(const String& s, String& v) { v = s; return true; }
@@ -157,6 +178,7 @@ private:
   IotsaBaseModule& _mod;
   IotsaWebServer *_server;
   String _apiPath;
+  AuthRule _rule = RestRule;
   const char *_right = nullptr;
   bool _authChecked = false;
   bool _authOk = false;

@@ -307,6 +307,12 @@ public:
 // an obviously incomplete module, not a subtle bug -- so this used to be two
 // classes (one lenient, one forcing overrides via `= 0`) purely to catch
 // that mistake at compile time; merged back into one, see cwi-dis/iotsa#206.
+// The right everyone has, also without logging in: for things that are
+// harmless or confirmed at the device (Runmode's identify). Handled in
+// IotsaBaseModule::needsAuthentication(), not by the auth providers
+// (cwi-dis/iotsa#284).
+#define IOTSA_RIGHT_NONE "none"
+
 class IotsaBaseModule : public IotsaApiProvider, public IotsaBLEProvider {
   friend class IotsaApplication;
   friend class IotsaConfigMod;
@@ -351,6 +357,8 @@ public:
   // must not go "live" (e.g. start BLE advertising) until every other module has had a
   // chance to register with them during setup()/lateSetup() -- see cwi-dis/iotsa#113.
   virtual void lateSetupDone() {}
+  // True means "refuse" (the auth provider has already sent its challenge).
+  // The right IOTSA_RIGHT_NONE is always granted, without asking the provider.
   virtual bool needsAuthentication(const char *right=NULL);
   bool needsAuthentication(const char *obj, IotsaApiOperation verb) override;
   virtual void sleepWakeupNotification(bool sleep) {}

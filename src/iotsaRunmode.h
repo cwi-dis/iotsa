@@ -71,7 +71,9 @@ protected:
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
 #ifdef IOTSA_WITH_WEB
-  void webHandler() override;
+  String webTitle() override { return "Iotsa runmode"; }
+  void formHandler_args(IotsaWebContext& ctx) override;
+  void formHandler_fields(IotsaWebContext& ctx) override;
 #endif
   // Identify (cwi-dis/iotsa#133): _pendingIdentify is set by any transport,
   // _doIdentify() runs the registered handlers from loop().
