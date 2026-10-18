@@ -171,7 +171,7 @@ bool IotsaMultiUserMod::getHandler(const char *path, JsonObject& reply) {
 
 bool IotsaMultiUserMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   if (strncmp(path, "/api/users/", 11) != 0) return apiError(404, "not found");
-  if (!iotsaController.inConfigurationMode()) return apiError(409, "not in configuration mode");
+  if (!iotsaConfigSettingsWritable()) return apiError(409, "not in configuration mode");
   // xxxjack should also check access rights? Maybe in stead of configurationMode?
   String num(path);
   num.remove(0, 11);
@@ -189,7 +189,7 @@ bool IotsaMultiUserMod::putHandler(const char *path, const JsonVariant& request,
 }
 bool IotsaMultiUserMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   if (strcmp(path, "/api/users") != 0) return apiError(404, "not found");
-  if (!iotsaController.inConfigurationMode()) return apiError(409, "not in configuration mode");
+  if (!iotsaConfigSettingsWritable()) return apiError(409, "not in configuration mode");
   IotsaUser newUser;
   if (!newUser.putHandler(request, reply)) return false;
   if (newUser.username == "") return apiError(400, "username missing");

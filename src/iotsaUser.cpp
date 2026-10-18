@@ -12,16 +12,19 @@ IotsaUserMod::IotsaUserMod(IotsaApplication &_app, const char *_username, const 
 
 #ifdef IOTSA_WITH_WEB
 void IotsaUserMod::formHandler_args(IotsaWebContext& ctx) {
+  // Who controls the device: configuration mode, as for the hostname and WiFi
+  // (and as over REST), so setting a password on a fresh device needs physical
+  // access.
   ctx.needsRight("users");
-  ctx.arg("username", username);
+  ctx.arg("username", username, IotsaWebContext::ConfigModeOnly);
   // Changing the password needs no login: knowing the old one is the proof.
   // The form always sends the three fields; typing the old password with empty
   // new ones clears the password.
   ctx.needsRight(IOTSA_RIGHT_NONE);
   String newPassword, again, old;
-  bool attempted = ctx.text("password", newPassword);
-  attempted |= ctx.text("again", again);
-  attempted |= ctx.text("old", old);
+  bool attempted = ctx.text("password", newPassword, IotsaWebContext::ConfigModeOnly);
+  attempted |= ctx.text("again", again, IotsaWebContext::ConfigModeOnly);
+  attempted |= ctx.text("old", old, IotsaWebContext::ConfigModeOnly);
   if (!attempted) return;
   if (old != password) {
     ctx.error("Old password incorrect.");
@@ -39,11 +42,14 @@ void IotsaUserMod::formHandler_fields(IotsaWebContext& ctx) {
     ctx.status("Username/password protection", "", (username == "" || password == "") ? "not enabled" : "enabled");
     return;
   }
+  if (!ctx.editable(IotsaWebContext::ConfigModeOnly)) {
+    ctx << "<p>Username and password can only be changed in configuration mode, see <a href='/runmode'>/runmode</a>.</p>\n";
+  }
   IotsaWebContext::Form form(ctx);
-  ctx.field("Username", "username", username);
-  if (password != "") ctx.password("Old password", "old");
-  ctx.password("New password", "password", IotsaWebContext::Config, "old password and empty new ones: no password");
-  ctx.password("Repeat new password", "again");
+  ctx.field("Username", "username", username, IotsaWebContext::ConfigModeOnly);
+  if (password != "") ctx.password("Old password", "old", IotsaWebContext::ConfigModeOnly);
+  ctx.password("New password", "password", IotsaWebContext::ConfigModeOnly, "old password and empty new ones: no password");
+  ctx.password("Repeat new password", "again", IotsaWebContext::ConfigModeOnly);
 }
 
 String IotsaUserMod::info() {
@@ -79,7 +85,7 @@ bool IotsaUserMod::postHandler(const char *path, const JsonVariant& request, Jso
 
 bool IotsaUserMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   if (strcmp(path, "/api/users/0") != 0) return apiError(404, "not found");
-  if (!iotsaController.inConfigurationMode()) return apiError(409, "not in configuration mode");
+  if (!iotsaConfigSettingsWritable()) return apiError(409, "not in configuration mode");
   bool anyChanged = false;
   JsonObject reqObj = request.as<JsonObject>();
   // Check old password, if a password has been set.

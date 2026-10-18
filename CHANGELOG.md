@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Changing usernames and passwords on the web page needs configuration mode, as over REST: anyone on the network could set the password of a fresh device (#183)
 - HTTPS on a memory-tight ESP32 (C3 with BLE): every second request failed, the server kept an idle connection's TLS session for 20 s; iotsa now answers `Connection: close` (#293)
 - Web pages accept POST over HTTPS too (the compat server registered GET only, jackjansen/esp32_idf5_https_server_compat#6)
 - KitchenSink and the DateTime example: the RTC only on the classic ESP32; on the C3 its clock pin was the console's TX pin (garbled console)
