@@ -83,35 +83,23 @@ IotsaCapabilityMod::IotsaCapabilityMod(IotsaApplication &_app, IotsaAuthenticati
 }
 
 #ifdef IOTSA_WITH_WEB
-void
-IotsaCapabilityMod::webHandler() {
-  String _trustedIssuer = api.webService->server->arg("trustedIssuer");
-  String _issuerKey = api.webService->server->arg("issuerKey");
-  if (_trustedIssuer != "" || _issuerKey != "") {
-    // Trust anchors: strictly configuration mode (not the broader
-    // iotsaConfigSettingsWritable() factory-AP case), cwi-dis/iotsa#106 step 5c.
-    if (!iotsaController.inConfigurationMode()) {
-      api.webService->server->send(403, "text/plain", "403 Forbidden, not in configuration mode");
-      return;
-    }
-    if (needsAuthentication("capabilities")) return;
-    iotsaController.extendCurrentMode();   // an edit -> keep the window open
-    if (_trustedIssuer != "") trustedIssuer = _trustedIssuer;
-    if (_issuerKey != "") issuerKey = _issuerKey;
-    configSave();
-    api.webService->server->send(200, "text/plain", "ok\r\n");
-    return;
-  }
-  String message = "<html><head><title>Capability Authority</title></head><body><h1>Capability Authority</h1>";
-  if (!iotsaController.inConfigurationMode())
-    message += "<p><em>Note:</em> You must be in configuration mode to be able to change issuer or key.</p>";
-  message += "<form method='get'>Issuer: <input name='trustedIssuer' value='";
-  message += htmlEncode(trustedIssuer);
-  message += "'><br>Current shared key is secret, but length is ";
-  message += String(issuerKey.length());
-  message += ".<br>New key: <input name='issuerKey'><br><input type='Submit'></form></body></html>";
+// The trust anchors: strictly configuration mode (not the broader
+// iotsaConfigSettingsWritable() factory-AP case), cwi-dis/iotsa#106 step 5c.
+void IotsaCapabilityMod::formHandler_args(IotsaWebContext& ctx) {
+  ctx.needsRight("capabilities");
+  ctx.arg("trustedIssuer", trustedIssuer, IotsaWebContext::ConfigModeOnly);
+  ctx.password("issuerKey", issuerKey, IotsaWebContext::ConfigModeOnly);
+}
 
-  api.webService->server->send(200, "text/html", message);
+void IotsaCapabilityMod::formHandler_fields(IotsaWebContext& ctx) {
+  if (ctx.section != IotsaWebContext::Configuration) return;
+  if (!ctx.editable(IotsaWebContext::ConfigModeOnly)) {
+    ctx << "<p>Issuer and key can only be changed in configuration mode.</p>\n";
+  }
+  IotsaWebContext::Form form(ctx);
+  ctx.field("Issuer", "trustedIssuer", trustedIssuer, IotsaWebContext::ConfigModeOnly);
+  ctx.status("Shared key", "has_issuerKey", issuerKey.length() ? "set" : "not set");
+  ctx.password("New shared key", "issuerKey", IotsaWebContext::ConfigModeOnly, "empty: unchanged");
 }
 
 String IotsaCapabilityMod::info() {
