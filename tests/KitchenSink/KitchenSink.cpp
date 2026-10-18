@@ -133,7 +133,7 @@ IotsaSimpleMod simpleMod(application, "/kitchensink", kitchenSinkSimpleHandler, 
 
 #ifdef IOTSA_WITH_BLE
 
-// Subclassed only to start scanning from boot and to exercise coordinateWithServer
+// Subclassed only to start a scan from boot and to exercise coordinateWithServer
 // (pauses/resumes the BLE server's advertising around each scan; iotsa creates
 // the server automatically in BLE builds) -- the same BLE
 // server/client interplay flagged as unsolved in the #113 scoping discussion.
@@ -145,7 +145,10 @@ public:
   using IotsaBLEClientManagerMod::IotsaBLEClientManagerMod;
   void setup() override {
     IotsaBLEClientManagerMod::setup();
-    findUnknownDevices(true);
+    // One scan window (scan_unknown_duration), like the "scan" button, not
+    // forever: endless scanning kept toggling the BLE server's advertising,
+    // which kept changing the largest free heap block (cwi-dis/iotsa#293).
+    startScanUnknown();
   }
 };
 KitchenSinkBLEClientMod bleClientMod(application);
