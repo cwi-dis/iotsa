@@ -99,11 +99,11 @@ bool IotsaWebContext::choice(const char *name, int& field, int count, FieldKind 
   return true;
 }
 
-bool IotsaWebContext::action(const char *name) {
+bool IotsaWebContext::action(const char *name, FieldKind kind) {
   String value;
   if (!_present(name, value)) return false;
-  if (!_mayChange(Live)) return false;
-  stateChanged = true;
+  if (!_mayChange(kind)) return false;
+  _changed(kind);
   return true;
 }
 
@@ -231,13 +231,25 @@ void IotsaWebContext::_markEditable(bool post, bool field) {
   }
 }
 
-IotsaWebContext::Form::Form(IotsaWebContext& ctx, const IotsaWebLabel& submitLabel, const IotsaWebLabel& heading)
+IotsaWebContext::Form::Form(IotsaWebContext& ctx, const IotsaWebLabel& submitLabel, const IotsaWebLabel& heading, const char *submitName)
 : _ctx(ctx)
 {
   Group g;
   g.submitLabel = submitLabel.text;
   g.heading = heading.text;
+  if (submitName) g.submitName = _ctx._scoped(submitName);
   _ctx._forms.push_back(g);
+}
+
+IotsaWebContext::FormHidden::FormHidden(IotsaWebContext& ctx, const char *name, const String& value)
+: _ctx(ctx),
+  _saved(ctx._formHidden)
+{
+  _ctx._formHidden += "<input type='hidden' name='" + _ctx._scoped(name) + "' value='" + IotsaBaseModule::htmlEncode(value) + "'>";
+}
+
+IotsaWebContext::FormHidden::~FormHidden() {
+  _ctx._formHidden = _saved;
 }
 
 IotsaWebContext::Form::~Form() {
@@ -263,10 +275,12 @@ void IotsaWebContext::_closeForm() {
     _out() += g.html + "</fieldset>\n";
   } else {
     if (heading.length()) _out() += "<h3>" + heading + "</h3>\n";
-    _out() += String("<form method='") + (g.post ? "post" : "get") + "'>\n";
+    _out() += String("<form method='") + (g.post ? "post" : "get") + "'>" + _formHidden + "\n";
     _out() += g.html;
     if (g.hasFields) {
-      _out() += "<button type='submit'>" + IotsaBaseModule::htmlEncode(g.submitLabel) + "</button>\n";
+      _out() += "<button type='submit'";
+      if (g.submitName.length()) _out() += " name='" + g.submitName + "' value='1'";
+      _out() += ">" + IotsaBaseModule::htmlEncode(g.submitLabel) + "</button>\n";
     }
     _out() += "</form>\n";
   }
@@ -350,7 +364,7 @@ void IotsaWebContext::button(const char *name, const IotsaWebLabel& label, const
   if (!editable(kind)) return;
   String html = "<button type='submit' name='" + _scoped(name) + "' value='" + IotsaBaseModule::htmlEncode(value) + "'>" + IotsaBaseModule::htmlEncode(label.text) + "</button>";
   if (_forms.empty()) {
-    _out() += "<form method='post' class='button'>" + html + "</form>\n";
+    _out() += "<form method='post' class='button'>" + _formHidden + html + "</form>\n";
   } else {
     _markEditable(true, false);
     _out() += html + "\n";
@@ -362,10 +376,20 @@ void IotsaWebContext::confirmedButton(const char *name, const IotsaWebLabel& lab
   String html = "<label><input type='checkbox' name='" + _scoped(name) + ".sure' value='1'> I am sure</label>";
   html += "<button type='submit' name='" + _scoped(name) + "' value='1'>" + IotsaBaseModule::htmlEncode(label.text) + "</button>";
   if (_forms.empty()) {
-    _out() += "<form method='post' class='button'>" + html + "</form>\n";
+    _out() += "<form method='post' class='button'>" + _formHidden + html + "</form>\n";
   } else {
     _markEditable(true, false);
     _out() += html + "\n";
+  }
+}
+
+void IotsaWebContext::cell(const IotsaWebLabel& label, const String& value, int flags) {
+  if (_headerRow) {
+    _out() += "<th>" + IotsaBaseModule::htmlEncode(label.text) + "</th>";
+  } else if (flags & Secret) {
+    _out() += String("<td>") + (value.length() ? "(set)" : "") + "</td>";
+  } else {
+    _out() += "<td>" + IotsaBaseModule::htmlEncode(value) + "</td>";
   }
 }
 
@@ -389,6 +413,95 @@ void IotsaWebContext::sendPage(const String& title, const String& everyday, cons
   }
   page += "<p><a href='/'>Home</a></p>\n</body></html>\n";
   _server->send(200, "text/html", page);
+}
+
+//
+// IotsaWebCollection
+//
+
+uint32_t IotsaWebCollection::_currentVersion() {
+  if (_version == 0) {
+#ifdef ESP32
+    _version = esp_random() | 1;
+#else
+    _version = RANDOM_REG32 | 1;
+#endif
+  }
+  return _version;
+}
+
+void IotsaWebCollection::formHandler_args(IotsaWebContext& ctx) {
+  String v;
+  if (ctx.peek("version", v) && v != String(_currentVersion())) {
+    ctx.error("This page was out of date, nothing changed. Reload it and try again.");
+    return;
+  }
+  if (_ops & Remove) {
+    for (int i = 0; i < size(); i++) {
+      IotsaWebContext::Scope s(ctx, key(i));
+      if (ctx.action("remove", _kind)) {
+        // The indices shift: nothing else in this request.
+        if (remove(i)) _version++;
+        return;
+      }
+    }
+  }
+  if (_ops & Add) {
+    IotsaWebContext::Scope s(ctx, "new");
+    if (ctx.action("add", _kind)) {
+      withExample([&](IotsaModObject& obj) {
+        obj.formHandler_args(ctx);
+        if (add(obj, ctx)) _version++;
+      });
+      return;
+    }
+  }
+  if (_presentation == Sections) {
+    for (int i = 0; i < size(); i++) {
+      IotsaWebContext::Scope s(ctx, key(i));
+      at(i)->formHandler_args(ctx);
+    }
+  }
+}
+
+void IotsaWebCollection::formHandler_fields(IotsaWebContext& ctx) {
+  IotsaWebContext::FormHidden version(ctx, "version", String(_currentVersion()));
+  bool removable = (_ops & Remove) && ctx.editable(_kind);
+  if (_presentation == Table) {
+    ctx << "<table>\n<tr>";
+    ctx._headerRow = true;
+    withExample([&](IotsaModObject& obj) { obj.formHandler_row(ctx); });
+    ctx._headerRow = false;
+    if (removable) ctx << "<th></th>";
+    ctx << "</tr>\n";
+    for (int i = 0; i < size(); i++) {
+      IotsaWebContext::Scope s(ctx, key(i));
+      ctx << "<tr>";
+      at(i)->formHandler_row(ctx);
+      if (removable) {
+        ctx << "<td>";
+        ctx.button("remove", "Remove", "1", _kind);
+        ctx << "</td>";
+      }
+      ctx << "</tr>\n";
+    }
+    ctx << "</table>\n";
+  } else {
+    for (int i = 0; i < size(); i++) {
+      String k = key(i);
+      IotsaWebContext::Scope s(ctx, k);
+      {
+        IotsaWebContext::Form form(ctx, "Change", k);
+        at(i)->formHandler_fields(ctx);
+      }
+      if (removable) ctx.button("remove", "Remove", "1", _kind);
+    }
+  }
+  if ((_ops & Add) && ctx.editable(_kind)) {
+    IotsaWebContext::Scope s(ctx, "new");
+    IotsaWebContext::Form form(ctx, "Add", "Add", "add");
+    withExample([&](IotsaModObject& obj) { obj.formHandler_fields(ctx); });
+  }
 }
 
 #endif // IOTSA_WITH_WEB

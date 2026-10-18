@@ -60,12 +60,16 @@ public:
   // One of count choices, 0..count-1 (written by choice() on the get side).
   bool choice(const char *name, int& field, int count, FieldKind kind = Config);
   // A button without fields (identify, reboot, remove): present and allowed.
-  bool action(const char *name);
+  // Counts as a change of the given kind.
+  bool action(const char *name, FieldKind kind = Live);
   // Input the module converts itself (a PEM key): present, non-empty and allowed.
   // Only reads it into value: call changed() once the converted result is a change.
   bool text(const char *name, String& value, FieldKind kind = Config);
   // Mark a change the module made itself (see text()).
   void changed(FieldKind kind) { _changed(kind); }
+  // Read an argument without any check or effect (hidden bookkeeping fields,
+  // a collection's version).
+  bool peek(const char *name, String& value) { return _present(name, value); }
   // A button that needs its "I am sure" box ticked (factory reset, remove all).
   bool confirmedAction(const char *name);
 
@@ -119,10 +123,22 @@ public:
   // fieldset's legend).
   class Form {
   public:
-    Form(IotsaWebContext& ctx, const IotsaWebLabel& submitLabel = "Save", const IotsaWebLabel& heading = "");
+    // submitName (scoped) gives the submit button a name=1, for an action.
+    Form(IotsaWebContext& ctx, const IotsaWebLabel& submitLabel = "Save", const IotsaWebLabel& heading = "", const char *submitName = nullptr);
     ~Form();
   private:
     IotsaWebContext& _ctx;
+  };
+
+  // While it lives, every form the context writes gets this hidden field (a
+  // collection's version, so a stale page is noticed).
+  class FormHidden {
+  public:
+    FormHidden(IotsaWebContext& ctx, const char *name, const String& value);
+    ~FormHidden();
+  private:
+    IotsaWebContext& _ctx;
+    String _saved;
   };
 
   // Read-only line. name is the REST field it comes from (written as the id),
@@ -149,6 +165,10 @@ public:
   void button(const char *name, const IotsaWebLabel& label, const char *value = "1", FieldKind kind = Live);
   // A button with an "I am sure" box, for confirmedAction().
   void confirmedButton(const char *name, const IotsaWebLabel& label, FieldKind kind = Live);
+  // A table cell, in formHandler_row(): <th>label</th> in the header row,
+  // <td>value</td> in an element's row. Secret shows only whether it is set.
+  enum CellFlags { Secret = 1 };
+  void cell(const IotsaWebLabel& label, const String& value, int flags = 0);
   // Raw HTML, not escaped.
   IotsaWebContext& operator<<(const String& html);
 
@@ -157,9 +177,11 @@ public:
   String takeOutput();
 
 private:
+  friend class IotsaWebCollection;
   struct Group {
     String html;
     String submitLabel;
+    String submitName;
     String heading;
     bool editable = false;   // something can be submitted: write a form
     bool hasFields = false;  // ... and it needs a submit button
@@ -193,9 +215,76 @@ private:
   bool _authChecked = false;
   bool _authOk = false;
   String _prefix;
+  String _formHidden;       // hidden fields for every form, see FormHidden
+  bool _headerRow = false;  // cell() writes <th>, see IotsaWebCollection
   String _output;
   std::vector<Group> _forms;
   std::vector<String> _feedback;
+};
+
+//
+// A collection of objects on a web page (cwi-dis/iotsa#183): an interface on top
+// of the module's own container. The container answers a few questions, the
+// framework writes the table or the sections, the operation buttons and the add
+// form, and handles them. The module calls it inside a Scope, like any object.
+//
+class IotsaWebCollection {
+public:
+  enum Ops { Add = 1, Remove = 2 };
+  enum Presentation { Table, Sections };
+  IotsaWebCollection(int ops, Presentation presentation, IotsaWebContext::FieldKind kind)
+  : _ops(ops), _presentation(presentation), _kind(kind) {}
+  virtual ~IotsaWebCollection() {}
+
+  // ---- the container answers these ----
+  virtual int size() = 0;
+  virtual IotsaModObject* at(int i) = 0;
+  // How an element is named in the page (and, cwi-dis/iotsa#217, in REST):
+  // its name where it has one, else its index.
+  virtual String key(int i) { return String(i); }
+  // Call fn with a new, empty element: for the table header and the add form.
+  virtual void withExample(std::function<void(IotsaModObject&)> fn) = 0;
+  // Add the filled-in example, or refuse with ctx.error().
+  virtual bool add(IotsaModObject& obj, IotsaWebContext& ctx) { return false; }
+  virtual bool remove(int i) { return false; }
+
+  // ---- written once, here ----
+  void formHandler_args(IotsaWebContext& ctx);
+  void formHandler_fields(IotsaWebContext& ctx);
+protected:
+  int _ops;
+  Presentation _presentation;
+  IotsaWebContext::FieldKind _kind;
+  // Bumped on every add and remove, and in every form of the collection, so a
+  // stale page (a reload, a bookmark, another browser) changes nothing.
+  // Random at boot, so a page from before a reboot is stale too.
+  uint32_t _version = 0;
+  uint32_t _currentVersion();
+};
+
+// The common case: a std::vector of values (users, tokens). accept, if given,
+// checks (and may complete) a new element before it is added.
+template<typename T> class IotsaWebVector : public IotsaWebCollection {
+public:
+  typedef std::function<String(T&)> KeyFunc;
+  typedef std::function<bool(T&, IotsaWebContext&)> AcceptFunc;
+  IotsaWebVector(std::vector<T>& v, int ops, Presentation presentation, IotsaWebContext::FieldKind kind, KeyFunc keyFunc = nullptr, AcceptFunc accept = nullptr)
+  : IotsaWebCollection(ops, presentation, kind), _v(v), _keyFunc(keyFunc), _accept(accept) {}
+  int size() override { return _v.size(); }
+  IotsaModObject* at(int i) override { return &_v[i]; }
+  String key(int i) override { return _keyFunc ? _keyFunc(_v[i]) : String(i); }
+  void withExample(std::function<void(IotsaModObject&)> fn) override { T example; fn(example); }
+  bool add(IotsaModObject& obj, IotsaWebContext& ctx) override {
+    T& t = static_cast<T&>(obj);
+    if (_accept && !_accept(t, ctx)) return false;
+    _v.push_back(t);
+    return true;
+  }
+  bool remove(int i) override { _v.erase(_v.begin() + i); return true; }
+private:
+  std::vector<T>& _v;
+  KeyFunc _keyFunc;
+  AcceptFunc _accept;
 };
 
 #endif // IOTSA_WITH_WEB

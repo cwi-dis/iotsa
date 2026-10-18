@@ -374,17 +374,27 @@ protected:
 class IotsaConfigFileLoad;
 class IotsaConfigFileSave;
 
+#ifdef IOTSA_WITH_WEB
+class IotsaWebContext;
+#endif
+
 class IotsaModObject {
 public:
   virtual ~IotsaModObject() {}
   virtual bool configLoad(IotsaConfigFileLoad& cf, const String& name) = 0;
   virtual void configSave(IotsaConfigFileSave& cf, const String& name) = 0;
 #ifdef IOTSA_WITH_WEB
-  // static virtual void formHandler_emptyfields(String& message) = 0;
-  virtual void formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) = 0;
-  // static virtual void formHandler_TH(String& message, bool includeConfig) = 0;
-  virtual void formHandler_TD(String& message, bool includeConfig) = 0;
-  virtual bool formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig) = 0;
+  // The web interface (cwi-dis/iotsa#183), the same shape as a module's.
+  // Names are relative: whoever holds the object puts it in a Scope.
+  // A field group implements args and fields, a table row implements row
+  // (ctx.cell(), once in header mode, then once per element).
+  virtual void formHandler_args(IotsaWebContext& ctx) {}
+  virtual void formHandler_fields(IotsaWebContext& ctx) {}
+  virtual void formHandler_row(IotsaWebContext& ctx) {}
+  // The old String-based interface, until every object is converted.
+  virtual void formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) {}
+  virtual void formHandler_TD(String& message, bool includeConfig) {}
+  virtual bool formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig) { return false; }
 #endif
 };
 
