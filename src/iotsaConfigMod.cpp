@@ -68,16 +68,26 @@ void IotsaConfigMod::formHandler_args(IotsaWebContext& ctx) {
   ctx.checkbox("bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot, IotsaWebContext::ConfigModeOnly);
 #endif
 #ifdef IOTSA_WITH_HTTPS
-  // Saved only when both are set, see configSave().
+  // The text fields aren't settings themselves: a valid key plus a valid
+  // certificate are, and configSave() saves them only together.
+  bool gotPem = false;
   String pem;
-  if (ctx.arg("httpsKey", pem, IotsaWebContext::ConfigModeOnly)) {
+  if (ctx.text("httpsKey", pem, IotsaWebContext::ConfigModeOnly)) {
+    gotPem = true;
     const char *err = _pemToDer(pem, _keyHead, _keyTail, newKey, newKeyLength);
     if (err) ctx.error(String("HTTPS private key: ") + err);
   }
-  pem = "";
-  if (ctx.arg("httpsCertificate", pem, IotsaWebContext::ConfigModeOnly)) {
+  if (ctx.text("httpsCertificate", pem, IotsaWebContext::ConfigModeOnly)) {
+    gotPem = true;
     const char *err = _pemToDer(pem, _certHead, _certTail, newCertificate, newCertificateLength);
     if (err) ctx.error(String("HTTPS certificate: ") + err);
+  }
+  if (gotPem) {
+    if (newKey && newCertificate) {
+      ctx.changed(IotsaWebContext::Config);
+    } else if (!ctx.hasFeedback()) {
+      ctx.feedback("The HTTPS key and certificate are only saved together.");
+    }
   }
 #endif
 }
