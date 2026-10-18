@@ -34,7 +34,9 @@ protected:
   void configLoad() override;
   void configSave() override;
 #ifdef IOTSA_WITH_WEB
-  void webHandler() override;
+  String webTitle() override { return "Battery module"; }
+  void formHandler_args(IotsaWebContext& ctx) override;
+  void formHandler_fields(IotsaWebContext& ctx) override;
 #endif
   void _readVoltages();
   uint32_t _lastVoltageReadMillis = 0;   // loop() re-reads periodically so iotsaStatus.onUsbPower stays fresh

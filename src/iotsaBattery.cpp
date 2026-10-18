@@ -13,38 +13,19 @@
 static const uint32_t VOLTAGE_READ_INTERVAL_MS = 5000;
 
 #ifdef IOTSA_WITH_WEB
-void
-IotsaBatteryMod::webHandler() {
-  bool anyChanged = false;
-  if (api.webService->server->hasArg("correctionVBat")) {
-    if (needsAuthentication()) return;
-    correctionVBat = api.webService->server->arg("correctionVBat").toFloat();
-    anyChanged = true;
-  }
-  if (anyChanged) {
-    iotsaController.extendCurrentMode();
-    configSave();
-  }
+void IotsaBatteryMod::formHandler_args(IotsaWebContext& ctx) {
+  if (pinVBat >= 0) ctx.arg("correctionVBat", correctionVBat);
+}
 
-  String message = "<html><head><title>Battery module</title></head><body><h1>Battery module</h1>";
-  _readVoltages();
-  message += "<p>";
-  if (pinVBat >= 0) {
-    message += "Battery level: " + String(levelVBat) + "%<br>";
+void IotsaBatteryMod::formHandler_fields(IotsaWebContext& ctx) {
+  if (ctx.section == IotsaWebContext::Everyday) {
+    _readVoltages();
+    if (pinVBat >= 0) ctx.status("Battery level", "levelVBat", String(levelVBat) + "%");
+    if (pinVUSB >= 0) ctx.status("USB voltage level", "levelVUSB", String(levelVUSB) + "%");
+  } else if (pinVBat >= 0) {
+    IotsaWebContext::Form form(ctx);
+    ctx.field("Battery voltage correction factor", "correctionVBat", correctionVBat);
   }
-  if (pinVUSB >= 0) {
-    message += "USB voltage level: " + String(levelVUSB) + "%<br>";
-  }
-  message += "</p>";
-  message += "<form method='post'>";
-  if (pinVBat >= 0) {
-    message += "Battery voltage correction factor: <input name='correctionVBat' value='" + String(correctionVBat) + "'><br>";
-  }
-  message += "<input type='submit'></form>";
-#ifdef IOTSA_HAS_SLEEP
-  message += "<p>Sleep/wake settings moved to <a href=\"/runmode\">/runmode</a>.</p>";
-#endif
-  api.webService->server->send(200, "text/html", message);
 }
 
 String IotsaBatteryMod::info() {
