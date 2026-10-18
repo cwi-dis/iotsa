@@ -16,47 +16,18 @@ void IotsaUser::configSave(IotsaConfigFileSave& cf, const String& f_name) {
 }
 
 #ifdef IOTSA_WITH_WEB
-void IotsaUser::formHandler_emptyfields(String& message) {
-  message += "Username: <input name='username'><br>";
-  message += "Password: <input name='password' type='password'><br>";
-  message += "Rights: <input name='rights'><br>";
+// Who controls the device: configuration mode, as over REST (cwi-dis/iotsa#183).
+void IotsaUser::formHandler_args(IotsaWebContext& ctx) {
+  ctx.arg("username", username, IotsaWebContext::ConfigModeOnly);
+  ctx.password("password", password, IotsaWebContext::ConfigModeOnly);
+  ctx.arg("rights", rights, IotsaWebContext::ConfigModeOnly);
 }
 
-void IotsaUser::formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) {
-  IotsaSerial.println("IotsaUser::formHandler not implemented");
+void IotsaUser::formHandler_fields(IotsaWebContext& ctx) {
+  ctx.field("Username", "username", username, IotsaWebContext::ConfigModeOnly);
+  ctx.password("Password", "password", IotsaWebContext::ConfigModeOnly, "empty: unchanged");
+  ctx.field("Rights", "rights", rights, IotsaWebContext::ConfigModeOnly, "* for all, or /right/right/");
 }
-
-void IotsaUser::formHandler_TH(String& message, bool includeConfig) {
-  message += "<th>User</th><th>rights</th><th>New password<br>New rights</th>";
-}
-
-void IotsaUser::formHandler_TD(String& message, bool includeConfig) {
-  message += "<td>";
-  message += IotsaBaseModule::htmlEncode(username);
-  message += "</td><td>";
-  message += IotsaBaseModule::htmlEncode(rights);
-  message += "</td><td><form method='get'>";
-  message += "<input type='hidden' name='command' value='change'>";
-  message += "<input type='hidden' name='username' value='";
-  message += IotsaBaseModule::htmlEncode(username);
-  message += "'>";
-  message += "<input name='password' type='password'><br>";
-  message += "<input name='rights' value='";
-  message += IotsaBaseModule::htmlEncode(rights);
-  message += "'><br>";
-  message += "<input type='submit' value='Change'>";
-  message += "</form></td>";
-}
-
-bool IotsaUser::formHandler_args(IotsaWebServer *server, const String& name, bool includeConfig) {
-  // name=="" for IotsaUser
-  username = server->arg("username");
-  // An empty password field means: leave the password as it is.
-  if (server->arg("password") != "") password = server->arg("password");
-  rights = server->arg("rights");
-  return true;
-}
-
 #endif
 
 bool IotsaUser::getHandler(JsonObject& reply) {
@@ -84,62 +55,47 @@ bool IotsaUser::putHandler(const JsonVariant& request, JsonObject& reply, bool *
 
 IotsaMultiUserMod::IotsaMultiUserMod(IotsaApplication &_app)
 :	IotsaAuthMod(_app)
+#ifdef IOTSA_WITH_WEB
+  , webUsers(users, IotsaWebCollection::Add, IotsaWebCollection::Sections, IotsaWebContext::ConfigModeOnly,
+      [](IotsaUser& u) { return u.username; },
+      [this](IotsaUser& u, IotsaWebContext& ctx) { return _acceptUser(u, ctx); })
+#endif
 {
 	configLoad();
 }
 
 #ifdef IOTSA_WITH_WEB
-void
-IotsaMultiUserMod::webHandler() {
-  String command = api.webService->server->arg("command");
+void IotsaMultiUserMod::formHandler_args(IotsaWebContext& ctx) {
+  ctx.needsRight("users");
+  IotsaWebContext::Scope s(ctx, "users");
+  webUsers.formHandler_args(ctx);
+}
 
-  if (command == "add") {
-    if (needsAuthentication("users")) return;
-    IotsaUser newUser;
-    if (newUser.formHandler_args(api.webService->server, "", true)) {
-      _addUser(newUser);
-    }
-  } else if (command == "change") {
-    if (needsAuthentication("users")) return;
-    String username = api.webService->server->arg("username");
-    bool ok = false;
-    for (auto& u: users) {
-      if (u.username == username) {
-        if (u.formHandler_args(api.webService->server, "", true)) {
-          ok = true;
-          configSave();
-        }
-      }
-    }
-    if (!ok) {
-      api.webService->server->send(404, "text/plain", "No such user\r\n");
-      return;
-    }
-  } else if (command != "") {
-    api.webService->server->send(400, "text/plain", "Unknown command");
+void IotsaMultiUserMod::formHandler_fields(IotsaWebContext& ctx) {
+  if (ctx.section == IotsaWebContext::Everyday) {
+    ctx.status("Users", "", String(users.size()));
     return;
   }
-    
-  // No command or empty command: default page.
-  String message = "<html><head><title>Edit users</title><style>table, th, td {border: 1px solid black;padding:5px;border-collapse: collapse;}</style></head><body><h1>Edit users</h1>";
-  message += "<h2>Existing users</h2><table><tr>";
-  IotsaUser::formHandler_TH(message, true);
-  message += "</tr>";
-  for(auto u: users) {
-    message += "<tr>";
-    u.formHandler_TD(message, true);
-    message += "</tr>";
+  if (!ctx.editable(IotsaWebContext::ConfigModeOnly)) {
+    ctx << "<p>Users can only be changed in configuration mode, see <a href='/runmode'>/runmode</a>.</p>\n";
   }
-  message += "</table><br>";
+  IotsaWebContext::Scope s(ctx, "users");
+  webUsers.formHandler_fields(ctx);
+}
 
-  message += "<h2>Add new user</h2><form method='get'>";
-  message += "<input type='hidden' name='command' value='add'>";
-  IotsaUser::formHandler_emptyfields(message);
-  message += "<input type='submit' value='Add'>";
-  message += "</form><hr>";
-
-  api.webService->server->send(200, "text/html", message);
-
+bool IotsaMultiUserMod::_acceptUser(IotsaUser& newUser, IotsaWebContext& ctx) {
+  if (newUser.username == "") {
+    ctx.error("A new user needs a username.");
+    return false;
+  }
+  for (auto& u : users) {
+    if (u.username == newUser.username) {
+      ctx.error("User " + newUser.username + " already exists.");
+      return false;
+    }
+  }
+  newUser.apiEndpoint = String("/api/users/") + String(users.size());
+  return true;
 }
 
 String IotsaMultiUserMod::info() {

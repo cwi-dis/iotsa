@@ -4,7 +4,7 @@
 #include "iotsa.h"
 #include "iotsaApi.h"
 
-class IotsaUser : IotsaApiModObject {
+class IotsaUser : public IotsaApiModObject {
 public:
   IotsaUser() {}
   String username;
@@ -15,11 +15,8 @@ public:
   bool configLoad(IotsaConfigFileLoad& cf, const String& f_name) override;
   void configSave(IotsaConfigFileSave& cf, const String& f_name) override;
 #ifdef IOTSA_WITH_WEB
-  static void formHandler_emptyfields(String& message) /*override*/;
-  static void formHandler_TH(String& message, bool includeConfig) /*override*/;
-  void formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) override;
-  void formHandler_TD(String& message, bool includeConfig) override;
-  bool formHandler_args(IotsaWebServer *server, const String& name, bool includeConfig) override;
+  void formHandler_args(IotsaWebContext& ctx) override;
+  void formHandler_fields(IotsaWebContext& ctx) override;
 #endif
   bool getHandler(JsonObject& reply) override;
   bool putHandler(const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
@@ -43,9 +40,17 @@ protected:
   void configLoad() override;
   void configSave() override;
 #ifdef IOTSA_WITH_WEB
-  void webHandler() override;
+  String webTitle() override { return "Edit users"; }
+  void formHandler_args(IotsaWebContext& ctx) override;
+  void formHandler_fields(IotsaWebContext& ctx) override;
 #endif
   std::vector<IotsaUser> users;
+#ifdef IOTSA_WITH_WEB
+  // No Remove: REST addresses users by index (/api/users/<n>), registered at
+  // boot, cwi-dis/iotsa#217.
+  IotsaWebVector<IotsaUser> webUsers;
+  bool _acceptUser(IotsaUser& newUser, IotsaWebContext& ctx);
+#endif
   int _addUser(IotsaUser& newUser);
   // _delUser(int) not implemented, because of /api/users/<num> which would change
 };
