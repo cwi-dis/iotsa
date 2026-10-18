@@ -3,7 +3,7 @@
 #include "iotsa.h"
 #include "iotsaApi.h"
 
-class IotsaStaticTokenObject : IotsaApiModObject {
+class IotsaStaticTokenObject : public IotsaApiModObject {
 public:
   IotsaStaticTokenObject() {}
   String token;
@@ -12,11 +12,9 @@ public:
   bool configLoad(IotsaConfigFileLoad& cf, const String& f_name) override;
   void configSave(IotsaConfigFileSave& cf, const String& f_name) override;
 #ifdef IOTSA_WITH_WEB
-  static void formHandler_emptyfields(String& message) /*override*/;
-  void formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) override;
-  static void formHandler_TH(String& message, bool includeConfig) /* override*/;
-  void formHandler_TD(String& message, bool includeConfig) override;
-  bool formHandler_args(IotsaWebServer *server, const String& name, bool includeConfig) override;
+  void formHandler_args(IotsaWebContext& ctx) override;
+  void formHandler_fields(IotsaWebContext& ctx) override;
+  void formHandler_row(IotsaWebContext& ctx) override;
 #endif
   bool getHandler(JsonObject& reply) override;
   bool putHandler(const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
@@ -33,15 +31,22 @@ public:
 #endif
   bool allows(const char *right=NULL) override;
   bool allows(const char *obj, IotsaApiOperation verb) override;
+  bool getHandler(const char *path, JsonObject& reply) override;
 protected:
   void configLoad() override;
   void configSave() override;
-  void handler();
-  int _addToken(IotsaStaticTokenObject& newToken);
-  bool _delToken(int index);
+#ifdef IOTSA_WITH_WEB
+  String webTitle() override { return "Tokens"; }
+  void formHandler_args(IotsaWebContext& ctx) override;
+  void formHandler_fields(IotsaWebContext& ctx) override;
+#endif
   
   IotsaAuthenticationProvider &chain;
   std::vector<IotsaStaticTokenObject> tokens;
+#ifdef IOTSA_WITH_WEB
+  // Keyed by index: the collection's version makes a stale Remove harmless.
+  IotsaWebVector<IotsaStaticTokenObject> webTokens;
+#endif
 };
 
 #endif

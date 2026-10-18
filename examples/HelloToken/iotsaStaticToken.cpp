@@ -17,34 +17,21 @@ void IotsaStaticTokenObject::configSave(IotsaConfigFileSave& cf, const String& f
 }
 
 #ifdef IOTSA_WITH_WEB
-void IotsaStaticTokenObject::formHandler_emptyfields(String& message) {
-  message += "Token: <input name='token'><br>";
-  message += "Rights: <input name='rights'><br>";
+void IotsaStaticTokenObject::formHandler_args(IotsaWebContext& ctx) {
+  ctx.arg("token", token);
+  ctx.arg("rights", rights);
 }
 
-void IotsaStaticTokenObject::formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) {
-  IotsaSerial.println("IotsaStaticTokenObject::formHandler not implemented");
+void IotsaStaticTokenObject::formHandler_fields(IotsaWebContext& ctx) {
+  ctx.field("Token", "token", token);
+  ctx.field("Rights", "rights", rights, IotsaWebContext::Config, "* for all, or /right/right/");
 }
 
-void IotsaStaticTokenObject::formHandler_TH(String& message, bool includeConfig) {
-  message += "<th>Token</th><th>rights</th>";
+void IotsaStaticTokenObject::formHandler_row(IotsaWebContext& ctx) {
+  // The token is a bearer secret: the page only shows that it is there.
+  ctx.cell("Token", token, IotsaWebContext::Secret);
+  ctx.cell("Rights", rights);
 }
-
-void IotsaStaticTokenObject::formHandler_TD(String& message, bool includeConfig) {
-  message += "<td>";
-  message += IotsaBaseModule::htmlEncode(token);
-  message += "</td><td>";
-  message += IotsaBaseModule::htmlEncode(rights);
-  message += "</td>";
-}
-
-bool IotsaStaticTokenObject::formHandler_args(IotsaWebServer *server, const String& name, bool includeConfig) {
-  // name=="" for IotsaUser
-  token = server->arg("token");
-  rights = server->arg("rights");
-  return token != "";
-}
-
 #endif // IOTSA_WITH_WEB
 
 bool IotsaStaticTokenObject::getHandler(JsonObject& reply) {
@@ -66,47 +53,40 @@ bool IotsaStaticTokenObject::putHandler(const JsonVariant& request, JsonObject& 
 IotsaStaticTokenMod::IotsaStaticTokenMod(IotsaApplication &_app, IotsaAuthenticationProvider &_chain)
 :	IotsaAuthMod(_app),
 	chain(_chain)
+#ifdef IOTSA_WITH_WEB
+  , webTokens(tokens, IotsaWebCollection::Add | IotsaWebCollection::Remove, IotsaWebCollection::Table, IotsaWebContext::Config,
+      nullptr,
+      [](IotsaStaticTokenObject& t, IotsaWebContext& ctx) {
+        if (t.token == "") ctx.error("A new token can't be empty.");
+        return t.token != "";
+      })
+#endif
 {
 	configLoad();
 }
 	
-void
-IotsaStaticTokenMod::handler() {
-  if (needsAuthentication("tokens")) return;
-  String command = app.server->arg("command");
+#ifdef IOTSA_WITH_WEB
+void IotsaStaticTokenMod::formHandler_args(IotsaWebContext& ctx) {
+  ctx.needsRight("tokens");
+  IotsaWebContext::Scope s(ctx, "tokens");
+  webTokens.formHandler_args(ctx);
+}
 
-  if (command == "add") {
-    IotsaStaticTokenObject newToken;
-    if (newToken.formHandler_args(app.server, "", true)) {
-      _addToken(newToken);
-      configSave();
-    }
-  } else if (command == "del") {
-    int index = app.server->arg("index").toInt();
-    _delToken(index);
-    configSave();
+void IotsaStaticTokenMod::formHandler_fields(IotsaWebContext& ctx) {
+  if (ctx.section != IotsaWebContext::Configuration) return;
+  IotsaWebContext::Scope s(ctx, "tokens");
+  webTokens.formHandler_fields(ctx);
+}
+#endif
+
+// The tokens themselves are secrets: only their rights.
+bool IotsaStaticTokenMod::getHandler(const char *path, JsonObject& reply) {
+  JsonArray list = reply["tokens"].to<JsonArray>();
+  for (auto& t : tokens) {
+    JsonObject o = list.add<JsonObject>();
+    o["rights"] = t.rights;
   }
-
-
-  String message = "<html><head><title>Tokens</title><style>table, th, td {border: 1px solid black;padding:5px;border-collapse: collapse;}</style></head><body><h1>Tokens</h1>";
-  message += "<h2>Existing tokens</h2><table><tr>";
-  IotsaStaticTokenObject::formHandler_TH(message, true);
-  message += "<th>Operation</th></tr>";
-  int index=0;
-  for(auto t: tokens) {
-    message += "<tr>";
-    t.formHandler_TD(message, true);
-    message += "<td><form><input type='hidden' name='index' value='" + String(index++) + "'><input type='submit' name='command' value='del'></form></td>";
-    message += "</tr>";
-  }
-  message += "</table><br>";
-
-  message += "<h2>Add new token</h2><form method='get'>";
-  IotsaStaticTokenObject::formHandler_emptyfields(message);
-  message += "<input type='submit' name='command' value='add'>";
-  message += "</form><hr>";
-
-  app.server->send(200, "text/html", message);
+  return true;
 }
 
 void IotsaStaticTokenMod::setup() {
@@ -114,17 +94,8 @@ void IotsaStaticTokenMod::setup() {
 }
 
 void IotsaStaticTokenMod::lateSetup() {
-  app.server->on("/tokens", std::bind(&IotsaStaticTokenMod::handler, this));
-}
-
-int IotsaStaticTokenMod::_addToken(IotsaStaticTokenObject& newToken) {
-  tokens.push_back(newToken);
-  return tokens.size()-1;
-}
-
-bool IotsaStaticTokenMod::_delToken(int index) {
-  tokens.erase(tokens.begin()+index);
-  return true;
+  api.setup("tokens", true);
+  name = "tokens";
 }
 
 void IotsaStaticTokenMod::configLoad() {
