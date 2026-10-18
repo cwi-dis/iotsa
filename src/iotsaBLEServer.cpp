@@ -90,47 +90,29 @@ private:
 };
 
 #ifdef IOTSA_WITH_WEB
-void
-IotsaBLEServerMod::webHandler() {
-  bool anyChanged = false;
-  if (api.webService->server->hasArg("isEnabled")) {
-    bool newIsEnabled = (bool)strtol(api.webService->server->arg("isEnabled").c_str(), 0, 10);
-    if (newIsEnabled != isEnabled) {
-      isEnabled = newIsEnabled;
-      iotsaController.requestReboot(REBOOT_DELAY_BLE_REINIT_MS);
-      anyChanged = true;
-    }
+void IotsaBLEServerMod::formHandler_args(IotsaWebContext& ctx) {
+  if (ctx.checkbox("isEnabled", isEnabled)) {
+    iotsaController.requestReboot(REBOOT_DELAY_BLE_REINIT_MS);
+    ctx.feedback("Rebooting to switch BLE on or off.");
   }
-  if( api.webService->server->hasArg("adv_min")) {
-    adv_min = strtol(api.webService->server->arg("adv_min").c_str(), 0, 10);
-    anyChanged = true;
-  }
-  if( api.webService->server->hasArg("adv_max")) {
-    adv_max = strtol(api.webService->server->arg("adv_max").c_str(), 0, 10);
-    anyChanged = true;
-  }if( api.webService->server->hasArg("tx_power_dbm")) {
-    tx_power_dbm = strtol(api.webService->server->arg("tx_power_dbm").c_str(), 0, 10);
-    anyChanged = true;
-  }
-  if( api.webService->server->hasArg("idle_timeout")) {
-    idle_timeout = strtol(api.webService->server->arg("idle_timeout").c_str(), 0, 10);
-    anyChanged = true;
-  }
-  if (anyChanged) configSave();
+  ctx.arg("adv_min", adv_min);
+  ctx.arg("adv_max", adv_max);
+  ctx.arg("tx_power_dbm", tx_power_dbm);
+  ctx.arg("idle_timeout", idle_timeout);
+}
 
-  
-  String message = "<html><head><title>BLE Server module</title></head><body><h1>BLE Server module</h1>";
-  message += "<form method='get'>";
-  // The hidden field after the checkbox sends 0 when it is unchecked; arg()
-  // returns the first value, so a checked box wins.
-  message += "<input type='checkbox' name='isEnabled' value='1'" + String(isEnabled ? " checked" : "") + "><input type='hidden' name='isEnabled' value='0'> BLE enabled<br>";
-  message += "Advertising interval (min): <input type='text' name='adv_min' value='" + String(adv_min) + "'> (default: -1, unit: 0.625ms, range: 32..16384)<br>";
-  message += "Advertising interval (max): <input type='text' name='adv_max' value='" + String(adv_max) + "'> (default: -1, unit: 0.625ms, range: 32..16384)<br>";
-  message += "Transmit power level: <input type='text' name='tx_power_dbm' value='" + String(tx_power_dbm) + "'> (raw dBm; -1: leave at hardware default; valid range is chip-dependent, e.g. -12..+9 on classic ESP32, -24..+21 on ESP32-C3/S3/C6)<br>";
-  message += "Transmit power level (actual): " + String(tx_power_dbm_actual) + " dBm<br>";
-  message += "Idle connection timeout: <input type='text' name='idle_timeout' value='" + String(idle_timeout) + "'> (seconds; disconnect a client that hasn't read or written anything for this long; 0: never)<br>";
-  message += "<input type='submit'></form></body></html>";
-  api.webService->server->send(200, "text/html", message);
+void IotsaBLEServerMod::formHandler_fields(IotsaWebContext& ctx) {
+  if (ctx.section == IotsaWebContext::Everyday) {
+    ctx.status("Transmit power level (actual)", "tx_power_dbm_actual", String(tx_power_dbm_actual) + " dBm");
+    ctx.status("Connected clients", "connected_peers", String(s_server ? (int)s_server->getConnectedCount() : 0));
+  } else {
+    IotsaWebContext::Form form(ctx);
+    ctx.checkbox("BLE enabled", "isEnabled", isEnabled, IotsaWebContext::Config, "changing it reboots");
+    ctx.field("Advertising interval (min)", "adv_min", adv_min, IotsaWebContext::Config, "unit 0.625 ms, 32..16384; -1: default");
+    ctx.field("Advertising interval (max)", "adv_max", adv_max, IotsaWebContext::Config, "unit 0.625 ms, 32..16384; -1: default");
+    ctx.field("Transmit power level", "tx_power_dbm", tx_power_dbm, IotsaWebContext::Config, "dBm; -1: hardware default; range depends on the chip, e.g. -12..+9 on the ESP32, -24..+21 on the C3/S3/C6");
+    ctx.field("Idle connection timeout", "idle_timeout", idle_timeout, IotsaWebContext::Config, "seconds without reads or writes before a client is disconnected; 0: never");
+  }
 }
 
 String IotsaBLEServerMod::info() {
