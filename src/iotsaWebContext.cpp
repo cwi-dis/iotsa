@@ -35,6 +35,8 @@ bool IotsaWebContext::_present(const char *name, String& value) {
 
 bool IotsaWebContext::_mayChange(FieldKind kind) {
   if (responded) return false;
+  // A Change's parameters: the Change itself was checked.
+  if (_inChange) return true;
   if (!_authChecked) {
     _authChecked = true;
     // Both send their own challenge when they refuse.
@@ -67,6 +69,12 @@ void IotsaWebContext::_setRule(AuthRule rule, const char *right) {
 }
 
 void IotsaWebContext::_changed(FieldKind kind) {
+  // A Change's parameters only read: Change::done() marks.
+  if (_inChange) return;
+  _mark(kind);
+}
+
+void IotsaWebContext::_mark(FieldKind kind) {
   if (kind == Live) {
     stateChanged = true;
   } else {
@@ -126,6 +134,26 @@ bool IotsaWebContext::confirmedAction(const char *name) {
   if (!_mayChange(Live)) return false;
   stateChanged = true;
   return true;
+}
+
+IotsaWebContext::Change::Change(IotsaWebContext& ctx, const char *button, FieldKind kind)
+: _ctx(ctx),
+  _kind(kind),
+  _outer(ctx._inChange)
+{
+  String value;
+  if (!_ctx._present(button, value)) return;
+  if (!_ctx._mayChange(kind)) return;
+  _active = true;
+  _ctx._inChange = true;
+}
+
+IotsaWebContext::Change::~Change() {
+  _ctx._inChange = _outer;
+}
+
+void IotsaWebContext::Change::done() {
+  if (_active && !_outer) _ctx._mark(_kind);
 }
 
 void IotsaWebContext::feedback(const String& text) {
@@ -436,17 +464,15 @@ void IotsaWebCollection::formHandler_args(IotsaWebContext& ctx) {
     ctx.error("This page was out of date, nothing changed. Reload it and try again.");
     return;
   }
-  // The buttons are read with text(): checked (auth, mode) but only a change
-  // once the add or remove actually happened.
-  String button;
   if (_ops & Remove) {
     for (int i = 0; i < size(); i++) {
       IotsaWebContext::Scope s(ctx, key(i));
-      if (ctx.text("remove", button, _kind)) {
+      IotsaWebContext::Change change(ctx, "remove", _kind);
+      if (change) {
         // The indices shift: nothing else in this request.
         if (remove(i)) {
           _version++;
-          ctx.changed(_kind);
+          change.done();
         }
         return;
       }
@@ -454,16 +480,13 @@ void IotsaWebCollection::formHandler_args(IotsaWebContext& ctx) {
   }
   if (_ops & Add) {
     IotsaWebContext::Scope s(ctx, "new");
-    if (ctx.text("add", button, _kind)) {
+    IotsaWebContext::Change change(ctx, "add", _kind);
+    if (change) {
       withExample([&](IotsaModObject& obj) {
-        // Filling in the example isn't a change by itself: only if it is added.
-        bool configBefore = ctx.configChanged, stateBefore = ctx.stateChanged;
         obj.formHandler_args(ctx);
-        ctx.configChanged = configBefore;
-        ctx.stateChanged = stateBefore;
         if (add(obj, ctx)) {
           _version++;
-          ctx.changed(_kind);
+          change.done();
         }
       });
       return;

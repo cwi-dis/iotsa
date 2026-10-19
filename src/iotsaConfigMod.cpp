@@ -70,21 +70,20 @@ void IotsaConfigMod::formHandler_args(IotsaWebContext& ctx) {
 #ifdef IOTSA_WITH_HTTPS
   // The text fields aren't settings themselves: a valid key plus a valid
   // certificate are, and configSave() saves them only together.
-  bool gotPem = false;
-  String pem;
-  if (ctx.text("httpsKey", pem, IotsaWebContext::ConfigModeOnly)) {
-    gotPem = true;
-    const char *err = _pemToDer(pem, _keyHead, _keyTail, newKey, newKeyLength);
-    if (err) ctx.error(String("HTTPS private key: ") + err);
-  }
-  if (ctx.text("httpsCertificate", pem, IotsaWebContext::ConfigModeOnly)) {
-    gotPem = true;
-    const char *err = _pemToDer(pem, _certHead, _certTail, newCertificate, newCertificateLength);
-    if (err) ctx.error(String("HTTPS certificate: ") + err);
-  }
-  if (gotPem) {
+  IotsaWebContext::Change upload(ctx, "uploadHttps", IotsaWebContext::ConfigModeOnly);
+  if (upload) {
+    String pem;
+    if (ctx.arg("httpsKey", pem)) {
+      const char *err = _pemToDer(pem, _keyHead, _keyTail, newKey, newKeyLength);
+      if (err) ctx.error(String("HTTPS private key: ") + err);
+    }
+    pem = "";
+    if (ctx.arg("httpsCertificate", pem)) {
+      const char *err = _pemToDer(pem, _certHead, _certTail, newCertificate, newCertificateLength);
+      if (err) ctx.error(String("HTTPS certificate: ") + err);
+    }
     if (newKey && newCertificate) {
-      ctx.changed(IotsaWebContext::Config);
+      upload.done();
     } else if (!ctx.hasFeedback()) {
       ctx.feedback("The HTTPS key and certificate are only saved together.");
     }
@@ -114,7 +113,7 @@ void IotsaConfigMod::formHandler_fields(IotsaWebContext& ctx) {
   }
 #ifdef IOTSA_WITH_HTTPS
   {
-    IotsaWebContext::Form form(ctx, "Upload", "HTTPS certificate");
+    IotsaWebContext::Form form(ctx, "Upload", "HTTPS certificate", "uploadHttps");
     ctx.textarea("Private key (PEM)", "httpsKey", IotsaWebContext::ConfigModeOnly, "both are needed");
     ctx.textarea("Certificate (PEM)", "httpsCertificate", IotsaWebContext::ConfigModeOnly);
   }

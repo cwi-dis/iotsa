@@ -73,6 +73,25 @@ public:
   // A button that needs its "I am sure" box ticked (factory reset, remove all).
   bool confirmedAction(const char *name);
 
+  // A change to the device's long-term state that the module may still refuse
+  // (add, remove, upload): triggered by its own button. While it lives, its
+  // parameters are read with the usual calls, but they only read: no mode
+  // check of their own and no change marked. done() marks the change, once it
+  // really happened. action() is for things that just happen now.
+  class Change {
+  public:
+    Change(IotsaWebContext& ctx, const char *button, FieldKind kind = Config);
+    ~Change();
+    // The button is present, and the right and mode allow it.
+    explicit operator bool() const { return _active; }
+    void done();
+  private:
+    IotsaWebContext& _ctx;
+    FieldKind _kind;
+    bool _active = false;
+    bool _outer;  // inside another Change: that one decides
+  };
+
   // Changes on this page need this named right (as in IotsaMultiUserMod),
   // instead of the REST rule (PUT on the module's API path). Checked lazily, at
   // the first change, so just viewing the page needs no right. Both kinds of
@@ -192,6 +211,7 @@ private:
   bool _present(const char *name, String& value);
   bool _mayChange(FieldKind kind);
   void _changed(FieldKind kind);
+  void _mark(FieldKind kind);
   void _field(const IotsaWebLabel& label, const char *name, const String& value, const char *type, FieldKind kind, const char *hint);
   String _scoped(const char *name) const;
   String& _out();
@@ -214,6 +234,7 @@ private:
   const char *_right = nullptr;
   bool _authChecked = false;
   bool _authOk = false;
+  bool _inChange = false;   // reading a Change's parameters
   String _prefix;
   String _formHidden;       // hidden fields for every form, see FormHidden
   bool _headerRow = false;  // cell() writes <th>, see IotsaWebCollection
