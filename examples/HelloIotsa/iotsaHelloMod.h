@@ -17,8 +17,8 @@ public:
   void loop() override;
   String info() override;
 protected:
-  bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
+  bool getHandler(const char *path, JsonObject& reply) override;
 #ifdef IOTSA_WITH_WEB
   String webTitle() override { return "Hello Server"; }
   void formHandler_args(IotsaWebContext& ctx) override;
