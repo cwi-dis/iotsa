@@ -437,7 +437,7 @@ String IotsaMod::htmlEncode(String data);
 
 ### Next steps
 
-The [Hello](examples/Hello/Hello.ino) example shows the minimal, single-file, Arduino-sketch-style way to do basic interaction with the user (through a browser form, and through information on the home page). [HelloIotsa](examples/HelloIotsa) shows the same thing structured the way we recommend for real applications, plus how to add a REST API to your service. [HelloUser](examples/HelloUser/HelloUser.ino), [HelloPasswd](examples/HelloPasswd/HelloPasswd.ino), [HelloRights](examples/HelloRights/HelloRights.ino) and [HelloToken](examples/HelloToken/HelloToken.ino) each take that same `HelloIotsa` baseline and add one specific access-control mechanism, gating both the web form and the REST API.
+The [Hello](examples/Hello/Hello.ino) example shows the minimal, single-file, Arduino-sketch-style way to do basic interaction with the user (through a browser form, and through information on the home page). [HelloIotsa](examples/HelloIotsa) shows the same thing structured the way we recommend for real applications, plus how to add a REST API to your service. [HelloPasswd](examples/HelloPasswd/HelloPasswd.ino), [HelloUser](examples/HelloUser/HelloUser.ino) and [HelloToken](examples/HelloToken/HelloToken.ino) each take that same `HelloIotsa` baseline and add one specific access-control mechanism, gating both the web form and the REST API.
 
 To use this to create an interface to some bit of sensor hardware simply add the usual code to your `setup()` and `loop()` functions, and store the sensor value that you read in your `loop()` in a global variable. Pick up the value of this variable in your handler or info function and format it in HTML. [Light](examples/Light/Light.ino) and [Temperature](examples/Temperature/Temperature.ino) are example programs of this type.
 
@@ -700,17 +700,15 @@ building on the previous one:
 - [HelloIotsa](examples/HelloIotsa) is the minimal *reasonable normal* iotsa app: the same
   functionality as `Hello`, but implemented as a C++ class with a REST interface (GET/PUT)
   for changing the name, and structured the way we recommend for real applications (app
-  module in its own `.h`/`.cpp`, separate from the application glue). Merges what used to
-  be two separate examples, _HelloCpp_ and _HelloApi_.
-- The next four each take the `HelloIotsa` baseline unchanged and add exactly **one**
+  module in its own `.h`/`.cpp`, separate from the application glue).
+- The next three each take the `HelloIotsa` baseline unchanged and add exactly **one**
   access-control mechanism on top, gating the REST API and changes through the web form (looking at the page needs no login):
-  - [HelloPasswd](examples/HelloPasswd/HelloPasswd.ino) — a hardcoded `IotsaAuthMod`
-    (username "admin", password "admin"). Builds with HTTPS support by default (when
-    using platformIO).
-  - [HelloUser](examples/HelloUser/HelloUser.ino) — _IotsaUserMod_, so the password can be
-    changed. Builds with HTTPS support by default (when using platformIO).
-  - [HelloRights](examples/HelloRights/HelloRights.ino) — rights-based, multi-user access
-    control via _IotsaUserMod_.
+  - [HelloPasswd](examples/HelloPasswd/HelloPasswd.ino) — a hardcoded username and password
+    ("admin", "admin"), in its own small `IotsaAuthMod` subclass. Builds with HTTPS
+    support by default (when using platformIO).
+  - [HelloUser](examples/HelloUser/HelloUser.ino) — users with rights, managed on the device
+    (_IotsaUserMod_): changing the name needs the right "hello". Builds with HTTPS support
+    by default (when using platformIO).
   - [HelloToken](examples/HelloToken/HelloToken.ino) — a user login or a static API token
     with specific rights (_IotsaUserMod_ + _IotsaStaticTokenMod_). Builds with HTTPS
     support by default (when using platformIO).

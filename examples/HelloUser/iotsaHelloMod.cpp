@@ -10,8 +10,10 @@ void IotsaHelloMod::setup() {
 // formHandler_fields() writes the page. The framework does the rest (page,
 // feedback, authentication), see cwi-dis/iotsa#183.
 void IotsaHelloMod::formHandler_args(IotsaWebContext& ctx) {
-  // Changing the name needs a login (the same rule as a PUT on
-  // /api/hello); just looking doesn't.
+  // Changing the name needs a user with the right "hello"; just looking
+  // doesn't. Without this line the page uses the rule for REST calls,
+  // which is also what a PUT on /api/hello needs: the right "api".
+  ctx.needsRight("hello");
   // Live: the name isn't saved, it is gone after a reboot.
   ctx.arg("personName", personName, IotsaWebContext::Live);
 }

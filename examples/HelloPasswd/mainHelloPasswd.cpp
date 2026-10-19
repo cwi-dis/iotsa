@@ -1,13 +1,8 @@
 //
-// This server includes the wifi configuration module, and optionally the
-// Over-The-Air update module (to allow uploading new code into the esp12 (or other
-// board) from the Arduino IDE.
-//
-// A "hello" module is added, which greets the user with a name settable through
-// a web form (not kept over reboots).
-//
-// This version requires a username/password to change the name, to enable
-// over-the-air updating and to change the WiFi configuration.
+// The Hello example with a password: changing the name needs a login with
+// the fixed username "admin" and password "admin" (see iotsaStaticAuthMod.cpp).
+// The login protects the whole device: the WiFi settings, over-the-air
+// updates and so on need it too.
 //
 
 #include "iotsa.h"

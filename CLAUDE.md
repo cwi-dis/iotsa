@@ -109,7 +109,7 @@ committed generated file is stale.
 - `Hello` — simplest possible single-file "Hello, user" server
 - `HelloIotsa` — the same, but structured the way we recommend for real applications
   (app module in its own `.h`/`.cpp`), with a REST API added
-- `HelloPasswd`, `HelloRights`, `HelloToken`, `HelloUser` — auth patterns
+- `HelloPasswd`, `HelloUser`, `HelloToken` — auth patterns
 - `Led`, `Light` — LED control / BLE
 - `Button`, `Input`, `Ringer` — input handling
 - `Log`, `Temperature`, `DateTime` — logging and sensors

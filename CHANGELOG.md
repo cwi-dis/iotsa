@@ -92,6 +92,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- The HelloRights example: HelloUser now shows rights (#183)
 - `IotsaMultiUserMod` (`iotsaMultiUser.h`): use `IotsaUserMod` (#183)
 - Per-item REST paths `/api/users/N` and `/api/buttons/N`: `PUT /api/buttons` takes the array, `null` leaves a button alone (#217)
 - `IOTSA_WITHOUT_API` (now an `#error`): API handlers are always compiled; leave out a transport with `IOTSA_WITHOUT_REST`/`IOTSA_WITHOUT_HPS` instead (#225)
