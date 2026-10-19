@@ -19,43 +19,31 @@ bool IotsaLedControlMod::blePutHandler(UUIDstring charUUID) {
 #endif // IOTSA_WITH_BLE
 
 #ifdef IOTSA_WITH_WEB
-void
-IotsaLedControlMod::webHandler() {
-  // Handles the page that is specific to the Led module: triggers a transient
-  // status-LED pulse (cwi-dis/iotsa#176) with the requested color/timing. It
-  // always decays back to the normal status display on its own.
-  bool anyChanged = false;
-  uint32_t _rgb = 0xffffff;
-  uint32_t _onDuration = 0;
-  uint32_t _offDuration = 0;
-  uint32_t _durationMs = 1000;
-  if( api.webService->server->hasArg("rgb")) {
-    _rgb = strtol(api.webService->server->arg("rgb").c_str(), 0, 16);
-    anyChanged = true;
-  }
-  if( api.webService->server->hasArg("onDuration")) {
-    _onDuration = api.webService->server->arg("onDuration").toInt();
-    anyChanged = true;
-  }
-  if( api.webService->server->hasArg("offDuration")) {
-    _offDuration = api.webService->server->arg("offDuration").toInt();
-    anyChanged = true;
-  }
-  if( api.webService->server->hasArg("durationMs")) {
-    _durationMs = api.webService->server->arg("durationMs").toInt();
-    anyChanged = true;
-  }
-  if (anyChanged) iotsaStatus.setStatusPulse(_rgb, _onDuration, _offDuration, _durationMs, "web led control");
+// The page triggers a transient status-LED pulse (cwi-dis/iotsa#176) with the
+// requested color/timing. It always decays back to the normal status display
+// on its own. The pulse happens now, so it is an action, and the fields are
+// its parameters.
+void IotsaLedControlMod::formHandler_args(IotsaWebContext& ctx) {
+  if (!ctx.action("pulse")) return;
+  String rgb = "ffffff";
+  uint32_t onDuration = 0;
+  uint32_t offDuration = 0;
+  uint32_t durationMs = 1000;
+  ctx.arg("rgb", rgb, IotsaWebContext::Live);
+  ctx.arg("onDuration", onDuration, IotsaWebContext::Live);
+  ctx.arg("offDuration", offDuration, IotsaWebContext::Live);
+  ctx.arg("durationMs", durationMs, IotsaWebContext::Live);
+  iotsaStatus.setStatusPulse(strtol(rgb.c_str(), 0, 16), onDuration, offDuration, durationMs, "web led control");
+  ctx.feedback("Pulsing.");
+}
 
-  String message = "<html><head><title>Led Server</title></head><body><h1>Led Server</h1>";
-  message += "<p>Triggers a transient status-LED pulse; it decays back to the normal status display automatically.</p>";
-  message += "<form method='get'>";
-  message += "Color (hex rrggbb): <input type='text' name='rgb'><br>";
-  message += "On time (ms): <input type='text' name='onDuration'><br>";
-  message += "Off time (ms): <input type='text' name='offDuration'><br>";
-  message += "Total duration (ms): <input type='text' name='durationMs' value='1000'><br>";
-  message += "<input type='submit'></form></body></html>";
-  api.webService->server->send(200, "text/html", message);
+void IotsaLedControlMod::formHandler_fields(IotsaWebContext& ctx) {
+  if (ctx.section != IotsaWebContext::Everyday) return;
+  IotsaWebContext::Form form(ctx, "Pulse", "Status LED pulse", "pulse");
+  ctx.field("Color", "rgb", "ffffff", IotsaWebContext::Live, "hex rrggbb");
+  ctx.field("On time", "onDuration", 0, IotsaWebContext::Live, "ms, 0: steady");
+  ctx.field("Off time", "offDuration", 0, IotsaWebContext::Live, "ms");
+  ctx.field("Total duration", "durationMs", 1000, IotsaWebContext::Live, "ms");
 }
 
 String IotsaLedControlMod::info() {

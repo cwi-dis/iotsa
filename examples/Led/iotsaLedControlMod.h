@@ -30,7 +30,9 @@ public:
 protected:
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
 #ifdef IOTSA_WITH_WEB
-  void webHandler() override;
+  String webTitle() override { return "Led Server"; }
+  void formHandler_args(IotsaWebContext& ctx) override;
+  void formHandler_fields(IotsaWebContext& ctx) override;
 #endif
 #ifdef IOTSA_WITH_BLE
   // BLE only ever triggers a solid color for a fixed duration -- there's no room

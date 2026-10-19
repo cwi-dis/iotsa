@@ -703,7 +703,7 @@ building on the previous one:
   module in its own `.h`/`.cpp`, separate from the application glue). Merges what used to
   be two separate examples, _HelloCpp_ and _HelloApi_.
 - The next four each take the `HelloIotsa` baseline unchanged and add exactly **one**
-  access-control mechanism on top, gating both the web form and the REST API:
+  access-control mechanism on top, gating the REST API and changes through the web form (looking at the page needs no login):
   - [HelloPasswd](examples/HelloPasswd/HelloPasswd.ino) — a hardcoded `IotsaAuthMod`
     (username "admin", password "admin"). Builds with HTTPS support by default (when
     using platformIO).

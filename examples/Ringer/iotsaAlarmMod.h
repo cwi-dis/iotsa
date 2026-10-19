@@ -17,14 +17,16 @@ public:
   void lateSetup() override;
   void loop() override;
   String info() override;
-  using IotsaBaseModule::needsAuthentication;
 protected:
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
 #ifdef IOTSA_WITH_WEB
-  void webHandler() override;
+  String webTitle() override { return "Alarm Server"; }
+  void formHandler_args(IotsaWebContext& ctx) override;
+  void formHandler_fields(IotsaWebContext& ctx) override;
 #endif
 private:
+  void _ring(int dur);
   unsigned long alarmEndTime = 0;
 };
 

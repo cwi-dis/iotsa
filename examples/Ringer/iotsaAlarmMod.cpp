@@ -4,26 +4,37 @@ void IotsaAlarmMod::setup() {
   pinMode(PIN_ALARM, OUTPUT); // Trick: we configure to input so we make the pin go Hi-Z.
 }
 
-#ifdef IOTSA_WITH_WEB
-void IotsaAlarmMod::webHandler() {
-
-  // An empty field (the form submitted without a value) changes nothing.
-  if (api.webService->server->hasArg("alarm") && api.webService->server->arg("alarm") != "") {
-    int dur = api.webService->server->arg("alarm").toInt();
-    if (dur) {
-      alarmEndTime = millis() + dur*100;
-      IotsaSerial.println("alarm on");
-      digitalWrite(PIN_ALARM, HIGH);
-    } else {
-      alarmEndTime = 0;
-    }
+// Ring for dur tenths of a second; 0 stops it.
+void IotsaAlarmMod::_ring(int dur) {
+  if (dur) {
+    alarmEndTime = millis() + dur*100;
+    IotsaSerial.println("alarm on");
+    digitalWrite(PIN_ALARM, HIGH);
+  } else {
+    alarmEndTime = 0;
+    digitalWrite(PIN_ALARM, LOW);
   }
-  String message = "<html><head><title>Alarm Server</title></head><body><h1>Alarm Server</h1>";
-  message += "<form method='get'>";
-  message += "Alarm: <input name='alarm' value=''> (times 0.1 second)<br>\n";
-  message += "<input type='submit'></form></body></html>";
-  api.webService->server->send(200, "text/html", message);
+}
 
+#ifdef IOTSA_WITH_WEB
+// Ringing happens now: Ring is an action, the duration its parameter.
+void IotsaAlarmMod::formHandler_args(IotsaWebContext& ctx) {
+  if (ctx.action("ring")) {
+    int dur = 10;
+    ctx.arg("alarm", dur, IotsaWebContext::Live);
+    _ring(dur);
+  }
+  if (ctx.action("stop")) _ring(0);
+}
+
+void IotsaAlarmMod::formHandler_fields(IotsaWebContext& ctx) {
+  if (ctx.section != IotsaWebContext::Everyday) return;
+  ctx.status("Alarm", "alarm", alarmEndTime ? "ringing" : "off");
+  {
+    IotsaWebContext::Form form(ctx, "Ring", "", "ring");
+    ctx.field("Duration", "alarm", 10, IotsaWebContext::Live, "times 0.1 second");
+  }
+  if (alarmEndTime) ctx.button("stop", "Stop");
 }
 
 String IotsaAlarmMod::info() {
@@ -50,13 +61,7 @@ bool IotsaAlarmMod::putHandler(const char *path, const JsonVariant& request, Jso
   } else {
     return apiError(400, "expected a duration, or {\"alarm\": duration}");
   }
-  if (dur) {
-    alarmEndTime = millis() + dur*100;
-    IotsaSerial.println("alarm on");
-    digitalWrite(PIN_ALARM, HIGH);
-  } else {
-    alarmEndTime = 0;
-  }
+  _ring(dur);
   return true;
 }
 

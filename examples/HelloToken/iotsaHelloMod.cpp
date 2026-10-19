@@ -5,22 +5,24 @@ void IotsaHelloMod::setup() {
   // Nothing to do during early initialization for this module
 }
 
-void
-IotsaHelloMod::webHandler() {
-  // Handles the page that is specific to the Hello module, greets the user and
-  // optionally stores a new name to greet the next time.
-  if (api.webService->server->hasArg("greeting")) {
-    if (needsAuthentication("hello")) {
-      return;
-    }
-    greeting = api.webService->server->arg("greeting");
-  }
-  String message = "<html><head><title>Hello Server</title></head><body><h1>Hello Server</h1>";
-  message += "<form method='get'>Greeting: <input name='greeting' value='";
-  message += htmlEncode(greeting);
-  message += "'></form></body></html>";
-  api.webService->server->send(200, "text/html", message);
+#ifdef IOTSA_WITH_WEB
+// The web page: formHandler_args() handles what the form sent, then
+// formHandler_fields() writes the page. The framework does the rest (page,
+// feedback, authentication), see cwi-dis/iotsa#183.
+void IotsaHelloMod::formHandler_args(IotsaWebContext& ctx) {
+  // Changing the greeting needs the right "hello"; just looking doesn't.
+  ctx.needsRight("hello");
+  // Live: the greeting isn't saved, it is gone after a reboot.
+  ctx.arg("greeting", greeting, IotsaWebContext::Live);
 }
+
+void IotsaHelloMod::formHandler_fields(IotsaWebContext& ctx) {
+  if (ctx.section != IotsaWebContext::Everyday) return;
+  if (greeting != "") ctx << "<p>Hello, " + htmlEncode(greeting) + "!</p>\n";
+  IotsaWebContext::Form form(ctx, "Set");
+  ctx.field("Greeting", "greeting", greeting, IotsaWebContext::Live);
+}
+#endif // IOTSA_WITH_WEB
 
 bool IotsaHelloMod::getHandler(const char *path, JsonObject& reply) {
   reply["greeting"] = greeting;

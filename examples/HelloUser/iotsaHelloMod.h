@@ -16,12 +16,15 @@ public:
   void lateSetup() override;
   void loop() override;
   String info() override;
-  using IotsaBaseModule::needsAuthentication;
 protected:
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
+#ifdef IOTSA_WITH_WEB
+  String webTitle() override { return "Hello Server"; }
+  void formHandler_args(IotsaWebContext& ctx) override;
+  void formHandler_fields(IotsaWebContext& ctx) override;
+#endif
 private:
-  void webHandler() override;
   String greeting;
 };
 
