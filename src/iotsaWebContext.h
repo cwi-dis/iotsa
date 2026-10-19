@@ -55,8 +55,9 @@ public:
   // A checkbox (written by checkbox() on the get side, with its hidden 0).
   bool checkbox(const char *name, bool& field, FieldKind kind = Config) { return arg(name, field, kind); }
   // A password: an empty one means "leave unchanged", unless allowEmpty (an
-  // open network, but only together with a new network name).
-  bool password(const char *name, String& field, FieldKind kind = Config, bool allowEmpty = false);
+  // open network, but only together with a new network name). clearable: an
+  // optional secret, its "clear" checkbox empties it.
+  bool password(const char *name, String& field, FieldKind kind = Config, bool allowEmpty = false, bool clearable = false);
   // One of count choices, 0..count-1 (written by choice() on the get side).
   bool choice(const char *name, int& field, int count, FieldKind kind = Config);
   // A button without fields (identify, reboot, remove): present and allowed.
@@ -168,10 +169,12 @@ public:
   void field(const IotsaWebLabel& label, const char *name, float value, FieldKind kind = Config, const char *hint = nullptr) { _field(label, name, String(value), "number' step='any", kind, hint); }
   void field(const IotsaWebLabel& label, const char *name, bool value, FieldKind kind = Config, const char *hint = nullptr) { checkbox(label, name, value, kind, hint); }
   void checkbox(const IotsaWebLabel& label, const char *name, bool value, FieldKind kind = Config, const char *hint = nullptr);
-  // Never prefilled.
-  void password(const IotsaWebLabel& label, const char *name, FieldKind kind = Config, const char *hint = nullptr);
+  // Never prefilled. clearable: with a "clear" checkbox (pass it only when
+  // there is something to clear).
+  void password(const IotsaWebLabel& label, const char *name, FieldKind kind = Config, const char *hint = nullptr, bool clearable = false);
   // A multi-line text field (a PEM key), never prefilled; makes the form POST.
-  void textarea(const IotsaWebLabel& label, const char *name, FieldKind kind = Config, const char *hint = nullptr);
+  // Read it with password() on the put side.
+  void textarea(const IotsaWebLabel& label, const char *name, FieldKind kind = Config, const char *hint = nullptr, bool clearable = false);
   // A <select> of count options; value is the index.
   void choice(const IotsaWebLabel& label, const char *name, int value, const char * const *options, int count, FieldKind kind = Config);
   // A button sending name=value. Inside a Form it is part of that form (and
@@ -213,6 +216,7 @@ private:
   void _markEditable(bool post, bool field = true);
   void _setRule(AuthRule rule, const char *right);
   void _closeForm();
+  String _clearBox(const char *name);
 
   static bool _parse(const String& s, String& v) { v = s; return true; }
   static bool _parse(const String& s, bool& v);

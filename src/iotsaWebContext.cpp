@@ -82,8 +82,14 @@ void IotsaWebContext::_mark(FieldKind kind) {
   }
 }
 
-bool IotsaWebContext::password(const char *name, String& field, FieldKind kind, bool allowEmpty) {
+bool IotsaWebContext::password(const char *name, String& field, FieldKind kind, bool allowEmpty, bool clearable) {
   String value;
+  if (clearable && _present((String(name) + ".clear").c_str(), value) && value == "1") {
+    if (field == "" || !_mayChange(kind)) return false;
+    field = "";
+    _changed(kind);
+    return true;
+  }
   if (!_present(name, value)) return false;
   if ((value == "" && !allowEmpty) || value == field) return false;
   if (!_mayChange(kind)) return false;
@@ -347,22 +353,28 @@ void IotsaWebContext::checkbox(const IotsaWebLabel& label, const char *name, boo
   _out() += line;
 }
 
-void IotsaWebContext::password(const IotsaWebLabel& label, const char *name, FieldKind kind, const char *hint) {
+String IotsaWebContext::_clearBox(const char *name) {
+  return "<label><input type='checkbox' name='" + _scoped(name) + ".clear' value='1'> Clear</label>\n";
+}
+
+void IotsaWebContext::password(const IotsaWebLabel& label, const char *name, FieldKind kind, const char *hint, bool clearable) {
   if (!editable(kind)) return;
   _markEditable(true);
   String line = "<label>" + IotsaBaseModule::htmlEncode(label.text) + ": ";
   line += "<input type='password' name='" + _scoped(name) + "' value=''>";
   if (hint) line += String(" <small>") + IotsaBaseModule::htmlEncode(hint) + "</small>";
   line += "</label>\n";
+  if (clearable) line += _clearBox(name);
   _out() += line;
 }
 
-void IotsaWebContext::textarea(const IotsaWebLabel& label, const char *name, FieldKind kind, const char *hint) {
+void IotsaWebContext::textarea(const IotsaWebLabel& label, const char *name, FieldKind kind, const char *hint, bool clearable) {
   if (!editable(kind)) return;
   _markEditable(true);
   String line = "<label>" + IotsaBaseModule::htmlEncode(label.text) + ":";
   if (hint) line += String(" <small>") + IotsaBaseModule::htmlEncode(hint) + "</small>";
   line += "<br><textarea name='" + _scoped(name) + "' rows='6' cols='64'></textarea></label>\n";
+  if (clearable) line += _clearBox(name);
   _out() += line;
 }
 

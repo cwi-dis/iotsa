@@ -21,7 +21,8 @@ public:
   void configSave(IotsaConfigFileSave& cf, const String& f_name) override;
 #ifdef IOTSA_WITH_WEB
   // Credentials and token are secrets, as over REST: never shown, empty
-  // leaves them unchanged. So does an empty root CA (a textarea).
+  // leaves them unchanged, a "clear" checkbox empties them. The root CA (a
+  // textarea) works the same way.
   void formHandler_args(IotsaWebContext& ctx) override;
   void formHandler_fields(IotsaWebContext& ctx) override;
   void formHandler_row(IotsaWebContext& ctx) override;
