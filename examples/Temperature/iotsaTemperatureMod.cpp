@@ -10,22 +10,26 @@ void IotsaTemperatureMod::setup() {
   // Nothing to do during early initialization for this module
 }
 
-void
-IotsaTemperatureMod::handler() {
-  // Handles the page that is specific to the Temperature module, greets the user and
-  // optionally stores a new name to greet the next time.
+bool IotsaTemperatureMod::getHandler(const char *path, JsonObject& reply) {
   _update();
-  String message = "{\"temperature\":";
-  message += String(temperature);
-  message += ",\"humidity\":";
-  message += String(humidity);
-  message += "}\n";
-  app.server->send(200, "application/json", message);
+  reply["temperature"] = temperature;
+  reply["humidity"] = humidity;
+  return true;
 }
 
+#ifdef IOTSA_WITH_WEB
+void IotsaTemperatureMod::formHandler_fields(IotsaWebContext& ctx) {
+  if (ctx.section != IotsaWebContext::Everyday) return;
+  _update();
+  ctx.status("Temperature", "temperature", String(temperature) + " °C");
+  ctx.status("Humidity", "humidity", String(humidity) + "%");
+}
+#endif
+
 void IotsaTemperatureMod::lateSetup() {
-  // Setup the web server hooks for this module.
-  app.server->on("/temperature", std::bind(&IotsaTemperatureMod::handler, this));
+  // A GET-only API, which also gives the web page.
+  api.setup("temperature", true);
+  name = "temperature";
 }
 
 String IotsaTemperatureMod::info() {
@@ -34,7 +38,7 @@ String IotsaTemperatureMod::info() {
   rv += String(temperature);
   rv += ", humidity is ";
   rv += String(humidity);
-  rv += ". See <a href=\"/temperature\">/temperature</a> for JSON data.</p>";
+  rv += ". See <a href=\"/temperature\">/temperature</a>, or <a href=\"/api/temperature\">/api/temperature</a> for JSON data.</p>";
   return rv;
 }
 
