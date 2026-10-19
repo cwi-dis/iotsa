@@ -5,18 +5,14 @@
 // modules. This file only contains the application glue: which modules to
 // instantiate, and setup()/loop().
 //
-// Functionally this merges what used to be two separate examples: HelloCpp
-// (the "hello, name" module implemented as a C++ class) and HelloApi (the same,
-// with a REST API for changing the name added on top).
-//
 
 #include "iotsa.h"
 #include "iotsaHelloMod.h"
 
-// CHANGE: Add application includes and declarations here
-
+// The application: handles WiFi, OTA and the other standard modules for you.
 IotsaApplication application("Iotsa Hello World Server");
 
+// Our module, see iotsaHelloMod.cpp. Creating it adds it to the application.
 IotsaHelloMod helloMod(application);
 
 // Standard setup() method, hands off most work to the application framework
