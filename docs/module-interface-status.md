@@ -8,8 +8,7 @@ Last reviewed: 2026-07-27.
 Every module in the interface matrix below falls into one of two categories:
 
 - **Infrastructural** — plumbing needed regardless of what the device actually *does*:
-  networking (`iotsaWifi`, `iotsaBLEServer`, `iotsaBLEClient`), auth (`iotsaUser`,
-  `iotsaMultiUser`, `iotsaCapabilities`), storage (`iotsaFiles`, `iotsaFilesUpload`,
+  networking (`iotsaWifi`, `iotsaBLEServer`, `iotsaBLEClient`), auth (`iotsaUser`, `iotsaCapabilities`), storage (`iotsaFiles`, `iotsaFilesUpload`,
   `iotsaFilesBackup`), power (`iotsaBattery`), time (`iotsaNtp`, `iotsaRtc`), diagnostics
   (`iotsaLogger`), firmware update (`iotsaOta`), core config (`iotsaConfigMod`), and generic
   mechanism helpers (`iotsaSimple`, `iotsaRequest`, `iotsaNothing`, plus the `iotsaApi`/
@@ -58,7 +57,6 @@ settable via REST or web are persisted to a config file and restored on reboot. 
 | iotsaInput | — | — | — | — | — |
 | iotsaLed | — | — | — | — | — |
 | iotsaLogger | Yes | chunked | — | — | `logger.cfg` |
-| iotsaMultiUser | Yes | old `+=` | get/put/post | — | `users.cfg` |
 | iotsaNothing | Yes | old `+=` | get/put | — | `nothing.cfg` |
 | iotsaNtp | Yes | old `+=` | get/put | — | `ntp.cfg` |
 | iotsaOta | — | — | — | — | — |
@@ -94,7 +92,7 @@ or BLE write).
   certs (`/config/httpsKey.der`, `/config/httpsCert.der`).
 
 **IotsaModObject — embedded-object variant:** `IotsaRequest` and the per-user objects in
-`IotsaMultiUser` implement `IotsaModObject` instead of `IotsaBaseMod`. Its interface is:
+`IotsaUserMod` implement `IotsaModObject` instead of `IotsaBaseMod`. Its interface is:
 
 ```cpp
 bool configLoad(IotsaConfigFileLoad& cf, const String& name);

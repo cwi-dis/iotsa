@@ -8,7 +8,7 @@
 //
 
 #include "iotsa.h"
-#include "iotsaMultiUser.h"
+#include "iotsaUser.h"
 #include "iotsaHelloMod.h"
 
 //
@@ -17,7 +17,7 @@
 IotsaApplication application("Iotsa Hello World Server with API and multiple users");
 
 // Multi-user access module. Defaults to all access until users are added
-IotsaMultiUserMod myAuthenticator(application);  // Our authenticator module
+IotsaUserMod myAuthenticator(application);  // Our authenticator module
 
 // Instantiate the Hello module, and install it in the framework
 IotsaHelloMod helloMod(application);

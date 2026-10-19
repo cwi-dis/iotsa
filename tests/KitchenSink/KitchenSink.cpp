@@ -10,8 +10,6 @@
 // - iotsaButton: superseded by iotsaInput (iotsa#160), and the two headers can't even
 //   be included together (both define a top-level `class Button`, with different
 //   bases -- a straight ODR collision, not just redundancy).
-// - IotsaUserMod: IotsaMultiUserMod is used as the sole auth provider instead; the two
-//   are mutually exclusive as documented in iotsa#151 (both derive IotsaAuthMod).
 // - iotsaLedControlMod-style REST/web wrapper: that's app-specific UX layered on top
 //   of iotsaLed in each example that needs it, not something iotsa itself ships.
 //
@@ -22,7 +20,7 @@
 //
 
 #include "iotsa.h"
-#include "iotsaMultiUser.h"
+#include "iotsaUser.h"
 #include "iotsaCapabilities.h"
 #include "iotsaBattery.h"
 #include "iotsaFiles.h"
@@ -78,8 +76,8 @@ IotsaApplication application("Iotsa KitchenSink Test Rig");
 
 // Multi-user auth, with capabilities chained on top. The top of that stack is the
 // application's auth provider (setAuth() in setup()), used by every module.
-IotsaMultiUserMod multiUserMod(application);
-IotsaCapabilityMod capabilityMod(application, multiUserMod);
+IotsaUserMod userMod(application);
+IotsaCapabilityMod capabilityMod(application, userMod);
 #define authProvider (&capabilityMod)
 
 IotsaBatteryMod batteryMod(application);

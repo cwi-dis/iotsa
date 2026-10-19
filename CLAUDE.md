@@ -14,7 +14,7 @@ The framework is built from independent modules, each a `iotsa*.h/.cpp` pair in 
 Key modules:
 
 - Core: `IotsaApplication`, `IotsaWifiMod`, `IotsaConfigMod`
-- Auth: `IotsaUserMod`, `IotsaMultiUserMod`, `IotsaCapabilities`
+- Auth: `IotsaUserMod`, `IotsaCapabilities`
 - Network protocols: `IotsaApiRestMod` (REST/HTTP), `IotsaApiCoapMod` (CoAP), `IotsaApiHpsMod` (BLE/HPS)
 - BLE: `IotsaBLEServerMod` (device as peripheral), `IotsaBLEClientMod` (device as central — generic
   scan/connect infrastructure, intended as a base class for app-specific modules; see

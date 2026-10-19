@@ -675,18 +675,13 @@ Allows issuing of _http_ and _https_ requests. Carrying username/password creden
 
 ### iotsaUser.h
 
-An authentication module (_IotsaAuthMod_) that stores a single username and password. Other modules can then specify they are only accessible after the user authenticates with this username/password combination.
-
-Accessing URL `/users` allows changing the password, and if the password has never been set the default password is shown whenever the device is booted in configuration mode.
-
-### iotsaMultiUser.h
-
-An authentication module (_IotsaAuthMod_) that stores a multiple usernames, passwords
-and rights. Other modules can then specify they are only accessible after the user authenticates with a username/password combination that has the correct _right_ in
+An authentication module (_IotsaAuthMod_) that stores usernames, passwords and
+rights. Other modules can then specify they are only accessible after the user
+authenticates with a username/password combination that has the correct _right_ in
 its set of rights.
 
-Accessing URL `/users` allows adding and changing users. A factory-installed device
-has no users, and allows all rights always.
+Accessing URL `/users` allows adding, changing and removing users, in configuration
+mode. A factory-installed device has no users, and allows all rights always.
 
 
 ## sample programs
@@ -715,7 +710,7 @@ building on the previous one:
   - [HelloUser](examples/HelloUser/HelloUser.ino) — _IotsaUserMod_, so the password can be
     changed. Builds with HTTPS support by default (when using platformIO).
   - [HelloRights](examples/HelloRights/HelloRights.ino) — rights-based, multi-user access
-    control via _IotsaMultiUserMod_.
+    control via _IotsaUserMod_.
   - [HelloToken](examples/HelloToken/HelloToken.ino) — a user login or a static API token
     with specific rights (_IotsaUserMod_ + _IotsaStaticTokenMod_). Builds with HTTPS
     support by default (when using platformIO).

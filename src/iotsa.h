@@ -111,7 +111,7 @@ public:
   // IotsaSimpleMod, and a module's own registrations that fall outside its page,
   // like IotsaConfigMod's cert upload, cwi-dis/iotsa#221) -- forwards to the shared
   // IotsaHttpServiceMod, set once in the constructor.
-  // Also still used by the auth-provider modules (IotsaUserMod/IotsaMultiUserMod/
+  // Also still used by the auth-provider modules (IotsaUserMod/
   // IotsaCapabilityMod), whose allows() implementations need to read credentials
   // off the live HTTP request regardless of which module they're authenticating for
   // -- a known wart, see cwi-dis/iotsa#107 (rights-earning redesign), which will

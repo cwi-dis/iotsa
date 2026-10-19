@@ -115,14 +115,6 @@ bool IotsaWebContext::action(const char *name, FieldKind kind) {
   return true;
 }
 
-bool IotsaWebContext::text(const char *name, String& value, FieldKind kind) {
-  String raw;
-  if (!_present(name, raw) || raw == "") return false;
-  if (!_mayChange(kind)) return false;
-  value = raw;
-  return true;
-}
-
 bool IotsaWebContext::confirmedAction(const char *name) {
   String value;
   if (!_present(name, value)) return false;

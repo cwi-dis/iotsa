@@ -62,11 +62,6 @@ public:
   // A button without fields (identify, reboot, remove): present and allowed.
   // Counts as a change of the given kind.
   bool action(const char *name, FieldKind kind = Live);
-  // Input the module converts itself (a PEM key): present, non-empty and allowed.
-  // Only reads it into value: call changed() once the converted result is a change.
-  bool text(const char *name, String& value, FieldKind kind = Config);
-  // Mark a change the module made itself (see text()).
-  void changed(FieldKind kind) { _changed(kind); }
   // Read an argument without any check or effect (hidden bookkeeping fields,
   // a collection's version).
   bool peek(const char *name, String& value) { return _present(name, value); }
@@ -92,7 +87,7 @@ public:
     bool _outer;  // inside another Change: that one decides
   };
 
-  // Changes on this page need this named right (as in IotsaMultiUserMod),
+  // Changes on this page need this named right (as in IotsaUserMod),
   // instead of the REST rule (PUT on the module's API path). Checked lazily, at
   // the first change, so just viewing the page needs no right. Both kinds of
   // check exist until cwi-dis/iotsa#284 decides between them. Can change

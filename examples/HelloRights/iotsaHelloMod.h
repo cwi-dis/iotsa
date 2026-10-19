@@ -8,7 +8,7 @@
 // Hello "name" module. Greets visitors to the /hello page, and allows them
 // to change the name by which they are greeted, through the web UI and/or
 // the REST API -- both gated on rights-based access control (see
-// IotsaMultiUserMod).
+// IotsaUserMod).
 //
 class IotsaHelloMod : public IotsaModule {
 public:

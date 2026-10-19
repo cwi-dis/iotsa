@@ -69,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `IotsaUserMod` is the former `IotsaMultiUserMod`: several users with rights, add and remove on the web page, users addressed by username in REST (`PUT /api/users`); stored users of the old single-user module are not read, re-add them (#183, #217)
 - `IotsaAuthMod` is an `IotsaModule`: `users` and `capabilities` are listed as modules with an API, so backups include them (restoring an older backup needs `--force` or a fresh backup) (#183)
 - CLI: one HTTP(S) session per device (reuses the connection when the device allows keep-alive) and retries a TLS handshake the device broke off (#293)
 - BLE client devices report `presence` (unknown, searching, notFound, remembered, seen) instead of `found`, which said "not found" for a device nobody had looked for yet (#286)
@@ -89,6 +90,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- `IotsaMultiUserMod` (`iotsaMultiUser.h`): use `IotsaUserMod` (#183)
+- Per-item REST paths `/api/users/N` (#217)
 - `IOTSA_WITHOUT_API` (now an `#error`): API handlers are always compiled; leave out a transport with `IOTSA_WITHOUT_REST`/`IOTSA_WITHOUT_HPS` instead (#225)
 - `iotsaStatus.mdnsEnabled` and the `mdns` entry in `/api/config`'s `features` (#237)
 - `IotsaNtpMod`: the dead pre-libc NTP client, `IOTSA_WITHOUT_TIMEZONE`, the always-zero `minutesWest` API field, and `localTime()` (which returned UTC) (#283)
