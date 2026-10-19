@@ -515,40 +515,43 @@ bool IotsaBLEClientDevice::putHandler(const JsonVariant& request, JsonObject& re
 }
 
 #ifdef IOTSA_WITH_WEB
-void IotsaBLEClientDevice::formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) {
-  message += text;
-  if (includeConfig) {
-    message += "BLE device name: <input name='" + f_name + ".name' value='" + String(bleName.c_str()) + "'><br>";
+void IotsaBLEClientDevice::formHandler_args(IotsaWebContext& ctx) {
+  IotsaWebContext::Change rename(ctx, "rename");
+  if (!rename) return;
+  String newName(bleName.c_str());
+  ctx.arg("name", newName);
+  if (newName == "") {
+    ctx.error("A device needs a name.");
+  } else if (owner && owner->getDevice(newName) != nullptr) {
+    ctx.error("Device " + newName + " already exists.");
+  } else if (retarget(std::string(newName.c_str()))) {
+    rename.done();
   }
-  const char *presence = presenceText(getPresence());
-  if (available()) {
-    message += "BLE address " + String(getAddress().c_str()) + " (" + presence;
-    if (isConnected()) message += ", connected";
-    message += ")";
-  } else {
-    message += "<em>" + String(presence) + "</em>";
-  }
-  message += "<br>";
 }
 
-void IotsaBLEClientDevice::formHandler_TD(String& message, bool includeConfig) {
-  message += "<td>" + String(bleName.c_str()) + "</td><td>";
-  if (available()) {
-    message += String(getAddress().c_str());
-    message += isConnected() ? " (connected)" : "";
+void IotsaBLEClientDevice::formHandler_fields(IotsaWebContext& ctx) {
+  String name(bleName.c_str());
+  if (ctx.section == IotsaWebContext::Everyday) {
+    const char *presence = presenceText(getPresence());
+    String status;
+    if (available()) {
+      status = "BLE address " + String(getAddress().c_str()) + " (" + presence;
+      if (isConnected()) status += ", connected";
+      status += ")";
+    } else {
+      status = presence;
+    }
+    ctx.status(name == "" ? String("BLE device") : name, "", name == "" ? String("not set") : status);
   } else {
-    message += "<em>" + String(presenceText(getPresence())) + "</em>";
+    IotsaWebContext::Form form(ctx, name == "" ? "Set" : "Rename", name, "rename");
+    ctx.field("BLE device name", "name", name);
   }
-  message += "</td>";
 }
 
-bool IotsaBLEClientDevice::formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig) {
-  if (!includeConfig) return false;
-  String n_name = f_name + ".name";
-  if (server->hasArg(n_name)) {
-    return retarget(std::string(server->arg(n_name).c_str()));
-  }
-  return false;
+void IotsaBLEClientDevice::formHandler_row(IotsaWebContext& ctx) {
+  ctx.cell("Name", String(bleName.c_str()));
+  String where = available() ? String(getAddress().c_str()) + (isConnected() ? " (connected)" : "") : String(presenceText(getPresence()));
+  ctx.cell("Address", where);
 }
 #endif // IOTSA_WITH_WEB
 

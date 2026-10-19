@@ -44,7 +44,7 @@ public:
   BLEButtonMod(IotsaApplication &_app)
   : IotsaModule(_app),
     // Pass bleClientMod as owner right away: ringer.retarget() (called from
-    // configLoad()/putHandler()/webHandler() below, all the way down in
+    // configLoad()/putHandler()/formHandler_args() below, all the way down in
     // IotsaBLEClientDevice) can then self-register on the very first real
     // name, no separate addDevice() call needed here (cwi-dis/iotsa#268).
     ringer(std::string(), "", &bleClientMod)
@@ -59,7 +59,9 @@ protected:
   bool getHandler(const char *path, JsonObject& reply) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
 #ifdef IOTSA_WITH_WEB
-  void webHandler() override;
+  String webTitle() override { return "BLE Doorbell Button"; }
+  void formHandler_args(IotsaWebContext& ctx) override;
+  void formHandler_fields(IotsaWebContext& ctx) override;
 #endif
 private:
   void startRingAttempt();
@@ -84,31 +86,29 @@ String BLEButtonMod::info() {
 }
 
 #ifdef IOTSA_WITH_WEB
-void BLEButtonMod::webHandler() {
-  IotsaWebServer *server = api.webService->server;
-  if (ringer.formHandler_args(server, "target", true)) {
-    configSave();
+void BLEButtonMod::formHandler_args(IotsaWebContext& ctx) {
+  {
+    IotsaWebContext::Scope s(ctx, "target");
+    ringer.formHandler_args(ctx);
   }
-  if (server->hasArg("ringnow")) {
+  if (ctx.action("ringnow")) {
     startRingAttempt();
+    ctx.feedback("Ringing.");
   }
-  String message = "<html><head><title>BLE Doorbell Button</title></head><body><h1>BLE Doorbell Button</h1>";
-  message += "<form method='get'>";
-  ringer.formHandler_fields(message, "Ring target: ", "target", true);
-  message += "<input type='submit' value='Set'>";
-  message += "</form>";
-  message += "<form method='get'><input type='hidden' name='ringnow' value='1'>";
-  message += "<input type='submit' value='Ring now'";
-  if (!ringer.available()) message += " disabled"; // nothing to ring yet
-  message += "></form>";
+}
+
+void BLEButtonMod::formHandler_fields(IotsaWebContext& ctx) {
+  {
+    IotsaWebContext::Scope s(ctx, "target");
+    ringer.formHandler_fields(ctx);
+  }
+  if (ctx.section != IotsaWebContext::Everyday) return;
   // Ringing is asynchronous (connect, ring, disconnect), so a ringnow request
   // can't report its outcome right away -- it shows up on the next page load.
   String status = ringStatus();
-  if (status != "") {
-    message += "<p>Last ring attempt: " + status + "</p>";
-  }
-  message += "<p>Or just fetch <code>/doorbell?ringnow=1</code> directly -- no form needed.</p>";
-  server->send(200, "text/html", message);
+  if (status != "") ctx.status("Last ring attempt", "", status);
+  if (ringer.available()) ctx.button("ringnow", "Ring now");
+  ctx << "<p>Or just fetch <code>/doorbell?ringnow=1</code> directly -- no form needed.</p>\n";
 }
 #endif // IOTSA_WITH_WEB
 

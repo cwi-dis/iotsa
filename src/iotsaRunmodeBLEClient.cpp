@@ -86,33 +86,38 @@ bool IotsaRunmodeBLEClient::putHandler(const JsonVariant& request, JsonObject& r
 }
 
 #ifdef IOTSA_WITH_WEB
-void IotsaRunmodeBLEClient::formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) {
-  IotsaBLEClientDevice::formHandler_fields(message, text, f_name, includeConfig);
-  if (includeConfig) {
-    message += "<form method='get'><input type='hidden' name='" + f_name + ".identify' value='1'><input type='submit' value='Identify'></form>";
-    message += "<form method='get'><input type='hidden' name='" + f_name + ".reboot' value='1'><input type='submit' value='Reboot'></form>";
-    message += "<form method='get'><input type='hidden' name='" + f_name + ".promoteMode' value='1'><input type='submit' value='Promote pending mode'></form>";
-    message += "<form method='get'><input type='hidden' name='" + f_name + ".setWifiDisabled' value='0'><input type='submit' value='Enable WiFi'></form>";
-    message += "<form method='get'><input type='hidden' name='" + f_name + ".setWifiDisabled' value='1'><input type='submit' value='Disable WiFi'></form>";
-  }
-  if (workPending) {
-    message += "<p>Command pending...</p>";
-  } else if (lastWorkStatus) {
-    message += "<p>Last command: " + String(lastWorkStatus) + "</p>";
+// Commands for the remote device: they happen now, once it can be reached.
+// Only one at a time.
+static void _queued(IotsaWebContext& ctx, bool ok) {
+  if (ok) {
+    ctx.feedback("Command queued, sent when the device can be reached.");
+  } else {
+    ctx.error("Busy: a command for this device is still pending.");
   }
 }
 
-bool IotsaRunmodeBLEClient::formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig) {
-  bool any = IotsaBLEClientDevice::formHandler_args(server, f_name, includeConfig);
-  if (!includeConfig) return any;
-  if (server->hasArg(f_name + ".identify")) any |= queueIdentify();
-  if (server->hasArg(f_name + ".reboot")) any |= queueReboot();
-  if (server->hasArg(f_name + ".promoteMode")) any |= queuePromoteMode();
-  if (server->hasArg(f_name + ".setWifiDisabled")) {
-    bool disabled = server->arg(f_name + ".setWifiDisabled").toInt() != 0;
-    any |= queueSetWifiDisabled(disabled);
+void IotsaRunmodeBLEClient::formHandler_args(IotsaWebContext& ctx) {
+  IotsaBLEClientDevice::formHandler_args(ctx);
+  if (ctx.action("identify")) _queued(ctx, queueIdentify());
+  if (ctx.action("reboot")) _queued(ctx, queueReboot());
+  if (ctx.action("promoteMode")) _queued(ctx, queuePromoteMode());
+  if (ctx.action("enableWifi")) _queued(ctx, queueSetWifiDisabled(false));
+  if (ctx.action("disableWifi")) _queued(ctx, queueSetWifiDisabled(true));
+}
+
+void IotsaRunmodeBLEClient::formHandler_fields(IotsaWebContext& ctx) {
+  IotsaBLEClientDevice::formHandler_fields(ctx);
+  if (ctx.section != IotsaWebContext::Everyday) return;
+  if (workPending) {
+    ctx.status("Command", "", "pending");
+  } else if (lastWorkStatus) {
+    ctx.status("Last command", "", lastWorkStatus);
   }
-  return any;
+  ctx.button("identify", "Identify");
+  ctx.button("reboot", "Reboot");
+  ctx.button("promoteMode", "Promote pending mode");
+  ctx.button("enableWifi", "Enable WiFi");
+  ctx.button("disableWifi", "Disable WiFi");
 }
 #endif // IOTSA_WITH_WEB
 #endif // IOTSA_WITH_BLE

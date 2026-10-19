@@ -391,7 +391,8 @@ public:
   virtual void formHandler_args(IotsaWebContext& ctx) {}
   virtual void formHandler_fields(IotsaWebContext& ctx) {}
   virtual void formHandler_row(IotsaWebContext& ctx) {}
-  // The old String-based interface, until every object is converted.
+  // The old String-based interface: nothing in iotsa uses it any more, it goes
+  // once the downstream repos are converted.
   virtual void formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) {}
   virtual void formHandler_TD(String& message, bool includeConfig) {}
   virtual bool formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig) { return false; }

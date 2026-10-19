@@ -20,11 +20,11 @@ public:
   bool configLoad(IotsaConfigFileLoad& cf, const String& f_name) override;
   void configSave(IotsaConfigFileSave& cf, const String& f_name) override;
 #ifdef IOTSA_WITH_WEB
-  static void formHandler_emptyfields(String& message);
-  void formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) override;
-  static void formHandler_TH(String& message, bool includeConfig);
-  void formHandler_TD(String& message, bool includeConfig) override;
-  bool formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig) override;
+  // Credentials and token are secrets, as over REST: never shown, empty
+  // leaves them unchanged. So does an empty root CA (a textarea).
+  void formHandler_args(IotsaWebContext& ctx) override;
+  void formHandler_fields(IotsaWebContext& ctx) override;
+  void formHandler_row(IotsaWebContext& ctx) override;
 #endif
   bool getHandler(JsonObject& reply) override;
   bool putHandler(const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;

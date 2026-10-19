@@ -94,11 +94,11 @@ public:
   // not configured).
   bool putHandler(const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
 #ifdef IOTSA_WITH_WEB
-  // Shows a found/connected status line always; the editable name field
-  // only when includeConfig (renaming isn't a day-to-day control).
-  void formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) override;
-  void formHandler_TD(String& message, bool includeConfig) override;
-  bool formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig) override;
+  // A found/connected status line on the everyday side; renaming (a form
+  // with a Rename button) on the configuration side.
+  void formHandler_args(IotsaWebContext& ctx) override;
+  void formHandler_fields(IotsaWebContext& ctx) override;
+  void formHandler_row(IotsaWebContext& ctx) override;
 #endif
   // Renames this device: updates the persisted identity and, if already
   // registered with an owning IotsaBLEClientMod (owner != nullptr), re-keys
