@@ -32,7 +32,7 @@ void IotsaHelloMod::loop() {
 // values the caller sent, and store or use them.
 bool IotsaHelloMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   JsonObject reqObj = request.as<JsonObject>();
-  getFromRequest<const char *>(reqObj, "greeting", greeting);
+  getFromRequest<const char *>(reqObj, "personName", personName);
   // Anything else in the request is reported back as "iotsa_api_ignored".
   checkUnhandled(reqObj);
   // Success, also when nothing changed. On an error, return apiError(status, "why").
@@ -41,7 +41,7 @@ bool IotsaHelloMod::putHandler(const char *path, const JsonVariant& request, Jso
 
 // The API GET handler: the values you want to send back to the caller.
 bool IotsaHelloMod::getHandler(const char *path, JsonObject& reply) {
-  reply["greeting"] = greeting;
+  reply["personName"] = personName;
   return true;
 }
 
@@ -52,8 +52,8 @@ bool IotsaHelloMod::getHandler(const char *path, JsonObject& reply) {
 // formHandler_args() handles what the form sent: here you pick up the values
 // and store or use them. Similar to putHandler.
 void IotsaHelloMod::formHandler_args(IotsaWebContext& ctx) {
-  // Live: the greeting isn't saved, it is gone after a reboot.
-  ctx.arg("greeting", greeting, IotsaWebContext::Live);
+  // Live: the name isn't saved, it is gone after a reboot.
+  ctx.arg("personName", personName, IotsaWebContext::Live);
 }
 
 // formHandler_fields() writes the page body, you implement here what values
@@ -62,22 +62,17 @@ void IotsaHelloMod::formHandler_args(IotsaWebContext& ctx) {
 // configuration part (ctx.section). Hello only has an everyday part.
 void IotsaHelloMod::formHandler_fields(IotsaWebContext& ctx) {
   if (ctx.section != IotsaWebContext::Everyday) return;
-  if (greeting != "") ctx << "<p>Hello, " + htmlEncode(greeting) + "!</p>\n";
+  ctx << "<p>Hello, " + htmlEncode(personName) + "!</p>\n";
   IotsaWebContext::Form form(ctx, "Set");
-  ctx.field("Greeting", "greeting", greeting, IotsaWebContext::Live);
+  ctx.field("Name", "personName", personName, IotsaWebContext::Live);
 }
 #endif // IOTSA_WITH_WEB
 
 // Return some information about this module, for the main page of the web server.
 String IotsaHelloMod::info() {
-  String rv = "<p>See <a href=\"/hello\">/hello</a> for info, ";
-  if (greeting == "") {
-    rv += "and to set the name to be greeted by.";
-  } else {
-    rv += "or to change the name ";
-    rv += htmlEncode(greeting);
-    rv += " that is currently greeted.";
-  }
+  String rv = "<p>See <a href=\"/hello\">/hello</a> to change the name ";
+  rv += htmlEncode(personName);
+  rv += " that is currently greeted.";
   rv += "</p>";
   return rv;
 }

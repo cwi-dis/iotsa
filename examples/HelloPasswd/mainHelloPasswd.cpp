@@ -6,7 +6,7 @@
 // A "hello" module is added, which greets the user with a name settable through
 // a web form (not kept over reboots).
 //
-// This version requires a username/password to change the greeting, to enable
+// This version requires a username/password to change the name, to enable
 // over-the-air updating and to change the WiFi configuration.
 //
 

@@ -25,7 +25,7 @@ protected:
   void formHandler_fields(IotsaWebContext& ctx) override;
 #endif
 private:
-  String greeting;
+  String personName = "human";
 };
 
 #endif

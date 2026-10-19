@@ -18,21 +18,16 @@ IotsaLoggerMod loggerMod(application);
 // them to change the name by which they are greeted.
 //
 
-String greeting;
+String personName = "human";
 
 String helloInfo() {
   // Return some information about this module, for the main page of the web server.
-  String rv = "<p>See <a href=\"/hello\">/hello</a> for info, ";
-  if (greeting == "") {
-  	rv += "and to set the name to be greeted by.";
-  } else {
-  	rv += "or to change the name \"";
-  	rv += IotsaBaseModule::htmlEncode(greeting);
-  	rv += "\" that is currently greeted.";
-  }
+  String rv = "<p>See <a href=\"/hello\">/hello</a> to change the name \"";
+  rv += IotsaBaseModule::htmlEncode(personName);
+  rv += "\" that is currently greeted.";
   rv += "</p>";
-  IotsaSerial.print("Logging Hello: info called, greeting=");
-  IotsaSerial.println(greeting);
+  IotsaSerial.print("Logging Hello: info called, personName=");
+  IotsaSerial.println(personName);
   return rv;
 }
 
@@ -40,17 +35,17 @@ void
 helloHandler() {
   // Handles the page that is specific to the Hello module, greets the user and
   // optionally stores a new name to greet the next time.
-  if( application.server->hasArg("greeting")) {
-    greeting = application.server->arg("greeting");
+  if( application.server->hasArg("personName")) {
+    personName = application.server->arg("personName");
   }
   String message = "<html><head><title>Hello Server</title></head><body><h1>Hello Server</h1>";
-  message += "<p>Hello, " + IotsaBaseModule::htmlEncode(greeting) + "!</p>";
-  message += "<form method='get'>Greeting: <input name='greeting' value='";
-  message += IotsaBaseModule::htmlEncode(greeting);
+  message += "<p>Hello, " + IotsaBaseModule::htmlEncode(personName) + "!</p>";
+  message += "<form method='get'>Name: <input name='personName' value='";
+  message += IotsaBaseModule::htmlEncode(personName);
   message += "'></form></body></html>";
   application.server->send(200, "text/html", message);
-  IotsaSerial.print("Logging Hello: handler called, greeting=");
-  IotsaSerial.println(greeting);
+  IotsaSerial.print("Logging Hello: handler called, personName=");
+  IotsaSerial.println(personName);
 }
 
 // Instantiate the Hello module, and install it in the framework

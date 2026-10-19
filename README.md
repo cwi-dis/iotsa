@@ -402,14 +402,14 @@ If you want your server to have a programming interface (either REST to access i
 
 ```
 bool IotsaHelloMod::getHandler(const char *path, JsonObject& reply) {
-  reply["greeting"] = greeting;
+  reply["personName"] = personName;
   return true;
 }
 
 bool IotsaHelloMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
-  JsonVariant arg = request["greeting"];
+  JsonVariant arg = request["personName"];
   if (arg.is<const char*>()) {
-    greeting = arg.as<String>();
+    personName = arg.as<String>();
     return true;
   }
   return false;
