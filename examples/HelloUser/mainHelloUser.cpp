@@ -12,18 +12,22 @@
 #include "iotsaUser.h"
 #include "iotsaHelloMod.h"
 
-//
-// Instantiate all the objects we need.
-//
-IotsaApplication application("Iotsa Hello World Server"); // The application framework
+// The application: handles WiFi, OTA and the other standard modules for you.
+IotsaApplication application("Iotsa Hello World Server");
 
-IotsaUserMod myAuthenticator(application);  // Our users
+// Our authenticator: the users, with their passwords and rights. It is a
+// standard module, and it has its own page, /users.
+IotsaUserMod myAuthenticator(application);
 
-IotsaHelloMod helloMod(application); // Our hello module (authenticated)
+// Our module, the same as in HelloIotsa except that it asks for the right
+// "hello", see iotsaHelloMod.cpp.
+IotsaHelloMod helloMod(application);
 
 // Standard setup() method, hands off everything to the application framework
 void setup(void){
-  application.setAuth(&myAuthenticator);  // every module, the standard ones included, uses this
+  // This is the line that makes the users work: from now on every module,
+  // the standard ones included, asks myAuthenticator before a change.
+  application.setAuth(&myAuthenticator);
   application.setup();
   application.lateSetup();
 }
