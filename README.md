@@ -188,7 +188,7 @@ for modified `platformio.ini` files.
 
 On reboot, the board will first initialize the LittleFS flash filesystem (if needed) and then create a WiFi network with a name similar to _config-iotsa1234_. Connect a device to that network and visit <http://192.168.4.1>. Configure your device name (at <http://192.168.4.1/config>) and WiFi name and password (at <http://192.168.4.1/wificonfig>), and after reboot the iotsa board should connect to your network and be visible as <http://yourdevicename.local>.
 
-When the device is running normally you can visit <http://yourdevicename.local/config> and request the device to go into configuration mode, or to do a factory reset. After requesting this you have a few minutes to power cycle the device to make it go into configuration mode again (see previous paragraph) or do a complete factory reset. When in configuration mode you have a few minutes to change the configuration (device name, WiFi name, password, maybe other parameters) before the device reverts to normal operation. The idea behind this sequence (_request configuration mode_, then _power cycle_, then _change parameters_) is that you need both network acccess and physical access before you can do a disruptive operation on the device.
+When the device is running normally you can visit <http://yourdevicename.local/runmode> and request the device to go into configuration mode, or to do a factory reset. After requesting this you have a few minutes to power cycle the device to make it go into configuration mode again (see previous paragraph) or do a complete factory reset. When in configuration mode you have a few minutes to change the configuration (device name, WiFi name, password, maybe other parameters) before the device reverts to normal operation. The idea behind this sequence (_request configuration mode_, then _power cycle_, then _change parameters_) is that you need both network acccess and physical access before you can do a disruptive operation on the device.
 
 ### Build time options
 
@@ -255,7 +255,7 @@ Whenever you made significant changes to your source tree (and committed them) y
 
 ### OTA programming
 
-If you have enabled over-the-air programming <http://yourdevicename.local/config> will also allow you to request the device to go into programmable mode. Again, you have a few minutes to power cycle and then a few minutes to reprogram:
+If you have enabled over-the-air programming <http://yourdevicename.local/runmode> will also allow you to request the device to go into programmable mode. Again, you have a few minutes to power cycle and then a few minutes to reprogram:
 
 - _For Arduino IDE_: 
   - In _Tools_ -> _Port_ -> _Network Port_ select your device.
@@ -291,23 +291,24 @@ Unlike most Arduino libraries and frameworks Iotsa does expose some of its C++ i
 
 Iotsa has two main types of objects:
 
-* `IotsaApplication`, of which there is only one, which is the web server and the container for the plugin modules.
-* `IotsaMod` which is a plugin module and of which there can be many. Each plugin module provides a web interface (usually with a HTML form to allow control over it) plus some functionality. The `IotsaMod` class is subclassed to provide specific functionality. 
+* `IotsaApplication`, of which there is only one, which is the web server and the container for the modules.
+* `IotsaModule`, of which there can be many. A module provides some functionality, plus a way for the outside world to see and change it: a web page, a REST (or CoAP) API, sometimes a BLE service. You subclass `IotsaModule` for your own functionality.
 
-  The standard modules are created automatically: `IotsaWifiMod` (connect to a specific Wifi network, after the user has provided the name and password), `IotsaOtaMod` (over-the-air updates), and the configuration and runmode modules. Your program only declares its own modules. 
-  
-  One that is often used is `IotsaSimpleMod` which allows you to write two functions to implement your own functionality (your reason for actually using Iotsa).
+  The standard modules for WiFi, over-the-air updates, configuration and the run mode are created automatically. Your program only declares its own modules, plus any optional standard modules it wants (see [available standard modules](#available-standard-modules)).
+
+  For the very simplest case there is `IotsaSimpleMod`, which turns two functions into a module.
+
+The rest of this section follows the `Hello` examples. The [sample programs](#sample-programs) section lists all examples.
 
 ### Do-nothing application
 
-You create a global variable `application` of type `IotsaApplication` to hold the basic implementation of your service framework. The WiFi module (so the end user can configure the WiFi network to join and such) and the OTA module are created automatically:
+You create a global variable `application` of type `IotsaApplication`. The WiFi module (so the end user can configure the WiFi network to join and such) and the OTA module are created automatically:
 
 ```
 IotsaApplication application("Iotsa Hello World Server");
-
 ```
 
-In your `setup()` function you call `app.setup()` and `app.lateSetup()` which will initialize the Iotsa framework:
+In your `setup()` function you call `application.setup()` and `application.lateSetup()`, which initialize the framework and all modules:
 
 ```
 void setup(void){
@@ -317,36 +318,35 @@ void setup(void){
 }
 ```
 
-In your `loop()` function you call `app.loop()`. This will take care of handling requests and every thing else that is needed to make the framework work:
+In your `loop()` function you call `application.loop()`. This handles requests and everything else the framework needs:
 
 ```
 void loop(void){
   application.loop();
   // Add your own loop code here....
- }
+}
 ```
 
-You have now created a Iotsa server that does absolutely nothing. 
+You have now created a Iotsa server that does absolutely nothing.
 
 For a real application, start from [HelloIotsa](examples/HelloIotsa/HelloIotsa.ino) instead: it is structured the way we recommend, with your module in its own `.h` and `.cpp` file.
 
 ### Hello world application
 
-One step more functionality is provided by the [Hello](examples/Hello/Hello.ino) example. It registers a handler function for the `/hello` URL (which provides a form through which a user can type in his or her name) and an info function that returns a paragraph (or more) on the home page `/`:
+One step more functionality is provided by the [Hello](examples/Hello/Hello.ino) example, a single file in Arduino-sketch style. It has a handler function for the `/hello` page (with a form through which a user can type in their name) and an info function that returns a paragraph for the home page `/`:
 
 ```
-void
-helloHandler() {
-  // Parse form arguments using server->args() and server->arg(...).
+void helloHandler() {
+  if (application.server->hasArg("personName")) {
+    personName = application.server->arg("personName");
+  }
   String message = "<html>...construct html page...</html>";
-  server->send(200, "text/html", message);
+  application.server->send(200, "text/html", message);
 }
 
 String helloInfo() {
-  String rv = "<p>See <a href=\"/hello\">/hello</a> for info.</p>";
-  return rv;
+  return "<p>See <a href=\"/hello\">/hello</a> to change the name.</p>";
 }
-
 ```
 
 These two functions (and the URL) are registered in the application as a `IotsaSimpleMod`:
@@ -355,50 +355,53 @@ These two functions (and the URL) are registered in the application as a `IotsaS
 IotsaSimpleMod helloMod(application, "/hello", helloHandler, helloInfo);
 ```
 
-### Another hello world application
+### Hello world as a module
 
-From a functionality point of view the hello module in [HelloIotsa](examples/HelloIotsa) is identical to _Hello_, but it is structured differently, as a C++ class. This is a bit more difficult to read (when you are used to standard Arduino programming and not C++ programming) but has the advantage that the functionality can easily be reused in other servers. Actually, most standard modules (below) started their life this way. Also, if you want to create a device without a user interface (REST or COAP only) you should follow this pattern.
-
-This is also the pattern we recommend for structuring your own applications: the module class lives in its own `.h`/`.cpp` pair (`iotsaHelloMod.h`/`iotsaHelloMod.cpp` in the `HelloIotsa` example), following the same declaration/implementation split as iotsa's own core modules, while the main file only contains the application glue (which modules to instantiate, plus `setup()`/`loop()`).
+From a functionality point of view [HelloIotsa](examples/HelloIotsa) is _Hello_, plus a REST API and keeping the name over reboots. But it is structured as a C++ class, the way we recommend for your own applications: the module class lives in its own `.h`/`.cpp` pair (`iotsaHelloMod.h`/`iotsaHelloMod.cpp`), and the main file only contains the application glue (which modules to create, plus `setup()`/`loop()`). The module can then be reused in other devices, and most standard modules started their life this way.
 
 You declare the class for your functionality:
 
 ```
-class IotsaHelloMod : public IotsaMod {
+class IotsaHelloMod : public IotsaModule {
 public:
-  IotsaHelloMod(IotsaApplication &_app) : IotsaMod(_app) {}
-  void setup();
-  void lateSetup();
-  void loop();
-  String info();
+  using IotsaModule::IotsaModule;
+  void setup() override;
+  void lateSetup() override;
+  void loop() override;
+  String info() override;
+protected:
+  void configLoad() override;
+  void configSave() override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
+  bool getHandler(const char *path, JsonObject& reply) override;
+  String webTitle() override { return "Hello Server"; }
+  void formHandler_args(IotsaWebContext& ctx) override;
+  void formHandler_fields(IotsaWebContext& ctx) override;
 private:
-  void handler();
+  String personName;
 };
-
 ```
 
-Then you implement the 5 methods, of which only `lateSetup` needs explanation: it is called when this module is added to the application, and should register the URL:
+In `lateSetup()` one call registers both the REST API and the web page: GET and PUT on `/api/hello`, and the page `/hello`:
 
 ```
 void IotsaHelloMod::lateSetup() {
-  // Setup the web server hooks for this module.
-  server->on("/hello", std::bind(&IotsaHelloMod::handler, this));
+  api.setup("hello", true, true);
+  name = "hello";
 }
 ```
 
-Finally you create a single object of your new `IotsaHelloMod` type and register it to the application:
+Finally the main file creates a single object of your module:
 
 ```
 IotsaHelloMod helloMod(application);
 ```
 
-Iotsa will now take care of calling your classes `IotsaHelloMod ::setup()`, `IotsaHelloMod ::lateSetup()` and `IotsaHelloMod ::loop()` methods at the right time without you needing to add any code to the normal `setup()` and `loop()` functions. Which means that this implementation of _Hello_ can be combined with as many other modules as you want, just by adding that 1-line declaration.
+Iotsa now calls your module's `setup()`, `lateSetup()` and `loop()` at the right time, without any code in the normal `setup()` and `loop()` functions. So this module can be combined with as many other modules as you want, just by adding that one-line declaration.
 
-### Hello World with an API
+### The API
 
-If you want your server to have a programming interface (either REST to access it over HTTP/TCP or COAP to access it over UDP) you use the base class `IotsaApiMod`. You provide methods for handling _GET_, _PUT_ and _POST_ requests (only for the ones you need) and register your API endpoint in your _lateSetup_. 
-
-[HelloIotsa](examples/HelloIotsa) has the full details (its hello module extends `IotsaApiMod` directly, combining this with the class-based structure above), but here are the _GET_ and _PUT_ methods:
+The REST (or CoAP) API is two methods. `getHandler()` puts the values into the reply; `putHandler()` picks up what the caller sent:
 
 ```
 bool IotsaHelloMod::getHandler(const char *path, JsonObject& reply) {
@@ -406,65 +409,72 @@ bool IotsaHelloMod::getHandler(const char *path, JsonObject& reply) {
   return true;
 }
 
-bool IotsaHelloMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply) {
-  JsonVariant arg = request["personName"];
-  if (arg.is<const char*>()) {
-    personName = arg.as<String>();
-    return true;
+bool IotsaHelloMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
+  JsonObject reqObj = request.as<JsonObject>();
+  if (getFromRequest<const char *>(reqObj, "personName", personName)) {
+    configSave();
+    if (changed) *changed = true;
   }
-  return false;
+  checkUnhandled(reqObj);
+  return true;
 }
 ```
 
-And here is the modified _lateSetup_ method:
+`checkUnhandled()` reports any field the handler didn't use back to the caller, as `iotsa_api_ignored`. On an error, return `apiError(status, "why")`.
+
+### The web page
+
+The page is two methods too, and the framework does the rest (the page itself, feedback, authentication, saving the configuration). `formHandler_args()` picks up what the form sent, like `putHandler()`; `formHandler_fields()` writes the page body, like `getHandler()`:
 
 ```
-void IotsaHelloMod::lateSetup() {
-  // Setup the web server hooks for this module.
-  server->on("/hello", std::bind(&IotsaHelloMod::handler, this));
-  api.setup("/api/hello", true, true);
-  name = "hello";
+void IotsaHelloMod::formHandler_args(IotsaWebContext& ctx) {
+  ctx.arg("personName", personName, IotsaWebContext::Config);
+}
+
+void IotsaHelloMod::formHandler_fields(IotsaWebContext& ctx) {
+  if (ctx.section != IotsaWebContext::Everyday) return;
+  ctx << "<p>Hello, " + htmlEncode(personName) + "!</p>\n";
+  IotsaWebContext::Form form(ctx, "Set");
+  ctx.field("Name", "personName", personName, IotsaWebContext::Config);
 }
 ```
 
-### HTML encoding
+The kind of a field says what a change means: `Live` is state that isn't saved (an LED, an alarm), `Config` is saved (the framework calls `configSave()`), `ConfigModeOnly` can only be changed in configuration mode (host name, WiFi network). A page has an everyday part and a configuration part; `formHandler_fields()` is called once for each (`ctx.section`).
 
-Strings that are interpolated into the HTML returned from the `info()` or `handler()` function must be ampersand-encoded. There is a static method in `IotsaMod` to do this for you:
+`ctx.field()`, `ctx.status()` and friends encode their values for HTML themselves. When you write HTML yourself, with `ctx <<` or in `info()`, encode interpolated strings with `htmlEncode()`.
+
+### Triggers
+
+A web page is for people. For another device, or `curl`, a module can add a trigger: a plain URL that does something right away, with its arguments in the query. The [Ringer](examples/Ringer/Ringer.ino) example rings on `/ring?alarm=20`:
 
 ```
-String IotsaMod::htmlEncode(String data);
+addTrigger("ring", [this](IotsaWebContext& ctx) { ringTrigger(ctx); });
 ```
 
 ### Next steps
 
-The [Hello](examples/Hello/Hello.ino) example shows the minimal, single-file, Arduino-sketch-style way to do basic interaction with the user (through a browser form, and through information on the home page). [HelloIotsa](examples/HelloIotsa) shows the same thing structured the way we recommend for real applications, plus how to add a REST API to your service. [HelloPasswd](examples/HelloPasswd/HelloPasswd.ino), [HelloUser](examples/HelloUser/HelloUser.ino) and [HelloToken](examples/HelloToken/HelloToken.ino) each take that same `HelloIotsa` baseline and add one specific access-control mechanism, gating both the web form and the REST API.
+[HelloPasswd](examples/HelloPasswd/HelloPasswd.ino), [HelloUser](examples/HelloUser/HelloUser.ino) and [HelloToken](examples/HelloToken/HelloToken.ino) each take the `HelloIotsa` module and add one access-control mechanism, gating both the web form and the REST API.
 
-To use this to create an interface to some bit of sensor hardware simply add the usual code to your `setup()` and `loop()` functions, and store the sensor value that you read in your `loop()` in a global variable. Pick up the value of this variable in your handler or info function and format it in HTML. [Light](examples/Light/Light.ino) and [Temperature](examples/Temperature/Temperature.ino) are example programs of this type.
-
-To interface to an actuator you present an HTML form in your handler, and store the user-supplied value in a global variable. Your `setup()` and `loop()` functions are again as usual, but in `loop()` you pick up the value from the global variable. [Led](examples/Led/Led.ino) is an example program of this type.
-
-Slightly more elaborate API examples are [Button](examples/Button/Button.ino) and [Ringer](examples/Ringer/Ringer). _Button_ waits for a button to be pressed on the device and then makes a call to a user-specifyable URL. If that URL happens to point to _Ringer_ it will in turn sound a buzzer.
-
-## User interface and operation
+For hardware, start with [Light](examples/Light/Light.ino), a module that only measures (a GET and a page without a form), and [Blink](examples/Blink/Blink.ino), a module that drives an output from a setting. Then see the [sample programs](#sample-programs) below.
 
 ## Core API
 
 ### iotsa.h
 
-This file declares the `IotsaApplication` and `IotsaMod` classes explained earlier. In addition it declares a class `IotsaAuthMod` which is a subclass of `IotsaMod` (so it has all the functionality of a normal module, like the handler) but it can be used as the application's _authenticator_. This gives the modules access control: they will only work after the user has provided a username/password combination, a capability token, or any other means of authentication you can think of.
+This file declares the `IotsaApplication` class, and `IotsaBaseModule`, the base class of all modules. `IotsaModule` (in `iotsaApi.h`) adds the API and the web page. `IotsaAuthMod` is a module that can be the application's _authenticator_: it gives the modules access control, so they only work after the user has provided a username/password combination, a capability token, or any other means of authentication you can think of.
 
-Here are the constructors of the three classes:
+The constructors:
 
 ```
 IotsaApplication(const char *_title);
-IotsaMod(IotsaApplication &_app, bool early=false);
+IotsaModule(IotsaApplication &_app, bool early=false);
 IotsaAuthMod(IotsaApplication &_app, bool early=false);
 ```
 
 An application has a single authenticator, used by every module, the standard ones (WiFi, OTA, configuration, runmode) included. Set it in `setup()`, before `application.setup()`:
 
 ```
-IotsaUserMod myAuthenticator(application, "owner");
+IotsaUserMod myAuthenticator(application);
 ...
 void setup() {
   application.setAuth(&myAuthenticator);
@@ -473,29 +483,29 @@ void setup() {
 }
 ```
 
-With a stack of authenticators (e.g. `IotsaCapabilityMod` on top of `IotsaUserMod`) pass the top one. Without `setAuth()` everything is allowed. Modules used to take an authenticator as a constructor argument; that argument is gone, and passing one is a compile error (cwi-dis/iotsa#284).
+With a stack of authenticators (e.g. `IotsaCapabilityMod` on top of `IotsaUserMod`) pass the top one. Without `setAuth()` everything is allowed.
 
 The optional `early` argument signifies that the module should be initialized early, this is generally used only by the WiFi module.
 
 ### iotsaApi.h
 
-Contains a class `IotsaApiMod`, a subclass of `IotsaMod`. Subclass this to implementing modules that also provide a REST interface. The class provides a method to register your API endpoint:
+Contains `IotsaModule`, the base class for a module with an API and a web page. Register your endpoint in `lateSetup()`:
 
 ```
-void apiSetup(const char* path, bool get=false, bool put=false, bool post=false);
+api.setup(const char* path, bool get=false, bool put=false, bool post=false);
 ```
 
-Call this in your `lateSetup()` method. Call multiple times if your class implements multiple endpoints.
-You should also provide the following methods to implement your `GET`, `PUT` and `POST` methods (for the ones for which you passed `true` in your `apiSetup` call):
+This registers `/api/<path>` for REST (and CoAP, and BLE/HPS when built in), and, when `get` is true, the web page `/<path>`. Call it several times if your module has several endpoints. Then implement the handlers for the methods you passed `true` for:
 
 ```
 bool getHandler(const char *path, JsonObject& reply);
-bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply);
-bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply);
+bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr);
+bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr);
 ```
-These methods are called on incoming REST or COAP calls. The request parameter object (or array, or value) is in `request`, store results in `reply` (which is already an initialized empty object). Return `true` for success, `false` for any failure (which will not return the reply object to the caller).
 
-The actual implementations are in _iotsaApiRest.h_ and _iotsaApiCoap.h_, but these are transparently renamed or combined.
+The request is in `request`; store results in `reply` (an empty object). Return `true` on success, also when nothing changed, and set `*changed` when something changed that needs saving. On failure, `return apiError(status, "why")`. `getFromRequest()` reads a field and removes it from the request, so `checkUnhandled()` can report what's left.
+
+The web page is `formHandler_args()` and `formHandler_fields()`, see [The web page](#the-web-page) above and `iotsaWebContext.h`. A trigger is `addTrigger()`, see [Triggers](#triggers).
 
 ### iotsaConfig.h
 
@@ -509,7 +519,7 @@ This is technically a module, but unlike other modules it is not really optional
 your iotsa board is running with WiFi disabled). It should _not_ be instantiated in your
 program, this happens automatically. This module also opens and/or initializes the LittleFS filesystem.
 
-If the iotsa server is operating in normal (production) mode a user can access URL `/config` to request configuration mode, factory reset or ota-programming mode. The user must then _demonstrate physical access_ within a few minutes to switch the iotsa server to its new mode, for another few minutes. If nothing happens during this period the server reverts to normal mode.
+If the iotsa server is operating in normal (production) mode a user can access URL `/runmode` (the run mode module, also created automatically) to request configuration mode, factory reset or ota-programming mode. The user must then _demonstrate physical access_ within a few minutes to switch the iotsa server to its new mode, for another few minutes. If nothing happens during this period the server reverts to normal mode.
 
 > The intention of _demonstrating physical access_ is that any "dangerous" operation requires both network access (to request the operation) and physical access. The user can always turn power on and off to demonstrate physical access, but a iotsa program can allow different methods (such as pressing a certain button a number of times in quick succession).
 
@@ -575,9 +585,20 @@ reasoning behind it. This section will be rewritten once that work lands.
 
 Note: `iotsaConfigMod.h`, `iotsaWifi.h`, and `iotsaSimple.h` are described in the framework section above; all others are described alphabetically below.
 
+### Adding a standard module
+
+To add an optional standard module, include its header and declare it next to your application, in the main file:
+
+```
+#include "iotsaNtp.h"
+IotsaNtpMod ntpMod(application);
+```
+
+That's all: its web page and API appear by themselves. Some modules need more (pins, or `setAuth()` for an authenticator); that is described with the module below.
+
 ### iotsaBattery.h
 
-Allows sleeping, hibernating and shutting down WiFi of your iotsa device to conserve battery power.
+Allows sleeping, hibernating and shutting down WiFi of your iotsa device to conserve battery power, and measures the battery and USB voltages. See the [LedBattery](examples/LedBattery/LedBattery.ino) example.
 
 ### iotsaBLEServer.h
 
@@ -592,7 +613,7 @@ Note that this file can be included if BLE is not supported (such as on an esp82
 
 ### iotsaButton.h
 
-A generalized module for handling buttons and switches attached to GPIO pins. Uses _iotsaRequest.h_ to enable REST calls when buttons are pressed. Also see _iotsaInput.h_ with which this will eventually be integrated.
+A generalized module for handling buttons and switches attached to GPIO pins. Uses _iotsaRequest.h_ to call a URL when a button is pressed. See the [Button](examples/Button/Button.ino) example. Will be merged into _iotsaInput.h_ (#160).
 
 ### iotsaCapabilities.h
 
@@ -615,10 +636,11 @@ Allows write access to files stored in `/data` on the LittleFS filesystem (where
 
 Creates a backup of the complete LittleFS filesystem (including `/data` and `/config`) as a tarfile when you access URL `/backup.tar`. Can be used to clone iotsa devices. Requires _IOTSA\_WITH\_WEB_.
 
+**Careful:** the backup includes the WiFi password, the users' passwords and other secrets, in plain text, and anyone with the right `backupfiles` (anyone at all, without an authenticator) can download it ([#300](https://github.com/cwi-dis/iotsa/issues/300)).
+
 ### iotsaInput.h
 
-Handles buttons, rotary encoders and (on ESP32) capacitive touchpads for input. Allows
-for callbacks to be made on changes, and (on ESP32) wakeup from sleep. Will be integrated with _iotsaButton.h_ at some point in the future.
+Handles buttons, rotary encoders and (on ESP32) capacitive touchpads for input. It can change your variables directly (`bindVar()`), call a callback on changes, and (on ESP32) wake the device from sleep. See the [Input](examples/Input/Input.ino) example. _iotsaButton.h_ will be merged into it (#160).
 
 ### iotsaLed.h
 
@@ -638,7 +660,7 @@ To use it, add `IotsaLoggerMod loggerMod(application);` next to your application
 
 ### iotsaNothing.h
 
-A module that does nothing. Use this as the basis of your own modules. Provides a user interface at `/nothing` and a REST interface on `/api/nothing`.
+A module that does nothing, with one setting, a web page at `/nothing` and a REST interface on `/api/nothing`. For your own modules, [HelloIotsa](examples/HelloIotsa) is a better starting point: it is explained.
 
 ### iotsaNtp.h
 
@@ -646,26 +668,27 @@ A module that contacts an NTP server to set the local clock. Accessing URL `/ntp
 
 The modules sets the `libc` time, so functions like `time()` and `localtime()` will work with the correct time.
 
-The module provides an API to get access to the time information:
+Your own module can ask it for the time:
 
 ```
-unsigned long utcTime();	// Seconds since 1-Jan-1970, UTC (unix time)
-unsigned long localTime();	// Seconds since 1-Jan-1970, local time zone
-int localSeconds();			// Local time-of-day, seconds (0-59)
-int localMinutes();			// Local time-of-day, minutes (0-59)
-int localHours();			// Local time-of-day, hours (0-23)
-int localHours12();			// Local time-of-day, hours (0-11)
-bool localIsPM();			// AM/PM indicator
-
+unsigned long utcTime();  // Seconds since 1-Jan-1970, UTC (unix time)
+int localSeconds();       // Local time-of-day, seconds (0-59)
+int localMinutes();       // Local time-of-day, minutes (0-59)
+int localHours();         // Local time-of-day, hours (0-23)
+int localHours12();       // Local time-of-day, hours (0-11)
+bool localIsPM();         // AM/PM indicator
+String isoTime();         // Local time, "YYYY-MM-DDTHH:MM:SS"
 ```
 
-Provides a user interface at `/ntp` and a REST interface at `/api/ntp`.
+Provides a user interface at `/ntpconfig` and a REST interface at `/api/ntpconfig`. Add it with `IotsaNtpMod ntpMod(application);`.
 
 ### iotsaRtc.h
 
 Support for _DS1302_ realtime clock chip, which usually comes on a board with battery backup so it can run for years. Will set _libc_ clock from RTC shortly after boot, and periodically set RTC clock from the system clock. So, when used together with `iotsaNtp` this automatically uses the RTC time when no network is available, and resynchronizes the RTC when a network is available.
 
 The RTC keeps UTC, and `isoTime()` (also `/api/rtcconfig`) returns it as `YYYY-MM-DDTHH:MM:SSZ`. For local time use `iotsaNtp`, which owns the timezone. Declaration order relative to `iotsaNtp` doesn't matter.
+
+Add it with the chip's three pins: `IotsaRtcMod rtcMod(application, PIN_ENA, PIN_CLK, PIN_DAT);`.
 
 ### iotsaOta.h
 
@@ -685,16 +708,18 @@ its set of rights.
 Accessing URL `/users` allows adding, changing and removing users, in configuration
 mode. A factory-installed device has no users, and allows all rights always.
 
+Add it as the application's authenticator: declare `IotsaUserMod userMod(application);`, and call `application.setAuth(&userMod)` in `setup()`. See the [HelloUser](examples/HelloUser/HelloUser.ino) example.
+
 
 ## sample programs
 
 To start your own application, copy _HelloIotsa_ (below): it is structured the way we recommend.
 
-### The Hello family
+The examples come in two strands. Every example after _HelloIotsa_ assumes you have read it, and its comments only explain what is new.
 
-Unlike the rest of the examples below, which are independent and each demonstrate one
-iotsa capability in isolation, the `Hello*` examples form a deliberate progression, each
-building on the previous one:
+### The interface strand: the Hello family
+
+How a module talks to the outside world. Each example builds on the previous one:
 
 - [Hello](examples/Hello/Hello.ino) is the toe-in-the-water entry point for people coming
   from Arduino: the simplest possible "Hello, user" server, a single file, no other
@@ -704,38 +729,42 @@ building on the previous one:
   for changing the name, keeping the name over reboots, and structured the way we
   recommend for real applications (app module in its own `.h`/`.cpp`, separate from the
   application glue).
-- The next three each take the `HelloIotsa` baseline unchanged and add exactly **one**
-  access-control mechanism on top, gating the REST API and changes through the web form (looking at the page needs no login):
+- The next three each take the `HelloIotsa` module unchanged and add exactly **one**
+  access-control mechanism on top, gating the REST API and changes through the web form
+  (looking at the page needs no login):
   - [HelloPasswd](examples/HelloPasswd/HelloPasswd.ino) — a hardcoded username and password
-    ("admin", "admin"), in its own small `IotsaAuthMod` subclass. Builds with HTTPS
-    support by default (when using platformIO).
+    ("admin", "admin"), in its own small `IotsaAuthMod` subclass.
   - [HelloUser](examples/HelloUser/HelloUser.ino) — users with rights, managed on the device
-    (_IotsaUserMod_): changing the name needs the right "hello". Builds with HTTPS support
-    by default (when using platformIO).
+    (_IotsaUserMod_): changing the name needs the right "hello".
   - [HelloToken](examples/HelloToken/HelloToken.ino) — a user login or a static API token
-    with specific rights (_IotsaUserMod_ + _IotsaStaticTokenMod_). Builds with HTTPS
-    support by default (when using platformIO).
+    with specific rights (_IotsaUserMod_ + _IotsaStaticTokenMod_).
 
-### Everything else
+  All three build with HTTPS by default (when using PlatformIO), so passwords and tokens
+  don't travel in the clear.
 
-- [Light](examples/Light/Light.ino) measures ambient light level with an LDR connected to the analog input.
+### The device strand
+
+Modules that read or drive hardware, and devices that talk to each other:
+
+- [Light](examples/Light/Light.ino) measures the ambient light level with an LDR connected to the analog input. The smallest input module: read-only.
 - [Blink](examples/Blink/Blink.ino) is Arduino's Blink the iotsa way: no `delay()`, and the interval can be changed on a web page or over REST (not saved). The output counterpart of _Light_.
 - [Temperature](examples/Temperature/Temperature.ino) measures temperature and humidity with a DHT21, through an external library (Adafruit's DHT sensor library): how to use a sensor library in an iotsa module.
-- [Input](examples/Input/Input.ino) is a dimmer set by hand: a button and a rotary encoder, read by the _iotsaInput_ module, change its values, shown on a web page.
+- [Input](examples/Input/Input.ino) is a dimmer set by hand: a button and a rotary encoder, read by the _iotsaInput_ module, dim an LED, and a web page shows the values.
 - [Led](examples/Led/Led.ino) lets the outside world flash the LED (colour, on/off times,
   duration) over the web, REST, CoAP and a BLE service of its own. Shows how to extend a
   standard module (_iotsaLed_), and a module that only makes something happen.
 - [LedBattery](examples/LedBattery/LedBattery.ino) is _Led_ on a battery-powered device:
   _iotsaBattery_ measures the battery and USB voltages, the device can sleep, and a BLE
   client can switch it into configuration mode, so it doesn't need WiFi all the time.
-- [Button](examples/Button/Button.ino) waits for a button to be pressed and then makes a call to a configurable URL. Pairs with _Ringer_ to implement a remote doorbell.
-- [Ringer](examples/Ringer/Ringer.ino) sounds a buzzer when asked, on its web page, its REST API or the trigger URL `/ring`. Pairs with _Button_ to implement a remote doorbell.
+- [Button](examples/Button/Button.ino) and [Ringer](examples/Ringer/Ringer.ino) are a doorbell over HTTP. _Button_ calls a configurable URL when its button is pressed; _Ringer_ sounds a buzzer when asked, on its web page, its REST API or its trigger `/ring`, which is the URL the button calls.
+- [BLEButton](examples/BLEButton/BLEButton.ino) and [BLERinger](examples/BLERinger/BLERinger.ino) are the same doorbell over BLE, with the Immediate Alert Service, a Bluetooth standard. _BLERinger_ shows the alert on the status LED.
+- [BLEManager](examples/BLEManager/BLEManager.ino) manages other iotsa devices over BLE: it finds them, and can identify or reboot them, switch their WiFi on or off, or confirm a mode change. A bridge between WiFi and devices that only have BLE.
 
-Board/feature build coverage (not tutorial material) lives separately, under `tests/`, mirrored one-for-one against the `examples/` source they build -- see `extras/python/gen_build_matrix.py`. Sketches under active development, not yet stable enough to be doc-grade material (e.g. [Infra](sandbox/Infra), a minimal scaffold for infrastructure and transport work), live under `sandbox/` instead -- still built on every push, just without `examples/`'s promise of being a stable starting point to copy.
+Board/feature build coverage (not tutorial material) lives separately, under `tests/`, see `extras/python/gen_build_matrix.py`. Sketches under active development, not yet stable enough to be doc-grade material (e.g. [Infra](sandbox/Infra), a minimal scaffold for infrastructure and transport work), live under `sandbox/` instead -- still built on every push, just without `examples/`'s promise of being a stable starting point to copy.
 
 ## more projects using iotsa
 
-Here are some projects that use iotsa, and that also be used as further examples (_Note that as of this writing not all projects may be publicly accessible yet_):
+Here are some projects that use iotsa, and that can also be used as further examples (_Note that as of this writing not all projects may be publicly accessible yet_):
 
 ### [lissabon](http://github.com/cwi-dis/lissabon)
 
@@ -755,14 +784,14 @@ Allows web access (or REST access) to analog and digital input and output pins.
 ![build-platformio](https://github.com/cwi-dis/iotsaDisplayServer/workflows/build-platformio/badge.svg)
 ![build-arduino](https://github.com/cwi-dis/iotsaDisplayServer/workflows/build-arduino/badge.svg)
 
-Drives an OLED display, such as an i2c 4x40 character module. Support for a buzzer (to attract user attention) and buttons (programmable to trigger actions by accessing programmable URLs) is included.
+Drives an LCD display, such as an i2c 4x40 character module. Support for a buzzer (to attract user attention) and buttons (programmable to trigger actions by accessing programmable URLs) is included.
 
 ### [iotsaOLEDServer](http://github.com/cwi-dis/iotsaOLEDServer)
 
 ![build-platformio](https://github.com/cwi-dis/iotsaOLEDServer/workflows/build-platformio/badge.svg)
 ![build-arduino](https://github.com/cwi-dis/iotsaOLEDServer/workflows/build-arduino/badge.svg)
 
-Drives an LCD display, such as an Adafruit SSD1306. Same external API as _iotsaDisplayServer_, but also allows Bluetooth LE control.
+Drives an OLED display, such as an Adafruit SSD1306. Same external API as _iotsaDisplayServer_, but also allows Bluetooth LE control.
 
 ### [iotsaMotorServer](http://github.com/cwi-dis/iotsaMotorServer)
 

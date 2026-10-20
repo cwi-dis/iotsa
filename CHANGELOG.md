@@ -76,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- README: the design and API sections describe the current interfaces (`IotsaModule`, `api.setup()`, web pages, triggers); the examples come in two strands; how to add a standard module (#183)
 - Input example is now a dimmer: a button and a rotary encoder dim an LED through `bindVar()`, shown on `/dimmer`; pins per chip (#183)
 - BLEButton, BLERinger and BLEManager examples: modules in their own files; the button calls its module directly, and `/ring` rings like the button (#183)
 - Ringer example: PUT `/api/alarm` takes only `{"alarm": n}`, no bare number; the pin comes from the main file (#183)
