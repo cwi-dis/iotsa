@@ -3,6 +3,13 @@
 #include "iotsa.h"
 #include "iotsaApi.h"
 
+//
+// A test fixture: a module that does nothing, with one setting ("argument"),
+// a web page /nothing and GET/PUT /api/nothing. sandbox/Infra uses it as its
+// one trivial application module, tests/KitchenSink as the target of its
+// IotsaRequest loopback. Not a template: start your own module from
+// examples/HelloIotsa.
+//
 class IotsaNothingMod : public IotsaModule {
 public:
   using IotsaModule::IotsaModule;

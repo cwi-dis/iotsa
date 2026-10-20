@@ -660,7 +660,7 @@ To use it, add `IotsaLoggerMod loggerMod(application);` next to your application
 
 ### iotsaNothing.h
 
-A module that does nothing, with one setting, a web page at `/nothing` and a REST interface on `/api/nothing`. For your own modules, [HelloIotsa](examples/HelloIotsa) is a better starting point: it is explained.
+A test fixture: a module that does nothing, with one setting, a web page at `/nothing` and a REST interface on `/api/nothing`. The sandbox and the tests use it as a trivial application module. For your own modules, start from [HelloIotsa](examples/HelloIotsa) instead.
 
 ### iotsaNtp.h
 
