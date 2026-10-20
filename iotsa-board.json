@@ -11,7 +11,7 @@
       "chip": "ESP8266 (ESP-12)",
       "reference": "README.md#supported-hardware-variants",
       "provenance": "iotsa-custom PCB",
-      "best_example": "examples/Skeleton (built as vanilla_esp8266)",
+      "best_example": "examples/Led (built as vanilla_esp8266)",
       "constraints": "No BLE. HTTPS unreliable on ESP8266 (see cwi-dis/iotsa#159).",
       "status": "supported",
       "notes": "The canonical ESP8266 target; the vanilla_esp8266 alias points here. Status LED: NeoPixel on GPIO15 (a few boards were built without one)."
@@ -151,7 +151,7 @@
       "chip": "ESP32-C3 (RISC-V single-core)",
       "reference": "https://www.espboards.dev/esp32/esp32-c3-super-mini/",
       "provenance": "off-the-shelf clone",
-      "best_example": "examples/DateTime",
+      "best_example": "examples/Blink",
       "constraints": "All ESP32-C3 limits (no PCNT / touch / analog Vbat / deep-sleep wakeup).",
       "status": "supported",
       "notes": "The in-progress P1-port-powered iotsaSmartMeter build targets this (cwi-dis/iotsaSmartMeter#1). Status LED: plain blue LED on GPIO8, active-low (confirmed on blecontrol, cwi-dis/iotsa#272); rather dim next to the red power LED. A variant with a NeoPixel reportedly exists but has not been seen."

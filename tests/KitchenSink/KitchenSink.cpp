@@ -62,7 +62,7 @@
 #endif
 #endif // ESP32
 
-// Real-time clock pins (DS1302), same as examples/DateTime. Only on the classic
+// Real-time clock pins (DS1302). Only on the classic
 // ESP32: the ESP8266, C3 and S3 don't have these pins, and on the C3 GPIO21 is the
 // console's TX pin (the RTC clock on it turned the console into garbage).
 #ifdef CONFIG_IDF_TARGET_ESP32

@@ -70,7 +70,7 @@ Using the `arduino-cli` tool is supported too.
 
 The _iotsa_ library is known to the PlatformIO library manager, so simply adding it to your _platformio.ini_ file should do the trick for adding the iotsa framework to your project..
 
-To build an example against your local (possibly uncommitted) changes to the iotsa library itself, open the `iotsa` source directory in _VSCode_ or _Atom_ and look for the `[env:Skeleton-example-iotsa_v4]` section (these `[env:...]` sections are generated from `examples/*/iotsa-build.json` and `tests/*/iotsa-build.json` into `generated_envs.ini` -- see `extras/python/gen_build_matrix.py`). Replace the references to _Skeleton_ with the name of the example you want to build.
+To build an example against your local (possibly uncommitted) changes to the iotsa library itself, open the `iotsa` source directory in _VSCode_ or _Atom_ and look for the `[env:HelloIotsa-example-iotsa_v4]` section (these `[env:...]` sections are generated from `examples/*/iotsa-build.json` and `tests/*/iotsa-build.json` into `generated_envs.ini` -- see `extras/python/gen_build_matrix.py`). Replace the references to _HelloIotsa_ with the name of the example you want to build.
 
 But: each example in the _examples_ folder also has its own _platformio.ini_ file, generated the same way, for building it standalone (pulling iotsa from GitHub rather than your local checkout). So you can also open `iotsa/examples/Hello` in _VSCode_ or _Atom_ and build it, or use the command line:
 
@@ -328,7 +328,7 @@ void loop(void){
 
 You have now created a Iotsa server that does absolutely nothing. 
 
-The [Skeleton](examples/Skeleton/Skeleton.ino) example does exactly this (but there are various `#define` statements at the top that you either turn into `#undef`, or keep to give you extra functionality).
+For a real application, start from [HelloIotsa](examples/HelloIotsa/HelloIotsa.ino) instead: it is structured the way we recommend, with your module in its own `.h` and `.cpp` file.
 
 ### Hello world application
 
@@ -688,7 +688,7 @@ mode. A factory-installed device has no users, and allows all rights always.
 
 ## sample programs
 
-- [Skeleton](examples/Skeleton/Skeleton.ino) is a good starting point for your own applications.
+To start your own application, copy _HelloIotsa_ (below): it is structured the way we recommend.
 
 ### The Hello family
 
@@ -721,7 +721,6 @@ building on the previous one:
 - [Light](examples/Light/Light.ino) measures ambient light level with an LDR connected to the analog input.
 - [Blink](examples/Blink/Blink.ino) is Arduino's Blink the iotsa way: no `delay()`, and the interval can be changed on a web page or over REST (not saved). The output counterpart of _Light_.
 - [Temperature](examples/Temperature/Temperature.ino) measures temperature and humidity with a DHT21, through an external library (Adafruit's DHT sensor library): how to use a sensor library in an iotsa module.
-- [DateTime](examples/DateTime/DateTime.ino) keeps the time via NTP and a realtime clock. Uses _iotsaNtp_ and _iotsaRtc_ modules.
 - [Input](examples/Input/Input.ino) is a dimmer set by hand: a button and a rotary encoder, read by the _iotsaInput_ module, change its values, shown on a web page.
 - [Led](examples/Led/Led.ino) lets the outside world flash the LED (colour, on/off times,
   duration) over the web, REST, CoAP and a BLE service of its own. Shows how to extend a

@@ -105,15 +105,17 @@ build matrices, and each entry's standalone `platformio.ini`. See #156, #224. Re
 with `--format={platformio-ini,board-defs-ini,boards-md,...}`; a CI step fails if any
 committed generated file is stale.
 
-- `Skeleton` — recommended starting point for new applications
 - `Hello` — simplest possible single-file "Hello, user" server
 - `HelloIotsa` — the same, but structured the way we recommend for real applications
-  (app module in its own `.h`/`.cpp`), with a REST API added
+  (app module in its own `.h`/`.cpp`), with a REST API added; the starting point for new
+  applications
 - `HelloPasswd`, `HelloUser`, `HelloToken` — auth patterns
 - `Light`, `Blink` — the smallest hardware input and output modules (read-only; a `Live` setting)
 - `Led`, `LedBattery` — a module that does something, over web/REST/CoAP/its own BLE service; the same on a battery, with sleep
-- `Button`, `Input`, `Ringer` — input handling
-- `Temperature`, `DateTime` — sensors and time
+- `Button`, `Ringer` — a doorbell over HTTP (Ringer has a trigger, `/ring`)
+- `Input` — a dimmer set by a button and a rotary encoder, through iotsaInput
+- `Temperature` — a sensor through an external library
+- `FileShare` — the files modules
 - `BLEManager`, `BLEButton`, `BLERinger` — BLE device-to-device communication:
   a central that manages and controls other iotsa devices, and a button/ringer
   pair (Immediate Alert Service)
