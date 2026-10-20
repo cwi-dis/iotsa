@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Temperature example: never read the sensor (`dht.begin()` was missing) (#183)
 - Web pages showed the credentials and token of outgoing requests (buttons), which REST already hid (#183)
 - Changing usernames and passwords on the web page needs configuration mode, as over REST: anyone on the network could set the password of a fresh device (#183)
 - HTTPS on a memory-tight ESP32 (C3 with BLE): every second request failed, the server kept an idle connection's TLS session for 20 s; iotsa now answers `Connection: close` (#293)
@@ -71,6 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The Log example is now HelloLog: Hello plus the logger module (#183)
 - Hello examples: the name to greet is `personName` (was `greeting`, also in `/api/hello`) and starts as "human"; HelloIotsa and the auth examples keep it over reboots (#183)
 - `IotsaUserMod` is the former `IotsaMultiUserMod`: several users with rights, add and remove on the web page, users addressed by username in REST (`PUT /api/users`); stored users of the old single-user module are not read, re-add them (#183, #217)
 - `IotsaAuthMod` is an `IotsaModule`: `users` and `capabilities` are listed as modules with an API, so backups include them (restoring an older backup needs `--force` or a fresh backup) (#183)

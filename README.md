@@ -697,6 +697,8 @@ building on the previous one:
 - [Hello](examples/Hello/Hello.ino) is the toe-in-the-water entry point for people coming
   from Arduino: the simplest possible "Hello, user" server, a single file, no other
   structure.
+- [HelloLog](examples/HelloLog/HelloLog.ino) branches off `Hello`: the same single file plus
+  the _iotsaLogger_ module, which shows the device's serial output on the web page `/logger`.
 - [HelloIotsa](examples/HelloIotsa) is the minimal *reasonable normal* iotsa app: the same
   functionality as `Hello`, but implemented as a C++ class with a REST interface (GET/PUT)
   for changing the name, keeping the name over reboots, and structured the way we
@@ -729,7 +731,6 @@ building on the previous one:
   operation without a permanent WiFi/web connection.
 - [Button](examples/Button/Button.ino) waits for a button to be pressed and then makes a call to a configurable URL. Pairs with _Ringer_ to implement a remote doorbell.
 - [Ringer](examples/Ringer/Ringer.ino) sounds a buzzer when a GET request is received. Pairs with _Button_ to implement a remote doorbell.
-- [Log](examples/Log/Log.ino) Example of using the _iotsaLogger_ module.
 - [FileShare](examples/FileShare/FileShare.ino) upload a file over HTTP and fetch it back
   again. Uses _iotsaFiles_, _iotsaFilesUpload_ and _iotsaFilesBackup_ together.
 
