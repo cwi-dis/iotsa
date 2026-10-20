@@ -76,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- BLEButton example: module in its own files, the button calls it directly, and `/ring` rings like the button (#183)
 - Ringer example: PUT `/api/alarm` takes only `{"alarm": n}`, no bare number; the pin comes from the main file (#183)
 - The transport build matrix (`tests/Led`) is now `tests/Transports`, built from `sandbox/Infra`, so the Led example carries no test machinery (#183)
 - Hello examples: the name to greet is `personName` (was `greeting`, also in `/api/hello`) and starts as "human"; HelloIotsa and the auth examples keep it over reboots (#183)
