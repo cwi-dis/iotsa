@@ -104,8 +104,8 @@ public:
   static bool runInLoop(std::function<void()> fn, uint32_t timeoutMs);
   static bool inLoopTask();
 #ifdef IOTSA_HAS_WEBSERVER
-  // Convenience for app-level sketch code (e.g. tests/KitchenSink, examples/Hello,
-  // examples/HelloLog) that registers its own raw handler outside of any module method,
+  // Convenience for app-level sketch code (e.g. tests/KitchenSink, examples/Hello)
+  // that registers its own raw handler outside of any module method,
   // and for any module that isn't itself an API-having module with a webHandler()
   // (web-server-extension modules like IotsaFilesUploadMod/IotsaLoggerMod/
   // IotsaSimpleMod, and a module's own registrations that fall outside its page,

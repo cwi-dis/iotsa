@@ -72,7 +72,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- The Log example is now HelloLog: Hello plus the logger module (#183)
 - Hello examples: the name to greet is `personName` (was `greeting`, also in `/api/hello`) and starts as "human"; HelloIotsa and the auth examples keep it over reboots (#183)
 - `IotsaUserMod` is the former `IotsaMultiUserMod`: several users with rights, add and remove on the web page, users addressed by username in REST (`PUT /api/users`); stored users of the old single-user module are not read, re-add them (#183, #217)
 - `IotsaAuthMod` is an `IotsaModule`: `users` and `capabilities` are listed as modules with an API, so backups include them (restoring an older backup needs `--force` or a fresh backup) (#183)
@@ -95,6 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- The Log example: using the logger is one line, see the README; an example comes with the new logger (#183, #294)
 - The HelloRights example: HelloUser now shows rights (#183)
 - `IotsaMultiUserMod` (`iotsaMultiUser.h`): use `IotsaUserMod` (#183)
 - Per-item REST paths `/api/users/N` and `/api/buttons/N`: `PUT /api/buttons` takes the array, `null` leaves a button alone (#217)

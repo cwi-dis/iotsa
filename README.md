@@ -634,6 +634,8 @@ The module does not provide a user-visible endpoint or REST api, but can be used
 
 Replaces the standard `Serial` object by an object that stores data in a memory buffer, and allows access to that memory buffer through the URL `/logger`. The buffer is tiny, 4Kb, but this allows some limited debugging over WiFi. Requires _IOTSA\_WITH\_HTTP_ or _IOTSA\_WITH\_HTTPS_.
 
+To use it, add `IotsaLoggerMod loggerMod(application);` next to your application, and print with `IotsaSerial` instead of `Serial`: `IotsaSerial` goes to the serial port and into the log, `Serial` only to the serial port.
+
 ### iotsaNothing.h
 
 A module that does nothing. Use this as the basis of your own modules. Provides a user interface at `/nothing` and a REST interface on `/api/nothing`.
@@ -697,8 +699,6 @@ building on the previous one:
 - [Hello](examples/Hello/Hello.ino) is the toe-in-the-water entry point for people coming
   from Arduino: the simplest possible "Hello, user" server, a single file, no other
   structure.
-- [HelloLog](examples/HelloLog/HelloLog.ino) branches off `Hello`: the same single file plus
-  the _iotsaLogger_ module, which shows the device's serial output on the web page `/logger`.
 - [HelloIotsa](examples/HelloIotsa) is the minimal *reasonable normal* iotsa app: the same
   functionality as `Hello`, but implemented as a C++ class with a REST interface (GET/PUT)
   for changing the name, keeping the name over reboots, and structured the way we
