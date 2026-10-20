@@ -3,7 +3,7 @@
 // Implementation of the Dimmer module. It is built like the Light module
 // (read that one first): read-only, a getHandler() and a page without a form.
 // What's new is where the values come from: the button and the encoder
-// change them directly, through bindVar().
+// change them directly, through bindVar(). And it drives an LED, with PWM.
 
 void IotsaDimmerMod::setup() {
   // Every press of the button toggles on (true: toggle; false would make on
@@ -11,16 +11,11 @@ void IotsaDimmerMod::setup() {
   button.bindVar(on, true);
   // Every step of the encoder changes level by 5, between 0 and 100.
   encoder.bindVar(level, 0, 100, 5);
-  // A callback runs after every change. Here it only logs; a real dimmer
-  // would set its lamp.
-  button.setCallback([this]() {
-    IotsaSerial.printf("dimmer: on=%d\n", on);
-    return true;
-  });
-  encoder.setCallback([this]() {
-    IotsaSerial.printf("dimmer: level=%d\n", level);
-    return true;
-  });
+  // A callback runs after every change: set the LED.
+  button.setCallback([this]() { _update(); return true; });
+  encoder.setCallback([this]() { _update(); return true; });
+  pinMode(pin, OUTPUT);
+  _update();
 }
 
 void IotsaDimmerMod::lateSetup() {
@@ -33,6 +28,13 @@ void IotsaDimmerMod::lateSetup() {
 // own loop(), and they change on and level for us.
 
 // No configLoad()/configSave(): after a reboot the dimmer is off, at 50.
+
+// Set the LED's brightness. analogWrite() switches the pin on and off very
+// fast (PWM); 0 is always off, 255 always on.
+void IotsaDimmerMod::_update() {
+  int brightness = on ? level * 255 / 100 : 0;
+  analogWrite(pin, activeLow ? 255 - brightness : brightness);
+}
 
 // No putHandler(): lateSetup() asked for no PUT.
 
