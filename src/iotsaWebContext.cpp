@@ -4,15 +4,10 @@
 #include <stdlib.h>
 #include <errno.h>
 
-static const char *_pageStyle =
-  "body{font-family:sans-serif;max-width:40em;margin:0 auto;padding:0 1em}\n"
-  "label{display:block;margin:0.3em 0}\n"
-  "small{color:#666}\n"
-  ".error{color:#b00}\n"
-  "fieldset{margin:0.5em 0}\n"
-  "form.button{display:inline-block;margin:0.2em 0.5em 0.2em 0}\n"
-  "table{border-collapse:collapse}\n"
-  "th,td{border:1px solid #888;padding:0.2em 0.5em}\n";
+// No styling on the pages, on purpose: they read the same in a text browser,
+// and global styling can be added later without overrides here. Each field
+// is a <div> of its own, so it gets a line of its own. The class names
+// (error, button) are hooks for that styling.
 
 IotsaWebContext::IotsaWebContext(IotsaBaseModule& mod, IotsaWebServer *server, const String& apiPath)
 : _mod(mod),
@@ -329,10 +324,10 @@ void IotsaWebContext::_field(const IotsaWebLabel& label, const char *name, const
     return;
   }
   _markEditable(false);
-  String line = "<label>" + IotsaBaseModule::htmlEncode(label.text) + ": ";
+  String line = "<div><label>" + IotsaBaseModule::htmlEncode(label.text) + ": ";
   line += String("<input type='") + type + "' name='" + _scoped(name) + "' value='" + IotsaBaseModule::htmlEncode(value) + "'>";
   if (hint) line += String(" <small>") + IotsaBaseModule::htmlEncode(hint) + "</small>";
-  line += "</label>\n";
+  line += "</label></div>\n";
   _out() += line;
 }
 
@@ -345,25 +340,25 @@ void IotsaWebContext::checkbox(const IotsaWebLabel& label, const char *name, boo
   String scoped = _scoped(name);
   // The hidden 0 comes after the checkbox: the servers return the first value,
   // so an unchecked box still sends a 0.
-  String line = "<label><input type='checkbox' name='" + scoped + "' value='1'";
+  String line = "<div><label><input type='checkbox' name='" + scoped + "' value='1'";
   if (value) line += " checked";
   line += "> " + IotsaBaseModule::htmlEncode(label.text);
   if (hint) line += String(" <small>") + IotsaBaseModule::htmlEncode(hint) + "</small>";
-  line += "</label><input type='hidden' name='" + scoped + "' value='0'>\n";
+  line += "</label><input type='hidden' name='" + scoped + "' value='0'></div>\n";
   _out() += line;
 }
 
 String IotsaWebContext::_clearBox(const char *name) {
-  return "<label><input type='checkbox' name='" + _scoped(name) + ".clear' value='1'> Clear</label>\n";
+  return "<div><label><input type='checkbox' name='" + _scoped(name) + ".clear' value='1'> Clear</label></div>\n";
 }
 
 void IotsaWebContext::password(const IotsaWebLabel& label, const char *name, FieldKind kind, const char *hint, bool clearable) {
   if (!editable(kind)) return;
   _markEditable(true);
-  String line = "<label>" + IotsaBaseModule::htmlEncode(label.text) + ": ";
+  String line = "<div><label>" + IotsaBaseModule::htmlEncode(label.text) + ": ";
   line += "<input type='password' name='" + _scoped(name) + "' value=''>";
   if (hint) line += String(" <small>") + IotsaBaseModule::htmlEncode(hint) + "</small>";
-  line += "</label>\n";
+  line += "</label></div>\n";
   if (clearable) line += _clearBox(name);
   _out() += line;
 }
@@ -371,9 +366,9 @@ void IotsaWebContext::password(const IotsaWebLabel& label, const char *name, Fie
 void IotsaWebContext::textarea(const IotsaWebLabel& label, const char *name, FieldKind kind, const char *hint, bool clearable) {
   if (!editable(kind)) return;
   _markEditable(true);
-  String line = "<label>" + IotsaBaseModule::htmlEncode(label.text) + ":";
+  String line = "<div><label>" + IotsaBaseModule::htmlEncode(label.text) + ":";
   if (hint) line += String(" <small>") + IotsaBaseModule::htmlEncode(hint) + "</small>";
-  line += "<br><textarea name='" + _scoped(name) + "' rows='6' cols='64'></textarea></label>\n";
+  line += "<br><textarea name='" + _scoped(name) + "' rows='6' cols='64'></textarea></label></div>\n";
   if (clearable) line += _clearBox(name);
   _out() += line;
 }
@@ -384,11 +379,11 @@ void IotsaWebContext::choice(const IotsaWebLabel& label, const char *name, int v
     return;
   }
   _markEditable(false);
-  String line = "<label>" + IotsaBaseModule::htmlEncode(label.text) + ": <select name='" + _scoped(name) + "'>";
+  String line = "<div><label>" + IotsaBaseModule::htmlEncode(label.text) + ": <select name='" + _scoped(name) + "'>";
   for (int i = 0; i < count; i++) {
     line += "<option value='" + String(i) + "'" + (i == value ? " selected" : "") + ">" + IotsaBaseModule::htmlEncode(options[i]) + "</option>";
   }
-  line += "</select></label>\n";
+  line += "</select></label></div>\n";
   _out() += line;
 }
 
@@ -435,11 +430,14 @@ void IotsaWebContext::sendPage(const String& title, const String& everyday, cons
   String page = "<!DOCTYPE html>\n<html><head><meta charset='utf-8'>\n";
   page += "<meta name='viewport' content='width=device-width, initial-scale=1'>\n";
   page += "<title>" + IotsaBaseModule::htmlEncode(title) + "</title>\n";
-  page += String("<style>\n") + _pageStyle + "</style></head><body>\n";
+  page += "</head><body>\n";
   page += "<h1>" + IotsaBaseModule::htmlEncode(title) + "</h1>\n";
   for (auto& f : _feedback) {
-    page += f.error ? "<p class='error'>" : "<p>";
-    page += IotsaBaseModule::htmlEncode(f.text) + "</p>\n";
+    if (f.error) {
+      page += "<p class='error'><strong>" + IotsaBaseModule::htmlEncode(f.text) + "</strong></p>\n";
+    } else {
+      page += "<p>" + IotsaBaseModule::htmlEncode(f.text) + "</p>\n";
+    }
   }
   page += everyday;
   if (configuration.length() > 0) {
