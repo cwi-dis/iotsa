@@ -196,6 +196,8 @@ void IotsaRunmodeMod::formHandler_fields(IotsaWebContext& ctx) {
         requested += " or " + String(iotsaController.rcmInteractionDescription());
       }
       ctx.status("Requested mode", "requestedMode", requested);
+    } else {
+      ctx.status("Requested mode", "requestedMode", "none");
     }
     ctx.status("Configuration mode timeout", "", String(iotsaController.modeTimeout()) + " seconds");
     ctx.status("WiFi radio", "wifiDisabled", iotsaStatus.wifiEnabled ? "enabled" : "disabled");
@@ -223,7 +225,9 @@ void IotsaRunmodeMod::formHandler_fields(IotsaWebContext& ctx) {
       IotsaWebContext::Form form(ctx, "Save", "Debug logging");
       ctx.checkbox("Debug logging", "debugLog", iotsaLogDebugEnabled);
     }
-#ifdef IOTSA_HAS_SLEEP
+#ifndef IOTSA_HAS_SLEEP
+    ctx << "<h3>Sleep / wake</h3>\n<p>Not available: this firmware is built without sleep support.</p>\n";
+#else
     IotsaSleepPolicy& sp = iotsaController.sleep();
     IotsaWebContext::Form form(ctx, "Save", "Sleep / wake");
     ctx.choice("Sleep mode", "sleepMode", int(_sleepConfig.mode), sleepModeNames, _IOTSA_SLEEP_MAX);
