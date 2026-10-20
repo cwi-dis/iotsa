@@ -1,60 +1,37 @@
 //
-// iotsa BLE device manager: discover, add, rename, and remove any number
-// of other iotsa devices reachable over BLE, entirely through
-// IotsaBLEClientManagerMod's own REST/web surface -- no app-specific
-// protocol code needed at all. Unlike the fully-generic collection mod
-// itself, this filters candidates to iotsa devices specifically (anything
-// advertising the universal runmode service every iotsa device compiles in
-// unconditionally), so "Available Unknown/new devices" only ever shows
-// other iotsa devices, not every random BLE gadget nearby.
+// A "BLE Manager" server: manages other iotsa devices over BLE. On the web
+// page /bleclient, or with /api/bleclient:
 //
-// Each added device is a plain IotsaRunmodeBLEClient (the default factory of
-// the manager's IotsaBLEClientCollection), and is remembered across reboots
-// (cwi-dis/iotsa#286). It also exposes
-// identify/reboot/promoteMode/setWifiDisabled as queueable commands via its
-// own REST/web surface (IotsaRunmodeBLEClient::queueIdentify() & friends,
-// serviced every tick by IotsaBLEClientMod::loop()) -- so this is
-// a real "WiFi/REST to BLE-only iotsa device" bridge/gateway, the mirror
-// image of HPS (cwi-dis/iotsa#267).
+// - Scan shows the iotsa devices nearby, for a while (20 seconds by default).
+// - Add one by its name; the manager remembers it over reboots.
+// - For an added device: identify it, reboot it, switch its WiFi on or off,
+//   or confirm a mode change it is waiting for (configuration or OTA mode,
+//   requested on the device itself; LedBattery shows how a device allows it).
 //
-// Replaces sandbox/BLEClient (a dual-role client+server debugging rig,
-// retired in cwi-dis/iotsa#273): built on the cwi-dis/iotsa#268/#264 generic
-// surface, and it took over that sandbox's build coverage (Arduino CI,
-// classic ESP32/S3/lolin32, and a debug variant).
+// So it is a bridge: you reach it over WiFi, it reaches devices that only
+// have BLE. See iotsaBLEManagerMod.cpp.
 //
-// See /bleclient for the web UI, or /api/bleclient for the REST equivalent.
-//
-#include "iotsa.h"
 
+#include "iotsa.h"
+#include "iotsaBLEManagerMod.h"
+
+#ifndef IOTSA_WITH_BLE
+#error This example needs BLE: build with -DIOTSA_WITH_BLE
+#endif
+
+// The application: handles WiFi, OTA and the other standard modules for you.
 IotsaApplication application("iotsa BLE Manager");
 
-#include "iotsaBLEClientManager.h"
-#include "iotsaRunmodeBLEClient.h"
+// Our module, see iotsaBLEManagerMod.cpp.
+IotsaBLEManagerMod bleClientMod(application);
 
-class BLEManagerMod : public IotsaBLEClientManagerMod {
-public:
-  using IotsaBLEClientManagerMod::IotsaBLEClientManagerMod;
-protected:
-  const char *devicesLabel() override { return "iotsa BLE devices"; }
-  // Only surface other iotsa devices as "unknown/addable" candidates --
-  // every iotsa device compiles IotsaRunmodeMod in unconditionally, so this
-  // is the generic recognition signal (same one
-  // IotsaRunmodeBLEClient's own header comment describes).
-  bool isInterestingUnknownDevice(const NimBLEAdvertisedDevice* device) override {
-    return device->isAdvertisingService(NimBLEUUID(IotsaRunmodeBLE::serviceUUID));
-  }
-};
-
-BLEManagerMod bleClientMod(application);
-
-void setup(void) {
+// Standard setup() method, hands off most work to the application framework
+void setup(void){
   application.setup();
   application.lateSetup();
-  // Not scanning for unknown devices continuously (that kept the radio
-  // scanning forever): an operator starts a session with scanUnknown, on the
-  // web page or over REST, to see what's nearby before adding it by name.
 }
 
-void loop(void) {
+// Standard loop() routine, hands off most work to the application framework
+void loop(void){
   application.loop();
 }
