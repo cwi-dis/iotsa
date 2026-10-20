@@ -7,7 +7,7 @@
 //
 // "Hello, name" module. Greets visitors to the /hello page, and allows them
 // to change the name by which they are greeted, either through the web UI
-// or through the REST API (GET/PUT /api/hello).
+// or through the REST API (GET/PUT /api/hello). The name is kept over reboots.
 //
 class IotsaHelloMod : public IotsaModule {
 public:
@@ -17,6 +17,8 @@ public:
   void loop() override;
   String info() override;
 protected:
+  void configLoad() override;
+  void configSave() override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
   bool getHandler(const char *path, JsonObject& reply) override;
 #ifdef IOTSA_WITH_WEB
@@ -25,7 +27,7 @@ protected:
   void formHandler_fields(IotsaWebContext& ctx) override;
 #endif
 private:
-  String personName = "human";
+  String personName;
 };
 
 #endif

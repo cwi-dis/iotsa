@@ -699,8 +699,9 @@ building on the previous one:
   structure.
 - [HelloIotsa](examples/HelloIotsa) is the minimal *reasonable normal* iotsa app: the same
   functionality as `Hello`, but implemented as a C++ class with a REST interface (GET/PUT)
-  for changing the name, and structured the way we recommend for real applications (app
-  module in its own `.h`/`.cpp`, separate from the application glue).
+  for changing the name, keeping the name over reboots, and structured the way we
+  recommend for real applications (app module in its own `.h`/`.cpp`, separate from the
+  application glue).
 - The next three each take the `HelloIotsa` baseline unchanged and add exactly **one**
   access-control mechanism on top, gating the REST API and changes through the web form (looking at the page needs no login):
   - [HelloPasswd](examples/HelloPasswd/HelloPasswd.ino) — a hardcoded username and password

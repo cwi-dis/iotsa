@@ -1,4 +1,5 @@
 #include "iotsaHelloMod.h"
+#include "iotsaConfigFile.h"
 
 // Implementation of the Hello module. This is the same module as in
 // HelloUser: HelloIotsa's, plus the ctx.needsRight() line in formHandler_args().
@@ -12,7 +13,9 @@
 
 // setup() handles early initialization of this module. Think of the same type
 // of things you would do in an Arduino sketch setup(): opening GPIO ports, etc.
+// Here we load the name we saved earlier.
 void IotsaHelloMod::setup() {
+  configLoad();
 }
 
 // An extension of the Arduino setup() idea: first setup() is called for all
@@ -30,11 +33,27 @@ void IotsaHelloMod::loop() {
   // Nothing to do in the loop, for this module
 }
 
+// The name is kept in a file, so it survives a reboot. configLoad() reads it,
+// with "human" if there is no file yet; configSave() writes it.
+void IotsaHelloMod::configLoad() {
+  IotsaConfigFileLoad cf("/config/hello.cfg");
+  cf.get("personName", personName, "human");
+}
+
+void IotsaHelloMod::configSave() {
+  IotsaConfigFileSave cf("/config/hello.cfg");
+  cf.put("personName", personName);
+}
+
 // The API PUT handler (REST or other protocols): pick up the
 // values the caller sent, and store or use them.
 bool IotsaHelloMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   JsonObject reqObj = request.as<JsonObject>();
-  getFromRequest<const char *>(reqObj, "personName", personName);
+  if (getFromRequest<const char *>(reqObj, "personName", personName)) {
+    // The request set the name, so save it.
+    configSave();
+    if (changed) *changed = true;
+  }
   // Anything else in the request is reported back as "iotsa_api_ignored".
   checkUnhandled(reqObj);
   // Success, also when nothing changed. On an error, return apiError(status, "why").
@@ -58,8 +77,8 @@ void IotsaHelloMod::formHandler_args(IotsaWebContext& ctx) {
   // looking doesn't. Without this line the page uses the rule for REST calls,
   // which is also what a PUT on /api/hello needs: the right "api".
   ctx.needsRight("hello");
-  // Live: the name isn't saved, it is gone after a reboot.
-  ctx.arg("personName", personName, IotsaWebContext::Live);
+  // Config: when the name changes, the framework calls configSave().
+  ctx.arg("personName", personName, IotsaWebContext::Config);
 }
 
 // formHandler_fields() writes the page body, you implement here what values
@@ -70,7 +89,7 @@ void IotsaHelloMod::formHandler_fields(IotsaWebContext& ctx) {
   if (ctx.section != IotsaWebContext::Everyday) return;
   ctx << "<p>Hello, " + htmlEncode(personName) + "!</p>\n";
   IotsaWebContext::Form form(ctx, "Set");
-  ctx.field("Name", "personName", personName, IotsaWebContext::Live);
+  ctx.field("Name", "personName", personName, IotsaWebContext::Config);
 }
 #endif // IOTSA_WITH_WEB
 
