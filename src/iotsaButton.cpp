@@ -92,7 +92,7 @@ void IotsaButtonMod::formHandler_fields(IotsaWebContext& ctx) {
 }
 
 String IotsaButtonMod::info() {
-  return "<p>See <a href='/buttons'>/buttons</a> to program URLs for button presses, <a href='/api/buttons'>/api/buttons</a> for REST interface..</a>";
+  return "<p>See <a href='/buttons'>/buttons</a> to program URLs for button presses, <a href='/api/buttons'>/api/buttons</a> for REST interface.</p>";
 }
 #endif // IOTSA_WITH_WEB
 

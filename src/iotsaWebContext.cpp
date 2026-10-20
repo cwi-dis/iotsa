@@ -400,8 +400,8 @@ void IotsaWebContext::button(const char *name, const IotsaWebLabel& label, const
 
 void IotsaWebContext::confirmedButton(const char *name, const IotsaWebLabel& label, FieldKind kind) {
   if (!editable(kind)) return;
-  String html = "<label><input type='checkbox' name='" + _scoped(name) + ".sure' value='1'> I am sure</label>";
-  html += "<button type='submit' name='" + _scoped(name) + "' value='1'>" + IotsaBaseModule::htmlEncode(label.text) + "</button>";
+  String html = "<button type='submit' name='" + _scoped(name) + "' value='1'>" + IotsaBaseModule::htmlEncode(label.text) + "</button>";
+  html += " <label><input type='checkbox' name='" + _scoped(name) + ".sure' value='1'> I am sure</label>";
   if (_forms.empty()) {
     _out() += "<form method='post' class='button'>" + _formHidden + html + "</form>\n";
   } else {

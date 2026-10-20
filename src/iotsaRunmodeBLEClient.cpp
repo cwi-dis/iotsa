@@ -115,7 +115,7 @@ void IotsaRunmodeBLEClient::formHandler_fields(IotsaWebContext& ctx) {
   }
   ctx.button("identify", "Identify");
   ctx.button("reboot", "Reboot");
-  ctx.button("promoteMode", "Promote pending mode");
+  ctx.button("promoteMode", "Confirm requested mode");
   ctx.button("enableWifi", "Enable WiFi");
   ctx.button("disableWifi", "Disable WiFi");
 }

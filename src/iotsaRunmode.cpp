@@ -214,7 +214,10 @@ void IotsaRunmodeMod::formHandler_fields(IotsaWebContext& ctx) {
       int requested = int(iotsaController.requestedMode());
       ctx.choice("Mode", "requestedMode", requested, requestableModeNames, _otaAvailable() ? 3 : 2, IotsaWebContext::Live);
     }
-    ctx.confirmedButton("factoryReset", "Factory reset and clear all files");
+    {
+      IotsaWebContext::Form form(ctx, "", "Factory reset");
+      ctx.confirmedButton("factoryReset", "Factory reset and clear all files");
+    }
   } else {
     {
       IotsaWebContext::Form form(ctx, "Save", "Debug logging");

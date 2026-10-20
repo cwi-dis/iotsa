@@ -94,7 +94,7 @@ void IotsaCapabilityMod::formHandler_args(IotsaWebContext& ctx) {
 void IotsaCapabilityMod::formHandler_fields(IotsaWebContext& ctx) {
   if (ctx.section != IotsaWebContext::Configuration) return;
   if (!ctx.editable(IotsaWebContext::ConfigModeStrict)) {
-    ctx << "<p>Issuer and key can only be changed in configuration mode.</p>\n";
+    ctx << "<p>Issuer and key can only be changed in configuration mode, see <a href='/runmode'>/runmode</a>.</p>\n";
   }
   IotsaWebContext::Form form(ctx);
   ctx.field("Issuer", "trustedIssuer", trustedIssuer, IotsaWebContext::ConfigModeStrict);
