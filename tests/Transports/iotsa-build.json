@@ -1,5 +1,6 @@
 {
-  "source": "examples/Led",
+  "_note": "Transport and build-flag combinations (WiFi/HTTP/HTTPS/REST/CoAP/BLE on and off), built from sandbox/Infra: every infrastructure module, one trivial application module.",
+  "source": "sandbox/Infra",
   "defaults": {
     "ci": {
       "platformio": true,
