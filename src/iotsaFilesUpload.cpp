@@ -39,6 +39,7 @@ IotsaFilesUploadMod::uploadHandler() {
 
 void
 IotsaFilesUploadMod::uploadOkHandler() {
+  iotsaNoKeepAlive(app.server);  // cwi-dis/iotsa#293
   String message;
   if (_uploadOK) {
     IFDEBUG IotsaSerial.println("upload ok");
@@ -51,6 +52,7 @@ IotsaFilesUploadMod::uploadOkHandler() {
 
 #ifdef IOTSA_WITH_WEB
 void IotsaFilesUploadMod::uploadFormHandler() {
+  iotsaNoKeepAlive(app.server);  // cwi-dis/iotsa#293
   if (needsAuthentication("uploadfiles")) return;
   String message = "<form method='POST' action='/upload' enctype='multipart/form-data'>Select file to upload:<input type='file' name='blob'><br>Filename:<input name='filename'><br><input type='submit' value='Update'></form>";
   app.server->send(200, "text/html", message);

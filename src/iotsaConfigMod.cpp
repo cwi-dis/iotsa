@@ -350,6 +350,7 @@ IotsaConfigMod::uploadHandler() {
 
 void
 IotsaConfigMod::uploadOkHandler() {
+  iotsaNoKeepAlive(app.server);  // cwi-dis/iotsa#293
   String message;
   if (_uploadOK) {
     IFDEBUG IotsaSerial.println("upload ok");

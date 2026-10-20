@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- HTTPS on memory-tight ESP32s: the files, upload, backup, logger and simple-module pages, and not-found answers (a browser's favicon request), now also answer `Connection: close`, so they no longer hold the only TLS session for 20 s (#293)
 - Buttons: on a fresh device the constructor's "send on press/release" was ignored, so a button sent nothing until configured (#183)
 - Led example: built with BLE, the LED was never started and identify() had no handler (#183)
 - Temperature example: never read the sensor (`dht.begin()` was missing) (#183)

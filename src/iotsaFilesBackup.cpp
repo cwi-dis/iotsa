@@ -67,6 +67,7 @@ void IotsaFilesBackupMod::setup() {
 
 void
 IotsaFilesBackupMod::handler() {
+  iotsaNoKeepAlive(app.server);  // cwi-dis/iotsa#293
   if (needsAuthentication("backupfiles")) return;
   IFDEBUG IotsaSerial.println("Creating backup");
 #ifdef CONTENT_LENGTH_UNKNOWN

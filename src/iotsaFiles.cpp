@@ -53,6 +53,7 @@ IotsaFilesMod::_listDir(String& message, const char *name)
 
 void
 IotsaFilesMod::listHandler() {
+  iotsaNoKeepAlive(app.server);  // cwi-dis/iotsa#293
   if (needsAuthentication("listfiles")) return;
   String message = "<html><head><title>Files</title></head><body><h1>Files</h1>";
   _listDir(message, "/data");
@@ -68,6 +69,7 @@ IotsaFilesMod::accessAllowed(String& path)
 
 void
 IotsaFilesMod::notFoundHandler() {
+  iotsaNoKeepAlive(app.server);  // cwi-dis/iotsa#293
   String message = "File Not Found\n\n";
   String path = app.server->uri();
   File dataFile;

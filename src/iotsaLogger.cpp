@@ -54,6 +54,7 @@ IotsaLoggerMod::IotsaLoggerMod(IotsaApplication &_app)
 
 void
 IotsaLoggerMod::handler() {
+  iotsaNoKeepAlive(app.server);  // cwi-dis/iotsa#293
   if (needsAuthentication("logger")) return;
 #ifdef CONTENT_LENGTH_UNKNOWN
   app.server->setContentLength(CONTENT_LENGTH_UNKNOWN);
