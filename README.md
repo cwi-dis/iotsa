@@ -722,7 +722,7 @@ building on the previous one:
 - [Blink](examples/Blink/Blink.ino) is Arduino's Blink the iotsa way: no `delay()`, and the interval can be changed on a web page or over REST (not saved). The output counterpart of _Light_.
 - [Temperature](examples/Temperature/Temperature.ino) measures temperature and humidity with a DHT21, through an external library (Adafruit's DHT sensor library): how to use a sensor library in an iotsa module.
 - [DateTime](examples/DateTime/DateTime.ino) keeps the time via NTP and a realtime clock. Uses _iotsaNtp_ and _iotsaRtc_ modules.
-- [Input](examples/Input/Input.ino) reads a rotary encoder and other digital inputs. Uses _iotsaInput_ module.
+- [Input](examples/Input/Input.ino) is a dimmer set by hand: a button and a rotary encoder, read by the _iotsaInput_ module, change its values, shown on a web page.
 - [Led](examples/Led/Led.ino) lets the outside world flash the LED (colour, on/off times,
   duration) over the web, REST, CoAP and a BLE service of its own. Shows how to extend a
   standard module (_iotsaLed_), and a module that only makes something happen.

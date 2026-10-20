@@ -1,49 +1,58 @@
 //
-// Demonstrates the Input abstraction (iotsaInput.h): a rotary encoder and a
-// pushbutton, both reporting their state changes to the serial console.
+// A "dimmer" controlled by hand: a pushbutton switches it on and off, a
+// rotary encoder sets the level. It shows the Input module (iotsaInput.h),
+// which reads buttons, rotary encoders and touchpads and changes your
+// variables for you. The result can be seen on the web page /dimmer and
+// with GET /api/dimmer. See iotsaDimmerMod.cpp.
+//
+// The button and the encoder connect to ground; the pins use their internal
+// pull-ups. For an Alps EC12D encoder with pushbutton, seen from the top:
+// northwest (A) and northeast (B) are the encoder pins, southwest (C) their
+// ground, north (E) and southeast (D) the pushbutton. Connect C and E to
+// ground, A to ENCODER_PIN_A, B to ENCODER_PIN_B, D to BUTTON_PIN.
 //
 
-#include <Arduino.h>
 #include "iotsa.h"
 #include "iotsaInput.h"
+#include "iotsaDimmerMod.h"
 
-IotsaApplication application("Iotsa Input Sample");
+// The button is the board's BOOT button, so it works without extra hardware.
+#if defined(ESP8266)
+#define BUTTON_PIN 0
+#define ENCODER_PIN_A 14
+#define ENCODER_PIN_B 12
+#elif defined(CONFIG_IDF_TARGET_ESP32C3)
+#define BUTTON_PIN 9
+#define ENCODER_PIN_A 4
+#define ENCODER_PIN_B 5
+#else
+#define BUTTON_PIN 0
+#define ENCODER_PIN_A 4
+#define ENCODER_PIN_B 5
+#endif
 
-// When using an Alps EC12D rotary encoder with pushbutton here is the pinout:
-// When viewed from the top there are pins at northwest, north, northeast, southwest, southeast.
-// These pins are named (in Alps terminology) A, E, B, C, D.
-// A and B (northwest, northeast) are the rotary encoder pins,
-// C is the corresponding ground,
-// D and E are the pushbutton pins.
-// So, connect E and C to GND, D to GPIO0, A to GPI14, B to GPIO2
-RotaryEncoder encoder(14, 2);
-#define ENCODER_STEPS 20
-Button button(0, true, true, true);
+// The application: handles WiFi, OTA and the other standard modules for you.
+IotsaApplication application("Iotsa Dimmer Server");
 
-Input* inputs[] = {
-  &button,
-  &encoder
-};
+// The controls: a button that acts when pressed (true), not when released
+// (false), and a rotary encoder.
+Button button(BUTTON_PIN, true, false);
+RotaryEncoder encoder(ENCODER_PIN_A, ENCODER_PIN_B);
 
+// The input module reads all controls in its list.
+Input* inputs[] = { &button, &encoder };
 IotsaInputMod inputMod(application, inputs, sizeof(inputs)/sizeof(inputs[0]));
 
+// Our module, see iotsaDimmerMod.cpp. It gets the controls from here.
+IotsaDimmerMod dimmerMod(application, button, encoder);
+
+// Standard setup() method, hands off most work to the application framework
 void setup(void){
   application.setup();
   application.lateSetup();
 }
 
-int oldButtonValue = -1;
-int oldEncoderValue = -1;
-
+// Standard loop() routine, hands off most work to the application framework
 void loop(void){
   application.loop();
-  if (button.pressed != oldButtonValue) {
-    IotsaSerial.printf("button: pressed=%d\n", button.pressed);
-    oldButtonValue = button.pressed;
-  }
-  if (encoder.value != oldEncoderValue) {
-    IotsaSerial.printf("encoder: value=%d\n", encoder.value);
-    oldEncoderValue = encoder.value;
-  }
 }
-
