@@ -13,22 +13,24 @@
 #include "iotsaStaticToken.h"
 #include "iotsaHelloMod.h"
 
-//
-// Instantiate all the objects we need.
-//
-IotsaApplication application("Iotsa Hello World Server"); // The application framework
+// The application: handles WiFi, OTA and the other standard modules for you.
+IotsaApplication application("Iotsa Hello World Server");
 
-// Authentication #1: users.
+// The users, as in HelloUser.
 IotsaUserMod myUserAuthenticator(application);
 
-// Authentication #2: tokens, falling back to the users when a request has none.
+// The tokens, see iotsaStaticToken.cpp. A request without a valid token is
+// passed on to the users.
 IotsaStaticTokenMod myTokenAuthenticator(application, myUserAuthenticator);
 
-IotsaHelloMod helloMod(application); // Our hello module
+// Our module, the same as in HelloUser.
+IotsaHelloMod helloMod(application);
 
 // Standard setup() method, hands off everything to the application framework
 void setup(void){
-  application.setAuth(&myTokenAuthenticator);  // every module, the standard ones included, uses this
+  // Every module, the standard ones included, asks the tokens first, and
+  // through them the users.
+  application.setAuth(&myTokenAuthenticator);
   application.setup();
   application.lateSetup();
 }
