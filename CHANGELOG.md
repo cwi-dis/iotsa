@@ -75,6 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Ringer example: PUT `/api/alarm` takes only `{"alarm": n}`, no bare number; the pin comes from the main file (#183)
 - The transport build matrix (`tests/Led`) is now `tests/Transports`, built from `sandbox/Infra`, so the Led example carries no test machinery (#183)
 - Hello examples: the name to greet is `personName` (was `greeting`, also in `/api/hello`) and starts as "human"; HelloIotsa and the auth examples keep it over reboots (#183)
 - `IotsaUserMod` is the former `IotsaMultiUserMod`: several users with rights, add and remove on the web page, users addressed by username in REST (`PUT /api/users`); stored users of the old single-user module are not read, re-add them (#183, #217)

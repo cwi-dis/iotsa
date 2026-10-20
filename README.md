@@ -730,7 +730,7 @@ building on the previous one:
   _iotsaBattery_ measures the battery and USB voltages, the device can sleep, and a BLE
   client can switch it into configuration mode, so it doesn't need WiFi all the time.
 - [Button](examples/Button/Button.ino) waits for a button to be pressed and then makes a call to a configurable URL. Pairs with _Ringer_ to implement a remote doorbell.
-- [Ringer](examples/Ringer/Ringer.ino) sounds a buzzer when a GET request is received. Pairs with _Button_ to implement a remote doorbell.
+- [Ringer](examples/Ringer/Ringer.ino) sounds a buzzer when asked, on its web page, its REST API or the trigger URL `/ring`. Pairs with _Button_ to implement a remote doorbell.
 - [FileShare](examples/FileShare/FileShare.ino) upload a file over HTTP and fetch it back
   again. Uses _iotsaFiles_, _iotsaFilesUpload_ and _iotsaFilesBackup_ together.
 
