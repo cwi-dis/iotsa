@@ -102,7 +102,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- Skeleton and DateTime examples: HelloIotsa is the starting point, and the README lists the standard modules you can add (#183)
+- Skeleton, DateTime and FileShare examples: HelloIotsa is the starting point, and the README lists the standard modules you can add (#183)
 - The Log example: using the logger is one line, see the README; an example comes with the new logger (#183, #294)
 - The HelloRights example: HelloUser now shows rights (#183)
 - `IotsaMultiUserMod` (`iotsaMultiUser.h`): use `IotsaUserMod` (#183)

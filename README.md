@@ -730,8 +730,6 @@ building on the previous one:
   client can switch it into configuration mode, so it doesn't need WiFi all the time.
 - [Button](examples/Button/Button.ino) waits for a button to be pressed and then makes a call to a configurable URL. Pairs with _Ringer_ to implement a remote doorbell.
 - [Ringer](examples/Ringer/Ringer.ino) sounds a buzzer when asked, on its web page, its REST API or the trigger URL `/ring`. Pairs with _Button_ to implement a remote doorbell.
-- [FileShare](examples/FileShare/FileShare.ino) upload a file over HTTP and fetch it back
-  again. Uses _iotsaFiles_, _iotsaFilesUpload_ and _iotsaFilesBackup_ together.
 
 Board/feature build coverage (not tutorial material) lives separately, under `tests/`, mirrored one-for-one against the `examples/` source they build -- see `extras/python/gen_build_matrix.py`. Sketches under active development, not yet stable enough to be doc-grade material (e.g. [Infra](sandbox/Infra), a minimal scaffold for infrastructure and transport work), live under `sandbox/` instead -- still built on every push, just without `examples/`'s promise of being a stable starting point to copy.
 

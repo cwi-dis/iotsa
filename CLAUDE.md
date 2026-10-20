@@ -115,7 +115,6 @@ committed generated file is stale.
 - `Button`, `Ringer` — a doorbell over HTTP (Ringer has a trigger, `/ring`)
 - `Input` — a dimmer set by a button and a rotary encoder, through iotsaInput
 - `Temperature` — a sensor through an external library
-- `FileShare` — the files modules
 - `BLEManager`, `BLEButton`, `BLERinger` — BLE device-to-device communication:
   a central that manages and controls other iotsa devices, and a button/ringer
   pair (Immediate Alert Service)
