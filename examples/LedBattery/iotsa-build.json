@@ -1,0 +1,31 @@
+{
+  "_note": "Needs BLE, so ESP32 only.",
+  "defaults": {
+    "build_flags": [
+      "-DIOTSA_WITH_BLE"
+    ]
+  },
+  "variants": [
+    {
+      "board": "vanilla_esp32",
+      "ci": {
+        "platformio": true,
+        "arduino": true
+      }
+    },
+    {
+      "board": "vanilla_esp32c3",
+      "ci": {
+        "platformio": true,
+        "arduino": false
+      }
+    },
+    {
+      "board": "vanilla_esp32s3",
+      "ci": {
+        "platformio": true,
+        "arduino": true
+      }
+    }
+  ]
+}

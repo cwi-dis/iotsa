@@ -111,7 +111,7 @@ committed generated file is stale.
   (app module in its own `.h`/`.cpp`), with a REST API added
 - `HelloPasswd`, `HelloUser`, `HelloToken` — auth patterns
 - `Light`, `Blink` — the smallest hardware input and output modules (read-only; a `Live` setting)
-- `Led` — LED control / BLE
+- `Led`, `LedBattery` — a module that does something, over web/REST/CoAP/its own BLE service; the same on a battery, with sleep
 - `Button`, `Input`, `Ringer` — input handling
 - `Temperature`, `DateTime` — sensors and time
 - `BLEManager`, `BLEButton`, `BLERinger` — BLE device-to-device communication:
