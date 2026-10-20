@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Buttons: on a fresh device the constructor's "send on press/release" was ignored, so a button sent nothing until configured (#183)
 - Led example: built with BLE, the LED was never started and identify() had no handler (#183)
 - Temperature example: never read the sensor (`dht.begin()` was missing) (#183)
 - Web pages showed the credentials and token of outgoing requests (buttons), which REST already hid (#183)

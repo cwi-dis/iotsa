@@ -10,6 +10,7 @@ void IotsaButtonMod::configLoad() {
     buttons[i].req.configLoad(cf, name);
     name = name + "on";
     String sendOn;
+    // Not saved yet: keep what the constructor said.
     cf.get(name, sendOn, "");
     if (sendOn == "press") {
       buttons[i].sendOnPress = true;
@@ -22,7 +23,8 @@ void IotsaButtonMod::configLoad() {
     if (sendOn == "change") {
       buttons[i].sendOnPress = true;
       buttons[i].sendOnRelease = true;
-    } else {
+    } else
+    if (sendOn == "none") {
       buttons[i].sendOnPress = false;
       buttons[i].sendOnRelease = false;
     }
