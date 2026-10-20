@@ -7,7 +7,7 @@
 
 //
 // Temperature module. Gets temperature and humidity data from a DHT21 module.
-// Read-only: a web page and GET /api/temperature.
+// Read-only: a web page and GET /api/temperature. Measures when asked.
 //
 class IotsaTemperatureMod : public IotsaModule {
 public:
@@ -20,15 +20,15 @@ public:
   void loop() override;
   String info() override;
 protected:
+  void _update();
   bool getHandler(const char *path, JsonObject& reply) override;
 #ifdef IOTSA_WITH_WEB
   String webTitle() override { return "Temperature"; }
   void formHandler_fields(IotsaWebContext& ctx) override;
 #endif
 private:
-  void _update();
-  float temperature;
-  float humidity;
+  float temperature = NAN;
+  float humidity = NAN;
   DHT dht;
 };
 
