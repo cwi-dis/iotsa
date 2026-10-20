@@ -5,16 +5,14 @@
 #include "iotsaApi.h"
 
 //
-// Authentication class. Requires username/password to match before allowing changing of
-// the user name to be greeted.
+// An authenticator with one fixed username and password, "admin" and "admin".
+// See iotsaStaticAuthMod.cpp.
 //
 class IotsaStaticAuthMod : public IotsaAuthMod {
 public:
   using IotsaAuthMod::IotsaAuthMod;
   void setup() override;
-  void lateSetup() override;
   void loop() override;
-  String info() override;
   bool allows(const char *right=NULL) override;
   bool allows(const char *obj, IotsaApiOperation verb) override;
 };

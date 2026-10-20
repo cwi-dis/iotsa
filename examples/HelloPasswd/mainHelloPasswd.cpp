@@ -9,17 +9,20 @@
 #include "iotsaStaticAuthMod.h"
 #include "iotsaHelloMod.h"
 
-//
-// Instantiate all the objects we need.
-//
-IotsaApplication application("Iotsa Hello World Server"); // The application framework
-IotsaStaticAuthMod myAuthenticator(application);  // Our authenticator module
+// The application: handles WiFi, OTA and the other standard modules for you.
+IotsaApplication application("Iotsa Hello World Server");
 
-IotsaHelloMod helloMod(application); // Our hello module (authenticated)
+// Our authenticator, see iotsaStaticAuthMod.cpp.
+IotsaStaticAuthMod myAuthenticator(application);
+
+// Our module, the same as in HelloIotsa. It doesn't know about the password.
+IotsaHelloMod helloMod(application);
 
 // Standard setup() method, hands off everything to the application framework
 void setup(void){
-  application.setAuth(&myAuthenticator);  // every module, the standard ones included, uses this
+  // This is the line that makes the password work: from now on every module,
+  // the standard ones included, asks myAuthenticator before a change.
+  application.setAuth(&myAuthenticator);
   application.setup();
   application.lateSetup();
 }
