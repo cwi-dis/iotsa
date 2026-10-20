@@ -163,27 +163,14 @@ void IotsaWifiMod::formHandler_args(IotsaWebContext& ctx) {
   ctx.needsRight("config");
   bool ssidChanged = ctx.arg("ssid", ssid, IotsaWebContext::ConfigModeOnly);
   // The form always sends the password field: empty means unchanged, except
-  // together with a new network (an open one).
-  ctx.password("ssidPassword", ssidPassword, IotsaWebContext::ConfigModeOnly, ssidChanged);
+  // together with a new network (an open one). The clear box empties it.
+  ctx.password("ssidPassword", ssidPassword, IotsaWebContext::ConfigModeOnly, ssidChanged, true);
   ctx.checkbox("wifiPowerReduction", wifiPowerReduction, IotsaWebContext::ConfigModeOnly);
 }
 
 void IotsaWifiMod::formHandler_fields(IotsaWebContext& ctx) {
   if (ctx.section == IotsaWebContext::Everyday) {
     ctx.status("Hostname", "", iotsaConfig.hostName);
-    ctx << "<p>See <a href='/config'>/config</a> to change the hostname.</p>\n";
-    return;
-  }
-  if (!ctx.editable(IotsaWebContext::ConfigModeOnly)) {
-    ctx << "<p>WiFi settings can only be changed in configuration mode, see <a href='/runmode'>/runmode</a>.</p>\n";
-  }
-  {
-    IotsaWebContext::Form form(ctx);
-    ctx.field("Network", "ssid", ssid, IotsaWebContext::ConfigModeOnly);
-    ctx.password("Password", "ssidPassword", IotsaWebContext::ConfigModeOnly, "empty: unchanged");
-    ctx.checkbox("WiFi power reduction", "wifiPowerReduction", wifiPowerReduction, IotsaWebContext::ConfigModeOnly, "works around an issue on some ESP32-C3 boards");
-  }
-  if (ctx.editable(IotsaWebContext::ConfigModeOnly)) {
 #ifdef ESP32
     uint8_t baseMac[6];
     char baseMacStr[32];
@@ -196,7 +183,17 @@ void IotsaWifiMod::formHandler_fields(IotsaWebContext& ctx) {
 #else
     ctx.status("WiFi MAC address", "", WiFi.macAddress());
 #endif
+    ctx << "<p>See <a href='/config'>/config</a> to change the hostname.</p>\n";
+    return;
   }
+  if (!ctx.editable(IotsaWebContext::ConfigModeOnly)) {
+    ctx << "<p>WiFi settings can only be changed in configuration mode, see <a href='/runmode'>/runmode</a>.</p>\n";
+  }
+  IotsaWebContext::Form form(ctx);
+  ctx.field("Network", "ssid", ssid, IotsaWebContext::ConfigModeOnly);
+  // Never prefilled, so empty means unchanged; the clear box empties it.
+  ctx.password("Password", "ssidPassword", IotsaWebContext::ConfigModeOnly, ssidPassword == "" ? "not set" : "set, empty: unchanged", ssidPassword != "");
+  ctx.checkbox("WiFi power reduction", "wifiPowerReduction", wifiPowerReduction, IotsaWebContext::ConfigModeOnly, "works around an issue on some ESP32-C3 boards");
 }
 
 String IotsaWifiMod::info() {

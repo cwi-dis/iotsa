@@ -326,7 +326,7 @@ void IotsaWebContext::_field(const IotsaWebLabel& label, const char *name, const
   _markEditable(false);
   String line = "<div><label>" + IotsaBaseModule::htmlEncode(label.text) + ": ";
   line += String("<input type='") + type + "' name='" + _scoped(name) + "' value='" + IotsaBaseModule::htmlEncode(value) + "'>";
-  if (hint) line += String(" <small>") + IotsaBaseModule::htmlEncode(hint) + "</small>";
+  if (hint) line += String(" <small>(") + IotsaBaseModule::htmlEncode(hint) + ")</small>";
   line += "</label></div>\n";
   _out() += line;
 }
@@ -343,7 +343,7 @@ void IotsaWebContext::checkbox(const IotsaWebLabel& label, const char *name, boo
   String line = "<div><label><input type='checkbox' name='" + scoped + "' value='1'";
   if (value) line += " checked";
   line += "> " + IotsaBaseModule::htmlEncode(label.text);
-  if (hint) line += String(" <small>") + IotsaBaseModule::htmlEncode(hint) + "</small>";
+  if (hint) line += String(" <small>(") + IotsaBaseModule::htmlEncode(hint) + ")</small>";
   line += "</label><input type='hidden' name='" + scoped + "' value='0'></div>\n";
   _out() += line;
 }
@@ -357,7 +357,7 @@ void IotsaWebContext::password(const IotsaWebLabel& label, const char *name, Fie
   _markEditable(true);
   String line = "<div><label>" + IotsaBaseModule::htmlEncode(label.text) + ": ";
   line += "<input type='password' name='" + _scoped(name) + "' value=''>";
-  if (hint) line += String(" <small>") + IotsaBaseModule::htmlEncode(hint) + "</small>";
+  if (hint) line += String(" <small>(") + IotsaBaseModule::htmlEncode(hint) + ")</small>";
   line += "</label></div>\n";
   if (clearable) line += _clearBox(name);
   _out() += line;
@@ -367,7 +367,7 @@ void IotsaWebContext::textarea(const IotsaWebLabel& label, const char *name, Fie
   if (!editable(kind)) return;
   _markEditable(true);
   String line = "<div><label>" + IotsaBaseModule::htmlEncode(label.text) + ":";
-  if (hint) line += String(" <small>") + IotsaBaseModule::htmlEncode(hint) + "</small>";
+  if (hint) line += String(" <small>(") + IotsaBaseModule::htmlEncode(hint) + ")</small>";
   line += "<br><textarea name='" + _scoped(name) + "' rows='6' cols='64'></textarea></label></div>\n";
   if (clearable) line += _clearBox(name);
   _out() += line;
