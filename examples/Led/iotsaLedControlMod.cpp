@@ -1,28 +1,82 @@
 #include "iotsaLedControlMod.h"
 
-#ifdef IOTSA_WITH_BLE
+// Implementation of the LED control module. Read HelloIotsa first; three things
+// are new here.
+//
+// 1. It extends a standard module. IotsaLedMod drives the status LED; this
+//    module is an IotsaLedMod with something added, a way for the outside world
+//    to flash the LED. Where it replaces one of IotsaLedMod's methods, it calls
+//    IotsaLedMod's own version first, so the status LED keeps working.
+//
+// 2. It only makes something happen: there are no settings, and a flash ends by
+//    itself, so there is nothing to read back. So there is a PUT but no GET, and
+//    the web page has an action button instead of settings.
+//
+// 3. The same thing can be done over BLE, with a BLE service of the module's
+//    own. Built without IOTSA_WITH_BLE, that part is left out.
+//
+// The flash itself is done by iotsa: iotsaStatus.setStatusPulse() shows a
+// colour for a while, on top of the normal status display, and then the LED
+// goes back to showing the status.
+
 void IotsaLedControlMod::setup() {
+  IotsaLedMod::setup();
+#ifdef IOTSA_WITH_BLE
+  // Our BLE service, and its one characteristic. The description tells BLE
+  // clients what to write: a colour as a 32-bit number.
   bleApi.setup(serviceUUID, this);
-  // Explain to clients what the rgb characteristic looks like
   bleApi.addCharacteristic(rgbUUID, bleApi.BLE_WRITE, NimBLE2904::FORMAT_UINT32, 0x2700, "RGBx color (solid pulse)");
+#endif
 }
 
+void IotsaLedControlMod::lateSetup() {
+  IotsaLedMod::lateSetup();
+  // PUT only: there is nothing to GET.
+  api.setup("led", false, true);
+}
+
+// No loop() of our own: we don't replace it, so IotsaLedMod::loop() is used
+// as it is, and that shows the LED. If you do replace it, call
+// IotsaLedMod::loop() from yours, as setup() and lateSetup() do.
+
+// No configLoad()/configSave(): nothing is saved.
+
+// A PUT starts a flash. Everything is optional: {} flashes white for a second.
+// rgb is a number here, 0xRRGGBB (for example 16711680 is red), because JSON
+// has no hexadecimal.
+bool IotsaLedControlMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
+  JsonObject reqObj = request.as<JsonObject>();
+  uint32_t rgb = 0xffffff;
+  uint32_t onDuration = 0;
+  uint32_t offDuration = 0;
+  uint32_t durationMs = 1000;
+  getFromRequest<uint32_t>(reqObj, "rgb", rgb);
+  getFromRequest<uint32_t>(reqObj, "onDuration", onDuration);
+  getFromRequest<uint32_t>(reqObj, "offDuration", offDuration);
+  getFromRequest<uint32_t>(reqObj, "durationMs", durationMs);
+  checkUnhandled(reqObj);
+  iotsaStatus.setStatusPulse(rgb, onDuration, offDuration, durationMs, "REST led control");
+  return true;
+}
+
+#ifdef IOTSA_WITH_BLE
+// The BLE equivalent of putHandler(): a client wrote one of our
+// characteristics. One write carries one value, so over BLE there is only a
+// colour, shown steadily for a few seconds.
 bool IotsaLedControlMod::blePutHandler(UUIDstring charUUID) {
   if (charUUID == rgbUUID) {
-      uint32_t _rgb = bleApi.getAsInt(rgbUUID);
-      iotsaStatus.setStatusPulse(_rgb, 0, 0, bleSolidDurationMs, "BLE led control");
-      return true;
+    uint32_t rgb = bleApi.getAsInt(rgbUUID);
+    iotsaStatus.setStatusPulse(rgb, 0, 0, bleSolidDurationMs, "BLE led control");
+    return true;
   }
-  IotsaSerial.println("ledControlMod: ble: write unknown uuid");
   return false;
 }
 #endif // IOTSA_WITH_BLE
 
 #ifdef IOTSA_WITH_WEB
-// The page triggers a transient status-LED pulse (cwi-dis/iotsa#176) with the
-// requested color/timing. It always decays back to the normal status display
-// on its own. The pulse happens now, so it is an action, and the fields are
-// its parameters.
+// The page has a form with the flash's parameters and a "Pulse" button. Only
+// when that button is pressed do we read the fields and flash: ctx.action()
+// makes something happen now, it doesn't change a setting.
 void IotsaLedControlMod::formHandler_args(IotsaWebContext& ctx) {
   if (!ctx.action("pulse")) return;
   String rgb = "ffffff";
@@ -47,10 +101,9 @@ void IotsaLedControlMod::formHandler_fields(IotsaWebContext& ctx) {
 }
 
 String IotsaLedControlMod::info() {
-  // Return some information about this module, for the main page of the web server.
-  String rv = "<p>See <a href=\"/led\">/led</a> for triggering a status-LED pulse.";
+  String rv = "<p>See <a href=\"/led\">/led</a> to flash the LED.";
 #ifdef IOTSA_HAS_RESTSERVER
-  rv += " Or use REST api at <a href='/api/led'>/api/led</a>.";
+  rv += " Or use PUT on <code>/api/led</code>.";
 #endif
 #ifdef IOTSA_WITH_BLE
   rv += " Or use BLE service " + String(serviceUUID) + " on device " + iotsaConfig.hostName + " for a solid-color pulse.";
@@ -59,19 +112,3 @@ String IotsaLedControlMod::info() {
   return rv;
 }
 #endif // IOTSA_WITH_WEB
-
-bool IotsaLedControlMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  uint32_t _rgb = request["rgb"]|0xffffff;
-  uint32_t _onDuration = request["onDuration"]|0;
-  uint32_t _offDuration = request["offDuration"]|0;
-  uint32_t _durationMs = request["durationMs"]|1000;
-  iotsaStatus.setStatusPulse(_rgb, _onDuration, _offDuration, _durationMs, "REST led control");
-  return true;
-}
-
-void IotsaLedControlMod::lateSetup() {
-  name = "led";
-  // Setup the web server hooks for this module. No GET: a pulse is transient,
-  // there's nothing meaningful to read back (cwi-dis/iotsa#256).
-  api.setup("led", false, true);
-}
