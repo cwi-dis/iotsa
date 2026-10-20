@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Blink example: Arduino's Blink without `delay()`, interval settable over web and REST (#183)
 - Web pages: `IotsaWebContext` and a default `webHandler()`; a module writes `formHandler_args(ctx)`/`formHandler_fields(ctx)`, the framework builds the page and saves the settings. NTP and Runmode use it (#183, #292)
 - Right `none` (`IOTSA_RIGHT_NONE`): always granted, without logging in (#284)
 - BLE client manager lists the 32 most recent named BLE devices its filter turned down (`unrecognized`: address, name, RSSI, seconds ago), e.g. a device on old firmware (#286)

@@ -110,7 +110,8 @@ committed generated file is stale.
 - `HelloIotsa` — the same, but structured the way we recommend for real applications
   (app module in its own `.h`/`.cpp`), with a REST API added
 - `HelloPasswd`, `HelloUser`, `HelloToken` — auth patterns
-- `Led`, `Light` — LED control / BLE
+- `Light`, `Blink` — the smallest hardware input and output modules (read-only; a `Live` setting)
+- `Led` — LED control / BLE
 - `Button`, `Input`, `Ringer` — input handling
 - `Log`, `Temperature`, `DateTime` — logging and sensors
 - `BLEManager`, `BLEButton`, `BLERinger` — BLE device-to-device communication:
