@@ -24,6 +24,7 @@ protected:
   String webTitle() override { return "Alarm Server"; }
   void formHandler_args(IotsaWebContext& ctx) override;
   void formHandler_fields(IotsaWebContext& ctx) override;
+  void ringTrigger(IotsaWebContext& ctx);
 #endif
 private:
   void _ring(int dur);

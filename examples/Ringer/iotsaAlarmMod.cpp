@@ -37,8 +37,17 @@ void IotsaAlarmMod::formHandler_fields(IotsaWebContext& ctx) {
   if (alarmEndTime) ctx.button("stop", "Stop");
 }
 
+// The trigger, /ring: rings right away, for curl or another device (Button).
+// curl 'http://ringer.local/ring?alarm=20' rings for 2 seconds.
+void IotsaAlarmMod::ringTrigger(IotsaWebContext& ctx) {
+  int dur = 10;
+  ctx.arg("alarm", dur, IotsaWebContext::Live);
+  _ring(dur);
+  ctx.feedback("Ringing.");
+}
+
 String IotsaAlarmMod::info() {
-  return "<p>See <a href='/alarm'>/alarm</a> to use the buzzer. REST interface on <a href='/api/alarm'>/api/alarm</a>";
+  return "<p>See <a href='/alarm'>/alarm</a> to use the buzzer. REST interface on <a href='/api/alarm'>/api/alarm</a>, trigger on <a href='/ring'>/ring</a>.</p>";
 }
 #endif // IOTSA_WITH_WEB
 
@@ -69,6 +78,9 @@ void IotsaAlarmMod::lateSetup() {
   // Setup the web server hooks for this module.
   api.setup("alarm", true, true);
   name = "alarm";
+#ifdef IOTSA_WITH_WEB
+  addTrigger("ring", [this](IotsaWebContext& ctx) { ringTrigger(ctx); });
+#endif
 }
 
 void IotsaAlarmMod::loop() {

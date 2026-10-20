@@ -48,4 +48,22 @@ void IotsaModule::webHandler() {
     String configuration = ctx.takeOutput();
     ctx.sendPage(webTitle(), everyday, configuration);
 }
+
+void IotsaModule::addTrigger(const char *path, TriggerHandler handler, const char *right) {
+    IotsaWebServer *server = api.webService->server;
+    // Leaked deliberately, like the page's path in IotsaApiServiceWeb::setup().
+    String *fullPath = new String(String("/") + path);
+    auto wrapper = [this, server, handler, right]() {
+        iotsaNoKeepAlive(server);
+        // Auth like the module's page: the REST rule for its API path.
+        IotsaWebContext ctx(*this, server, "/api/" + api.webService->pagePath);
+        if (right) ctx.needsRight(right);
+        if (ctx.allowed()) handler(ctx);
+        if (ctx.responded) return;
+        ctx.sendText();
+    };
+    // GET and POST, for the same reason as a page.
+    server->on(fullPath->c_str(), HTTP_GET, wrapper);
+    server->on(fullPath->c_str(), HTTP_POST, wrapper);
+}
 #endif // IOTSA_WITH_WEB

@@ -155,11 +155,11 @@ void IotsaWebContext::Change::done() {
 }
 
 void IotsaWebContext::feedback(const String& text) {
-  _feedback.push_back("<p>" + IotsaBaseModule::htmlEncode(text) + "</p>\n");
+  _feedback.push_back({text, false});
 }
 
 void IotsaWebContext::error(const String& text) {
-  _feedback.push_back("<p class='error'>" + IotsaBaseModule::htmlEncode(text) + "</p>\n");
+  _feedback.push_back({text, true});
 }
 
 void IotsaWebContext::respond(int code, const char *type, const String& body) {
@@ -437,7 +437,10 @@ void IotsaWebContext::sendPage(const String& title, const String& everyday, cons
   page += "<title>" + IotsaBaseModule::htmlEncode(title) + "</title>\n";
   page += String("<style>\n") + _pageStyle + "</style></head><body>\n";
   page += "<h1>" + IotsaBaseModule::htmlEncode(title) + "</h1>\n";
-  for (auto& f : _feedback) page += f;
+  for (auto& f : _feedback) {
+    page += f.error ? "<p class='error'>" : "<p>";
+    page += IotsaBaseModule::htmlEncode(f.text) + "</p>\n";
+  }
   page += everyday;
   if (configuration.length() > 0) {
     page += "<h2>Configuration</h2>\n";
@@ -445,6 +448,17 @@ void IotsaWebContext::sendPage(const String& title, const String& everyday, cons
   }
   page += "<p><a href='/'>Home</a></p>\n</body></html>\n";
   _server->send(200, "text/html", page);
+}
+
+void IotsaWebContext::sendText() {
+  String text;
+  bool failed = false;
+  for (auto& f : _feedback) {
+    text += f.text + "\n";
+    if (f.error) failed = true;
+  }
+  if (text.length() == 0) text = "OK\n";
+  _server->send(failed ? 400 : 200, "text/plain", text);
 }
 
 //

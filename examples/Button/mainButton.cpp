@@ -2,6 +2,9 @@
 // Server for a button. When the button is pressed a configurable http[s] request is sent.
 // A led is flashed red or green to indicate success or failure.
 //
+// Together with the Ringer example this is a doorbell: set the button's URL
+// to the ringer's trigger, http://ringer.local/ring?alarm=20.
+//
 
 #include "iotsa.h"
 #include "iotsaButton.h"

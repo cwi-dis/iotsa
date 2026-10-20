@@ -117,6 +117,17 @@ public:
   virtual void formHandler_fields(IotsaWebContext& ctx) {}
 #endif
 protected:
+#ifdef IOTSA_WITH_WEB
+  // A trigger (cwi-dis/iotsa#183): a plain URL that does something right away,
+  // for curl or another device, like GET /ring?alarm=20. The handler reads the
+  // arguments with ctx.arg() (kind Live), as formHandler_args() does. Every
+  // call is a change, so the right is checked before the handler runs: the
+  // REST rule for the module's API path, or the named right if given. The
+  // answer is plain text: the ctx.feedback() lines, or "OK"; 400 with the
+  // ctx.error() lines. Call it in lateSetup(), next to api.setup().
+  typedef std::function<void(IotsaWebContext& ctx)> TriggerHandler;
+  void addTrigger(const char *path, TriggerHandler handler, const char *right = nullptr);
+#endif
   // Like the other getFromRequest() copies, but also removes a consumed field,
   // so checkUnhandled() can report whatever is left over.
   template <typename JT, typename CT>  bool getFromRequest(const JsonObject& reqObj, const char *name, CT& var) {

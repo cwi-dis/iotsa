@@ -68,6 +68,9 @@ public:
   bool peek(const char *name, String& value) { return _present(name, value); }
   // A button that needs its "I am sure" box ticked (factory reset, remove all).
   bool confirmedAction(const char *name);
+  // The right and the mode allow a change of this kind, without an argument
+  // that asks for it: a trigger, which is a change by itself.
+  bool allowed(FieldKind kind = Live) { return _mayChange(kind); }
 
   // A change to the device's long-term state that the module may still refuse
   // (add, remove, upload): triggered by its own button. While it lives, its
@@ -191,6 +194,9 @@ public:
 
   // Used by IotsaModule::webHandler().
   void sendPage(const String& title, const String& everyday, const String& configuration);
+  // Used by a trigger: the feedback lines as plain text ("OK" if none), 400
+  // if one of them is an error.
+  void sendText();
   String takeOutput();
 
 private:
@@ -239,7 +245,11 @@ private:
   bool _headerRow = false;  // cell() writes <th>, see IotsaWebCollection
   String _output;
   std::vector<Group> _forms;
-  std::vector<String> _feedback;
+  struct Feedback {
+    String text;
+    bool error;
+  };
+  std::vector<Feedback> _feedback;
 };
 
 //

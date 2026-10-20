@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Triggers: `addTrigger("ring", handler)` gives a module a plain URL for curl or another device; the Ringer example rings on `/ring?alarm=20`, so Button and Ringer make a doorbell again (#183)
 - LedBattery example: the Led example on a battery, with sleep and configuration mode over BLE; Led itself is now only about the LED (#183)
 - Blink example: Arduino's Blink without `delay()`, interval settable over web and REST (#183)
 - Web pages: `IotsaWebContext` and a default `webHandler()`; a module writes `formHandler_args(ctx)`/`formHandler_fields(ctx)`, the framework builds the page and saves the settings. NTP and Runmode use it (#183, #292)
