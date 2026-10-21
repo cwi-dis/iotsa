@@ -435,13 +435,13 @@ void IotsaHelloMod::formHandler_fields(IotsaWebContext& ctx) {
   if (ctx.section != IotsaWebContext::Everyday) return;
   ctx << "<p>Hello, " + htmlEncode(personName) + "!</p>\n";
   IotsaWebContext::Form form(ctx, "Set");
-  ctx.field("Name", "personName", personName, IotsaWebContext::Config);
+  ctx.showField("Name", "personName", personName, IotsaWebContext::Config);
 }
 ```
 
 The kind of a field says what a change means: `Live` is state that isn't saved (an LED, an alarm), `Config` is saved (the framework calls `configSave()`), `ConfigModeOnly` can only be changed in configuration mode (host name, WiFi network). A page has an everyday part and a configuration part; `formHandler_fields()` is called once for each (`ctx.section`).
 
-`ctx.field()`, `ctx.status()` and friends encode their values for HTML themselves. When you write HTML yourself, with `ctx <<` or in `info()`, encode interpolated strings with `htmlEncode()`.
+`ctx.showField()`, `ctx.showStatus()` and friends encode their values for HTML themselves. When you write HTML yourself, with `ctx <<` or in `info()`, encode interpolated strings with `htmlEncode()`.
 
 ### Triggers
 

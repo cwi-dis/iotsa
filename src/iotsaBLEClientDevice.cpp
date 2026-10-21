@@ -541,17 +541,17 @@ void IotsaBLEClientDevice::formHandler_fields(IotsaWebContext& ctx) {
     } else {
       status = presence;
     }
-    ctx.status(name == "" ? String("BLE device") : name, "", name == "" ? String("not set") : status);
+    ctx.showStatus(name == "" ? String("BLE device") : name, "", name == "" ? String("not set") : status);
   } else {
     IotsaWebContext::Form form(ctx, name == "" ? "Set" : "Rename", name, "rename");
-    ctx.field("BLE device name", "name", name);
+    ctx.showField("BLE device name", "name", name);
   }
 }
 
 void IotsaBLEClientDevice::formHandler_row(IotsaWebContext& ctx) {
-  ctx.cell("Name", String(bleName.c_str()));
+  ctx.showCell("Name", String(bleName.c_str()));
   String where = available() ? String(getAddress().c_str()) + (isConnected() ? " (connected)" : "") : String(presenceText(getPresence()));
-  ctx.cell("Address", where);
+  ctx.showCell("Address", where);
 }
 #endif // IOTSA_WITH_WEB
 

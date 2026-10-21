@@ -2,7 +2,7 @@
 #include "iotsaConfigFile.h"
 
 // Implementation of the Hello module. This is the same module as in
-// HelloIotsa, except for the ctx.needsRight() line in formHandler_args().
+// HelloIotsa, except for the ctx.argsNeedRight() line in formHandler_args().
 //
 // An iotsa module is somewhat like an Arduino sketch, except (1) it provides
 // a way for the "outside world" to see and change values (either through a
@@ -76,7 +76,7 @@ void IotsaHelloMod::formHandler_args(IotsaWebContext& ctx) {
   // Changing the name needs a user with the right "hello"; just looking
   // doesn't. Without this line the page uses the rule for REST calls,
   // which is also what a PUT on /api/hello needs: the right "api".
-  ctx.needsRight("hello");
+  ctx.argsNeedRight("hello");
   // Config: when the name changes, the framework calls configSave().
   ctx.arg("personName", personName, IotsaWebContext::Config);
 }
@@ -89,7 +89,7 @@ void IotsaHelloMod::formHandler_fields(IotsaWebContext& ctx) {
   if (ctx.section != IotsaWebContext::Everyday) return;
   ctx << "<p>Hello, " + htmlEncode(personName) + "!</p>\n";
   IotsaWebContext::Form form(ctx, "Set");
-  ctx.field("Name", "personName", personName, IotsaWebContext::Config);
+  ctx.showField("Name", "personName", personName, IotsaWebContext::Config);
 }
 #endif // IOTSA_WITH_WEB
 

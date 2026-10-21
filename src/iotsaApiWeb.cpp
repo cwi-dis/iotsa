@@ -57,7 +57,7 @@ void IotsaModule::addTrigger(const char *path, TriggerHandler handler, const cha
         iotsaNoKeepAlive(server);
         // Auth like the module's page: the REST rule for its API path.
         IotsaWebContext ctx(*this, server, "/api/" + api.webService->pagePath);
-        if (right) ctx.needsRight(right);
+        if (right) ctx.argsNeedRight(right);
         if (ctx.allowed()) handler(ctx);
         if (ctx.responded) return;
         ctx.sendText();

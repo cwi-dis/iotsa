@@ -56,11 +56,11 @@ void IotsaTemperatureMod::formHandler_fields(IotsaWebContext& ctx) {
   if (ctx.section != IotsaWebContext::Everyday) return;
   _update();
   if (isnan(temperature)) {
-    ctx.status("Temperature", "temperature", "no reading, check the sensor");
+    ctx.showStatus("Temperature", "temperature", "no reading, check the sensor");
     return;
   }
-  ctx.status("Temperature", "temperature", String(temperature) + " °C");
-  ctx.status("Humidity", "humidity", String(humidity) + "%");
+  ctx.showStatus("Temperature", "temperature", String(temperature) + " °C");
+  ctx.showStatus("Humidity", "humidity", String(humidity) + "%");
 }
 #endif // IOTSA_WITH_WEB
 

@@ -19,15 +19,15 @@ void IotsaUser::configSave(IotsaConfigFileSave& cf, const String& f_name) {
 // Only a new user (in the add form) has no username yet.
 void IotsaUser::formHandler_args(IotsaWebContext& ctx) {
   if (username == "") ctx.arg("username", username, IotsaWebContext::ConfigModeOnly);
-  ctx.password("password", password, IotsaWebContext::ConfigModeOnly);
+  ctx.argPassword("password", password, IotsaWebContext::ConfigModeOnly);
   ctx.arg("rights", rights, IotsaWebContext::ConfigModeOnly);
 }
 
 void IotsaUser::formHandler_fields(IotsaWebContext& ctx) {
   // An existing user's username is the heading of its section.
-  if (username == "") ctx.field("Username", "username", username, IotsaWebContext::ConfigModeOnly);
-  ctx.password("Password", "password", IotsaWebContext::ConfigModeOnly, password == "" ? "" : "empty: unchanged");
-  ctx.field("Rights", "rights", rights, IotsaWebContext::ConfigModeOnly, "* for all, or /right/right/");
+  if (username == "") ctx.showField("Username", "username", username, IotsaWebContext::ConfigModeOnly);
+  ctx.showPassword("Password", "password", IotsaWebContext::ConfigModeOnly, password == "" ? "" : "empty: unchanged");
+  ctx.showField("Rights", "rights", rights, IotsaWebContext::ConfigModeOnly, "* for all, or /right/right/");
 }
 #endif
 
@@ -88,14 +88,14 @@ int IotsaUserMod::_find(const String& username) {
 
 #ifdef IOTSA_WITH_WEB
 void IotsaUserMod::formHandler_args(IotsaWebContext& ctx) {
-  ctx.needsRight("users");
+  ctx.argsNeedRight("users");
   IotsaWebContext::Scope s(ctx, "users");
   webUsers.formHandler_args(ctx);
 }
 
 void IotsaUserMod::formHandler_fields(IotsaWebContext& ctx) {
   if (ctx.section == IotsaWebContext::Everyday) {
-    ctx.status("Users", "", users.empty() ? String("none, everything is allowed") : String(users.size()));
+    ctx.showStatus("Users", "", users.empty() ? String("none, everything is allowed") : String(users.size()));
     return;
   }
   if (!ctx.editable(IotsaWebContext::ConfigModeOnly)) {

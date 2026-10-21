@@ -75,10 +75,10 @@ bool IotsaLedControlMod::blePutHandler(UUIDstring charUUID) {
 
 #ifdef IOTSA_WITH_WEB
 // The page has a form with the flash's parameters and a "Pulse" button. Only
-// when that button is pressed do we read the fields and flash: ctx.action()
+// when that button is pressed do we read the fields and flash: ctx.argAction()
 // makes something happen now, it doesn't change a setting.
 void IotsaLedControlMod::formHandler_args(IotsaWebContext& ctx) {
-  if (!ctx.action("pulse")) return;
+  if (!ctx.argAction("pulse")) return;
   String rgb = "ffffff";
   uint32_t onDuration = 0;
   uint32_t offDuration = 0;
@@ -94,10 +94,10 @@ void IotsaLedControlMod::formHandler_args(IotsaWebContext& ctx) {
 void IotsaLedControlMod::formHandler_fields(IotsaWebContext& ctx) {
   if (ctx.section != IotsaWebContext::Everyday) return;
   IotsaWebContext::Form form(ctx, "Pulse", "Status LED pulse", "pulse");
-  ctx.field("Color", "rgb", "ffffff", IotsaWebContext::Live, "hex rrggbb");
-  ctx.field("On time", "onDuration", 0, IotsaWebContext::Live, "ms, 0: steady");
-  ctx.field("Off time", "offDuration", 0, IotsaWebContext::Live, "ms");
-  ctx.field("Total duration", "durationMs", 1000, IotsaWebContext::Live, "ms");
+  ctx.showField("Color", "rgb", "ffffff", IotsaWebContext::Live, "hex rrggbb");
+  ctx.showField("On time", "onDuration", 0, IotsaWebContext::Live, "ms, 0: steady");
+  ctx.showField("Off time", "offDuration", 0, IotsaWebContext::Live, "ms");
+  ctx.showField("Total duration", "durationMs", 1000, IotsaWebContext::Live, "ms");
 }
 
 String IotsaLedControlMod::info() {

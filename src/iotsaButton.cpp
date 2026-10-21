@@ -69,7 +69,7 @@ void IotsaButtonMod::formHandler_args(IotsaWebContext& ctx) {
     IotsaWebContext::Scope s(ctx, "button" + String(i+1));
     buttons[i].req.formHandler_args(ctx);
     int sendOn = (buttons[i].sendOnPress ? 1 : 0) | (buttons[i].sendOnRelease ? 2 : 0);
-    if (ctx.choice("on", sendOn, 4)) {
+    if (ctx.argChoice("on", sendOn, 4)) {
       buttons[i].sendOnPress = (sendOn & 1) != 0;
       buttons[i].sendOnRelease = (sendOn & 2) != 0;
     }
@@ -81,12 +81,12 @@ void IotsaButtonMod::formHandler_fields(IotsaWebContext& ctx) {
     String label = "Button " + String(i+1);
     IotsaWebContext::Scope s(ctx, "button" + String(i+1));
     if (ctx.section == IotsaWebContext::Everyday) {
-      ctx.status(label, "state", buttons[i].buttonState ? "pressed" : "released");
+      ctx.showStatus(label, "state", buttons[i].buttonState ? "pressed" : "released");
     } else {
       IotsaWebContext::Form form(ctx, "Save", label);
       buttons[i].req.formHandler_fields(ctx);
       int sendOn = (buttons[i].sendOnPress ? 1 : 0) | (buttons[i].sendOnRelease ? 2 : 0);
-      ctx.choice("Call URL on", "on", sendOn, sendOnNames, 4);
+      ctx.showChoice("Call URL on", "on", sendOn, sendOnNames, 4);
     }
   }
 }

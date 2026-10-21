@@ -10,7 +10,7 @@ void IotsaNothingMod::formHandler_args(IotsaWebContext& ctx) {
 void IotsaNothingMod::formHandler_fields(IotsaWebContext& ctx) {
   if (ctx.section == IotsaWebContext::Configuration) {
     IotsaWebContext::Form form(ctx);
-    ctx.field("Argument", "argument", argument);
+    ctx.showField("Argument", "argument", argument);
   }
 }
 

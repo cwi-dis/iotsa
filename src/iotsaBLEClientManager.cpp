@@ -178,7 +178,7 @@ bool IotsaBLEClientManagerMod::putHandler(const char *path, const JsonVariant& r
 
 #ifdef IOTSA_WITH_WEB
 void IotsaBLEClientManagerMod::formHandler_args(IotsaWebContext& ctx) {
-  if (ctx.action("scanUnknown")) {
+  if (ctx.argAction("scanUnknown")) {
     startScanUnknown();
     ctx.feedback("Scanning for " + String(scanUnknownDurationMillis/1000) + " seconds.");
   }
@@ -227,11 +227,11 @@ void IotsaBLEClientManagerMod::formHandler_fields(IotsaWebContext& ctx) {
     for (auto& kv : devices) {
       IotsaWebContext::Scope s(ctx, String(kv.first.c_str()));
       kv.second->formHandler_fields(ctx);
-      ctx.button("remove", "Remove", "1", IotsaWebContext::Config);
+      ctx.showButton("remove", "Remove", "1", IotsaWebContext::Config);
     }
     IotsaWebContext::Scope s(ctx, "new");
     IotsaWebContext::Form form(ctx, "Add", "Add a device", "add");
-    ctx.field("BLE device name", "name", "");
+    ctx.showField("BLE device name", "name", "");
     return;
   }
   // Known-devices listing (cwi-dis/iotsa#264): each device renders its own
@@ -245,7 +245,7 @@ void IotsaBLEClientManagerMod::formHandler_fields(IotsaWebContext& ctx) {
     kv.second->formHandler_fields(ctx);
   }
   ctx << "<h3>Unknown " + htmlEncode(label) + "</h3>\n";
-  ctx.button("scanUnknown", "Scan for " + String(scanUnknownDurationMillis/1000) + " seconds");
+  ctx.showButton("scanUnknown", "Scan for " + String(scanUnknownDurationMillis/1000) + " seconds");
   if (unknownDevices.size() == 0) {
     ctx << "<p>No unknown " + htmlEncode(label) + " seen recently.</p>\n";
   } else {

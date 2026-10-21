@@ -54,7 +54,7 @@ String IotsaNtpMod::isoTime()
 
 #ifdef IOTSA_WITH_WEB
 void IotsaNtpMod::formHandler_args(IotsaWebContext& ctx) {
-  ctx.needsRight("ntp");
+  ctx.argsNeedRight("ntp");
   bool changed = ctx.arg("ntpServer", ntpServer);
   changed |= ctx.arg("tzDescription", tzDescription);
   if (changed) {
@@ -64,12 +64,12 @@ void IotsaNtpMod::formHandler_args(IotsaWebContext& ctx) {
 
 void IotsaNtpMod::formHandler_fields(IotsaWebContext& ctx) {
   if (ctx.section == IotsaWebContext::Everyday) {
-    ctx.status("UTC time", "", String(utcTime()));
-    ctx.status("Local time", "", isoTime());
+    ctx.showStatus("UTC time", "", String(utcTime()));
+    ctx.showStatus("Local time", "", isoTime());
   } else {
     IotsaWebContext::Form form(ctx);
-    ctx.field("NTP server", "ntpServer", ntpServer);
-    ctx.field("Timezone", "tzDescription", tzDescription, IotsaWebContext::Config, "POSIX TZ, for example CET-1CEST,M3.5.0,M10.5.0/3");
+    ctx.showField("NTP server", "ntpServer", ntpServer);
+    ctx.showField("Timezone", "tzDescription", tzDescription, IotsaWebContext::Config, "POSIX TZ, for example CET-1CEST,M3.5.0,M10.5.0/3");
   }
 }
 

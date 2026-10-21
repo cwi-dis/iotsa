@@ -47,23 +47,23 @@ void IotsaRequest::configSave(IotsaConfigFileSave& cf, const String& f_name) {
 #ifdef IOTSA_WITH_WEB
 void IotsaRequest::formHandler_args(IotsaWebContext& ctx) {
   ctx.arg("url", url);
-  ctx.password(SSL_INFO_NAME, sslInfo, IotsaWebContext::Config, false, true);
-  ctx.password("credentials", credentials, IotsaWebContext::Config, false, true);
-  ctx.password("token", token, IotsaWebContext::Config, false, true);
+  ctx.argPassword(SSL_INFO_NAME, sslInfo, IotsaWebContext::Config, false, true);
+  ctx.argPassword("credentials", credentials, IotsaWebContext::Config, false, true);
+  ctx.argPassword("token", token, IotsaWebContext::Config, false, true);
 }
 
 void IotsaRequest::formHandler_fields(IotsaWebContext& ctx) {
-  ctx.field("URL", "url", url);
-  ctx.textarea("Root CA certificate (https only, PEM)", SSL_INFO_NAME, IotsaWebContext::Config, sslInfo == "" ? "not set" : "set, empty: unchanged", sslInfo != "");
-  ctx.password("Credentials (user:pass)", "credentials", IotsaWebContext::Config, credentials == "" ? "optional" : "set, empty: unchanged", credentials != "");
-  ctx.password("Bearer token", "token", IotsaWebContext::Config, token == "" ? "optional" : "set, empty: unchanged", token != "");
+  ctx.showField("URL", "url", url);
+  ctx.showTextarea("Root CA certificate (https only, PEM)", SSL_INFO_NAME, IotsaWebContext::Config, sslInfo == "" ? "not set" : "set, empty: unchanged", sslInfo != "");
+  ctx.showPassword("Credentials (user:pass)", "credentials", IotsaWebContext::Config, credentials == "" ? "optional" : "set, empty: unchanged", credentials != "");
+  ctx.showPassword("Bearer token", "token", IotsaWebContext::Config, token == "" ? "optional" : "set, empty: unchanged", token != "");
 }
 
 void IotsaRequest::formHandler_row(IotsaWebContext& ctx) {
-  ctx.cell("URL", url);
-  ctx.cell("Root CA", sslInfo, IotsaWebContext::Secret);
-  ctx.cell("Credentials", credentials, IotsaWebContext::Secret);
-  ctx.cell("Token", token, IotsaWebContext::Secret);
+  ctx.showCell("URL", url);
+  ctx.showCell("Root CA", sslInfo, IotsaWebContext::Secret);
+  ctx.showCell("Credentials", credentials, IotsaWebContext::Secret);
+  ctx.showCell("Token", token, IotsaWebContext::Secret);
 }
 #endif // IOTSA_WITH_WEB
 

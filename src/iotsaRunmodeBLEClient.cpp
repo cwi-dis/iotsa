@@ -98,26 +98,26 @@ static void _queued(IotsaWebContext& ctx, bool ok) {
 
 void IotsaRunmodeBLEClient::formHandler_args(IotsaWebContext& ctx) {
   IotsaBLEClientDevice::formHandler_args(ctx);
-  if (ctx.action("identify")) _queued(ctx, queueIdentify());
-  if (ctx.action("reboot")) _queued(ctx, queueReboot());
-  if (ctx.action("promoteMode")) _queued(ctx, queuePromoteMode());
-  if (ctx.action("enableWifi")) _queued(ctx, queueSetWifiDisabled(false));
-  if (ctx.action("disableWifi")) _queued(ctx, queueSetWifiDisabled(true));
+  if (ctx.argAction("identify")) _queued(ctx, queueIdentify());
+  if (ctx.argAction("reboot")) _queued(ctx, queueReboot());
+  if (ctx.argAction("promoteMode")) _queued(ctx, queuePromoteMode());
+  if (ctx.argAction("enableWifi")) _queued(ctx, queueSetWifiDisabled(false));
+  if (ctx.argAction("disableWifi")) _queued(ctx, queueSetWifiDisabled(true));
 }
 
 void IotsaRunmodeBLEClient::formHandler_fields(IotsaWebContext& ctx) {
   IotsaBLEClientDevice::formHandler_fields(ctx);
   if (ctx.section != IotsaWebContext::Everyday) return;
   if (workPending) {
-    ctx.status("Command", "", "pending");
+    ctx.showStatus("Command", "", "pending");
   } else if (lastWorkStatus) {
-    ctx.status("Last command", "", lastWorkStatus);
+    ctx.showStatus("Last command", "", lastWorkStatus);
   }
-  ctx.button("identify", "Identify");
-  ctx.button("reboot", "Reboot");
-  ctx.button("promoteMode", "Confirm requested mode");
-  ctx.button("enableWifi", "Enable WiFi");
-  ctx.button("disableWifi", "Disable WiFi");
+  ctx.showButton("identify", "Identify");
+  ctx.showButton("reboot", "Reboot");
+  ctx.showButton("promoteMode", "Confirm requested mode");
+  ctx.showButton("enableWifi", "Enable WiFi");
+  ctx.showButton("disableWifi", "Disable WiFi");
 }
 #endif // IOTSA_WITH_WEB
 #endif // IOTSA_WITH_BLE

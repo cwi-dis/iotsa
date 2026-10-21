@@ -68,7 +68,7 @@ void IotsaRtcMod::_updateCurrentTime() {
 
 #ifdef IOTSA_WITH_WEB
 void IotsaRtcMod::formHandler_args(IotsaWebContext& ctx) {
-  ctx.needsRight("rtc");
+  ctx.argsNeedRight("rtc");
   String time;
   if (ctx.arg("isoTime", time, IotsaWebContext::Live)) {
     if (!setIsoTime(time)) ctx.error("Not an ISO 8601 time: " + time);
@@ -77,11 +77,11 @@ void IotsaRtcMod::formHandler_args(IotsaWebContext& ctx) {
 
 void IotsaRtcMod::formHandler_fields(IotsaWebContext& ctx) {
   if (ctx.section == IotsaWebContext::Everyday) {
-    ctx.status("RTC time (UTC)", "isoTime", isoTime());
+    ctx.showStatus("RTC time (UTC)", "isoTime", isoTime());
   } else {
     // Empty, not the current time: that would be stale by the time it is sent.
     IotsaWebContext::Form form(ctx, "Set");
-    ctx.field("Set RTC time", "isoTime", "", IotsaWebContext::Live, "UTC, YYYY-MM-DDTHH:MM:SS");
+    ctx.showField("Set RTC time", "isoTime", "", IotsaWebContext::Live, "UTC, YYYY-MM-DDTHH:MM:SS");
   }
 }
 

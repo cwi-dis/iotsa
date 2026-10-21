@@ -91,7 +91,7 @@ private:
 
 #ifdef IOTSA_WITH_WEB
 void IotsaBLEServerMod::formHandler_args(IotsaWebContext& ctx) {
-  if (ctx.checkbox("isEnabled", isEnabled)) {
+  if (ctx.argCheckbox("isEnabled", isEnabled)) {
     iotsaController.requestReboot(REBOOT_DELAY_BLE_REINIT_MS);
     ctx.feedback("Rebooting to switch BLE on or off.");
   }
@@ -103,15 +103,15 @@ void IotsaBLEServerMod::formHandler_args(IotsaWebContext& ctx) {
 
 void IotsaBLEServerMod::formHandler_fields(IotsaWebContext& ctx) {
   if (ctx.section == IotsaWebContext::Everyday) {
-    ctx.status("Transmit power level (actual)", "tx_power_dbm_actual", String(tx_power_dbm_actual) + " dBm");
-    ctx.status("Connected clients", "connected_peers", String(s_server ? (int)s_server->getConnectedCount() : 0));
+    ctx.showStatus("Transmit power level (actual)", "tx_power_dbm_actual", String(tx_power_dbm_actual) + " dBm");
+    ctx.showStatus("Connected clients", "connected_peers", String(s_server ? (int)s_server->getConnectedCount() : 0));
   } else {
     IotsaWebContext::Form form(ctx);
-    ctx.checkbox("BLE enabled", "isEnabled", isEnabled, IotsaWebContext::Config, "changing it reboots");
-    ctx.field("Advertising interval (min)", "adv_min", adv_min, IotsaWebContext::Config, "unit 0.625 ms, 32..16384; -1: default");
-    ctx.field("Advertising interval (max)", "adv_max", adv_max, IotsaWebContext::Config, "unit 0.625 ms, 32..16384; -1: default");
-    ctx.field("Transmit power level", "tx_power_dbm", tx_power_dbm, IotsaWebContext::Config, "dBm; -1: hardware default; range depends on the chip, e.g. -12..+9 on the ESP32, -24..+21 on the C3/S3/C6");
-    ctx.field("Idle connection timeout", "idle_timeout", idle_timeout, IotsaWebContext::Config, "seconds without reads or writes before a client is disconnected; 0: never");
+    ctx.showCheckbox("BLE enabled", "isEnabled", isEnabled, IotsaWebContext::Config, "changing it reboots");
+    ctx.showField("Advertising interval (min)", "adv_min", adv_min, IotsaWebContext::Config, "unit 0.625 ms, 32..16384; -1: default");
+    ctx.showField("Advertising interval (max)", "adv_max", adv_max, IotsaWebContext::Config, "unit 0.625 ms, 32..16384; -1: default");
+    ctx.showField("Transmit power level", "tx_power_dbm", tx_power_dbm, IotsaWebContext::Config, "dBm; -1: hardware default; range depends on the chip, e.g. -12..+9 on the ESP32, -24..+21 on the C3/S3/C6");
+    ctx.showField("Idle connection timeout", "idle_timeout", idle_timeout, IotsaWebContext::Config, "seconds without reads or writes before a client is disconnected; 0: never");
   }
 }
 

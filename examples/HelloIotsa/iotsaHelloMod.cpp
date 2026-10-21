@@ -83,7 +83,7 @@ void IotsaHelloMod::formHandler_fields(IotsaWebContext& ctx) {
   if (ctx.section != IotsaWebContext::Everyday) return;
   ctx << "<p>Hello, " + htmlEncode(personName) + "!</p>\n";
   IotsaWebContext::Form form(ctx, "Set");
-  ctx.field("Name", "personName", personName, IotsaWebContext::Config);
+  ctx.showField("Name", "personName", personName, IotsaWebContext::Config);
 }
 #endif // IOTSA_WITH_WEB
 

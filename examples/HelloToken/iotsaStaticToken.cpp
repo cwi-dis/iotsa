@@ -54,15 +54,15 @@ void IotsaStaticTokenObject::formHandler_args(IotsaWebContext& ctx) {
 
 // The fields for adding a new token.
 void IotsaStaticTokenObject::formHandler_fields(IotsaWebContext& ctx) {
-  ctx.field("Token", "token", token);
-  ctx.field("Rights", "rights", rights, IotsaWebContext::Config, "* for all, or /right/right/");
+  ctx.showField("Token", "token", token);
+  ctx.showField("Rights", "rights", rights, IotsaWebContext::Config, "* for all, or /right/right/");
 }
 
 // One row of the table of existing tokens. The token is a secret: the page
 // only shows that it is there.
 void IotsaStaticTokenObject::formHandler_row(IotsaWebContext& ctx) {
-  ctx.cell("Token", token, IotsaWebContext::Secret);
-  ctx.cell("Rights", rights);
+  ctx.showCell("Token", token, IotsaWebContext::Secret);
+  ctx.showCell("Rights", rights);
 }
 #endif // IOTSA_WITH_WEB
 
@@ -158,7 +158,7 @@ bool IotsaStaticTokenMod::getHandler(const char *path, JsonObject& reply) {
 #ifdef IOTSA_WITH_WEB
 void IotsaStaticTokenMod::formHandler_args(IotsaWebContext& ctx) {
   // Changing the tokens needs the right "tokens".
-  ctx.needsRight("tokens");
+  ctx.argsNeedRight("tokens");
   IotsaWebContext::Scope s(ctx, "tokens");
   webTokens.formHandler_args(ctx);
 }

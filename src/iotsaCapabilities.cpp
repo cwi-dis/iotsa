@@ -86,9 +86,9 @@ IotsaCapabilityMod::IotsaCapabilityMod(IotsaApplication &_app, IotsaAuthenticati
 // The trust anchors: strictly configuration mode (not the broader
 // iotsaConfigSettingsWritable() factory-AP case), cwi-dis/iotsa#106 step 5c.
 void IotsaCapabilityMod::formHandler_args(IotsaWebContext& ctx) {
-  ctx.needsRight("capabilities");
+  ctx.argsNeedRight("capabilities");
   ctx.arg("trustedIssuer", trustedIssuer, IotsaWebContext::ConfigModeStrict);
-  ctx.password("issuerKey", issuerKey, IotsaWebContext::ConfigModeStrict);
+  ctx.argPassword("issuerKey", issuerKey, IotsaWebContext::ConfigModeStrict);
 }
 
 void IotsaCapabilityMod::formHandler_fields(IotsaWebContext& ctx) {
@@ -97,9 +97,9 @@ void IotsaCapabilityMod::formHandler_fields(IotsaWebContext& ctx) {
     ctx << "<p>Issuer and key can only be changed in configuration mode, see <a href='/runmode'>/runmode</a>.</p>\n";
   }
   IotsaWebContext::Form form(ctx);
-  ctx.field("Issuer", "trustedIssuer", trustedIssuer, IotsaWebContext::ConfigModeStrict);
-  ctx.status("Shared key", "has_issuerKey", issuerKey.length() ? "set" : "not set");
-  ctx.password("New shared key", "issuerKey", IotsaWebContext::ConfigModeStrict, "empty: unchanged");
+  ctx.showField("Issuer", "trustedIssuer", trustedIssuer, IotsaWebContext::ConfigModeStrict);
+  ctx.showStatus("Shared key", "has_issuerKey", issuerKey.length() ? "set" : "not set");
+  ctx.showPassword("New shared key", "issuerKey", IotsaWebContext::ConfigModeStrict, "empty: unchanged");
 }
 
 String IotsaCapabilityMod::info() {

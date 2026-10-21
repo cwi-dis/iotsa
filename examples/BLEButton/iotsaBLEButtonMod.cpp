@@ -73,7 +73,7 @@ void IotsaBLEButtonMod::formHandler_args(IotsaWebContext& ctx) {
     IotsaWebContext::Scope s(ctx, "target");
     ringer.formHandler_args(ctx);
   }
-  if (ctx.action("ringnow")) {
+  if (ctx.argAction("ringnow")) {
     ring();
     ctx.feedback("Ringing.");
   }
@@ -87,8 +87,8 @@ void IotsaBLEButtonMod::formHandler_fields(IotsaWebContext& ctx) {
   if (ctx.section != IotsaWebContext::Everyday) return;
   // How the last ring went shows up on the next page load.
   String status = ringStatus();
-  if (status != "") ctx.status("Last ring attempt", "", status);
-  if (ringer.available()) ctx.button("ringnow", "Ring now");
+  if (status != "") ctx.showStatus("Last ring attempt", "", status);
+  if (ringer.available()) ctx.showButton("ringnow", "Ring now");
 }
 
 // The trigger, /ring: rings the target, like pressing the button.

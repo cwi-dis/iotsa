@@ -20,11 +20,11 @@ void IotsaBatteryMod::formHandler_args(IotsaWebContext& ctx) {
 void IotsaBatteryMod::formHandler_fields(IotsaWebContext& ctx) {
   if (ctx.section == IotsaWebContext::Everyday) {
     _readVoltages();
-    if (pinVBat >= 0) ctx.status("Battery level", "levelVBat", String(levelVBat) + "%");
-    if (pinVUSB >= 0) ctx.status("USB voltage level", "levelVUSB", String(levelVUSB) + "%");
+    if (pinVBat >= 0) ctx.showStatus("Battery level", "levelVBat", String(levelVBat) + "%");
+    if (pinVUSB >= 0) ctx.showStatus("USB voltage level", "levelVUSB", String(levelVUSB) + "%");
   } else if (pinVBat >= 0) {
     IotsaWebContext::Form form(ctx);
-    ctx.field("Battery voltage correction factor", "correctionVBat", correctionVBat);
+    ctx.showField("Battery voltage correction factor", "correctionVBat", correctionVBat);
   }
 }
 

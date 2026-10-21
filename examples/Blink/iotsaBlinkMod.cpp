@@ -53,7 +53,7 @@ void IotsaBlinkMod::formHandler_args(IotsaWebContext& ctx) {
 void IotsaBlinkMod::formHandler_fields(IotsaWebContext& ctx) {
   if (ctx.section != IotsaWebContext::Everyday) return;
   IotsaWebContext::Form form(ctx, "Set");
-  ctx.field("Interval (ms)", "interval", interval, IotsaWebContext::Live, "0 stops blinking");
+  ctx.showField("Interval (ms)", "interval", interval, IotsaWebContext::Live, "0 stops blinking");
 }
 #endif // IOTSA_WITH_WEB
 

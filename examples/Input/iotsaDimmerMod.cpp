@@ -49,8 +49,8 @@ bool IotsaDimmerMod::getHandler(const char *path, JsonObject& reply) {
 
 void IotsaDimmerMod::formHandler_fields(IotsaWebContext& ctx) {
   if (ctx.section != IotsaWebContext::Everyday) return;
-  ctx.status("On", "on", on ? "yes" : "no");
-  ctx.status("Level", "level", String(level));
+  ctx.showStatus("On", "on", on ? "yes" : "no");
+  ctx.showStatus("Level", "level", String(level));
 }
 #endif // IOTSA_WITH_WEB
 

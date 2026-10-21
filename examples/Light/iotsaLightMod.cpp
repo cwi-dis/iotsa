@@ -59,8 +59,8 @@ bool IotsaLightMod::getHandler(const char *path, JsonObject& reply) {
 // everyday part.
 void IotsaLightMod::formHandler_fields(IotsaWebContext& ctx) {
   if (ctx.section != IotsaWebContext::Everyday) return;
-  ctx.status("Light level", "lightLevel", String((int)(lightLevel*100)) + "%");
-  ctx.status("Raw value", "light", String(light) + " (seen " + String(minLight) + " to " + String(maxLight) + ")");
+  ctx.showStatus("Light level", "lightLevel", String((int)(lightLevel*100)) + "%");
+  ctx.showStatus("Raw value", "light", String(light) + " (seen " + String(minLight) + " to " + String(maxLight) + ")");
 }
 #endif // IOTSA_WITH_WEB
 
