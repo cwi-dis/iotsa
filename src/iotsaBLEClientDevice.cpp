@@ -516,10 +516,10 @@ bool IotsaBLEClientDevice::putHandler(const JsonVariant& request, JsonObject& re
 
 #ifdef IOTSA_WITH_WEB
 void IotsaBLEClientDevice::formHandler_args(IotsaWebContext& ctx) {
-  IotsaWebContext::Change rename(ctx, "rename");
+  IotsaWebContext::Change rename(ctx, "rename", IotsaWebContext::Saved);
   if (!rename) return;
   String newName(bleName.c_str());
-  ctx.arg("name", newName);
+  ctx.arg("name", newName, IotsaWebContext::Saved);
   if (newName == "") {
     ctx.error("A device needs a name.");
   } else if (owner && owner->getDevice(newName) != nullptr) {
@@ -531,7 +531,7 @@ void IotsaBLEClientDevice::formHandler_args(IotsaWebContext& ctx) {
 
 void IotsaBLEClientDevice::formHandler_fields(IotsaWebContext& ctx) {
   String name(bleName.c_str());
-  if (ctx.section == IotsaWebContext::Everyday) {
+  if (ctx.includesEveryday()) {
     const char *presence = presenceText(getPresence());
     String status;
     if (available()) {
@@ -544,7 +544,7 @@ void IotsaBLEClientDevice::formHandler_fields(IotsaWebContext& ctx) {
     ctx.showStatus(name == "" ? String("BLE device") : name, "", name == "" ? String("not set") : status);
   } else {
     IotsaWebContext::Form form(ctx, name == "" ? "Set" : "Rename", name, "rename");
-    ctx.showField("BLE device name", "name", name);
+    ctx.showField("BLE device name", "name", name, IotsaWebContext::Saved);
   }
 }
 

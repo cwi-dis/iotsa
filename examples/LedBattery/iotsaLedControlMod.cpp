@@ -78,26 +78,26 @@ bool IotsaLedControlMod::blePutHandler(UUIDstring charUUID) {
 // when that button is pressed do we read the fields and flash: ctx.argAction()
 // makes something happen now, it doesn't change a setting.
 void IotsaLedControlMod::formHandler_args(IotsaWebContext& ctx) {
-  if (!ctx.argAction("pulse")) return;
+  if (!ctx.argAction("pulse", IotsaWebContext::Transient)) return;
   String rgb = "ffffff";
   uint32_t onDuration = 0;
   uint32_t offDuration = 0;
   uint32_t durationMs = 1000;
-  ctx.arg("rgb", rgb, IotsaWebContext::Live);
-  ctx.arg("onDuration", onDuration, IotsaWebContext::Live);
-  ctx.arg("offDuration", offDuration, IotsaWebContext::Live);
-  ctx.arg("durationMs", durationMs, IotsaWebContext::Live);
+  ctx.arg("rgb", rgb, IotsaWebContext::Transient);
+  ctx.arg("onDuration", onDuration, IotsaWebContext::Transient);
+  ctx.arg("offDuration", offDuration, IotsaWebContext::Transient);
+  ctx.arg("durationMs", durationMs, IotsaWebContext::Transient);
   iotsaStatus.setStatusPulse(strtol(rgb.c_str(), 0, 16), onDuration, offDuration, durationMs, "web led control");
   ctx.feedback("Pulsing.");
 }
 
 void IotsaLedControlMod::formHandler_fields(IotsaWebContext& ctx) {
-  if (ctx.section != IotsaWebContext::Everyday) return;
+  if (!ctx.includesEveryday()) return;
   IotsaWebContext::Form form(ctx, "Pulse", "Status LED pulse", "pulse");
-  ctx.showField("Color", "rgb", "ffffff", IotsaWebContext::Live, "hex rrggbb");
-  ctx.showField("On time", "onDuration", 0, IotsaWebContext::Live, "ms, 0: steady");
-  ctx.showField("Off time", "offDuration", 0, IotsaWebContext::Live, "ms");
-  ctx.showField("Total duration", "durationMs", 1000, IotsaWebContext::Live, "ms");
+  ctx.showField("Color", "rgb", "ffffff", IotsaWebContext::Transient, "hex rrggbb");
+  ctx.showField("On time", "onDuration", 0, IotsaWebContext::Transient, "ms, 0: steady");
+  ctx.showField("Off time", "offDuration", 0, IotsaWebContext::Transient, "ms");
+  ctx.showField("Total duration", "durationMs", 1000, IotsaWebContext::Transient, "ms");
 }
 
 String IotsaLedControlMod::info() {

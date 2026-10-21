@@ -110,7 +110,7 @@ committed generated file is stale.
   (app module in its own `.h`/`.cpp`), with a REST API added; the starting point for new
   applications
 - `HelloPasswd`, `HelloUser`, `HelloToken` — auth patterns
-- `Light`, `Blink` — the smallest hardware input and output modules (read-only; a `Live` setting)
+- `Light`, `Blink` — the smallest hardware input and output modules (read-only; a `Transient` setting)
 - `Led`, `LedBattery` — a module that does something, over web/REST/CoAP/its own BLE service; the same on a battery, with sleep
 - `Button`, `Ringer` — a doorbell over HTTP (Ringer has a trigger, `/ring`)
 - `Input` — a dimmer set by a button and a rotary encoder, through iotsaInput

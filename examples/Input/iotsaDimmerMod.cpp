@@ -48,7 +48,7 @@ bool IotsaDimmerMod::getHandler(const char *path, JsonObject& reply) {
 // No formHandler_args(): the page has no form.
 
 void IotsaDimmerMod::formHandler_fields(IotsaWebContext& ctx) {
-  if (ctx.section != IotsaWebContext::Everyday) return;
+  if (!ctx.includesEveryday()) return;
   ctx.showStatus("On", "on", on ? "yes" : "no");
   ctx.showStatus("Level", "level", String(level));
 }

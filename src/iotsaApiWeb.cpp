@@ -40,13 +40,13 @@ void IotsaModule::webHandler() {
     } else if (ctx.stateChanged && !ctx.hasFeedback()) {
         ctx.feedback("Done.");
     }
-    ctx.section = IotsaWebContext::Everyday;
+    ctx.setParts(true, false);
     formHandler_fields(ctx);
     String everyday = ctx.takeOutput();
-    ctx.section = IotsaWebContext::Configuration;
+    ctx.setParts(false, true);
     formHandler_fields(ctx);
-    String configuration = ctx.takeOutput();
-    ctx.sendPage(webTitle(), everyday, configuration);
+    String settings = ctx.takeOutput();
+    ctx.sendPage(webTitle(), everyday, settings);
 }
 
 void IotsaModule::addTrigger(const char *path, TriggerHandler handler, const char *right) {

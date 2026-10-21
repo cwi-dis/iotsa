@@ -58,7 +58,7 @@ bool IotsaLightMod::getHandler(const char *path, JsonObject& reply) {
 // The page only shows the values. Nothing is configured, so there is only an
 // everyday part.
 void IotsaLightMod::formHandler_fields(IotsaWebContext& ctx) {
-  if (ctx.section != IotsaWebContext::Everyday) return;
+  if (!ctx.includesEveryday()) return;
   ctx.showStatus("Light level", "lightLevel", String((int)(lightLevel*100)) + "%");
   ctx.showStatus("Raw value", "light", String(light) + " (seen " + String(minLight) + " to " + String(maxLight) + ")");
 }

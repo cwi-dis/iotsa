@@ -30,7 +30,7 @@ void IotsaBlinkMod::loop() {
 
 // No configLoad()/configSave(), on purpose: unlike HelloIotsa's name, the
 // interval is not saved. After a reboot it is 1000 ms again. The fields are
-// Live (below), which tells the web page not to save anything either.
+// Transient (below), which tells the web page not to save anything either.
 
 bool IotsaBlinkMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
   JsonObject reqObj = request.as<JsonObject>();
@@ -47,13 +47,13 @@ bool IotsaBlinkMod::getHandler(const char *path, JsonObject& reply) {
 
 #ifdef IOTSA_WITH_WEB
 void IotsaBlinkMod::formHandler_args(IotsaWebContext& ctx) {
-  ctx.arg("interval", interval, IotsaWebContext::Live);
+  ctx.arg("interval", interval, IotsaWebContext::Transient);
 }
 
 void IotsaBlinkMod::formHandler_fields(IotsaWebContext& ctx) {
-  if (ctx.section != IotsaWebContext::Everyday) return;
+  if (!ctx.includesEveryday()) return;
   IotsaWebContext::Form form(ctx, "Set");
-  ctx.showField("Interval (ms)", "interval", interval, IotsaWebContext::Live, "0 stops blinking");
+  ctx.showField("Interval (ms)", "interval", interval, IotsaWebContext::Transient, "0 stops blinking");
 }
 #endif // IOTSA_WITH_WEB
 

@@ -129,13 +129,13 @@ static const char * const sleepModeNames[] = {"None", "Delay", "Light sleep", "D
 
 void IotsaRunmodeMod::formHandler_args(IotsaWebContext& ctx) {
   ctx.argsNeedRight(IOTSA_RIGHT_NONE);
-  if (ctx.argAction("identify")) {
+  if (ctx.argAction("identify", IotsaWebContext::Transient)) {
     _pendingIdentify = true;
     ctx.feedback("Identifying.");
   }
   // Factory reset is not one of the choices: it has its own confirmed button.
   int requested = int(iotsaController.requestedMode());
-  if (ctx.argChoice("requestedMode", requested, _otaAvailable() ? 3 : 2, IotsaWebContext::Live)) {
+  if (ctx.argChoice("requestedMode", requested, _otaAvailable() ? 3 : 2, IotsaWebContext::Transient)) {
     iotsaController.requestMode(iotsa_mode(requested));
   }
   if (ctx.argConfirmedAction("factoryReset")) {
@@ -143,39 +143,39 @@ void IotsaRunmodeMod::formHandler_args(IotsaWebContext& ctx) {
   }
 
   ctx.argsNeedRight("config");
-  if (ctx.argAction("reboot")) {
+  if (ctx.argAction("reboot", IotsaWebContext::Transient)) {
     iotsaController.requestReboot(IotsaController::REBOOT_DELAY_HTTP_MS);
     ctx.feedback("Rebooting in 2 seconds.");
   }
   bool wifiDisabled = !iotsaStatus.wifiEnabled;
-  if (ctx.arg("wifiDisabled", wifiDisabled, IotsaWebContext::Live)) {
+  if (ctx.arg("wifiDisabled", wifiDisabled, IotsaWebContext::Transient)) {
     iotsaController.setWifiRadioEnabled(!wifiDisabled);
   }
 #ifdef IOTSA_WITH_BLE
   bool bleDisabled = !iotsaController.bleRadioWanted();
-  if (ctx.arg("bleDisabled", bleDisabled, IotsaWebContext::Live)) {
+  if (ctx.arg("bleDisabled", bleDisabled, IotsaWebContext::Transient)) {
     iotsaController.setBleRadioEnabled(!bleDisabled);
   }
 #endif
-  ctx.argCheckbox("debugLog", iotsaLogDebugEnabled);
+  ctx.argCheckbox("debugLog", iotsaLogDebugEnabled, IotsaWebContext::Saved);
 #ifdef IOTSA_HAS_SLEEP
   IotsaSleepPolicy& sp = iotsaController.sleep();
   int sleepMode = int(_sleepConfig.mode);
-  if (ctx.argChoice("sleepMode", sleepMode, _IOTSA_SLEEP_MAX)) {
+  if (ctx.argChoice("sleepMode", sleepMode, _IOTSA_SLEEP_MAX, IotsaWebContext::Saved)) {
     _sleepConfig.mode = IotsaSleepMode(sleepMode);
   }
-  ctx.arg("sleepDuration", _sleepConfig.sleepDuration);
-  ctx.arg("wakeDuration", _sleepConfig.wakeDuration);
-  ctx.arg("activityExtraWakeDuration", sp.activityExtraWakeDuration);
-  ctx.arg("bootExtraWakeDuration", _sleepConfig.bootExtraWakeDuration);
-  ctx.argCheckbox("disableSleepOnWiFi", _sleepConfig.disableSleepOnWiFi);
-  ctx.argCheckbox("disableWiFiOnSleep", _sleepConfig.disableWiFiOnSleep);
-  ctx.argCheckbox("disableSleepOnUSBPower", _sleepConfig.disableSleepOnUSBPower);
+  ctx.arg("sleepDuration", _sleepConfig.sleepDuration, IotsaWebContext::Saved);
+  ctx.arg("wakeDuration", _sleepConfig.wakeDuration, IotsaWebContext::Saved);
+  ctx.arg("activityExtraWakeDuration", sp.activityExtraWakeDuration, IotsaWebContext::Saved);
+  ctx.arg("bootExtraWakeDuration", _sleepConfig.bootExtraWakeDuration, IotsaWebContext::Saved);
+  ctx.argCheckbox("disableSleepOnWiFi", _sleepConfig.disableSleepOnWiFi, IotsaWebContext::Saved);
+  ctx.argCheckbox("disableWiFiOnSleep", _sleepConfig.disableWiFiOnSleep, IotsaWebContext::Saved);
+  ctx.argCheckbox("disableSleepOnUSBPower", _sleepConfig.disableSleepOnUSBPower, IotsaWebContext::Saved);
 #ifdef ESP32
-  ctx.arg("cpuFrequencyBoot", _cpuFrequencyBoot);
-  ctx.arg("cpuFrequencySleep", _cpuFrequencySleep);
+  ctx.arg("cpuFrequencyBoot", _cpuFrequencyBoot, IotsaWebContext::Saved);
+  ctx.arg("cpuFrequencySleep", _cpuFrequencySleep, IotsaWebContext::Saved);
   int cpuFrequency = getCpuFrequencyMhz();
-  if (ctx.arg("cpuFrequency", cpuFrequency, IotsaWebContext::Live) && cpuFrequency != 0) {
+  if (ctx.arg("cpuFrequency", cpuFrequency, IotsaWebContext::Transient) && cpuFrequency != 0) {
     setCpuFrequencyMhz(cpuFrequency);
   }
 #endif
@@ -183,7 +183,7 @@ void IotsaRunmodeMod::formHandler_args(IotsaWebContext& ctx) {
 }
 
 void IotsaRunmodeMod::formHandler_fields(IotsaWebContext& ctx) {
-  if (ctx.section == IotsaWebContext::Everyday) {
+  if (ctx.includesEveryday()) {
     String current = iotsaController.modeName(iotsaController.currentMode());
     if (iotsaController.currentMode()) {
       current += ", times out in " + String((iotsaController.currentModeEndTime() - millis())/1000) + " seconds";
@@ -205,43 +205,43 @@ void IotsaRunmodeMod::formHandler_fields(IotsaWebContext& ctx) {
     ctx.showStatus("BLE radio", "bleDisabled", iotsaController.bleRadioWanted() ? "enabled" : "disabled");
 #endif
 
-    ctx.showButton("identify", "Identify");
-    ctx.showButton("reboot", "Reboot now");
-    ctx.showButton("wifiDisabled", iotsaStatus.wifiEnabled ? "Disable WiFi radio" : "Enable WiFi radio", iotsaStatus.wifiEnabled ? "1" : "0");
+    ctx.showButton("identify", "Identify", IotsaWebContext::Transient);
+    ctx.showButton("reboot", "Reboot now", IotsaWebContext::Transient);
+    ctx.showButton("wifiDisabled", iotsaStatus.wifiEnabled ? "Disable WiFi radio" : "Enable WiFi radio", IotsaWebContext::Transient, iotsaStatus.wifiEnabled ? "1" : "0");
 #ifdef IOTSA_WITH_BLE
-    ctx.showButton("bleDisabled", iotsaController.bleRadioWanted() ? "Disable BLE radio" : "Enable BLE radio", iotsaController.bleRadioWanted() ? "1" : "0");
+    ctx.showButton("bleDisabled", iotsaController.bleRadioWanted() ? "Disable BLE radio" : "Enable BLE radio", IotsaWebContext::Transient, iotsaController.bleRadioWanted() ? "1" : "0");
 #endif
     {
       IotsaWebContext::Form form(ctx, "Request", "Mode after the next reboot");
       int requested = int(iotsaController.requestedMode());
-      ctx.showChoice("Mode", "requestedMode", requested, requestableModeNames, _otaAvailable() ? 3 : 2, IotsaWebContext::Live);
+      ctx.showChoice("Mode", "requestedMode", requested, requestableModeNames, _otaAvailable() ? 3 : 2, IotsaWebContext::Transient);
     }
     {
       IotsaWebContext::Form form(ctx, "", "Factory reset");
-      ctx.showConfirmedButton("factoryReset", "Factory reset and clear all files");
+      ctx.showConfirmedButton("factoryReset", "Factory reset and clear all files", IotsaWebContext::Transient);
     }
   } else {
     {
       IotsaWebContext::Form form(ctx, "Save", "Debug logging");
-      ctx.showCheckbox("Debug logging", "debugLog", iotsaLogDebugEnabled);
+      ctx.showCheckbox("Debug logging", "debugLog", iotsaLogDebugEnabled, IotsaWebContext::Saved);
     }
 #ifndef IOTSA_HAS_SLEEP
     ctx << "<h3>Sleep / wake</h3>\n<p>Not available: this firmware is built without sleep support.</p>\n";
 #else
     IotsaSleepPolicy& sp = iotsaController.sleep();
     IotsaWebContext::Form form(ctx, "Save", "Sleep / wake");
-    ctx.showChoice("Sleep mode", "sleepMode", int(_sleepConfig.mode), sleepModeNames, _IOTSA_SLEEP_MAX);
-    ctx.showField("Sleep duration", "sleepDuration", _sleepConfig.sleepDuration, IotsaWebContext::Config, "ms");
-    ctx.showField("Wake duration", "wakeDuration", _sleepConfig.wakeDuration, IotsaWebContext::Config, "ms");
-    ctx.showField("Extra wake after activity", "activityExtraWakeDuration", sp.activityExtraWakeDuration, IotsaWebContext::Config, "ms");
-    ctx.showField("Extra wake after power-on or reset", "bootExtraWakeDuration", _sleepConfig.bootExtraWakeDuration, IotsaWebContext::Config, "ms");
-    ctx.showCheckbox("Don't sleep while WiFi is active", "disableSleepOnWiFi", _sleepConfig.disableSleepOnWiFi);
-    ctx.showCheckbox("Disable WiFi before sleeping", "disableWiFiOnSleep", _sleepConfig.disableWiFiOnSleep);
-    ctx.showCheckbox("Don't sleep on USB power", "disableSleepOnUSBPower", _sleepConfig.disableSleepOnUSBPower);
+    ctx.showChoice("Sleep mode", "sleepMode", int(_sleepConfig.mode), sleepModeNames, _IOTSA_SLEEP_MAX, IotsaWebContext::Saved);
+    ctx.showField("Sleep duration", "sleepDuration", _sleepConfig.sleepDuration, IotsaWebContext::Saved, "ms");
+    ctx.showField("Wake duration", "wakeDuration", _sleepConfig.wakeDuration, IotsaWebContext::Saved, "ms");
+    ctx.showField("Extra wake after activity", "activityExtraWakeDuration", sp.activityExtraWakeDuration, IotsaWebContext::Saved, "ms");
+    ctx.showField("Extra wake after power-on or reset", "bootExtraWakeDuration", _sleepConfig.bootExtraWakeDuration, IotsaWebContext::Saved, "ms");
+    ctx.showCheckbox("Don't sleep while WiFi is active", "disableSleepOnWiFi", _sleepConfig.disableSleepOnWiFi, IotsaWebContext::Saved);
+    ctx.showCheckbox("Disable WiFi before sleeping", "disableWiFiOnSleep", _sleepConfig.disableWiFiOnSleep, IotsaWebContext::Saved);
+    ctx.showCheckbox("Don't sleep on USB power", "disableSleepOnUSBPower", _sleepConfig.disableSleepOnUSBPower, IotsaWebContext::Saved);
 #ifdef ESP32
-    ctx.showField("CPU frequency on boot", "cpuFrequencyBoot", _cpuFrequencyBoot, IotsaWebContext::Config, "MHz, 0: unchanged");
-    ctx.showField("CPU frequency on first sleep", "cpuFrequencySleep", _cpuFrequencySleep, IotsaWebContext::Config, "MHz, 0: unchanged");
-    ctx.showField("Current CPU frequency", "cpuFrequency", getCpuFrequencyMhz(), IotsaWebContext::Live, "MHz");
+    ctx.showField("CPU frequency on boot", "cpuFrequencyBoot", _cpuFrequencyBoot, IotsaWebContext::Saved, "MHz, 0: unchanged");
+    ctx.showField("CPU frequency on first sleep", "cpuFrequencySleep", _cpuFrequencySleep, IotsaWebContext::Saved, "MHz, 0: unchanged");
+    ctx.showField("Current CPU frequency", "cpuFrequency", getCpuFrequencyMhz(), IotsaWebContext::Transient, "MHz");
 #endif
 #endif // IOTSA_HAS_SLEEP
   }

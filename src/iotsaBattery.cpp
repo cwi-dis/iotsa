@@ -14,17 +14,17 @@ static const uint32_t VOLTAGE_READ_INTERVAL_MS = 5000;
 
 #ifdef IOTSA_WITH_WEB
 void IotsaBatteryMod::formHandler_args(IotsaWebContext& ctx) {
-  if (pinVBat >= 0) ctx.arg("correctionVBat", correctionVBat);
+  if (pinVBat >= 0) ctx.arg("correctionVBat", correctionVBat, IotsaWebContext::Saved);
 }
 
 void IotsaBatteryMod::formHandler_fields(IotsaWebContext& ctx) {
-  if (ctx.section == IotsaWebContext::Everyday) {
+  if (ctx.includesEveryday()) {
     _readVoltages();
     if (pinVBat >= 0) ctx.showStatus("Battery level", "levelVBat", String(levelVBat) + "%");
     if (pinVUSB >= 0) ctx.showStatus("USB voltage level", "levelVUSB", String(levelVUSB) + "%");
   } else if (pinVBat >= 0) {
     IotsaWebContext::Form form(ctx);
-    ctx.showField("Battery voltage correction factor", "correctionVBat", correctionVBat);
+    ctx.showField("Battery voltage correction factor", "correctionVBat", correctionVBat, IotsaWebContext::Saved);
   }
 }
 

@@ -4,13 +4,13 @@
 
 #ifdef IOTSA_WITH_WEB
 void IotsaNothingMod::formHandler_args(IotsaWebContext& ctx) {
-  ctx.arg("argument", argument);
+  ctx.arg("argument", argument, IotsaWebContext::Saved);
 }
 
 void IotsaNothingMod::formHandler_fields(IotsaWebContext& ctx) {
-  if (ctx.section == IotsaWebContext::Configuration) {
+  if (ctx.includesSettings()) {
     IotsaWebContext::Form form(ctx);
-    ctx.showField("Argument", "argument", argument);
+    ctx.showField("Argument", "argument", argument, IotsaWebContext::Saved);
   }
 }
 

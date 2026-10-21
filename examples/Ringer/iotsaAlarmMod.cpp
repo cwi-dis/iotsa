@@ -55,22 +55,22 @@ bool IotsaAlarmMod::getHandler(const char *path, JsonObject& reply) {
 #ifdef IOTSA_WITH_WEB
 // Ringing happens now: Ring is an action, the duration its parameter.
 void IotsaAlarmMod::formHandler_args(IotsaWebContext& ctx) {
-  if (ctx.argAction("ring")) {
+  if (ctx.argAction("ring", IotsaWebContext::Transient)) {
     int dur = 10;
-    ctx.arg("alarm", dur, IotsaWebContext::Live);
+    ctx.arg("alarm", dur, IotsaWebContext::Transient);
     _ring(dur);
   }
-  if (ctx.argAction("stop")) _ring(0);
+  if (ctx.argAction("stop", IotsaWebContext::Transient)) _ring(0);
 }
 
 void IotsaAlarmMod::formHandler_fields(IotsaWebContext& ctx) {
-  if (ctx.section != IotsaWebContext::Everyday) return;
+  if (!ctx.includesEveryday()) return;
   ctx.showStatus("Alarm", "alarm", alarmDuration ? "ringing" : "off");
   {
     IotsaWebContext::Form form(ctx, "Ring", "", "ring");
-    ctx.showField("Duration", "alarm", 10, IotsaWebContext::Live, "times 0.1 second");
+    ctx.showField("Duration", "alarm", 10, IotsaWebContext::Transient, "times 0.1 second");
   }
-  if (alarmDuration) ctx.showButton("stop", "Stop");
+  if (alarmDuration) ctx.showButton("stop", "Stop", IotsaWebContext::Transient);
 }
 
 // The trigger, /ring: a plain URL that rings right away, for curl or another
@@ -79,7 +79,7 @@ void IotsaAlarmMod::formHandler_fields(IotsaWebContext& ctx) {
 // pressed (ring=1 in the URL). The trigger needs no such thing.
 void IotsaAlarmMod::ringTrigger(IotsaWebContext& ctx) {
   int dur = 10;
-  ctx.arg("alarm", dur, IotsaWebContext::Live);
+  ctx.arg("alarm", dur, IotsaWebContext::Transient);
   _ring(dur);
   ctx.feedback("Ringing.");
 }

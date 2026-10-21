@@ -46,17 +46,17 @@ void IotsaRequest::configSave(IotsaConfigFileSave& cf, const String& f_name) {
 
 #ifdef IOTSA_WITH_WEB
 void IotsaRequest::formHandler_args(IotsaWebContext& ctx) {
-  ctx.arg("url", url);
-  ctx.argPassword(SSL_INFO_NAME, sslInfo, IotsaWebContext::Config, false, true);
-  ctx.argPassword("credentials", credentials, IotsaWebContext::Config, false, true);
-  ctx.argPassword("token", token, IotsaWebContext::Config, false, true);
+  ctx.arg("url", url, IotsaWebContext::Saved);
+  ctx.argPassword(SSL_INFO_NAME, sslInfo, IotsaWebContext::Saved, false, true);
+  ctx.argPassword("credentials", credentials, IotsaWebContext::Saved, false, true);
+  ctx.argPassword("token", token, IotsaWebContext::Saved, false, true);
 }
 
 void IotsaRequest::formHandler_fields(IotsaWebContext& ctx) {
-  ctx.showField("URL", "url", url);
-  ctx.showTextarea("Root CA certificate (https only, PEM)", SSL_INFO_NAME, IotsaWebContext::Config, sslInfo == "" ? "not set" : "set, empty: unchanged", sslInfo != "");
-  ctx.showPassword("Credentials (user:pass)", "credentials", IotsaWebContext::Config, credentials == "" ? "optional" : "set, empty: unchanged", credentials != "");
-  ctx.showPassword("Bearer token", "token", IotsaWebContext::Config, token == "" ? "optional" : "set, empty: unchanged", token != "");
+  ctx.showField("URL", "url", url, IotsaWebContext::Saved);
+  ctx.showTextarea("Root CA certificate (https only, PEM)", SSL_INFO_NAME, IotsaWebContext::Saved, sslInfo == "" ? "not set" : "set, empty: unchanged", sslInfo != "");
+  ctx.showPassword("Credentials (user:pass)", "credentials", IotsaWebContext::Saved, credentials == "" ? "optional" : "set, empty: unchanged", credentials != "");
+  ctx.showPassword("Bearer token", "token", IotsaWebContext::Saved, token == "" ? "optional" : "set, empty: unchanged", token != "");
 }
 
 void IotsaRequest::formHandler_row(IotsaWebContext& ctx) {

@@ -107,9 +107,9 @@ public:
   bool hasApi() const override { return true; }
 #ifdef IOTSA_WITH_WEB
   // The default page (cwi-dis/iotsa#183): formHandler_args() handles the
-  // arguments, the framework saves the configuration when a Config field
-  // changed, then formHandler_fields() is called once per section (day-to-day,
-  // configuration) to fill the page. Override webHandler() itself only for a
+  // arguments, the framework saves the configuration when a Saved field
+  // changed, then formHandler_fields() is called once per part (everyday,
+  // settings) to fill the page. Override webHandler() itself only for a
   // page that doesn't fit (streaming, a text interface).
   void webHandler() override;
   virtual String webTitle() { return name; }
@@ -120,7 +120,7 @@ protected:
 #ifdef IOTSA_WITH_WEB
   // A trigger (cwi-dis/iotsa#183): a plain URL that does something right away,
   // for curl or another device, like GET /ring?alarm=20. The handler reads the
-  // arguments with ctx.arg() (kind Live), as formHandler_args() does. Every
+  // arguments with ctx.arg() (Transient), as formHandler_args() does. Every
   // call is a change, so the right is checked before the handler runs: the
   // REST rule for the module's API path, or the named right if given. The
   // answer is plain text: the ctx.feedback() lines, or "OK"; 400 with the

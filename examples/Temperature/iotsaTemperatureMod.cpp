@@ -53,7 +53,7 @@ bool IotsaTemperatureMod::getHandler(const char *path, JsonObject& reply) {
 
 // The page only shows the values, so there is only an everyday part.
 void IotsaTemperatureMod::formHandler_fields(IotsaWebContext& ctx) {
-  if (ctx.section != IotsaWebContext::Everyday) return;
+  if (!ctx.includesEveryday()) return;
   _update();
   if (isnan(temperature)) {
     ctx.showStatus("Temperature", "temperature", "no reading, check the sensor");

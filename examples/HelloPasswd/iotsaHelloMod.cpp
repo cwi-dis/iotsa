@@ -74,18 +74,19 @@ bool IotsaHelloMod::getHandler(const char *path, JsonObject& reply) {
 // and store or use them. Similar to putHandler.
 void IotsaHelloMod::formHandler_args(IotsaWebContext& ctx) {
   // Config: when the name changes, the framework calls configSave().
-  ctx.arg("personName", personName, IotsaWebContext::Config);
+  ctx.arg("personName", personName, IotsaWebContext::Saved);
 }
 
 // formHandler_fields() writes the page body, you implement here what values
 // you want to send back to the user. Similar to getHandler.
 // Called twice: once for the everyday part of the page, once for the
-// configuration part (ctx.section). Hello only has an everyday part.
+// settings (ctx.includesEveryday(), ctx.includesSettings()). Hello only
+// has an everyday part.
 void IotsaHelloMod::formHandler_fields(IotsaWebContext& ctx) {
-  if (ctx.section != IotsaWebContext::Everyday) return;
+  if (!ctx.includesEveryday()) return;
   ctx << "<p>Hello, " + htmlEncode(personName) + "!</p>\n";
   IotsaWebContext::Form form(ctx, "Set");
-  ctx.showField("Name", "personName", personName, IotsaWebContext::Config);
+  ctx.showField("Name", "personName", personName, IotsaWebContext::Saved);
 }
 #endif // IOTSA_WITH_WEB
 

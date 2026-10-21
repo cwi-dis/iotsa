@@ -48,14 +48,14 @@ bool IotsaStaticTokenObject::getHandler(JsonObject& reply) {
 
 #ifdef IOTSA_WITH_WEB
 void IotsaStaticTokenObject::formHandler_args(IotsaWebContext& ctx) {
-  ctx.arg("token", token);
-  ctx.arg("rights", rights);
+  ctx.arg("token", token, IotsaWebContext::Saved);
+  ctx.arg("rights", rights, IotsaWebContext::Saved);
 }
 
 // The fields for adding a new token.
 void IotsaStaticTokenObject::formHandler_fields(IotsaWebContext& ctx) {
-  ctx.showField("Token", "token", token);
-  ctx.showField("Rights", "rights", rights, IotsaWebContext::Config, "* for all, or /right/right/");
+  ctx.showField("Token", "token", token, IotsaWebContext::Saved);
+  ctx.showField("Rights", "rights", rights, IotsaWebContext::Saved, "* for all, or /right/right/");
 }
 
 // One row of the table of existing tokens. The token is a secret: the page
@@ -73,7 +73,7 @@ IotsaStaticTokenMod::IotsaStaticTokenMod(IotsaApplication &_app, IotsaAuthentica
 :	IotsaAuthMod(_app),
 	chain(_chain)
 #ifdef IOTSA_WITH_WEB
-  , webTokens(tokens, IotsaWebCollection::Add | IotsaWebCollection::Remove, IotsaWebCollection::Table, IotsaWebContext::Config,
+  , webTokens(tokens, IotsaWebCollection::Add | IotsaWebCollection::Remove, IotsaWebCollection::Table, IotsaWebContext::Saved,
       nullptr,
       // Refuse a new token that is empty.
       [](IotsaStaticTokenObject& t, IotsaWebContext& ctx) {
@@ -165,7 +165,7 @@ void IotsaStaticTokenMod::formHandler_args(IotsaWebContext& ctx) {
 
 void IotsaStaticTokenMod::formHandler_fields(IotsaWebContext& ctx) {
   // The tokens are configuration, there is no everyday part.
-  if (ctx.section != IotsaWebContext::Configuration) return;
+  if (!ctx.includesSettings()) return;
   IotsaWebContext::Scope s(ctx, "tokens");
   webTokens.formHandler_fields(ctx);
 }

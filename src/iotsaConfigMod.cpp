@@ -55,30 +55,30 @@ static const char *_certTail = "-----END CERTIFICATE-----";
 #ifdef IOTSA_WITH_WEB
 void IotsaConfigMod::formHandler_args(IotsaWebContext& ctx) {
   ctx.argsNeedRight("config");
-  if (ctx.arg("hostName", iotsaConfig.hostName, IotsaWebContext::ConfigModeOnly)) {
+  if (ctx.arg("hostName", iotsaConfig.hostName, IotsaWebContext::SavedInConfigMode)) {
     iotsaController.requestReboot(IotsaController::REBOOT_DELAY_HTTP_MS);
     ctx.feedback("Rebooting to change the hostname.");
   }
   uint32_t timeout = iotsaController.modeTimeout();
-  if (ctx.arg("modeTimeout", timeout, IotsaWebContext::ConfigModeOnly)) {
+  if (ctx.arg("modeTimeout", timeout, IotsaWebContext::SavedInConfigMode)) {
     iotsaController.setModeTimeout(timeout);
   }
-  ctx.argCheckbox("wifiDisabledOnBoot", iotsaConfig.wifiDisabledOnBoot, IotsaWebContext::ConfigModeOnly);
+  ctx.argCheckbox("wifiDisabledOnBoot", iotsaConfig.wifiDisabledOnBoot, IotsaWebContext::SavedInConfigMode);
 #ifdef IOTSA_WITH_BLE
-  ctx.argCheckbox("bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot, IotsaWebContext::ConfigModeOnly);
+  ctx.argCheckbox("bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot, IotsaWebContext::SavedInConfigMode);
 #endif
 #ifdef IOTSA_WITH_HTTPS
   // The text fields aren't settings themselves: a valid key plus a valid
   // certificate are, and configSave() saves them only together.
-  IotsaWebContext::Change upload(ctx, "uploadHttps", IotsaWebContext::ConfigModeOnly);
+  IotsaWebContext::Change upload(ctx, "uploadHttps", IotsaWebContext::SavedInConfigMode);
   if (upload) {
     String pem;
-    if (ctx.arg("httpsKey", pem)) {
+    if (ctx.arg("httpsKey", pem, IotsaWebContext::Saved)) {
       const char *err = _pemToDer(pem, _keyHead, _keyTail, newKey, newKeyLength);
       if (err) ctx.error(String("HTTPS private key: ") + err);
     }
     pem = "";
-    if (ctx.arg("httpsCertificate", pem)) {
+    if (ctx.arg("httpsCertificate", pem, IotsaWebContext::Saved)) {
       const char *err = _pemToDer(pem, _certHead, _certTail, newCertificate, newCertificateLength);
       if (err) ctx.error(String("HTTPS certificate: ") + err);
     }
@@ -92,30 +92,30 @@ void IotsaConfigMod::formHandler_args(IotsaWebContext& ctx) {
 }
 
 void IotsaConfigMod::formHandler_fields(IotsaWebContext& ctx) {
-  if (ctx.section == IotsaWebContext::Everyday) {
+  if (ctx.includesEveryday()) {
     ctx.showStatus(IOTSA_FS_NAME " usage", "", String(iotsaFSUsedBytes()) + " of " + String(iotsaFSTotalBytes()) + " bytes");
 #ifdef IOTSA_WITH_HTTPS
     ctx.showStatus("HTTPS certificate", "defaultCert", iotsaConfig.usingDefaultCertificate() ? "factory-installed (not very secure)" : "uploaded");
 #endif
     return;
   }
-  if (!ctx.editable(IotsaWebContext::ConfigModeOnly)) {
+  if (!ctx.editable(IotsaWebContext::SavedInConfigMode)) {
     ctx << "<p>These settings can only be changed in configuration mode, see <a href='/runmode'>/runmode</a>.</p>\n";
   }
   {
     IotsaWebContext::Form form(ctx);
-    ctx.showField("Hostname", "hostName", iotsaConfig.hostName, IotsaWebContext::ConfigModeOnly, "changing it reboots");
-    ctx.showField("Configuration mode timeout", "modeTimeout", iotsaController.modeTimeout(), IotsaWebContext::ConfigModeOnly, "seconds");
-    ctx.showCheckbox("WiFi disabled on boot", "wifiDisabledOnBoot", iotsaConfig.wifiDisabledOnBoot, IotsaWebContext::ConfigModeOnly);
+    ctx.showField("Hostname", "hostName", iotsaConfig.hostName, IotsaWebContext::SavedInConfigMode, "changing it reboots");
+    ctx.showField("Configuration mode timeout", "modeTimeout", iotsaController.modeTimeout(), IotsaWebContext::SavedInConfigMode, "seconds");
+    ctx.showCheckbox("WiFi disabled on boot", "wifiDisabledOnBoot", iotsaConfig.wifiDisabledOnBoot, IotsaWebContext::SavedInConfigMode);
 #ifdef IOTSA_WITH_BLE
-    ctx.showCheckbox("BLE disabled on boot", "bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot, IotsaWebContext::ConfigModeOnly);
+    ctx.showCheckbox("BLE disabled on boot", "bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot, IotsaWebContext::SavedInConfigMode);
 #endif
   }
 #ifdef IOTSA_WITH_HTTPS
   {
     IotsaWebContext::Form form(ctx, "Upload", "HTTPS certificate", "uploadHttps");
-    ctx.showTextarea("Private key (PEM)", "httpsKey", IotsaWebContext::ConfigModeOnly, "both are needed");
-    ctx.showTextarea("Certificate (PEM)", "httpsCertificate", IotsaWebContext::ConfigModeOnly);
+    ctx.showTextarea("Private key (PEM)", "httpsKey", IotsaWebContext::SavedInConfigMode, "both are needed");
+    ctx.showTextarea("Certificate (PEM)", "httpsCertificate", IotsaWebContext::SavedInConfigMode);
   }
 #endif
 }

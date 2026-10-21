@@ -28,7 +28,7 @@ bool IotsaWebContext::_present(const char *name, String& value) {
   return true;
 }
 
-bool IotsaWebContext::_mayChange(FieldKind kind) {
+bool IotsaWebContext::_mayChange(Persistence persistence) {
   if (responded) return false;
   // A Change's parameters: the Change itself was checked.
   if (_inChange) return true;
@@ -45,7 +45,7 @@ bool IotsaWebContext::_mayChange(FieldKind kind) {
     responded = true;
     return false;
   }
-  if (!editable(kind)) {
+  if (!editable(persistence)) {
     if (!refusedConfigMode) error("Some settings can only be changed in configuration mode.");
     refusedConfigMode = true;
     return false;
@@ -63,37 +63,37 @@ void IotsaWebContext::_setRule(AuthRule rule, const char *right) {
   if (_authOk || !_authChecked) _authChecked = false;
 }
 
-void IotsaWebContext::_changed(FieldKind kind) {
+void IotsaWebContext::_changed(Persistence persistence) {
   // A Change's parameters only read: Change::done() marks.
   if (_inChange) return;
-  _mark(kind);
+  _mark(persistence);
 }
 
-void IotsaWebContext::_mark(FieldKind kind) {
-  if (kind == Live) {
+void IotsaWebContext::_mark(Persistence persistence) {
+  if (persistence == Transient) {
     stateChanged = true;
   } else {
     configChanged = true;
   }
 }
 
-bool IotsaWebContext::argPassword(const char *name, String& field, FieldKind kind, bool allowEmpty, bool clearable) {
+bool IotsaWebContext::argPassword(const char *name, String& field, Persistence persistence, bool allowEmpty, bool clearable) {
   String value;
   if (clearable && _present((String(name) + ".clear").c_str(), value) && value == "1") {
-    if (field == "" || !_mayChange(kind)) return false;
+    if (field == "" || !_mayChange(persistence)) return false;
     field = "";
-    _changed(kind);
+    _changed(persistence);
     return true;
   }
   if (!_present(name, value)) return false;
   if ((value == "" && !allowEmpty) || value == field) return false;
-  if (!_mayChange(kind)) return false;
+  if (!_mayChange(persistence)) return false;
   field = value;
-  _changed(kind);
+  _changed(persistence);
   return true;
 }
 
-bool IotsaWebContext::argChoice(const char *name, int& field, int count, FieldKind kind) {
+bool IotsaWebContext::argChoice(const char *name, int& field, int count, Persistence persistence) {
   String value;
   if (!_present(name, value)) return false;
   int newValue;
@@ -102,17 +102,17 @@ bool IotsaWebContext::argChoice(const char *name, int& field, int count, FieldKi
     return false;
   }
   if (newValue == field) return false;
-  if (!_mayChange(kind)) return false;
+  if (!_mayChange(persistence)) return false;
   field = newValue;
-  _changed(kind);
+  _changed(persistence);
   return true;
 }
 
-bool IotsaWebContext::argAction(const char *name, FieldKind kind) {
+bool IotsaWebContext::argAction(const char *name, Persistence persistence) {
   String value;
   if (!_present(name, value)) return false;
-  if (!_mayChange(kind)) return false;
-  _changed(kind);
+  if (!_mayChange(persistence)) return false;
+  _changed(persistence);
   return true;
 }
 
@@ -124,19 +124,19 @@ bool IotsaWebContext::argConfirmedAction(const char *name) {
     error("Not done: tick \"I am sure\" first.");
     return false;
   }
-  if (!_mayChange(Live)) return false;
+  if (!_mayChange(Transient)) return false;
   stateChanged = true;
   return true;
 }
 
-IotsaWebContext::Change::Change(IotsaWebContext& ctx, const char *button, FieldKind kind)
+IotsaWebContext::Change::Change(IotsaWebContext& ctx, const char *button, Persistence persistence)
 : _ctx(ctx),
-  _kind(kind),
+  _persistence(persistence),
   _outer(ctx._inChange)
 {
   String value;
   if (!_ctx._present(button, value)) return;
-  if (!_ctx._mayChange(kind)) return;
+  if (!_ctx._mayChange(persistence)) return;
   _active = true;
   _ctx._inChange = true;
 }
@@ -146,7 +146,7 @@ IotsaWebContext::Change::~Change() {
 }
 
 void IotsaWebContext::Change::done() {
-  if (_active && !_outer) _ctx._mark(_kind);
+  if (_active && !_outer) _ctx._mark(_persistence);
 }
 
 void IotsaWebContext::feedback(const String& text) {
@@ -226,9 +226,8 @@ String IotsaWebContext::_scoped(const char *name) const {
 // Get side
 //
 
-bool IotsaWebContext::editable(FieldKind kind) const {
-  if (kind == ConfigModeOnly) return iotsaConfigSettingsWritable();
-  if (kind == ConfigModeStrict) return iotsaController.inConfigurationMode();
+bool IotsaWebContext::editable(Persistence persistence) const {
+  if (persistence == SavedInConfigMode) return iotsaConfigSettingsWritable();
   return true;
 }
 
@@ -314,12 +313,12 @@ void IotsaWebContext::showStatus(const IotsaWebLabel& label, const char *name, c
   _out() += line;
 }
 
-void IotsaWebContext::showField(const IotsaWebLabel& label, const char *name, const String& value, FieldKind kind, const char *hint) {
-  _field(label, name, value, "text", kind, hint);
+void IotsaWebContext::showField(const IotsaWebLabel& label, const char *name, const String& value, Persistence persistence, const char *hint) {
+  _field(label, name, value, "text", persistence, hint);
 }
 
-void IotsaWebContext::_field(const IotsaWebLabel& label, const char *name, const String& value, const char *type, FieldKind kind, const char *hint) {
-  if (!editable(kind)) {
+void IotsaWebContext::_field(const IotsaWebLabel& label, const char *name, const String& value, const char *type, Persistence persistence, const char *hint) {
+  if (!editable(persistence)) {
     showStatus(label, name, value);
     return;
   }
@@ -331,8 +330,8 @@ void IotsaWebContext::_field(const IotsaWebLabel& label, const char *name, const
   _out() += line;
 }
 
-void IotsaWebContext::showCheckbox(const IotsaWebLabel& label, const char *name, bool value, FieldKind kind, const char *hint) {
-  if (!editable(kind)) {
+void IotsaWebContext::showCheckbox(const IotsaWebLabel& label, const char *name, bool value, Persistence persistence, const char *hint) {
+  if (!editable(persistence)) {
     showStatus(label, name, value ? "yes" : "no");
     return;
   }
@@ -352,8 +351,8 @@ String IotsaWebContext::_clearBox(const char *name) {
   return "<div><label><input type='checkbox' name='" + _scoped(name) + ".clear' value='1'> Clear</label></div>\n";
 }
 
-void IotsaWebContext::showPassword(const IotsaWebLabel& label, const char *name, FieldKind kind, const char *hint, bool clearable) {
-  if (!editable(kind)) return;
+void IotsaWebContext::showPassword(const IotsaWebLabel& label, const char *name, Persistence persistence, const char *hint, bool clearable) {
+  if (!editable(persistence)) return;
   _markEditable(true);
   String line = "<div><label>" + IotsaBaseModule::htmlEncode(label.text) + ": ";
   line += "<input type='password' name='" + _scoped(name) + "' value=''>";
@@ -363,8 +362,8 @@ void IotsaWebContext::showPassword(const IotsaWebLabel& label, const char *name,
   _out() += line;
 }
 
-void IotsaWebContext::showTextarea(const IotsaWebLabel& label, const char *name, FieldKind kind, const char *hint, bool clearable) {
-  if (!editable(kind)) return;
+void IotsaWebContext::showTextarea(const IotsaWebLabel& label, const char *name, Persistence persistence, const char *hint, bool clearable) {
+  if (!editable(persistence)) return;
   _markEditable(true);
   String line = "<div><label>" + IotsaBaseModule::htmlEncode(label.text) + ":";
   if (hint) line += String(" <small>(") + IotsaBaseModule::htmlEncode(hint) + ")</small>";
@@ -373,8 +372,8 @@ void IotsaWebContext::showTextarea(const IotsaWebLabel& label, const char *name,
   _out() += line;
 }
 
-void IotsaWebContext::showChoice(const IotsaWebLabel& label, const char *name, int value, const char * const *options, int count, FieldKind kind) {
-  if (!editable(kind)) {
+void IotsaWebContext::showChoice(const IotsaWebLabel& label, const char *name, int value, const char * const *options, int count, Persistence persistence) {
+  if (!editable(persistence)) {
     showStatus(label, name, (value >= 0 && value < count) ? options[value] : String(value));
     return;
   }
@@ -387,8 +386,8 @@ void IotsaWebContext::showChoice(const IotsaWebLabel& label, const char *name, i
   _out() += line;
 }
 
-void IotsaWebContext::showButton(const char *name, const IotsaWebLabel& label, const char *value, FieldKind kind) {
-  if (!editable(kind)) return;
+void IotsaWebContext::showButton(const char *name, const IotsaWebLabel& label, Persistence persistence, const char *value) {
+  if (!editable(persistence)) return;
   String html = "<button type='submit' name='" + _scoped(name) + "' value='" + IotsaBaseModule::htmlEncode(value) + "'>" + IotsaBaseModule::htmlEncode(label.text) + "</button>";
   if (_forms.empty()) {
     _out() += "<form method='post' class='button'>" + _formHidden + html + "</form>\n";
@@ -398,8 +397,8 @@ void IotsaWebContext::showButton(const char *name, const IotsaWebLabel& label, c
   }
 }
 
-void IotsaWebContext::showConfirmedButton(const char *name, const IotsaWebLabel& label, FieldKind kind) {
-  if (!editable(kind)) return;
+void IotsaWebContext::showConfirmedButton(const char *name, const IotsaWebLabel& label, Persistence persistence) {
+  if (!editable(persistence)) return;
   String html = "<button type='submit' name='" + _scoped(name) + "' value='1'>" + IotsaBaseModule::htmlEncode(label.text) + "</button>";
   html += " <label><input type='checkbox' name='" + _scoped(name) + ".sure' value='1'> I am sure</label>";
   if (_forms.empty()) {
@@ -426,7 +425,7 @@ String IotsaWebContext::takeOutput() {
   return rv;
 }
 
-void IotsaWebContext::sendPage(const String& title, const String& everyday, const String& configuration) {
+void IotsaWebContext::sendPage(const String& title, const String& everyday, const String& settings) {
   String page = "<!DOCTYPE html>\n<html><head><meta charset='utf-8'>\n";
   page += "<meta name='viewport' content='width=device-width, initial-scale=1'>\n";
   page += "<title>" + IotsaBaseModule::htmlEncode(title) + "</title>\n";
@@ -440,9 +439,9 @@ void IotsaWebContext::sendPage(const String& title, const String& everyday, cons
     }
   }
   page += everyday;
-  if (configuration.length() > 0) {
-    page += "<h2>Configuration</h2>\n";
-    page += configuration;
+  if (settings.length() > 0) {
+    page += "<h2>Settings</h2>\n";
+    page += settings;
   }
   page += "<p><a href='/'>Home</a></p>\n</body></html>\n";
   _server->send(200, "text/html", page);
@@ -483,7 +482,7 @@ void IotsaWebCollection::formHandler_args(IotsaWebContext& ctx) {
   if (_ops & Remove) {
     for (int i = 0; i < size(); i++) {
       IotsaWebContext::Scope s(ctx, key(i));
-      IotsaWebContext::Change change(ctx, "remove", _kind);
+      IotsaWebContext::Change change(ctx, "remove", _persistence);
       if (change) {
         // The indices shift: nothing else in this request.
         if (remove(i)) {
@@ -496,7 +495,7 @@ void IotsaWebCollection::formHandler_args(IotsaWebContext& ctx) {
   }
   if (_ops & Add) {
     IotsaWebContext::Scope s(ctx, "new");
-    IotsaWebContext::Change change(ctx, "add", _kind);
+    IotsaWebContext::Change change(ctx, "add", _persistence);
     if (change) {
       withExample([&](IotsaModObject& obj) {
         obj.formHandler_args(ctx);
@@ -518,7 +517,7 @@ void IotsaWebCollection::formHandler_args(IotsaWebContext& ctx) {
 
 void IotsaWebCollection::formHandler_fields(IotsaWebContext& ctx) {
   IotsaWebContext::FormHidden version(ctx, "version", String(_currentVersion()));
-  bool removable = (_ops & Remove) && ctx.editable(_kind);
+  bool removable = (_ops & Remove) && ctx.editable(_persistence);
   if (_presentation == Table) {
     ctx << "<table>\n<tr>";
     ctx._headerRow = true;
@@ -532,7 +531,7 @@ void IotsaWebCollection::formHandler_fields(IotsaWebContext& ctx) {
       at(i)->formHandler_row(ctx);
       if (removable) {
         ctx << "<td>";
-        ctx.showButton("remove", "Remove", "1", _kind);
+        ctx.showButton("remove", "Remove", _persistence);
         ctx << "</td>";
       }
       ctx << "</tr>\n";
@@ -546,10 +545,10 @@ void IotsaWebCollection::formHandler_fields(IotsaWebContext& ctx) {
         IotsaWebContext::Form form(ctx, "Change", k);
         at(i)->formHandler_fields(ctx);
       }
-      if (removable) ctx.showButton("remove", "Remove", "1", _kind);
+      if (removable) ctx.showButton("remove", "Remove", _persistence);
     }
   }
-  if ((_ops & Add) && ctx.editable(_kind)) {
+  if ((_ops & Add) && ctx.editable(_persistence)) {
     IotsaWebContext::Scope s(ctx, "new");
     IotsaWebContext::Form form(ctx, "Add", "Add", "add");
     withExample([&](IotsaModObject& obj) { obj.formHandler_fields(ctx); });

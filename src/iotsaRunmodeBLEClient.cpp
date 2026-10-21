@@ -98,26 +98,26 @@ static void _queued(IotsaWebContext& ctx, bool ok) {
 
 void IotsaRunmodeBLEClient::formHandler_args(IotsaWebContext& ctx) {
   IotsaBLEClientDevice::formHandler_args(ctx);
-  if (ctx.argAction("identify")) _queued(ctx, queueIdentify());
-  if (ctx.argAction("reboot")) _queued(ctx, queueReboot());
-  if (ctx.argAction("promoteMode")) _queued(ctx, queuePromoteMode());
-  if (ctx.argAction("enableWifi")) _queued(ctx, queueSetWifiDisabled(false));
-  if (ctx.argAction("disableWifi")) _queued(ctx, queueSetWifiDisabled(true));
+  if (ctx.argAction("identify", IotsaWebContext::Transient)) _queued(ctx, queueIdentify());
+  if (ctx.argAction("reboot", IotsaWebContext::Transient)) _queued(ctx, queueReboot());
+  if (ctx.argAction("promoteMode", IotsaWebContext::Transient)) _queued(ctx, queuePromoteMode());
+  if (ctx.argAction("enableWifi", IotsaWebContext::Transient)) _queued(ctx, queueSetWifiDisabled(false));
+  if (ctx.argAction("disableWifi", IotsaWebContext::Transient)) _queued(ctx, queueSetWifiDisabled(true));
 }
 
 void IotsaRunmodeBLEClient::formHandler_fields(IotsaWebContext& ctx) {
   IotsaBLEClientDevice::formHandler_fields(ctx);
-  if (ctx.section != IotsaWebContext::Everyday) return;
+  if (!ctx.includesEveryday()) return;
   if (workPending) {
     ctx.showStatus("Command", "", "pending");
   } else if (lastWorkStatus) {
     ctx.showStatus("Last command", "", lastWorkStatus);
   }
-  ctx.showButton("identify", "Identify");
-  ctx.showButton("reboot", "Reboot");
-  ctx.showButton("promoteMode", "Confirm requested mode");
-  ctx.showButton("enableWifi", "Enable WiFi");
-  ctx.showButton("disableWifi", "Disable WiFi");
+  ctx.showButton("identify", "Identify", IotsaWebContext::Transient);
+  ctx.showButton("reboot", "Reboot", IotsaWebContext::Transient);
+  ctx.showButton("promoteMode", "Confirm requested mode", IotsaWebContext::Transient);
+  ctx.showButton("enableWifi", "Enable WiFi", IotsaWebContext::Transient);
+  ctx.showButton("disableWifi", "Disable WiFi", IotsaWebContext::Transient);
 }
 #endif // IOTSA_WITH_WEB
 #endif // IOTSA_WITH_BLE

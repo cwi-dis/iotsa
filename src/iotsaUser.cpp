@@ -18,16 +18,16 @@ void IotsaUser::configSave(IotsaConfigFileSave& cf, const String& f_name) {
 // Who controls the device: configuration mode, as over REST (cwi-dis/iotsa#183).
 // Only a new user (in the add form) has no username yet.
 void IotsaUser::formHandler_args(IotsaWebContext& ctx) {
-  if (username == "") ctx.arg("username", username, IotsaWebContext::ConfigModeOnly);
-  ctx.argPassword("password", password, IotsaWebContext::ConfigModeOnly);
-  ctx.arg("rights", rights, IotsaWebContext::ConfigModeOnly);
+  if (username == "") ctx.arg("username", username, IotsaWebContext::SavedInConfigMode);
+  ctx.argPassword("password", password, IotsaWebContext::SavedInConfigMode);
+  ctx.arg("rights", rights, IotsaWebContext::SavedInConfigMode);
 }
 
 void IotsaUser::formHandler_fields(IotsaWebContext& ctx) {
   // An existing user's username is the heading of its section.
-  if (username == "") ctx.showField("Username", "username", username, IotsaWebContext::ConfigModeOnly);
-  ctx.showPassword("Password", "password", IotsaWebContext::ConfigModeOnly, password == "" ? "" : "empty: unchanged");
-  ctx.showField("Rights", "rights", rights, IotsaWebContext::ConfigModeOnly, "* for all, or /right/right/");
+  if (username == "") ctx.showField("Username", "username", username, IotsaWebContext::SavedInConfigMode);
+  ctx.showPassword("Password", "password", IotsaWebContext::SavedInConfigMode, password == "" ? "" : "empty: unchanged");
+  ctx.showField("Rights", "rights", rights, IotsaWebContext::SavedInConfigMode, "* for all, or /right/right/");
 }
 #endif
 
@@ -58,7 +58,7 @@ IotsaUserMod::IotsaUserMod(IotsaApplication &_app, const char *_defaultUsername,
   defaultUsername(_defaultUsername),
   defaultPassword(_defaultPassword)
 #ifdef IOTSA_WITH_WEB
-  , webUsers(users, IotsaWebCollection::Add | IotsaWebCollection::Remove, IotsaWebCollection::Sections, IotsaWebContext::ConfigModeOnly,
+  , webUsers(users, IotsaWebCollection::Add | IotsaWebCollection::Remove, IotsaWebCollection::Sections, IotsaWebContext::SavedInConfigMode,
       [](IotsaUser& u) { return u.username; },
       [this](IotsaUser& u, IotsaWebContext& ctx) {
         const char *err = _refuseUser(u);
@@ -94,11 +94,11 @@ void IotsaUserMod::formHandler_args(IotsaWebContext& ctx) {
 }
 
 void IotsaUserMod::formHandler_fields(IotsaWebContext& ctx) {
-  if (ctx.section == IotsaWebContext::Everyday) {
+  if (ctx.includesEveryday()) {
     ctx.showStatus("Users", "", users.empty() ? String("none, everything is allowed") : String(users.size()));
     return;
   }
-  if (!ctx.editable(IotsaWebContext::ConfigModeOnly)) {
+  if (!ctx.editable(IotsaWebContext::SavedInConfigMode)) {
     ctx << "<p>Users can only be changed in configuration mode, see <a href='/runmode'>/runmode</a>.</p>\n";
   }
   IotsaWebContext::Scope s(ctx, "users");
