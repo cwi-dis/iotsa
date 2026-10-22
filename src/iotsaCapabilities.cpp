@@ -82,62 +82,6 @@ IotsaCapabilityMod::IotsaCapabilityMod(IotsaApplication &_app, IotsaAuthenticati
 	configLoad();
 }
 
-#ifdef IOTSA_WITH_WEB
-// The trust anchors: only in configuration mode, like users and WiFi.
-void IotsaCapabilityMod::formHandler_args(IotsaWebContext& ctx) {
-  ctx.argsNeedRight("capabilities");
-  ctx.arg("trustedIssuer", trustedIssuer, IotsaWebContext::SavedInConfigMode);
-  ctx.argPassword("issuerKey", issuerKey, IotsaWebContext::SavedInConfigMode);
-}
-
-void IotsaCapabilityMod::formHandler_fields(IotsaWebContext& ctx) {
-  if (!ctx.includesSettings()) return;
-  if (!ctx.editable(IotsaWebContext::SavedInConfigMode)) {
-    ctx << "<p>Issuer and key can only be changed in configuration mode, see <a href='/runmode'>/runmode</a>.</p>\n";
-  }
-  IotsaWebContext::Form form(ctx);
-  ctx.showField("Issuer", "trustedIssuer", trustedIssuer, IotsaWebContext::SavedInConfigMode);
-  ctx.showStatus("Shared key", "has_issuerKey", issuerKey.length() ? "set" : "not set");
-  ctx.showPassword("New shared key", "issuerKey", IotsaWebContext::SavedInConfigMode, "empty: unchanged");
-}
-
-String IotsaCapabilityMod::info() {
-  String message = "<p>Capabilities enabled.";
-  message += " See <a href=\"/capabilities\">/capabilities</a> to change settings.";
-  message += "</p>";
-  return message;
-}
-#endif // IOTSA_WITH_WEB
-
-bool IotsaCapabilityMod::getHandler(const char *path, JsonObject& reply) {
-  if (strcmp(path, "/api/capabilities") != 0) return false;
-  reply["trustedIssuer"] = trustedIssuer;
-  reply["has_issuerKey"] = (issuerKey.length() > 0);
-  return true;
-}
-
-bool IotsaCapabilityMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  if (strcmp(path, "/api/capabilities") != 0) return apiError(404, "not found");
-  if (!iotsaConfigSettingsWritable()) return apiError(409, "not in configuration mode");
-  bool anyChanged = false;
-  JsonObject reqObj = request.as<JsonObject>();
-  if (getFromRequest<const char *>(reqObj, "trustedIssuer", trustedIssuer)) {
-    anyChanged = true;
-  }
-  if (getFromRequest<const char *>(reqObj, "issuerKey", issuerKey)) {
-    anyChanged = true;
-  }
-  if (anyChanged) {
-    configSave();
-    if (changed) *changed = true;
-  }
-  return true;
-}
-
-bool IotsaCapabilityMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  return false;
-}
-
 void IotsaCapabilityMod::setup() {
   configLoad();
 }
@@ -145,22 +89,6 @@ void IotsaCapabilityMod::setup() {
 void IotsaCapabilityMod::lateSetup() {
   api.setup("capabilities", true, true, false);
   name = "capabilities";
-}
-
-void IotsaCapabilityMod::configLoad() {
-  IotsaConfigFileLoad cf("/config/capabilities.cfg");
-  cf.get("issuer", trustedIssuer, "");
-  cf.get("key", issuerKey, "");
-}
-
-void IotsaCapabilityMod::configSave() {
-  IotsaConfigFileSave cf("/config/capabilities.cfg");
-  cf.put("issuer", trustedIssuer);
-  cf.put("key", issuerKey);
-  IotsaSerial.print("Saved capabilities.cfg, issuer=");
-  IotsaSerial.print(trustedIssuer);
-  IotsaSerial.print(", key length=");
-  IotsaSerial.println(issuerKey.length());
 }
 
 void IotsaCapabilityMod::loop() {
@@ -193,6 +121,7 @@ bool IotsaCapabilityMod::allows(const char *right) {
   // If no rights fall back to username/password authentication
   return chain.allows(right);
 }
+
 #ifdef IOTSA_HAS_WEBSERVER
 void IotsaCapabilityMod::loadCapabilitiesFromRequest() {
 
@@ -275,3 +204,75 @@ void IotsaCapabilityMod::loadCapabilitiesFromRequest() {
   capabilities = new IotsaCapability(obj, get, put, post);
 }
 #endif // IOTSA_HAS_WEBSERVER
+
+void IotsaCapabilityMod::configLoad() {
+  IotsaConfigFileLoad cf("/config/capabilities.cfg");
+  cf.get("issuer", trustedIssuer, "");
+  cf.get("key", issuerKey, "");
+}
+
+void IotsaCapabilityMod::configSave() {
+  IotsaConfigFileSave cf("/config/capabilities.cfg");
+  cf.put("issuer", trustedIssuer);
+  cf.put("key", issuerKey);
+  IotsaSerial.print("Saved capabilities.cfg, issuer=");
+  IotsaSerial.print(trustedIssuer);
+  IotsaSerial.print(", key length=");
+  IotsaSerial.println(issuerKey.length());
+}
+
+bool IotsaCapabilityMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
+  if (strcmp(path, "/api/capabilities") != 0) return apiError(404, "not found");
+  if (!iotsaConfigSettingsWritable()) return apiError(409, "not in configuration mode");
+  bool anyChanged = false;
+  JsonObject reqObj = request.as<JsonObject>();
+  if (getFromRequest<const char *>(reqObj, "trustedIssuer", trustedIssuer)) {
+    anyChanged = true;
+  }
+  if (getFromRequest<const char *>(reqObj, "issuerKey", issuerKey)) {
+    anyChanged = true;
+  }
+  if (anyChanged) {
+    configSave();
+    if (changed) *changed = true;
+  }
+  return true;
+}
+
+bool IotsaCapabilityMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
+  return false;
+}
+
+bool IotsaCapabilityMod::getHandler(const char *path, JsonObject& reply) {
+  if (strcmp(path, "/api/capabilities") != 0) return false;
+  reply["trustedIssuer"] = trustedIssuer;
+  reply["has_issuerKey"] = (issuerKey.length() > 0);
+  return true;
+}
+
+#ifdef IOTSA_WITH_WEB
+// The trust anchors: only in configuration mode, like users and WiFi.
+void IotsaCapabilityMod::formHandler_args(IotsaWebContext& ctx) {
+  ctx.argsNeedRight("capabilities");
+  ctx.arg("trustedIssuer", trustedIssuer, IotsaWebContext::SavedInConfigMode);
+  ctx.argPassword("issuerKey", issuerKey, IotsaWebContext::SavedInConfigMode);
+}
+
+void IotsaCapabilityMod::formHandler_fields(IotsaWebContext& ctx) {
+  if (!ctx.includesSettings()) return;
+  if (!ctx.editable(IotsaWebContext::SavedInConfigMode)) {
+    ctx << "<p>Issuer and key can only be changed in configuration mode, see <a href='/runmode'>/runmode</a>.</p>\n";
+  }
+  IotsaWebContext::Form form(ctx);
+  ctx.showField("Issuer", "trustedIssuer", trustedIssuer, IotsaWebContext::SavedInConfigMode);
+  ctx.showStatus("Shared key", "has_issuerKey", issuerKey.length() ? "set" : "not set");
+  ctx.showPassword("New shared key", "issuerKey", IotsaWebContext::SavedInConfigMode, "empty: unchanged");
+}
+
+String IotsaCapabilityMod::info() {
+  String message = "<p>Capabilities enabled.";
+  message += " See <a href=\"/capabilities\">/capabilities</a> to change settings.";
+  message += "</p>";
+  return message;
+}
+#endif // IOTSA_WITH_WEB

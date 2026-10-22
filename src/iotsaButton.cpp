@@ -3,6 +3,42 @@
 
 #define DEBOUNCE_DELAY 50 // 50 ms debouncing
 
+void IotsaButtonMod::setup() {
+  for (int i=0; i<nButton; i++) {
+    pinMode(buttons[i].pin, INPUT_PULLUP);
+  }
+  configLoad();
+}
+
+void IotsaButtonMod::lateSetup() {
+  api.setup("buttons", true, true);
+  name = "buttons";
+}
+
+void IotsaButtonMod::loop() {
+  for (int i=0; i<nButton; i++) {
+    int state = digitalRead(buttons[i].pin);
+    if (state != buttons[i].debounceState) {
+      buttons[i].debounceTime = millis();
+    }
+    buttons[i].debounceState = state;
+    if (millis() > buttons[i].debounceTime + DEBOUNCE_DELAY) {
+      int newButtonState = (state == LOW);
+      if (newButtonState != buttons[i].buttonState) {
+        buttons[i].buttonState = newButtonState;
+        bool doSend = (buttons[i].buttonState && buttons[i].sendOnPress) || (!buttons[i].buttonState && buttons[i].sendOnRelease);
+        if (doSend && buttons[i].req.url != "") {
+          if (buttons[i].req.send()) {
+            if (successCallback) successCallback();
+          } else {
+            if (failureCallback) failureCallback();
+          }
+        }
+      }
+    }
+  }
+}
+
 void IotsaButtonMod::configLoad() {
   IotsaConfigFileLoad cf("/config/buttons.cfg");
   for (int i=0; i<nButton; i++) {
@@ -53,11 +89,41 @@ void IotsaButtonMod::configSave() {
   }
 }
 
-void IotsaButtonMod::setup() {
-  for (int i=0; i<nButton; i++) {
-    pinMode(buttons[i].pin, INPUT_PULLUP);
+// An array with one entry per button, by position (cwi-dis/iotsa#217); null
+// or missing entries leave that button alone.
+bool IotsaButtonMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
+  if (!request.is<JsonArray>()) {
+    return apiError(400, "expected an array of buttons");
   }
-  configLoad();
+  bool anyChanged = false;
+  const JsonArray all = request.as<JsonArray>();
+  for (int i=0; i<nButton; i++) {
+      const JsonVariant r = all[i];
+      if (r.isNull()) continue;
+      if (!buttons[i].req.putHandler(r, reply, &anyChanged)) return false;
+      const JsonObject reqObj = r.as<JsonObject>();
+      if (getFromRequest<int>(reqObj, "onPress", buttons[i].sendOnPress)) {
+        anyChanged = true;
+      }
+      if (getFromRequest<int>(reqObj, "onRelease", buttons[i].sendOnRelease)) {
+        anyChanged = true;
+      }
+  }
+  // xxxjack cannot use checkUnhandled() because of the array of buttons
+  if (anyChanged) { configSave(); if (changed) *changed = true; }
+  return true;
+}
+
+bool IotsaButtonMod::getHandler(const char *path, JsonObject& reply) {
+  JsonArray rv = reply["buttons"].to<JsonArray>();
+  for (Button *b=buttons; b<buttons+nButton; b++) {
+      JsonObject bRv = rv.add<JsonObject>();
+      b->req.getHandler(bRv);
+      bRv["state"] = b->buttonState;
+      bRv["onPress"] = b->sendOnPress;
+      bRv["onRelease"] = b->sendOnRelease;
+  }
+  return true;
 }
 
 #ifdef IOTSA_WITH_WEB
@@ -95,69 +161,3 @@ String IotsaButtonMod::info() {
   return "<p>See <a href='/buttons'>/buttons</a> to program URLs for button presses, <a href='/api/buttons'>/api/buttons</a> for REST interface.</p>";
 }
 #endif // IOTSA_WITH_WEB
-
-void IotsaButtonMod::loop() {
-  for (int i=0; i<nButton; i++) {
-    int state = digitalRead(buttons[i].pin);
-    if (state != buttons[i].debounceState) {
-      buttons[i].debounceTime = millis();
-    }
-    buttons[i].debounceState = state;
-    if (millis() > buttons[i].debounceTime + DEBOUNCE_DELAY) {
-      int newButtonState = (state == LOW);
-      if (newButtonState != buttons[i].buttonState) {
-        buttons[i].buttonState = newButtonState;
-        bool doSend = (buttons[i].buttonState && buttons[i].sendOnPress) || (!buttons[i].buttonState && buttons[i].sendOnRelease);
-        if (doSend && buttons[i].req.url != "") {
-          if (buttons[i].req.send()) {
-            if (successCallback) successCallback();
-          } else {
-            if (failureCallback) failureCallback();
-          }
-        }
-      }
-    }
-  }
-}
-
-bool IotsaButtonMod::getHandler(const char *path, JsonObject& reply) {
-  JsonArray rv = reply["buttons"].to<JsonArray>();
-  for (Button *b=buttons; b<buttons+nButton; b++) {
-      JsonObject bRv = rv.add<JsonObject>();
-      b->req.getHandler(bRv);
-      bRv["state"] = b->buttonState;
-      bRv["onPress"] = b->sendOnPress;
-      bRv["onRelease"] = b->sendOnRelease;
-  }
-  return true;
-}
-
-// An array with one entry per button, by position (cwi-dis/iotsa#217); null
-// or missing entries leave that button alone.
-bool IotsaButtonMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  if (!request.is<JsonArray>()) {
-    return apiError(400, "expected an array of buttons");
-  }
-  bool anyChanged = false;
-  const JsonArray all = request.as<JsonArray>();
-  for (int i=0; i<nButton; i++) {
-      const JsonVariant r = all[i];
-      if (r.isNull()) continue;
-      if (!buttons[i].req.putHandler(r, reply, &anyChanged)) return false;
-      const JsonObject reqObj = r.as<JsonObject>();
-      if (getFromRequest<int>(reqObj, "onPress", buttons[i].sendOnPress)) {
-        anyChanged = true;
-      }
-      if (getFromRequest<int>(reqObj, "onRelease", buttons[i].sendOnRelease)) {
-        anyChanged = true;
-      }
-  }
-  // xxxjack cannot use checkUnhandled() because of the array of buttons
-  if (anyChanged) { configSave(); if (changed) *changed = true; }
-  return true;
-}
-
-void IotsaButtonMod::lateSetup() {
-  api.setup("buttons", true, true);
-  name = "buttons";
-}

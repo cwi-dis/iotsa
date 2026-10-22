@@ -52,6 +52,18 @@ IotsaLoggerMod::IotsaLoggerMod(IotsaApplication &_app)
   iotsaOverrideSerial->println("iotsa logger enabled");
 }
 
+void IotsaLoggerMod::setup() {
+  configLoad();
+}
+
+void IotsaLoggerMod::lateSetup() {
+  app.server->on("/logger", std::bind(&IotsaLoggerMod::handler, this));
+  name = "logger";
+}
+
+void IotsaLoggerMod::loop() {
+}
+
 void
 IotsaLoggerMod::handler() {
   iotsaNoKeepAlive(app.server);  // cwi-dis/iotsa#293
@@ -72,15 +84,6 @@ IotsaLoggerMod::handler() {
   }
 }
 
-void IotsaLoggerMod::setup() {
-  configLoad();
-}
-
-void IotsaLoggerMod::lateSetup() {
-  app.server->on("/logger", std::bind(&IotsaLoggerMod::handler, this));
-  name = "logger";
-}
-
 void IotsaLoggerMod::configLoad() {
   IotsaConfigFileLoad cf("/config/logger.cfg");
   cf.get("argument", argument, "");
@@ -90,9 +93,6 @@ void IotsaLoggerMod::configLoad() {
 void IotsaLoggerMod::configSave() {
   IotsaConfigFileSave cf("/config/logger.cfg");
   cf.put("argument", argument);
-}
-
-void IotsaLoggerMod::loop() {
 }
 
 String IotsaLoggerMod::info() {

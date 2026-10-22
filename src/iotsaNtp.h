@@ -27,12 +27,12 @@ public:
 
   String ntpServer;
 protected:
-  bool getHandler(const char *path, JsonObject& reply) override;
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
   String tzDescription;
   void parseTimezone(const String& newDesc);
   void configLoad() override;
   void configSave() override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
+  bool getHandler(const char *path, JsonObject& reply) override;
 #ifdef IOTSA_WITH_WEB
   String webTitle() override { return "NTP Client Settings"; }
   void formHandler_args(IotsaWebContext& ctx) override;

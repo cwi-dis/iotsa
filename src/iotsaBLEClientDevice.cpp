@@ -443,34 +443,6 @@ const char *IotsaBLEClientDevice::presenceText(Presence p) {
   return texts[(int)p];
 }
 
-bool IotsaBLEClientDevice::getHandler(JsonObject& reply) {
-  IotsaBLEDeviceInfo::getHandler(reply);
-  if (lastConnectAttemptAtMillis != 0) {
-    reply["lastConnectAttemptMillisAgo"] = millis() - lastConnectAttemptAtMillis;
-  }
-  reply["numConnectCalls"] = numConnectCalls;
-  reply["numConnectSkipped"] = numConnectSkipped;
-  reply["numConnectAttempts"] = numConnectAttempts;
-  reply["numConnectFailed"] = numConnectFailed;
-  reply["numConnectSucceeded"] = numConnectSucceeded;
-  reply["numConnectionOpen"] = isConnected() ? 1 : 0;
-  reply["numConnectionFailed"] = numConnectionFailed;
-  reply["numConnectionClosedLocally"] = numConnectionClosedLocally;
-  if (lastDisconnectReason != -1) {
-    reply["lastDisconnectReason"] = NimBLEUtils::returnCodeToString(lastDisconnectReason);
-    reply["lastDisconnectMillisAgo"] = millis() - lastDisconnectAtMillis;
-  }
-  reply["presence"] = presenceName(getPresence());
-  reply["connected"] = isConnected();
-  static const char *linkStateNames[] = {"idle", "waitingForAddress", "waitingForRadio", "connecting", "lingering"};
-  reply["linkState"] = linkStateNames[(int)linkState];
-  reply["workPending"] = (bool)workPending;
-  if (lastWorkStatus) reply["lastWorkStatus"] = lastWorkStatus;
-  reply["lastWorkMillis"] = lastWorkMillis;
-  reply["maxWorkMillis"] = maxWorkMillis;
-  return true;
-}
-
 bool IotsaBLEClientDevice::retarget(const std::string& newName) {
   if (newName == bleName) return false;
   if (owner && bleName != "") owner->delDevice(bleName);
@@ -511,6 +483,34 @@ bool IotsaBLEClientDevice::putHandler(const JsonVariant& request, JsonObject& re
   if (getFromRequest<String>(reqObj, "name", newName)) {
     if (retarget(std::string(newName.c_str())) && changed) *changed = true;
   }
+  return true;
+}
+
+bool IotsaBLEClientDevice::getHandler(JsonObject& reply) {
+  IotsaBLEDeviceInfo::getHandler(reply);
+  if (lastConnectAttemptAtMillis != 0) {
+    reply["lastConnectAttemptMillisAgo"] = millis() - lastConnectAttemptAtMillis;
+  }
+  reply["numConnectCalls"] = numConnectCalls;
+  reply["numConnectSkipped"] = numConnectSkipped;
+  reply["numConnectAttempts"] = numConnectAttempts;
+  reply["numConnectFailed"] = numConnectFailed;
+  reply["numConnectSucceeded"] = numConnectSucceeded;
+  reply["numConnectionOpen"] = isConnected() ? 1 : 0;
+  reply["numConnectionFailed"] = numConnectionFailed;
+  reply["numConnectionClosedLocally"] = numConnectionClosedLocally;
+  if (lastDisconnectReason != -1) {
+    reply["lastDisconnectReason"] = NimBLEUtils::returnCodeToString(lastDisconnectReason);
+    reply["lastDisconnectMillisAgo"] = millis() - lastDisconnectAtMillis;
+  }
+  reply["presence"] = presenceName(getPresence());
+  reply["connected"] = isConnected();
+  static const char *linkStateNames[] = {"idle", "waitingForAddress", "waitingForRadio", "connecting", "lingering"};
+  reply["linkState"] = linkStateNames[(int)linkState];
+  reply["workPending"] = (bool)workPending;
+  if (lastWorkStatus) reply["lastWorkStatus"] = lastWorkStatus;
+  reply["lastWorkMillis"] = lastWorkMillis;
+  reply["maxWorkMillis"] = maxWorkMillis;
   return true;
 }
 

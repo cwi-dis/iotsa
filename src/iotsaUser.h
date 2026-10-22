@@ -15,12 +15,12 @@ public:
 public:
   bool configLoad(IotsaConfigFileLoad& cf, const String& f_name) override;
   void configSave(IotsaConfigFileSave& cf, const String& f_name) override;
+  bool putHandler(const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
+  bool getHandler(JsonObject& reply) override;
 #ifdef IOTSA_WITH_WEB
   void formHandler_args(IotsaWebContext& ctx) override;
   void formHandler_fields(IotsaWebContext& ctx) override;
 #endif
-  bool getHandler(JsonObject& reply) override;
-  bool putHandler(const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
 };
 
 // Usernames, passwords and rights. No users means everything is allowed, as on a
@@ -37,9 +37,9 @@ public:
 #endif
   bool allows(const char *right=NULL) override;
   bool allows(const char *obj, IotsaApiOperation verb) override;
-  bool getHandler(const char *path, JsonObject& reply) override;
-  bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
   bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
+  bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
+  bool getHandler(const char *path, JsonObject& reply) override;
 protected:
   void configLoad() override;
   void configSave() override;

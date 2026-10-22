@@ -12,6 +12,115 @@
 // sleep policy) doesn't go stale between REST/BLE queries.
 static const uint32_t VOLTAGE_READ_INTERVAL_MS = 5000;
 
+void IotsaBatteryMod::setup() {
+  configLoad();
+}
+
+void IotsaBatteryMod::lateSetup() {
+#ifdef IOTSA_WITH_BLE
+  bleApi.setup(serviceUUID, this);
+  bleApi.addCharacteristic(levelVBatUUID, bleApi.BLE_READ, NimBLE2904::FORMAT_UINT8, 0x27AD, "Battery Level");
+  bleApi.addCharacteristic(levelVUSBUUID, bleApi.BLE_READ, NimBLE2904::FORMAT_UINT8, 0x27AD, "USB Voltage Level");
+#endif
+  api.setup("battery", true, true);
+  name = "battery";
+}
+
+void IotsaBatteryMod::loop() {
+  if (_lastVoltageReadMillis == 0 || millis() - _lastVoltageReadMillis >= VOLTAGE_READ_INTERVAL_MS) {
+    _lastVoltageReadMillis = millis();
+    _readVoltages();
+  }
+}
+
+void IotsaBatteryMod::setPinDisableSleep(int pin) {
+#ifdef IOTSA_HAS_SLEEP
+  if (IotsaRunmodeMod::instance()) IotsaRunmodeMod::instance()->setPinDisableSleep(pin);
+#else
+  (void)pin;
+  IFDEBUG IotsaSerial.println("iotsaBattery: setPinDisableSleep ignored, built without IOTSA_HAS_SLEEP");
+#endif
+}
+
+void IotsaBatteryMod::allowBLEConfigModeSwitch() {
+  // The BLE mode-promote gesture moved to IotsaRunmodeMod's control service
+  // (cwi-dis/iotsa#106). Transitional forwarder for the ~4 downstream callers.
+#ifdef IOTSA_WITH_BLE
+  if (IotsaRunmodeMod::instance()) IotsaRunmodeMod::instance()->allowBLEModeSwitch();
+#endif
+}
+
+void IotsaBatteryMod::_readVoltages() {
+  if (pinVBat >= 0) {
+    int level = analogRead(pinVBat);
+    // 3.9v input would give a reading of 4095 (at the default attenuation of 11dB). We scale, so a voltage of rangeVBat gives 100%
+    // See https://esphome.io/components/sensor/adc.html#adc-esp32-attenuation for a description of the attenuation
+    float lvbFloat = (level * correctionVBat * 3.9)/ 4096.0;
+    float charge = (lvbFloat - rangeVBatMin) / (rangeVBat - rangeVBatMin);
+    levelVBat = charge <= 0 ? 0 : int(100*charge);
+    IFDEBUG IotsaSerial.print("VBat=");
+    IFDEBUG IotsaSerial.println(levelVBat);
+  }
+  if (pinVUSB >= 0) {
+    int level = analogRead(pinVUSB);
+    levelVUSB = int(100*3.9*level/(rangeVUSB*4096));
+  }
+  // Publish "on USB power" for IotsaSleepPolicy (cwi-dis/iotsa#106). No VUSB
+  // sense => assume battery, so sleep is not USB-gated.
+  iotsaStatus.onUsbPower = (pinVUSB >= 0 && levelVUSB > 80);
+}
+
+void IotsaBatteryMod::configLoad() {
+  IotsaConfigFileLoad cf("/config/battery.cfg");
+  cf.get("correctionVBat", correctionVBat, 1.0);
+}
+
+void IotsaBatteryMod::configSave() {
+  IotsaConfigFileSave cf("/config/battery.cfg");
+  if (pinVBat >= 0) {
+    cf.put("correctionVBat", correctionVBat);
+  }
+}
+
+bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
+  bool anyChanged = false;
+  JsonObject reqObj = request.as<JsonObject>();
+  if (pinVBat >= 0 && getFromRequest<float>(reqObj, "correctionVBat", correctionVBat)) {
+    anyChanged = true;
+  }
+  if (anyChanged) { configSave(); if (changed) *changed = true; }
+  checkUnhandled(reqObj);
+  return true;
+}
+
+bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
+  _readVoltages();
+  if (pinVBat >= 0) {
+    reply["levelVBat"] = levelVBat;
+    reply["correctionVBat"] = correctionVBat;
+  }
+  if (pinVUSB >= 0) {
+    reply["levelVUSB"] = levelVUSB;
+    reply["onUsbPower"] = iotsaStatus.onUsbPower;
+  }
+  return true;
+}
+
+#ifdef IOTSA_WITH_BLE
+bool IotsaBatteryMod::bleGetHandler(UUIDstring charUUID) {
+  _readVoltages();
+  if (charUUID == levelVBatUUID) {
+      bleApi.set(levelVBatUUID, levelVBat);
+      return true;
+  }
+  if (charUUID == levelVUSBUUID) {
+      bleApi.set(levelVUSBUUID, levelVUSB);
+      return true;
+  }
+  return false;
+}
+#endif // IOTSA_WITH_BLE
+
 #ifdef IOTSA_WITH_WEB
 void IotsaBatteryMod::formHandler_args(IotsaWebContext& ctx) {
   if (pinVBat >= 0) ctx.arg("correctionVBat", correctionVBat, IotsaWebContext::Saved);
@@ -38,112 +147,3 @@ String IotsaBatteryMod::info() {
   return message;
 }
 #endif // IOTSA_WITH_WEB
-
-void IotsaBatteryMod::setup() {
-  configLoad();
-}
-
-void IotsaBatteryMod::setPinDisableSleep(int pin) {
-#ifdef IOTSA_HAS_SLEEP
-  if (IotsaRunmodeMod::instance()) IotsaRunmodeMod::instance()->setPinDisableSleep(pin);
-#else
-  (void)pin;
-  IFDEBUG IotsaSerial.println("iotsaBattery: setPinDisableSleep ignored, built without IOTSA_HAS_SLEEP");
-#endif
-}
-
-void IotsaBatteryMod::allowBLEConfigModeSwitch() {
-  // The BLE mode-promote gesture moved to IotsaRunmodeMod's control service
-  // (cwi-dis/iotsa#106). Transitional forwarder for the ~4 downstream callers.
-#ifdef IOTSA_WITH_BLE
-  if (IotsaRunmodeMod::instance()) IotsaRunmodeMod::instance()->allowBLEModeSwitch();
-#endif
-}
-
-bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
-  _readVoltages();
-  if (pinVBat >= 0) {
-    reply["levelVBat"] = levelVBat;
-    reply["correctionVBat"] = correctionVBat;
-  }
-  if (pinVUSB >= 0) {
-    reply["levelVUSB"] = levelVUSB;
-    reply["onUsbPower"] = iotsaStatus.onUsbPower;
-  }
-  return true;
-}
-
-bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  bool anyChanged = false;
-  JsonObject reqObj = request.as<JsonObject>();
-  if (pinVBat >= 0 && getFromRequest<float>(reqObj, "correctionVBat", correctionVBat)) {
-    anyChanged = true;
-  }
-  if (anyChanged) { configSave(); if (changed) *changed = true; }
-  checkUnhandled(reqObj);
-  return true;
-}
-
-#ifdef IOTSA_WITH_BLE
-bool IotsaBatteryMod::bleGetHandler(UUIDstring charUUID) {
-  _readVoltages();
-  if (charUUID == levelVBatUUID) {
-      bleApi.set(levelVBatUUID, levelVBat);
-      return true;
-  }
-  if (charUUID == levelVUSBUUID) {
-      bleApi.set(levelVUSBUUID, levelVUSB);
-      return true;
-  }
-  return false;
-}
-#endif // IOTSA_WITH_BLE
-
-void IotsaBatteryMod::lateSetup() {
-#ifdef IOTSA_WITH_BLE
-  bleApi.setup(serviceUUID, this);
-  bleApi.addCharacteristic(levelVBatUUID, bleApi.BLE_READ, NimBLE2904::FORMAT_UINT8, 0x27AD, "Battery Level");
-  bleApi.addCharacteristic(levelVUSBUUID, bleApi.BLE_READ, NimBLE2904::FORMAT_UINT8, 0x27AD, "USB Voltage Level");
-#endif
-  api.setup("battery", true, true);
-  name = "battery";
-}
-
-void IotsaBatteryMod::configLoad() {
-  IotsaConfigFileLoad cf("/config/battery.cfg");
-  cf.get("correctionVBat", correctionVBat, 1.0);
-}
-
-void IotsaBatteryMod::configSave() {
-  IotsaConfigFileSave cf("/config/battery.cfg");
-  if (pinVBat >= 0) {
-    cf.put("correctionVBat", correctionVBat);
-  }
-}
-
-void IotsaBatteryMod::loop() {
-  if (_lastVoltageReadMillis == 0 || millis() - _lastVoltageReadMillis >= VOLTAGE_READ_INTERVAL_MS) {
-    _lastVoltageReadMillis = millis();
-    _readVoltages();
-  }
-}
-
-void IotsaBatteryMod::_readVoltages() {
-  if (pinVBat >= 0) {
-    int level = analogRead(pinVBat);
-    // 3.9v input would give a reading of 4095 (at the default attenuation of 11dB). We scale, so a voltage of rangeVBat gives 100%
-    // See https://esphome.io/components/sensor/adc.html#adc-esp32-attenuation for a description of the attenuation
-    float lvbFloat = (level * correctionVBat * 3.9)/ 4096.0;
-    float charge = (lvbFloat - rangeVBatMin) / (rangeVBat - rangeVBatMin);
-    levelVBat = charge <= 0 ? 0 : int(100*charge);
-    IFDEBUG IotsaSerial.print("VBat=");
-    IFDEBUG IotsaSerial.println(levelVBat);
-  }
-  if (pinVUSB >= 0) {
-    int level = analogRead(pinVUSB);
-    levelVUSB = int(100*3.9*level/(rangeVUSB*4096));
-  }
-  // Publish "on USB power" for IotsaSleepPolicy (cwi-dis/iotsa#106). No VUSB
-  // sense => assume battery, so sleep is not USB-gated.
-  iotsaStatus.onUsbPower = (pinVUSB >= 0 && levelVUSB > 80);
-}

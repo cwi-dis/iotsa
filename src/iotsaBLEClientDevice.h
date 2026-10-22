@@ -76,16 +76,10 @@ public:
   bool get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, uint32_t& value);
   bool get(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, std::string& value);
   bool getAsNotification(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, BleNotificationCallback callback);
-  // Adds connect-specific fields (on top of the base class's
-  // name/bleAddress/rssi/lastSeenMillisAgo) to reply: lastConnectAttemptMillisAgo,
-  // numConnectCalls, numConnectSkipped, numConnectAttempts, numConnectFailed,
-  // numConnectSucceeded, numConnectionOpen, numConnectionFailed,
-  // numConnectionClosedLocally, lastDisconnectReason, lastDisconnectMillisAgo.
-  bool getHandler(JsonObject& reply) override;
   // f_name is the usual per-instance config-key/form-field prefix (e.g.
   // "dimmer3"), matching every other IotsaModObject implementation's
   // convention (see e.g. IotsaRequest). Persists/reports/renders name +
-  // resolved address; connect stats above are report-only (getHandler),
+  // resolved address; connect stats are report-only (getHandler, below),
   // never persisted or web-editable.
   bool configLoad(IotsaConfigFileLoad& cf, const String& f_name) override;
   void configSave(IotsaConfigFileSave& cf, const String& f_name) override;
@@ -93,6 +87,12 @@ public:
   // object is meaningfully settable from outside (address is discovered,
   // not configured).
   bool putHandler(const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
+  // Adds connect-specific fields (on top of the base class's
+  // name/bleAddress/rssi/lastSeenMillisAgo) to reply: lastConnectAttemptMillisAgo,
+  // numConnectCalls, numConnectSkipped, numConnectAttempts, numConnectFailed,
+  // numConnectSucceeded, numConnectionOpen, numConnectionFailed,
+  // numConnectionClosedLocally, lastDisconnectReason, lastDisconnectMillisAgo.
+  bool getHandler(JsonObject& reply) override;
 #ifdef IOTSA_WITH_WEB
   // A found/connected status line on the everyday side; renaming (a form
   // with a Rename button) on the configuration side.

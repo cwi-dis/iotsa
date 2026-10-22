@@ -19,6 +19,8 @@ public:
   bool send(const char *query=NULL, String *responseBody=NULL);
   bool configLoad(IotsaConfigFileLoad& cf, const String& f_name) override;
   void configSave(IotsaConfigFileSave& cf, const String& f_name) override;
+  bool putHandler(const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
+  bool getHandler(JsonObject& reply) override;
 #ifdef IOTSA_WITH_WEB
   // Credentials and token are secrets, as over REST: never shown, empty
   // leaves them unchanged, a "clear" checkbox empties them. The root CA (a
@@ -27,8 +29,6 @@ public:
   void formHandler_fields(IotsaWebContext& ctx) override;
   void formHandler_row(IotsaWebContext& ctx) override;
 #endif
-  bool getHandler(JsonObject& reply) override;
-  bool putHandler(const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
   String url;
   String sslInfo; // PEM root CA cert for https:// urls (both ESP32 and ESP8266)
   String credentials;

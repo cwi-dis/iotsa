@@ -3,6 +3,20 @@
 #include <time.h>
 #include <stdlib.h>
 
+void IotsaNtpMod::setup() {
+  configLoad();
+}
+
+void IotsaNtpMod::lateSetup() {
+  api.setup("ntpconfig", true, true);
+  name = "ntpconfig";
+}
+
+void IotsaNtpMod::loop() {
+  // Nothing to do: the platform's SNTP client (started by parseTimezone())
+  // runs on its own.
+}
+
 unsigned long IotsaNtpMod::utcTime()
 {
   return time(NULL);
@@ -52,6 +66,55 @@ String IotsaNtpMod::isoTime()
   return String(buf);
 }
 
+// Installs the timezone and (re)starts the platform SNTP client with the
+// current server.
+void IotsaNtpMod::parseTimezone(const String& newDesc) {
+  tzDescription = newDesc;
+#ifdef ESP8266
+  configTime(newDesc.c_str(), ntpServer.c_str());
+#else
+  configTzTime(newDesc.c_str(), ntpServer.c_str());
+#endif
+}
+
+void IotsaNtpMod::configLoad() {
+  IotsaConfigFileLoad cf("/config/ntp.cfg");
+  cf.get("ntpServer", ntpServer, "pool.ntp.org");
+  String newTzdesc;
+  cf.get("tzDescription", newTzdesc, "0");
+  parseTimezone(newTzdesc);
+}
+
+void IotsaNtpMod::configSave() {
+  IotsaConfigFileSave cf("/config/ntp.cfg");
+  cf.put("ntpServer", ntpServer);
+  cf.put("tzDescription", tzDescription);
+}
+
+bool IotsaNtpMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
+  bool anyChanged = false;
+  JsonObject reqObj = request.as<JsonObject>();
+  if (getFromRequest<const char *>(reqObj, "ntpServer", ntpServer)) {
+    anyChanged = true;
+  }
+  if (getFromRequest<const char *>(reqObj, "tzDescription", tzDescription)) {
+    anyChanged = true;
+  }
+  if (anyChanged) {
+    parseTimezone(tzDescription);  // also restarts SNTP, so a new server takes effect now
+    configSave();
+    if (changed) *changed = true;
+  }
+  checkUnhandled(reqObj);
+  return true;
+}
+
+bool IotsaNtpMod::getHandler(const char *path, JsonObject& reply) {
+  reply["ntpServer"] = ntpServer;
+  reply["tzDescription"] = tzDescription;
+  return true;
+}
+
 #ifdef IOTSA_WITH_WEB
 void IotsaNtpMod::formHandler_args(IotsaWebContext& ctx) {
   ctx.argsNeedRight("ntp");
@@ -83,66 +146,3 @@ String IotsaNtpMod::info() {
   return message;
 }
 #endif // IOTSA_WITH_WEB
-
-void IotsaNtpMod::setup() {
-  configLoad();
-}
-
-bool IotsaNtpMod::getHandler(const char *path, JsonObject& reply) {
-  reply["ntpServer"] = ntpServer;
-  reply["tzDescription"] = tzDescription;
-  return true;
-}
-
-bool IotsaNtpMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  bool anyChanged = false;
-  JsonObject reqObj = request.as<JsonObject>();
-  if (getFromRequest<const char *>(reqObj, "ntpServer", ntpServer)) {
-    anyChanged = true;
-  }
-  if (getFromRequest<const char *>(reqObj, "tzDescription", tzDescription)) {
-    anyChanged = true;
-  }
-  if (anyChanged) {
-    parseTimezone(tzDescription);  // also restarts SNTP, so a new server takes effect now
-    configSave();
-    if (changed) *changed = true;
-  }
-  checkUnhandled(reqObj);
-  return true;
-}
-
-void IotsaNtpMod::lateSetup() {
-  api.setup("ntpconfig", true, true);
-  name = "ntpconfig";
-}
-
-void IotsaNtpMod::configLoad() {
-  IotsaConfigFileLoad cf("/config/ntp.cfg");
-  cf.get("ntpServer", ntpServer, "pool.ntp.org");
-  String newTzdesc;
-  cf.get("tzDescription", newTzdesc, "0");
-  parseTimezone(newTzdesc);
-}
-
-void IotsaNtpMod::configSave() {
-  IotsaConfigFileSave cf("/config/ntp.cfg");
-  cf.put("ntpServer", ntpServer);
-  cf.put("tzDescription", tzDescription);
-}
-
-void IotsaNtpMod::loop() {
-  // Nothing to do: the platform's SNTP client (started by parseTimezone())
-  // runs on its own.
-}
-
-// Installs the timezone and (re)starts the platform SNTP client with the
-// current server.
-void IotsaNtpMod::parseTimezone(const String& newDesc) {
-  tzDescription = newDesc;
-#ifdef ESP8266
-  configTime(newDesc.c_str(), ntpServer.c_str());
-#else
-  configTzTime(newDesc.c_str(), ntpServer.c_str());
-#endif
-}

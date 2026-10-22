@@ -35,10 +35,10 @@ public:
   String info() override;
 #endif
 protected:
-  bool getHandler(const char *path, JsonObject& reply) override;
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
   void configLoad() override;
   void configSave() override;
+  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
+  bool getHandler(const char *path, JsonObject& reply) override;
 #ifdef IOTSA_WITH_WEB
   String webTitle() override { return "Buttons"; }
   void formHandler_args(IotsaWebContext& ctx) override;
