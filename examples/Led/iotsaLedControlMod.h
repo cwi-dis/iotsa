@@ -22,7 +22,7 @@ public:
   String info() override;
 #endif
 protected:
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
+  void putHandler(IotsaApiContext& ctx) override;
 #ifdef IOTSA_WITH_BLE
   bool blePutHandler(UUIDstring charUUID) override;
 #endif

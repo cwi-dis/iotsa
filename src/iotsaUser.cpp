@@ -15,25 +15,26 @@ void IotsaUser::configSave(IotsaConfigFileSave& cf, const String& f_name) {
 }
 
 // The username isn't changed here: it addresses the user.
-bool IotsaUser::putHandler(const JsonVariant& request, JsonObject& reply, bool *changed) {
-  if (!request.is<JsonObject>()) return apiError(400, "expected an object");
-  JsonObject reqObj = request.as<JsonObject>();
+// Inside the module's Change, so the right and the mode were checked before
+// the old password is compared.
+void IotsaUser::putHandler(IotsaApiContext& ctx) {
+  // A user with a password is only changed by whoever knows it.
   if (password != "") {
-    String old = reqObj["old_password"].as<String>();
-    if (old != password) return apiError(403, "wrong old_password");
+    ctx.used("old_password");
+    if (ctx.request()["old_password"].as<String>() != password) {
+      ctx.error(403, "wrong old_password");
+      return;
+    }
   }
-  bool any = false;
-  any |= getFromRequest<const char *>(reqObj, "password", password);
-  any |= getFromRequest<const char *>(reqObj, "rights", rights);
-  if (any && changed) *changed = true;
-  return true;
+  ctx.argPassword("password", password, IotsaApiContext::SavedInConfigMode);
+  ctx.arg("rights", rights, IotsaApiContext::SavedInConfigMode);
 }
 
-bool IotsaUser::getHandler(JsonObject& reply) {
-  reply["username"] = username;
-  reply["hasPassword"] = password.length() > 0;
-  reply["rights"] = rights;
-  return true;
+void IotsaUser::getHandler(IotsaApiContext& ctx) {
+  ctx.show("username", username);
+  ctx.show("rights", rights);
+  ctx.showsNeedRight(IOTSA_RIGHT_NEVER);
+  ctx.show("password", password);
 }
 
 #ifdef IOTSA_WITH_WEB
@@ -82,38 +83,20 @@ void IotsaUserMod::lateSetup() {
 void IotsaUserMod::loop() {
 }
 
-bool IotsaUserMod::allows(const char *right) {
+IotsaAccess IotsaUserMod::allows(IotsaContext& ctx, const char *right) {
   // No users means everything is allowed.
-  if (users.empty()) return true;
-#ifdef IOTSA_HAS_WEBSERVER
-  // Reaches app.server directly rather than through api.webService: allows() is the
-  // transport-agnostic IotsaAuthenticationProvider interface, called for every
-  // module/transport, not just this one's own web page -- a known wart pending
-  // cwi-dis/iotsa#107's context-object redesign, see cwi-dis/iotsa#211.
-  // Otherwise we loop over all users until we find one that matches.
-  for(auto& u: users) {
-    if (app.server->authenticate(u.username.c_str(), u.password.c_str())) {
-      // NULL or empty rights field means: only existence is required.
-      if (right == NULL || *right == '\0') return true;
-      String rightField("/");
-      rightField += right;
-      rightField += "/";
-      if (u.rights == "*" || u.rights.indexOf(rightField) >= 0) {
-        return true;
-      }
-      break;
+  if (users.empty()) return IotsaAccess::Granted;
+  // The REST rule: every API path and verb needs the right "api".
+  if (right == nullptr) right = "api";
+  String rightField = String("/") + right + "/";
+  for (auto& u: users) {
+    if (ctx.hasBasicAuth(u.username.c_str(), u.password.c_str())) {
+      if (u.rights == "*" || u.rights.indexOf(rightField) >= 0) return IotsaAccess::Granted;
+      // A known user without the right: logging in again won't help.
+      return IotsaAccess::Forbidden;
     }
   }
-  app.server->requestAuthentication();
-  IotsaSerial.print("Return 401 Unauthorized for right=");
-  IotsaSerial.println(right);
-
-#endif // WITH_HTTP_OR_HTTPS
-  return false;
-}
-
-bool IotsaUserMod::allows(const char *obj, IotsaApiOperation verb) {
-  return allows("api");
+  return IotsaAccess::NeedsCredentials;
 }
 
 const char *IotsaUserMod::_refuseUser(const IotsaUser& newUser) {
@@ -162,51 +145,56 @@ void IotsaUserMod::configSave() {
 }
 
 // Change one user, addressed by username, or remove it with "remove": true.
-bool IotsaUserMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  if (strcmp(path, "/api/users") != 0) return apiError(404, "not found");
-  if (!iotsaConfigSettingsWritable()) return apiError(409, "not in configuration mode");
-  if (!request.is<JsonObject>()) return apiError(400, "expected an object");
-  JsonObject reqObj = request.as<JsonObject>();
-  int idx = _find(reqObj["username"].as<String>());
-  if (idx < 0) return apiError(404, "no such user");
-  bool userChanged = false;
-  if (reqObj["remove"].as<bool>()) {
-    users.erase(users.begin() + idx);
-    userChanged = true;
-  } else {
-    if (!users[idx].putHandler(request, reply, &userChanged)) return false;
+// Change or remove the user named by username. A Change, as on the web page:
+// the right and configuration mode are checked before anything else.
+void IotsaUserMod::putHandler(IotsaApiContext& ctx) {
+  ctx.argsNeedRight("users");
+  IotsaApiContext::Change change(ctx, "username", IotsaApiContext::SavedInConfigMode);
+  if (!change) {
+    if (!ctx.failed()) ctx.error(400, "username missing");
+    return;
   }
-  if (userChanged) {
-    configSave();
-    if (changed) *changed = true;
+  int idx = _find(ctx.request()["username"].as<String>());
+  if (idx < 0) {
+    ctx.error(404, "no such user");
+    return;
   }
-  return true;
+  bool remove = false;
+  ctx.arg("remove", remove, IotsaApiContext::SavedInConfigMode);
+  if (!remove) users[idx].putHandler(ctx);
+  if (!change) return;
+  if (remove) users.erase(users.begin() + idx);
+  change.done();
 }
 
 // Add a user.
-bool IotsaUserMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  if (strcmp(path, "/api/users") != 0) return apiError(404, "not found");
-  if (!iotsaConfigSettingsWritable()) return apiError(409, "not in configuration mode");
-  if (!request.is<JsonObject>()) return apiError(400, "expected an object");
+// Add a user.
+void IotsaUserMod::postHandler(IotsaApiContext& ctx) {
+  ctx.argsNeedRight("users");
+  IotsaApiContext::Change change(ctx, "username", IotsaApiContext::SavedInConfigMode);
+  if (!change) {
+    if (!ctx.failed()) ctx.error(400, "username missing");
+    return;
+  }
   IotsaUser newUser;
-  newUser.username = request["username"].as<String>();
-  if (!newUser.putHandler(request, reply)) return false;
+  ctx.arg("username", newUser.username, IotsaApiContext::SavedInConfigMode);
+  newUser.putHandler(ctx);
+  if (!change) return;
   const char *err = _refuseUser(newUser);
-  if (err) return apiError(400, err);
+  if (err) {
+    ctx.error(400, err);
+    return;
+  }
   users.push_back(newUser);
-  configSave();
-  if (changed) *changed = true;
-  return true;
+  change.done();
 }
 
-bool IotsaUserMod::getHandler(const char *path, JsonObject& reply) {
-  if (strcmp(path, "/api/users") != 0) return false;
-  JsonArray usersList = reply["users"].to<JsonArray>();
+void IotsaUserMod::getHandler(IotsaApiContext& ctx) {
+  JsonArray usersList = ctx.reply()["users"].to<JsonArray>();
   for (auto& u: users) {
-    JsonObject user = usersList.add<JsonObject>();
-    u.getHandler(user);
+    IotsaApiContext::Scope s(ctx, u.username, JsonObject(), usersList.add<JsonObject>());
+    u.getHandler(ctx);
   }
-  return true;
 }
 
 #ifdef IOTSA_WITH_WEB
@@ -217,12 +205,10 @@ void IotsaUserMod::formHandler_args(IotsaWebContext& ctx) {
 }
 
 void IotsaUserMod::formHandler_fields(IotsaWebContext& ctx) {
+  ctx.argsNeedRight("users");
   if (ctx.includesEveryday()) {
     ctx.showStatus("Users", "", users.empty() ? String("none, everything is allowed") : String(users.size()));
     return;
-  }
-  if (!ctx.editable(IotsaWebContext::SavedInConfigMode)) {
-    ctx << "<p>Users can only be changed in configuration mode, see <a href='/runmode'>/runmode</a>.</p>\n";
   }
   IotsaWebContext::Scope s(ctx, "users");
   webUsers.formHandler_fields(ctx);

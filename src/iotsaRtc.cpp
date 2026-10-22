@@ -119,19 +119,16 @@ void IotsaRtcMod::configLoad() {
 void IotsaRtcMod::configSave() {
 }
 
-bool IotsaRtcMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  JsonObject reqObj = request.as<JsonObject>();
-  const char *time = nullptr;
-  if (getFromRequest<const char *>(reqObj, "isoTime", time)) {
-    if (!setIsoTime(time)) return apiError(400, "isoTime: not an ISO 8601 time");
+void IotsaRtcMod::putHandler(IotsaApiContext& ctx) {
+  ctx.argsNeedRight("rtc");
+  String time;
+  if (ctx.arg("isoTime", time, IotsaApiContext::Transient)) {
+    if (!setIsoTime(time)) ctx.error(400, "isoTime: not an ISO 8601 time");
   }
-  checkUnhandled(reqObj);
-  return true;
 }
 
-bool IotsaRtcMod::getHandler(const char *path, JsonObject& reply) {
-  reply["isoTime"] = isoTime();
-  return true;
+void IotsaRtcMod::getHandler(IotsaApiContext& ctx) {
+  ctx.show("isoTime", isoTime());
 }
 
 #ifdef IOTSA_WITH_WEB
@@ -144,6 +141,7 @@ void IotsaRtcMod::formHandler_args(IotsaWebContext& ctx) {
 }
 
 void IotsaRtcMod::formHandler_fields(IotsaWebContext& ctx) {
+  ctx.argsNeedRight("rtc");
   if (ctx.includesEveryday()) {
     ctx.showStatus("RTC time (UTC)", "isoTime", isoTime());
   } else {

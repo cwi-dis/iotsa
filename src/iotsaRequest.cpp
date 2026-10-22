@@ -140,24 +140,19 @@ void IotsaRequest::configSave(IotsaConfigFileSave& cf, const String& f_name) {
     cf.put(f_name + ".token", token);
 }
 
-bool IotsaRequest::putHandler(const JsonVariant& request, JsonObject& reply, bool *changed) {
-  if (!request.is<JsonObject>()) return apiError(400, "expected an object");
-  const JsonObject& reqObj = request.as<JsonObject>();
-  bool any = false;
-  any |= getFromRequest<const char *>(reqObj, "url", url);
-  any |= getFromRequest<const char *>(reqObj, SSL_INFO_NAME, sslInfo);
-  any |= getFromRequest<const char *>(reqObj, "credentials", credentials);
-  any |= getFromRequest<const char *>(reqObj, "token", token);
-  if (any && changed) *changed = true;
-  return true;
+void IotsaRequest::putHandler(IotsaApiContext& ctx) {
+  ctx.arg("url", url, IotsaApiContext::Saved);
+  ctx.argPassword(SSL_INFO_NAME, sslInfo, IotsaApiContext::Saved);
+  ctx.argPassword("credentials", credentials, IotsaApiContext::Saved);
+  ctx.argPassword("token", token, IotsaApiContext::Saved);
 }
 
-bool IotsaRequest::getHandler(JsonObject& reply) {
-  reply["url"] = url;
-  reply[SSL_INFO_NAME] = sslInfo;
-  reply["hasCredentials"] = credentials != "";
-  reply["hasToken"] = token != "";
-  return true;
+void IotsaRequest::getHandler(IotsaApiContext& ctx) {
+  ctx.show("url", url);
+  ctx.showsNeedRight(IOTSA_RIGHT_NEVER);
+  ctx.show(SSL_INFO_NAME, sslInfo);
+  ctx.show("credentials", credentials);
+  ctx.show("token", token);
 }
 
 #ifdef IOTSA_WITH_WEB

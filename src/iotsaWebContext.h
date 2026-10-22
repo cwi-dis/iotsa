@@ -1,6 +1,7 @@
 #ifndef _IOTSAWEBCONTEXT_H_
 #define _IOTSAWEBCONTEXT_H_
 #include "iotsa.h"
+#include "iotsaContext.h"
 
 #ifdef IOTSA_WITH_WEB
 //
@@ -21,24 +22,16 @@ public:
   String text;
 };
 
-class IotsaWebContext {
+class IotsaWebContext : public IotsaHttpContext {
 public:
   IotsaWebContext(IotsaBaseModule& mod, IotsaWebServer *server, const String& apiPath);
 
   // ---- put side ----
 
-  // What a change does to the module's saved state. Every arg*() and show*()
-  // call says it.
-  enum Persistence {
-    Transient,        // changes state, nothing saved (alarm, LED, isOn)
-    Saved,            // the framework calls the module's configSave() afterwards
-    SavedInConfigMode // the same, and only in configuration mode or on a factory-fresh
-                      // device's own AP, iotsaConfigSettingsWritable() (hostName, ssid)
-  };
-
   // If the argument is present and differs from field: check auth (once per
   // request), check configuration mode, parse, assign. Returns true if field
-  // changed. A refused or unparseable change is reported on the page instead.
+  // changed. A refused or unparseable change is an error, which stops the
+  // rest of the request (see IotsaContext::error()).
   template<typename T> bool arg(const char *name, T& field, Persistence persistence) {
     String value;
     if (!_present(name, value)) return false;
@@ -47,8 +40,10 @@ public:
       error(String("Invalid value for ") + _scoped(name) + ".");
       return false;
     }
-    if (newValue == field) return false;
+    bool same = newValue == field;
+    if (same && _compareFirst()) return false;
     if (!_mayChange(persistence)) return false;
+    if (same) return false;
     field = newValue;
     _changed(persistence);
     return true;
@@ -65,52 +60,23 @@ public:
   // Counts as a change of the given persistence.
   bool argAction(const char *name, Persistence persistence);
   // Read an argument without any check or effect (hidden bookkeeping fields,
-  // a collection's version).
+  // a collection's version). It does count as used.
   bool argPeek(const char *name, String& value) { return _present(name, value); }
   // A button that needs its "I am sure" box ticked (factory reset, remove all).
   bool argConfirmedAction(const char *name);
-  // The right and the mode allow a change of this persistence, without an argument
-  // that asks for it: a trigger, which is a change by itself.
-  bool allowed(Persistence persistence = Transient) { return _mayChange(persistence); }
-
-  // A change to the device's long-term state that the module may still refuse
-  // (add, remove, upload): triggered by its own button. While it lives, its
-  // parameters are read with the usual calls, but they only read: no mode
-  // check of their own and no change marked. done() marks the change, once it
-  // really happened. argAction() is for things that just happen now.
-  class Change {
-  public:
-    Change(IotsaWebContext& ctx, const char *button, Persistence persistence);
-    ~Change();
-    // The button is present, and the right and mode allow it.
-    explicit operator bool() const { return _active; }
-    void done();
-  private:
-    IotsaWebContext& _ctx;
-    Persistence _persistence;
-    bool _active = false;
-    bool _outer;  // inside another Change: that one decides
-  };
-
-  // Changes on this page need this named right (as in IotsaUserMod),
-  // instead of the REST rule (PUT on the module's API path). Checked lazily, at
-  // the first change, so just viewing the page needs no right. Both kinds of
-  // check exist until cwi-dis/iotsa#284 decides between them. Can change
-  // halfway through formHandler_args(): the calls after it use the new right.
-  // IOTSA_RIGHT_NONE: the changes after it need no right at all.
-  void argsNeedRight(const char *right) { _setRule(NamedRight, right); }
 
   // Lines shown at the top of the page.
   void feedback(const String& text);
-  void error(const String& text);
   bool hasFeedback() const { return !_feedback.empty(); }
+  // An error line at the top of the page: IotsaContext::error() with 400.
+  using IotsaContext::error;
+  void error(const String& text) { IotsaContext::error(400, text); }
   // Answer the request yourself (plain text, 404): the framework sends nothing more.
   void respond(int code, const char *type, const String& body);
+  // After the put side: request arguments nothing read become a feedback
+  // line, unless the request failed (then later fields weren't read anyway).
+  void reportUnused();
 
-  // Filled in by the calls above, read by the framework.
-  bool configChanged = false;     // saved, mode window extended, LED pulse
-  bool stateChanged = false;      // only "Done." on the page
-  bool refusedConfigMode = false; // "must be in configuration mode"
   bool responded = false;         // auth failed (challenge sent), or respond() was called
 
   // ---- objects inside a module ----
@@ -133,8 +99,10 @@ public:
   // the settings.
   bool includesEveryday() const { return _includesEveryday; }
   bool includesSettings() const { return _includesSettings; }
-  // Whether a field of this persistence can be edited now.
-  bool editable(Persistence persistence) const;
+  // Whether a field of this persistence can be edited now: the mode allows
+  // it, and the write right is granted or can be obtained by logging in.
+  // When not, the part of the page gets a line saying why.
+  bool editable(Persistence persistence);
 
   // A group of fields that wants to be a form, with a submit button. Written as
   // a <form> unless a form is already open, then as a <fieldset> inside it. No
@@ -199,8 +167,8 @@ public:
   // Used by IotsaModule::webHandler().
   void setParts(bool everyday, bool settings) { _includesEveryday = everyday; _includesSettings = settings; }
   void sendPage(const String& title, const String& everyday, const String& settings);
-  // Used by a trigger: the feedback lines as plain text ("OK" if none), 400
-  // if one of them is an error.
+  // Used by a trigger: the feedback lines as plain text ("OK" if none), or
+  // the error with its status.
   void sendText();
   String takeOutput();
 
@@ -215,17 +183,13 @@ private:
     bool hasFields = false;  // ... and it needs a submit button
     bool post = false;
   };
-  enum AuthRule { RestRule, NamedRight };
-
   bool _present(const char *name, String& value);
-  bool _mayChange(Persistence persistence);
-  void _changed(Persistence persistence);
-  void _mark(Persistence persistence);
+  bool _hasArg(const char *name) override { String value; return _present(name, value); }
+  void _authRefused() override { responded = true; }
   void _field(const IotsaWebLabel& label, const char *name, const String& value, const char *type, Persistence persistence, const char *hint);
   String _scoped(const char *name) const;
   String& _out();
   void _markEditable(bool post, bool field = true);
-  void _setRule(AuthRule rule, const char *right);
   void _closeForm();
   String _clearBox(const char *name);
 
@@ -237,16 +201,10 @@ private:
   static bool _parse(const String& s, unsigned long& v);
   static bool _parse(const String& s, float& v);
 
-  IotsaBaseModule& _mod;
-  IotsaWebServer *_server;
-  String _apiPath;
-  AuthRule _rule = RestRule;
-  const char *_right = nullptr;
-  bool _authChecked = false;
-  bool _authOk = false;
   bool _includesEveryday = true;
   bool _includesSettings = true;
-  bool _inChange = false;   // reading a Change's parameters
+  bool _plainForMode = false;   // a field was plain text: configuration mode
+  bool _plainForRight = false;  // ... or a right the caller doesn't have
   String _prefix;
   String _formHidden;       // hidden fields for every form, see FormHidden
   bool _headerRow = false;  // showCell() writes <th>, see IotsaWebCollection
@@ -254,7 +212,6 @@ private:
   std::vector<Group> _forms;
   struct Feedback {
     String text;
-    bool error;
   };
   std::vector<Feedback> _feedback;
 };

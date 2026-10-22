@@ -19,31 +19,13 @@ void IotsaApiServiceRest::setup(const char* path, bool get, bool put, bool post,
 void IotsaApiServiceRest::_handle(IotsaApiOperation verb, const char *path) {
     IotsaActivityScope activity(IOTSA_CRUMB_REQUEST, IOTSA_CRUMB_REST);
     iotsaNoKeepAlive(server);
-    iotsaApiBegin("rest", verb == IOTSA_API_GET ? "GET" : verb == IOTSA_API_PUT ? "PUT" : "POST", path);
-    JsonDocument replyDocument;
-    JsonObject reply = replyDocument.to<JsonObject>();
-    bool ok = false;
-    if (!provider->needsAuthentication(path, verb)) {
-        iotsaController.noteActivity();
-        if (verb == IOTSA_API_GET) {
-            ok = provider->getHandler(path, reply);
-        } else {
-            JsonDocument requestDocument;
-            DeserializationError err = deserializeJson(requestDocument, server->arg("plain"));
-            if (err == DeserializationError::NoMemory || requestDocument.overflowed()) {
-                iotsaApiError(413, "request too big");
-            } else if (err && err != DeserializationError::EmptyInput) {
-                iotsaApiError(400, "invalid JSON");
-            } else {
-                JsonObject request = requestDocument.as<JsonObject>();
-                ok = verb == IOTSA_API_PUT ? provider->putHandler(path, request, reply) : provider->postHandler(path, request, reply);
-            }
-        }
-    }
+    iotsaController.noteActivity();
+    String requestBody = verb == IOTSA_API_GET ? String() : server->arg("plain");
     String body;
-    int status = iotsaApiEnd(ok, replyDocument, body);
-    // A refusing authenticator has already sent its own reply (a 401 challenge).
-    if (iotsaApiResult.authResponded) return;
+    bool responded;
+    int status = iotsaApiRequest(provider, "rest", verb, path, requestBody.c_str(), true, body, responded);
+    // A 401 challenge has already been sent.
+    if (responded) return;
     server->send(status, "application/json", body);
 }
 #endif // IOTSA_HAS_RESTSERVER

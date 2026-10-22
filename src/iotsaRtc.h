@@ -35,8 +35,8 @@ protected:
   void _updateCurrentTime();
   void configLoad() override;
   void configSave() override;
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
-  bool getHandler(const char *path, JsonObject& reply) override;
+  void putHandler(IotsaApiContext& ctx) override;
+  void getHandler(IotsaApiContext& ctx) override;
 #ifdef IOTSA_WITH_WEB
   String webTitle() override { return "Realtime Clock Settings"; }
   void formHandler_args(IotsaWebContext& ctx) override;

@@ -91,28 +91,19 @@ void IotsaNtpMod::configSave() {
   cf.put("tzDescription", tzDescription);
 }
 
-bool IotsaNtpMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  bool anyChanged = false;
-  JsonObject reqObj = request.as<JsonObject>();
-  if (getFromRequest<const char *>(reqObj, "ntpServer", ntpServer)) {
-    anyChanged = true;
-  }
-  if (getFromRequest<const char *>(reqObj, "tzDescription", tzDescription)) {
-    anyChanged = true;
-  }
-  if (anyChanged) {
+void IotsaNtpMod::putHandler(IotsaApiContext& ctx) {
+  ctx.argsNeedRight("ntp");
+  bool changed = ctx.arg("ntpServer", ntpServer, IotsaApiContext::Saved);
+  changed |= ctx.arg("tzDescription", tzDescription, IotsaApiContext::Saved);
+  if (ctx.failed()) return;
+  if (changed) {
     parseTimezone(tzDescription);  // also restarts SNTP, so a new server takes effect now
-    configSave();
-    if (changed) *changed = true;
   }
-  checkUnhandled(reqObj);
-  return true;
 }
 
-bool IotsaNtpMod::getHandler(const char *path, JsonObject& reply) {
-  reply["ntpServer"] = ntpServer;
-  reply["tzDescription"] = tzDescription;
-  return true;
+void IotsaNtpMod::getHandler(IotsaApiContext& ctx) {
+  ctx.show("ntpServer", ntpServer);
+  ctx.show("tzDescription", tzDescription);
 }
 
 #ifdef IOTSA_WITH_WEB
@@ -120,12 +111,14 @@ void IotsaNtpMod::formHandler_args(IotsaWebContext& ctx) {
   ctx.argsNeedRight("ntp");
   bool changed = ctx.arg("ntpServer", ntpServer, IotsaWebContext::Saved);
   changed |= ctx.arg("tzDescription", tzDescription, IotsaWebContext::Saved);
+  if (ctx.failed()) return;
   if (changed) {
     parseTimezone(tzDescription);  // also restarts SNTP, so a new server takes effect now
   }
 }
 
 void IotsaNtpMod::formHandler_fields(IotsaWebContext& ctx) {
+  ctx.argsNeedRight("ntp");
   if (ctx.includesEveryday()) {
     ctx.showStatus("UTC time", "", String(utcTime()));
     ctx.showStatus("Local time", "", isoTime());

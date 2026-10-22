@@ -44,19 +44,17 @@ void IotsaLedControlMod::lateSetup() {
 // A PUT starts a flash. Everything is optional: {} flashes white for a second.
 // rgb is a number here, 0xRRGGBB (for example 16711680 is red), because JSON
 // has no hexadecimal.
-bool IotsaLedControlMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  JsonObject reqObj = request.as<JsonObject>();
+void IotsaLedControlMod::putHandler(IotsaApiContext& ctx) {
   uint32_t rgb = 0xffffff;
   uint32_t onDuration = 0;
   uint32_t offDuration = 0;
   uint32_t durationMs = 1000;
-  getFromRequest<uint32_t>(reqObj, "rgb", rgb);
-  getFromRequest<uint32_t>(reqObj, "onDuration", onDuration);
-  getFromRequest<uint32_t>(reqObj, "offDuration", offDuration);
-  getFromRequest<uint32_t>(reqObj, "durationMs", durationMs);
-  checkUnhandled(reqObj);
+  ctx.arg("rgb", rgb, IotsaApiContext::Transient);
+  ctx.arg("onDuration", onDuration, IotsaApiContext::Transient);
+  ctx.arg("offDuration", offDuration, IotsaApiContext::Transient);
+  ctx.arg("durationMs", durationMs, IotsaApiContext::Transient);
+  if (ctx.failed()) return;
   iotsaStatus.setStatusPulse(rgb, onDuration, offDuration, durationMs, "REST led control");
-  return true;
 }
 
 #ifdef IOTSA_WITH_BLE

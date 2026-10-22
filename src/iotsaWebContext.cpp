@@ -10,9 +10,7 @@
 // (error, button) are hooks for that styling.
 
 IotsaWebContext::IotsaWebContext(IotsaBaseModule& mod, IotsaWebServer *server, const String& apiPath)
-: _mod(mod),
-  _server(server),
-  _apiPath(apiPath)
+: IotsaHttpContext(mod, server, apiPath)
 {
 }
 
@@ -21,60 +19,12 @@ IotsaWebContext::IotsaWebContext(IotsaBaseModule& mod, IotsaWebServer *server, c
 //
 
 bool IotsaWebContext::_present(const char *name, String& value) {
-  if (responded) return false;
+  if (responded || failed()) return false;
   String scoped = _scoped(name);
   if (!_server->hasArg(scoped)) return false;
+  _use(scoped);
   value = _server->arg(scoped);
   return true;
-}
-
-bool IotsaWebContext::_mayChange(Persistence persistence) {
-  if (responded) return false;
-  // A Change's parameters: the Change itself was checked.
-  if (_inChange) return true;
-  if (!_authChecked) {
-    _authChecked = true;
-    // Both send their own challenge when they refuse.
-    if (_rule == NamedRight) {
-      _authOk = !_mod.needsAuthentication(_right);
-    } else {
-      _authOk = !_mod.needsAuthentication(_apiPath.c_str(), IOTSA_API_PUT);
-    }
-  }
-  if (!_authOk) {
-    responded = true;
-    return false;
-  }
-  if (!editable(persistence)) {
-    if (!refusedConfigMode) error("Some settings can only be changed in configuration mode.");
-    refusedConfigMode = true;
-    return false;
-  }
-  return true;
-}
-
-void IotsaWebContext::_setRule(AuthRule rule, const char *right) {
-  bool sameRight = right == _right || (right && _right && strcmp(right, _right) == 0);
-  if (rule == _rule && (rule != NamedRight || sameRight)) return;
-  _rule = rule;
-  _right = right;
-  // A refusal has already answered the request, so only a successful (or not
-  // yet done) check is redone for the new rule.
-  if (_authOk || !_authChecked) _authChecked = false;
-}
-
-void IotsaWebContext::_changed(Persistence persistence) {
-  // A Change's parameters only read: Change::done() marks.
-  if (_inChange) return;
-  _mark(persistence);
-}
-
-void IotsaWebContext::_mark(Persistence persistence) {
-  if (persistence == Transient) {
-    stateChanged = true;
-  } else {
-    configChanged = true;
-  }
 }
 
 bool IotsaWebContext::argPassword(const char *name, String& field, Persistence persistence, bool allowEmpty, bool clearable) {
@@ -86,8 +36,11 @@ bool IotsaWebContext::argPassword(const char *name, String& field, Persistence p
     return true;
   }
   if (!_present(name, value)) return false;
-  if ((value == "" && !allowEmpty) || value == field) return false;
+  if (value == "" && !allowEmpty) return false;
+  // Check before comparing: a password is never readable, so "unchanged, not
+  // refused" must not tell a right guess from a wrong one.
   if (!_mayChange(persistence)) return false;
+  if (value == field) return false;
   field = value;
   _changed(persistence);
   return true;
@@ -101,8 +54,10 @@ bool IotsaWebContext::argChoice(const char *name, int& field, int count, Persist
     error(String("Invalid value for ") + _scoped(name) + ".");
     return false;
   }
-  if (newValue == field) return false;
+  bool same = newValue == field;
+  if (same && _compareFirst()) return false;
   if (!_mayChange(persistence)) return false;
+  if (same) return false;
   field = newValue;
   _changed(persistence);
   return true;
@@ -125,41 +80,31 @@ bool IotsaWebContext::argConfirmedAction(const char *name) {
     return false;
   }
   if (!_mayChange(Transient)) return false;
-  stateChanged = true;
+  _changed(Transient);
   return true;
 }
 
-IotsaWebContext::Change::Change(IotsaWebContext& ctx, const char *button, Persistence persistence)
-: _ctx(ctx),
-  _persistence(persistence),
-  _outer(ctx._inChange)
-{
-  String value;
-  if (!_ctx._present(button, value)) return;
-  if (!_ctx._mayChange(persistence)) return;
-  _active = true;
-  _ctx._inChange = true;
-}
-
-IotsaWebContext::Change::~Change() {
-  _ctx._inChange = _outer;
-}
-
-void IotsaWebContext::Change::done() {
-  if (_active && !_outer) _ctx._mark(_persistence);
-}
-
 void IotsaWebContext::feedback(const String& text) {
-  _feedback.push_back({text, false});
-}
-
-void IotsaWebContext::error(const String& text) {
-  _feedback.push_back({text, true});
+  _feedback.push_back({text});
 }
 
 void IotsaWebContext::respond(int code, const char *type, const String& body) {
   _server->send(code, type, body);
   responded = true;
+}
+
+void IotsaWebContext::reportUnused() {
+  if (responded || failed()) return;
+  String names;
+  for (int i = 0; i < _server->args(); i++) {
+    String name = _server->argName(i);
+    // "plain": the request body, added by the ESP32 web server itself.
+    if (name == "plain" || _isUsed(name)) continue;
+    _use(name);  // once, also when sent twice
+    if (names.length()) names += ", ";
+    names += name;
+  }
+  if (names.length()) feedback("Ignored: " + names + ".");
 }
 
 bool IotsaWebContext::_parse(const String& s, bool& v) {
@@ -226,8 +171,15 @@ String IotsaWebContext::_scoped(const char *name) const {
 // Get side
 //
 
-bool IotsaWebContext::editable(Persistence persistence) const {
-  if (persistence == SavedInConfigMode) return iotsaConfigSettingsWritable();
+bool IotsaWebContext::editable(Persistence persistence) {
+  if (_writeAccess() == IotsaAccess::Forbidden) {
+    _plainForRight = true;
+    return false;
+  }
+  if (!_modeAllows(persistence)) {
+    _plainForMode = true;
+    return false;
+  }
   return true;
 }
 
@@ -420,8 +372,14 @@ void IotsaWebContext::showCell(const IotsaWebLabel& label, const String& value, 
 }
 
 String IotsaWebContext::takeOutput() {
-  String rv = _output;
+  // Why some fields of this part are plain text, once, at the top.
+  String rv;
+  if (_plainForMode) rv += "<p>Some of these can only be changed in configuration mode, see <a href='/runmode'>/runmode</a>.</p>\n";
+  if (_plainForRight) rv += "<p>Some of these can't be changed with the rights you have.</p>\n";
+  rv += _output;
   _output = "";
+  _plainForMode = false;
+  _plainForRight = false;
   return rv;
 }
 
@@ -431,12 +389,11 @@ void IotsaWebContext::sendPage(const String& title, const String& everyday, cons
   page += "<title>" + IotsaBaseModule::htmlEncode(title) + "</title>\n";
   page += "</head><body>\n";
   page += "<h1>" + IotsaBaseModule::htmlEncode(title) + "</h1>\n";
+  if (failed()) {
+    page += "<p class='error'><strong>" + IotsaBaseModule::htmlEncode(errorMessage()) + "</strong></p>\n";
+  }
   for (auto& f : _feedback) {
-    if (f.error) {
-      page += "<p class='error'><strong>" + IotsaBaseModule::htmlEncode(f.text) + "</strong></p>\n";
-    } else {
-      page += "<p>" + IotsaBaseModule::htmlEncode(f.text) + "</p>\n";
-    }
+    page += "<p>" + IotsaBaseModule::htmlEncode(f.text) + "</p>\n";
   }
   page += everyday;
   if (settings.length() > 0) {
@@ -448,14 +405,16 @@ void IotsaWebContext::sendPage(const String& title, const String& everyday, cons
 }
 
 void IotsaWebContext::sendText() {
+  if (failed()) {
+    _server->send(errorStatus(), "text/plain", errorMessage() + "\n");
+    return;
+  }
   String text;
-  bool failed = false;
   for (auto& f : _feedback) {
     text += f.text + "\n";
-    if (f.error) failed = true;
   }
   if (text.length() == 0) text = "OK\n";
-  _server->send(failed ? 400 : 200, "text/plain", text);
+  _server->send(200, "text/plain", text);
 }
 
 //
@@ -499,7 +458,8 @@ void IotsaWebCollection::formHandler_args(IotsaWebContext& ctx) {
     if (change) {
       withExample([&](IotsaModObject& obj) {
         obj.formHandler_args(ctx);
-        if (add(obj, ctx)) {
+        // A refused field fails the whole add.
+        if (change && add(obj, ctx)) {
           _version++;
           change.done();
         }

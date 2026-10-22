@@ -45,25 +45,19 @@ void IotsaHelloMod::configSave() {
   cf.put("personName", personName);
 }
 
-// The API PUT handler (REST or other protocols): pick up the
-// values the caller sent, and store or use them.
-bool IotsaHelloMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  JsonObject reqObj = request.as<JsonObject>();
-  if (getFromRequest<const char *>(reqObj, "personName", personName)) {
-    // The request set the name, so save it.
-    configSave();
-    if (changed) *changed = true;
-  }
-  // Anything else in the request is reported back as "iotsa_api_ignored".
-  checkUnhandled(reqObj);
-  // Success, also when nothing changed. On an error, return apiError(status, "why").
-  return true;
+// The API PUT handler (REST or other protocols): pick up the values the
+// caller sent, and store or use them. The ctx object handles the common
+// things, as on the web page: ctx.arg() checks the caller's rights, and
+// because personName is Saved, the framework calls configSave() when it
+// changed. Anything else in the request is reported back as
+// "iotsa_api_ignored". To refuse, call ctx.error(status, "why").
+void IotsaHelloMod::putHandler(IotsaApiContext& ctx) {
+  ctx.arg("personName", personName, IotsaApiContext::Saved);
 }
 
 // The API GET handler: the values you want to send back to the caller.
-bool IotsaHelloMod::getHandler(const char *path, JsonObject& reply) {
-  reply["personName"] = personName;
-  return true;
+void IotsaHelloMod::getHandler(IotsaApiContext& ctx) {
+  ctx.show("personName", personName);
 }
 
 #ifdef IOTSA_WITH_WEB // only with web pages

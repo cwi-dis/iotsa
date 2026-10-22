@@ -32,17 +32,13 @@ void IotsaBlinkMod::loop() {
 // interval is not saved. After a reboot it is 1000 ms again. The fields are
 // Transient (below), which tells the web page not to save anything either.
 
-bool IotsaBlinkMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  JsonObject reqObj = request.as<JsonObject>();
-  // Nothing to save, so no configSave() and *changed stays as it is.
-  getFromRequest<int>(reqObj, "interval", interval);
-  checkUnhandled(reqObj);
-  return true;
+void IotsaBlinkMod::putHandler(IotsaApiContext& ctx) {
+  // Transient: nothing to save.
+  ctx.arg("interval", interval, IotsaApiContext::Transient);
 }
 
-bool IotsaBlinkMod::getHandler(const char *path, JsonObject& reply) {
-  reply["interval"] = interval;
-  return true;
+void IotsaBlinkMod::getHandler(IotsaApiContext& ctx) {
+  ctx.show("interval", interval);
 }
 
 #ifdef IOTSA_WITH_WEB

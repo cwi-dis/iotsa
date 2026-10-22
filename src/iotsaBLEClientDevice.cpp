@@ -476,42 +476,38 @@ void IotsaBLEClientDevice::configSave(IotsaConfigFileSave& cf, const String& f_n
   if (addr != "") cf.put(f_name + ".address", addr);
 }
 
-bool IotsaBLEClientDevice::putHandler(const JsonVariant& request, JsonObject& reply, bool *changed) {
-  if (!request.is<JsonObject>()) return apiError(400, "expected an object");
-  const JsonObject& reqObj = request.as<JsonObject>();
-  String newName;
-  if (getFromRequest<String>(reqObj, "name", newName)) {
-    if (retarget(std::string(newName.c_str())) && changed) *changed = true;
-  }
-  return true;
+void IotsaBLEClientDevice::putHandler(IotsaApiContext& ctx) {
+  String newName(bleName.c_str());
+  bool rename = ctx.arg("name", newName, IotsaApiContext::Saved);
+  if (ctx.failed()) return;
+  if (rename) retarget(std::string(newName.c_str()));
 }
 
-bool IotsaBLEClientDevice::getHandler(JsonObject& reply) {
-  IotsaBLEDeviceInfo::getHandler(reply);
+void IotsaBLEClientDevice::getHandler(IotsaApiContext& ctx) {
+  IotsaBLEDeviceInfo::getHandler(ctx);
   if (lastConnectAttemptAtMillis != 0) {
-    reply["lastConnectAttemptMillisAgo"] = millis() - lastConnectAttemptAtMillis;
+    ctx.show("lastConnectAttemptMillisAgo", millis() - lastConnectAttemptAtMillis);
   }
-  reply["numConnectCalls"] = numConnectCalls;
-  reply["numConnectSkipped"] = numConnectSkipped;
-  reply["numConnectAttempts"] = numConnectAttempts;
-  reply["numConnectFailed"] = numConnectFailed;
-  reply["numConnectSucceeded"] = numConnectSucceeded;
-  reply["numConnectionOpen"] = isConnected() ? 1 : 0;
-  reply["numConnectionFailed"] = numConnectionFailed;
-  reply["numConnectionClosedLocally"] = numConnectionClosedLocally;
+  ctx.show("numConnectCalls", numConnectCalls);
+  ctx.show("numConnectSkipped", numConnectSkipped);
+  ctx.show("numConnectAttempts", numConnectAttempts);
+  ctx.show("numConnectFailed", numConnectFailed);
+  ctx.show("numConnectSucceeded", numConnectSucceeded);
+  ctx.show("numConnectionOpen", isConnected() ? 1 : 0);
+  ctx.show("numConnectionFailed", numConnectionFailed);
+  ctx.show("numConnectionClosedLocally", numConnectionClosedLocally);
   if (lastDisconnectReason != -1) {
-    reply["lastDisconnectReason"] = NimBLEUtils::returnCodeToString(lastDisconnectReason);
-    reply["lastDisconnectMillisAgo"] = millis() - lastDisconnectAtMillis;
+    ctx.show("lastDisconnectReason", NimBLEUtils::returnCodeToString(lastDisconnectReason));
+    ctx.show("lastDisconnectMillisAgo", millis() - lastDisconnectAtMillis);
   }
-  reply["presence"] = presenceName(getPresence());
-  reply["connected"] = isConnected();
+  ctx.show("presence", presenceName(getPresence()));
+  ctx.show("connected", isConnected());
   static const char *linkStateNames[] = {"idle", "waitingForAddress", "waitingForRadio", "connecting", "lingering"};
-  reply["linkState"] = linkStateNames[(int)linkState];
-  reply["workPending"] = (bool)workPending;
-  if (lastWorkStatus) reply["lastWorkStatus"] = lastWorkStatus;
-  reply["lastWorkMillis"] = lastWorkMillis;
-  reply["maxWorkMillis"] = maxWorkMillis;
-  return true;
+  ctx.show("linkState", linkStateNames[(int)linkState]);
+  ctx.show("workPending", (bool)workPending);
+  if (lastWorkStatus) ctx.show("lastWorkStatus", lastWorkStatus);
+  ctx.show("lastWorkMillis", lastWorkMillis);
+  ctx.show("maxWorkMillis", maxWorkMillis);
 }
 
 #ifdef IOTSA_WITH_WEB
@@ -520,6 +516,8 @@ void IotsaBLEClientDevice::formHandler_args(IotsaWebContext& ctx) {
   if (!rename) return;
   String newName(bleName.c_str());
   ctx.arg("name", newName, IotsaWebContext::Saved);
+  // A refused field fails the whole rename.
+  if (!rename) return;
   if (newName == "") {
     ctx.error("A device needs a name.");
   } else if (owner && owner->getDevice(newName) != nullptr) {

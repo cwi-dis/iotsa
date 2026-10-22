@@ -82,28 +82,20 @@ void IotsaBatteryMod::configSave() {
   }
 }
 
-bool IotsaBatteryMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  bool anyChanged = false;
-  JsonObject reqObj = request.as<JsonObject>();
-  if (pinVBat >= 0 && getFromRequest<float>(reqObj, "correctionVBat", correctionVBat)) {
-    anyChanged = true;
-  }
-  if (anyChanged) { configSave(); if (changed) *changed = true; }
-  checkUnhandled(reqObj);
-  return true;
+void IotsaBatteryMod::putHandler(IotsaApiContext& ctx) {
+  if (pinVBat >= 0) ctx.arg("correctionVBat", correctionVBat, IotsaApiContext::Saved);
 }
 
-bool IotsaBatteryMod::getHandler(const char *path, JsonObject& reply) {
+void IotsaBatteryMod::getHandler(IotsaApiContext& ctx) {
   _readVoltages();
   if (pinVBat >= 0) {
-    reply["levelVBat"] = levelVBat;
-    reply["correctionVBat"] = correctionVBat;
+    ctx.show("levelVBat", levelVBat);
+    ctx.show("correctionVBat", correctionVBat);
   }
   if (pinVUSB >= 0) {
-    reply["levelVUSB"] = levelVUSB;
-    reply["onUsbPower"] = iotsaStatus.onUsbPower;
+    ctx.show("levelVUSB", levelVUSB);
+    ctx.show("onUsbPower", iotsaStatus.onUsbPower);
   }
-  return true;
 }
 
 #ifdef IOTSA_WITH_BLE

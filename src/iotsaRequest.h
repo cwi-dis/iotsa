@@ -19,12 +19,13 @@ public:
   bool send(const char *query=NULL, String *responseBody=NULL);
   bool configLoad(IotsaConfigFileLoad& cf, const String& f_name) override;
   void configSave(IotsaConfigFileSave& cf, const String& f_name) override;
-  bool putHandler(const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
-  bool getHandler(JsonObject& reply) override;
+  // Credentials, token and the root CA are write-only: redacted when set,
+  // and an empty string empties them.
+  void putHandler(IotsaApiContext& ctx) override;
+  void getHandler(IotsaApiContext& ctx) override;
 #ifdef IOTSA_WITH_WEB
-  // Credentials and token are secrets, as over REST: never shown, empty
-  // leaves them unchanged, a "clear" checkbox empties them. The root CA (a
-  // textarea) works the same way.
+  // The same on the web page: never shown, empty leaves them unchanged, a
+  // "clear" checkbox empties them. The root CA is a textarea.
   void formHandler_args(IotsaWebContext& ctx) override;
   void formHandler_fields(IotsaWebContext& ctx) override;
   void formHandler_row(IotsaWebContext& ctx) override;

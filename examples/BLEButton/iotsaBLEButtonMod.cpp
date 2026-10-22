@@ -52,19 +52,13 @@ String IotsaBLEButtonMod::ringStatus() {
 }
 
 // The target's fields are ringer's own, so it handles them.
-bool IotsaBLEButtonMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  bool ringerChanged = false;
-  if (!ringer.putHandler(request, reply, &ringerChanged)) return false;
-  if (ringerChanged) {
-    configSave();
-    if (changed) *changed = true;
-  }
-  return true;
+// The target's fields are ours: the framework calls configSave() when one changed.
+void IotsaBLEButtonMod::putHandler(IotsaApiContext& ctx) {
+  ringer.putHandler(ctx);
 }
 
-bool IotsaBLEButtonMod::getHandler(const char *path, JsonObject& reply) {
-  ringer.getHandler(reply);
-  return true;
+void IotsaBLEButtonMod::getHandler(IotsaApiContext& ctx) {
+  ringer.getHandler(ctx);
 }
 
 #ifdef IOTSA_WITH_WEB
@@ -73,7 +67,9 @@ void IotsaBLEButtonMod::formHandler_args(IotsaWebContext& ctx) {
     IotsaWebContext::Scope s(ctx, "target");
     ringer.formHandler_args(ctx);
   }
-  if (ctx.argAction("ringnow", IotsaWebContext::Transient)) {
+  bool ringNow = ctx.argAction("ringnow", IotsaWebContext::Transient);
+  if (ctx.failed()) return;
+  if (ringNow) {
     ring();
     ctx.feedback("Ringing.");
   }

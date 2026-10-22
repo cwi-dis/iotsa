@@ -63,17 +63,16 @@ bool IotsaBLEDeviceInfo::receivedAdvertisement(const NimBLEAdvertisedDevice& _de
   return changed;
 }
 
-bool IotsaBLEDeviceInfo::getHandler(JsonObject& reply) {
-  reply["name"] = bleName;
+void IotsaBLEDeviceInfo::getHandler(IotsaApiContext& ctx) {
+  ctx.show("name", bleName);
   std::string addr = getAddress();
-  if (addr != "") reply["address"] = String(addr.c_str()); // REST field name unchanged by the bleAddress rename -- wire API, not internal naming
+  if (addr != "") ctx.show("address", String(addr.c_str())); // REST field name unchanged by the bleAddress rename -- wire API, not internal naming
   if (lastSeenAtMillis != 0) {
     // rssi only comes from advertisements; a device can also be seen by
     // connecting to it (IotsaBLEClientDevice), then there's no rssi yet.
-    if (rssi != 0) reply["rssi"] = rssi;
-    reply["lastSeenMillisAgo"] = millis() - lastSeenAtMillis;
+    if (rssi != 0) ctx.show("rssi", rssi);
+    ctx.show("lastSeenMillisAgo", millis() - lastSeenAtMillis);
   }
-  return true;
 }
 
 #endif // IOTSA_WITH_BLE

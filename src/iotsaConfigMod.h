@@ -23,10 +23,8 @@ public:
   String info() override;
 #endif
 protected:
-  bool getHandler(const char *path, JsonObject& reply) override;
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
-  void uploadHandler();
-  void uploadOkHandler();
+  void putHandler(IotsaApiContext& ctx) override;
+  void getHandler(IotsaApiContext& ctx) override;
 private:
   void configLoad() override;
   void configSave() override;

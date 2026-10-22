@@ -169,6 +169,7 @@ void IotsaWifiMod::formHandler_args(IotsaWebContext& ctx) {
 }
 
 void IotsaWifiMod::formHandler_fields(IotsaWebContext& ctx) {
+  ctx.argsNeedRight("config");
   if (ctx.includesEveryday()) {
     ctx.showStatus("Hostname", "", iotsaConfig.hostName);
 #ifdef ESP32
@@ -185,9 +186,6 @@ void IotsaWifiMod::formHandler_fields(IotsaWebContext& ctx) {
 #endif
     ctx << "<p>See <a href='/config'>/config</a> to change the hostname.</p>\n";
     return;
-  }
-  if (!ctx.editable(IotsaWebContext::SavedInConfigMode)) {
-    ctx << "<p>WiFi settings can only be changed in configuration mode, see <a href='/runmode'>/runmode</a>.</p>\n";
   }
   IotsaWebContext::Form form(ctx);
   ctx.showField("Network", "ssid", ssid, IotsaWebContext::SavedInConfigMode);
@@ -212,35 +210,21 @@ String IotsaWifiMod::info() {
 }
 #endif // IOTSA_WITH_WEB
 
-bool IotsaWifiMod::getHandler(const char *path, JsonObject& reply) {
-  reply["ssid"] = ssid;
-  reply["has_ssidPassword"] = ssidPassword.length() > 0;
-  reply["wifiPowerReduction"] = wifiPowerReduction;
-  return true;
-}
-
-bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  bool anyChanged = false;
-  if (!iotsaConfigSettingsWritable()) {
-    IOTSA_LOG_DEBUG_WIFI("iotsaWifi", "wifiConfig write rejected, not in config mode");
-    return apiError(409, "not in configuration mode");
-  }
-  JsonObject reqObj = request.as<JsonObject>();
-  if (getFromRequest<const char *>(reqObj, "ssid", ssid)) {
-    anyChanged = true;
-  }
-  if (getFromRequest<const char *>(reqObj, "ssidPassword", ssidPassword)) {
-    anyChanged = true;
-  }
-  if (getFromRequest<bool>(reqObj, "wifiPowerReduction", wifiPowerReduction)) {
-    anyChanged = true;
-  }
-  if (anyChanged) { configSave(); if (changed) *changed = true; }
+void IotsaWifiMod::putHandler(IotsaApiContext& ctx) {
+  ctx.argsNeedRight("config");
   // No `reboot` key here (cwi-dis/iotsa#106): /api/runmode is the canonical place
   // to ask for a reboot; /api/config keeps it as a backward-compat forwarder.
   // A WiFi credential change takes effect live, so nothing here needs a reboot.
-  checkUnhandled(reqObj);
-  return true;
+  ctx.arg("ssid", ssid, IotsaApiContext::SavedInConfigMode);
+  ctx.argPassword("ssidPassword", ssidPassword, IotsaApiContext::SavedInConfigMode);
+  ctx.arg("wifiPowerReduction", wifiPowerReduction, IotsaApiContext::SavedInConfigMode);
+}
+
+void IotsaWifiMod::getHandler(IotsaApiContext& ctx) {
+  ctx.show("ssid", ssid);
+  ctx.show("wifiPowerReduction", wifiPowerReduction);
+  ctx.showsNeedRight(IOTSA_RIGHT_NEVER);
+  ctx.show("ssidPassword", ssidPassword);
 }
 
 void IotsaWifiMod::lateSetup() {

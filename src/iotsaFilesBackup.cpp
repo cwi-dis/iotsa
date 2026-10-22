@@ -67,8 +67,6 @@ void IotsaFilesBackupMod::setup() {
 
 void
 IotsaFilesBackupMod::handler() {
-  iotsaNoKeepAlive(app.server);  // cwi-dis/iotsa#293
-  if (needsAuthentication("backupfiles")) return;
   IFDEBUG IotsaSerial.println("Creating backup");
 #ifdef CONTENT_LENGTH_UNKNOWN
   app.server->setContentLength(CONTENT_LENGTH_UNKNOWN);
@@ -134,7 +132,7 @@ IotsaFilesBackupMod::handler() {
 }
 
 void IotsaFilesBackupMod::lateSetup() {
-  app.server->on("/backup.tar", std::bind(&IotsaFilesBackupMod::handler, this));
+  addWebHandler("/backup.tar", std::bind(&IotsaFilesBackupMod::handler, this), "backupfiles");
   name = "filesbackup";
 }
 

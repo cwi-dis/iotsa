@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `PUT /api/users` compared the old password before checking rights and configuration mode (#296)
 - HTTPS on memory-tight ESP32s: the files, upload, backup, logger and simple-module pages, and not-found answers (a browser's favicon request), now also answer `Connection: close`, so they no longer hold the only TLS session for 20 s (#293)
 - Buttons: on a fresh device the constructor's "send on press/release" was ignored, so a button sent nothing until configured (#183)
 - Led example: built with BLE, the LED was never started and identify() had no handler (#183)
@@ -77,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- API handlers get a request context, shared with web pages: the same rights per field on every transport, reads open, secrets write-only (`iotsa_api_redacted`), the first error stops the request (#296)
 - README: the design and API sections describe the current interfaces (`IotsaModule`, `api.setup()`, web pages, triggers); the examples come in two strands; how to add a standard module (#183)
 - Input example is now a dimmer: a button and a rotary encoder dim an LED through `bindVar()`, shown on `/dimmer`; pins per chip (#183)
 - BLEButton, BLERinger and BLEManager examples: modules in their own files; the button calls its module directly, and `/ring` rings like the button (#183)
@@ -104,6 +106,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- `/configupload`: `iotsa certificate` sends key and certificate in one PUT on `/api/config` (#296)
 - Skeleton, DateTime and FileShare examples: HelloIotsa is the starting point, and the README lists the standard modules you can add (#183)
 - The Log example: using the logger is one line, see the README; an example comes with the new logger (#183, #294)
 - The HelloRights example: HelloUser now shows rights (#183)

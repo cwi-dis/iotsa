@@ -15,8 +15,8 @@ public:
 public:
   bool configLoad(IotsaConfigFileLoad& cf, const String& f_name) override;
   void configSave(IotsaConfigFileSave& cf, const String& f_name) override;
-  bool putHandler(const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
-  bool getHandler(JsonObject& reply) override;
+  void putHandler(IotsaApiContext& ctx) override;
+  void getHandler(IotsaApiContext& ctx) override;
 #ifdef IOTSA_WITH_WEB
   void formHandler_args(IotsaWebContext& ctx) override;
   void formHandler_fields(IotsaWebContext& ctx) override;
@@ -35,11 +35,10 @@ public:
 #ifdef IOTSA_WITH_WEB
   String info() override;
 #endif
-  bool allows(const char *right=NULL) override;
-  bool allows(const char *obj, IotsaApiOperation verb) override;
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
-  bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
-  bool getHandler(const char *path, JsonObject& reply) override;
+  IotsaAccess allows(IotsaContext& ctx, const char *right) override;
+  void putHandler(IotsaApiContext& ctx) override;
+  void postHandler(IotsaApiContext& ctx) override;
+  void getHandler(IotsaApiContext& ctx) override;
 protected:
   void configLoad() override;
   void configSave() override;

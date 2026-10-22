@@ -57,7 +57,7 @@ void IotsaLoggerMod::setup() {
 }
 
 void IotsaLoggerMod::lateSetup() {
-  app.server->on("/logger", std::bind(&IotsaLoggerMod::handler, this));
+  addWebHandler("/logger", std::bind(&IotsaLoggerMod::handler, this), "logger");
   name = "logger";
 }
 
@@ -66,8 +66,6 @@ void IotsaLoggerMod::loop() {
 
 void
 IotsaLoggerMod::handler() {
-  iotsaNoKeepAlive(app.server);  // cwi-dis/iotsa#293
-  if (needsAuthentication("logger")) return;
 #ifdef CONTENT_LENGTH_UNKNOWN
   app.server->setContentLength(CONTENT_LENGTH_UNKNOWN);
 #endif

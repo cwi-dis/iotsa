@@ -28,7 +28,7 @@ public:
   String info() override;
 protected:
   void _update();
-  bool getHandler(const char *path, JsonObject& reply) override;
+  void getHandler(IotsaApiContext& ctx) override;
 #ifdef IOTSA_WITH_WEB
   String webTitle() override { return "Light"; }
   void formHandler_fields(IotsaWebContext& ctx) override;

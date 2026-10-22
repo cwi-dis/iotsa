@@ -64,8 +64,8 @@ public:
   String info() override;
 #endif
 protected:
-  bool getHandler(const char *path, JsonObject& reply) override;
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
+  void getHandler(IotsaApiContext& ctx) override;
+  void putHandler(IotsaApiContext& ctx) override;
   uint32_t _blockLoopOnce = 0;
   uint32_t _blockLoopEvery = 0;
   volatile uint32_t _blockBle = 0;
@@ -119,47 +119,45 @@ void IotsaFaultMod::loop() {
   IOTSA_LOG("fault", "loop block end, millis=%lu", (unsigned long)millis());
 }
 
-bool IotsaFaultMod::getHandler(const char *path, JsonObject& reply) {
-  reply["millisStart"] = millis();
-  reply["blockLoopEvery"] = _blockLoopEvery;
-  reply["blockBle"] = (uint32_t)_blockBle;
-  reply["replySize"] = _replySize;
-  reply["breadcrumbs"] = iotsaBreadcrumbsEnabled;
-  reply["loopsPerSecond"] = _loopsPerSecond;
+void IotsaFaultMod::getHandler(IotsaApiContext& ctx) {
+  ctx.show("millisStart", millis());
+  ctx.show("blockLoopEvery", _blockLoopEvery);
+  ctx.show("blockBle", (uint32_t)_blockBle);
+  ctx.show("replySize", _replySize);
+  ctx.show("breadcrumbs", iotsaBreadcrumbsEnabled);
+  ctx.show("loopsPerSecond", _loopsPerSecond);
   if (_replySize) {
     String filler;
     filler.reserve(_replySize);
     for (uint32_t i = 0; i < _replySize; i++) filler += 'x';
-    reply["filler"] = filler;
+    ctx.show("filler", filler);
   }
-  reply["millisEnd"] = millis();
-  return true;
+  ctx.show("millisEnd", millis());
 }
 
-bool IotsaFaultMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  reply["millisStart"] = millis();
-  JsonObject reqObj = request.as<JsonObject>();
-  uint32_t blockHandler = 0;
-  getFromRequest<int>(reqObj, "blockLoop", _blockLoopOnce);
-  getFromRequest<int>(reqObj, "blockLoopEvery", _blockLoopEvery);
-  uint32_t ble;
-  if (getFromRequest<int>(reqObj, "blockBle", ble)) _blockBle = ble;
-  getFromRequest<int>(reqObj, "replySize", _replySize);
-  getFromRequest<bool>(reqObj, "crash", _crash);
-  getFromRequest<bool>(reqObj, "breadcrumbs", iotsaBreadcrumbsEnabled);
-  const char *payload = nullptr;
-  if (getFromRequest<const char *>(reqObj, "payload", payload)) {
-    reply["payloadLength"] = payload ? strlen(payload) : 0;
+void IotsaFaultMod::putHandler(IotsaApiContext& ctx) {
+  ctx.show("millisStart", millis());
+  ctx.arg("blockLoop", _blockLoopOnce, IotsaApiContext::Transient);
+  ctx.arg("blockLoopEvery", _blockLoopEvery, IotsaApiContext::Transient);
+  uint32_t ble = _blockBle;
+  if (ctx.arg("blockBle", ble, IotsaApiContext::Transient)) _blockBle = ble;
+  ctx.arg("replySize", _replySize, IotsaApiContext::Transient);
+  ctx.arg("crash", _crash, IotsaApiContext::Transient);
+  ctx.arg("breadcrumbs", iotsaBreadcrumbsEnabled, IotsaApiContext::Transient);
+  String payload;
+  if (ctx.arg("payload", payload, IotsaApiContext::Transient)) {
+    ctx.show("payloadLength", payload.length());
   }
-  if (getFromRequest<int>(reqObj, "blockHandler", blockHandler)) {
+  uint32_t blockHandler = 0;
+  bool block = ctx.arg("blockHandler", blockHandler, IotsaApiContext::Transient);
+  if (ctx.failed()) return;
+  if (block) {
     IotsaActivityScope activity(CRUMB_BLOCK_HANDLER);
     IOTSA_LOG("fault", "handler block %lu ms start, millis=%lu", (unsigned long)blockHandler, (unsigned long)millis());
     busyWait(blockHandler);
     IOTSA_LOG("fault", "handler block end, millis=%lu", (unsigned long)millis());
   }
-  checkUnhandled(reqObj);
-  reply["millisEnd"] = millis();
-  return true;
+  ctx.show("millisEnd", millis());
 }
 
 #ifdef IOTSA_WITH_BLE

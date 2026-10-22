@@ -219,11 +219,6 @@ protected:
     bool cmd_put = command == HPSControl::PUT;
     bool cmd_post = command == HPSControl::POST;
     const char *url_c = curUrl.c_str();
-    // One request = one iotsaApiBegin()/iotsaApiEnd() pair, like REST and CoAP (cwi-dis/iotsa#280).
-    iotsaApiBegin("hps", cmd_get ? "GET" : cmd_put ? "PUT" : cmd_post ? "POST" : "?", url_c);
-    ArduinoJson::JsonDocument reply_doc;
-    ArduinoJson::JsonObject reply = reply_doc.to<JsonObject>();
-    bool ok = false;
     IotsaApiProvider* provider = nullptr;
     if (cmd_get || cmd_put || cmd_post) {
       std::list<IotsaHpsServiceEntryPoint *>&epList =
@@ -236,30 +231,19 @@ protected:
         }
       }
     }
-    if (!cmd_get && !cmd_put && !cmd_post) {
-      iotsaApiError(400, "bad HPS command");
-    } else if (provider == nullptr) {
-      iotsaApiError(404, "not found");
-    } else {
-      ArduinoJson::JsonDocument request_doc;
-      DeserializationError err = ArduinoJson::deserializeJson(request_doc, requestBody.c_str());
-      if (err == DeserializationError::NoMemory || request_doc.overflowed()) {
-        iotsaApiError(413, "request too big");
-      } else if (err && err != DeserializationError::EmptyInput) {
-        iotsaApiError(400, "invalid JSON");
-      } else {
-        ArduinoJson::JsonObject request = request_doc.as<JsonObject>();
-        if (cmd_get) {
-          ok = provider->getHandler(url_c, reply);
-        } else if (cmd_put) {
-          ok = provider->putHandler(url_c, request, reply);
-        } else {
-          ok = provider->postHandler(url_c, request, reply);
-        }
-      }
-    }
+    // One request, the same as over REST and CoAP (cwi-dis/iotsa#280).
+    const char *method = cmd_get ? "GET" : cmd_put ? "PUT" : cmd_post ? "POST" : "?";
     String body;
-    int status = iotsaApiEnd(ok, reply_doc, body);
+    int status;
+    if (!cmd_get && !cmd_put && !cmd_post) {
+      status = iotsaApiRefusal("hps", method, url_c, 400, "bad HPS command", body);
+    } else if (provider == nullptr) {
+      status = iotsaApiRefusal("hps", method, url_c, 404, "not found", body);
+    } else {
+      IotsaApiOperation verb = cmd_get ? IOTSA_API_GET : cmd_put ? IOTSA_API_PUT : IOTSA_API_POST;
+      bool responded;
+      status = iotsaApiRequest(provider, "hps", verb, url_c, requestBody.c_str(), false, body, responded);
+    }
     curBody = body.c_str();
     // A chunking-enabled client reads the reply back over several chunked reads (see
     // bleGetHandler's bodyUUID case), so there's nothing to truncate here; a

@@ -91,39 +91,37 @@ void IotsaButtonMod::configSave() {
 
 // An array with one entry per button, by position (cwi-dis/iotsa#217); null
 // or missing entries leave that button alone.
-bool IotsaButtonMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  if (!request.is<JsonArray>()) {
-    return apiError(400, "expected an array of buttons");
+// An array with an element per button; null leaves that button alone.
+void IotsaButtonMod::putHandler(IotsaApiContext& ctx) {
+  JsonVariant body = ctx.requestVariant();
+  if (!body.is<JsonArray>()) {
+    ctx.error(400, "expected an array of buttons");
+    return;
   }
-  bool anyChanged = false;
-  const JsonArray all = request.as<JsonArray>();
+  JsonArray all = body.as<JsonArray>();
   for (int i=0; i<nButton; i++) {
-      const JsonVariant r = all[i];
-      if (r.isNull()) continue;
-      if (!buttons[i].req.putHandler(r, reply, &anyChanged)) return false;
-      const JsonObject reqObj = r.as<JsonObject>();
-      if (getFromRequest<int>(reqObj, "onPress", buttons[i].sendOnPress)) {
-        anyChanged = true;
-      }
-      if (getFromRequest<int>(reqObj, "onRelease", buttons[i].sendOnRelease)) {
-        anyChanged = true;
-      }
+    JsonVariant r = all[i];
+    if (r.isNull()) continue;
+    if (!r.is<JsonObject>()) {
+      ctx.error(400, "expected an object for each button");
+      return;
+    }
+    IotsaApiContext::Scope s(ctx, String(i), r.as<JsonObject>(), JsonObject());
+    buttons[i].req.putHandler(ctx);
+    ctx.arg("onPress", buttons[i].sendOnPress, IotsaApiContext::Saved);
+    ctx.arg("onRelease", buttons[i].sendOnRelease, IotsaApiContext::Saved);
   }
-  // xxxjack cannot use checkUnhandled() because of the array of buttons
-  if (anyChanged) { configSave(); if (changed) *changed = true; }
-  return true;
 }
 
-bool IotsaButtonMod::getHandler(const char *path, JsonObject& reply) {
-  JsonArray rv = reply["buttons"].to<JsonArray>();
-  for (Button *b=buttons; b<buttons+nButton; b++) {
-      JsonObject bRv = rv.add<JsonObject>();
-      b->req.getHandler(bRv);
-      bRv["state"] = b->buttonState;
-      bRv["onPress"] = b->sendOnPress;
-      bRv["onRelease"] = b->sendOnRelease;
+void IotsaButtonMod::getHandler(IotsaApiContext& ctx) {
+  JsonArray rv = ctx.reply()["buttons"].to<JsonArray>();
+  for (int i=0; i<nButton; i++) {
+    IotsaApiContext::Scope s(ctx, String(i), JsonObject(), rv.add<JsonObject>());
+    buttons[i].req.getHandler(ctx);
+    ctx.show("state", buttons[i].buttonState);
+    ctx.show("onPress", buttons[i].sendOnPress);
+    ctx.show("onRelease", buttons[i].sendOnRelease);
   }
-  return true;
 }
 
 #ifdef IOTSA_WITH_WEB

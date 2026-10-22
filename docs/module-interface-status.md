@@ -144,10 +144,11 @@ Both could expose REST endpoints, but there has been no need yet.
 
 ### 4. `iotsaRequest` uses a different API base class
 
-`IotsaRequest` inherits `IotsaApiModObject` (simplified interface: `getHandler(JsonObject&)` /
-`putHandler(const JsonVariant&)` — no path argument, no reply object in put). All standalone
-modules use `IotsaApiMod` (path-based). This is intentional: `IotsaRequest` is a helper object
-embedded in other modules, not a standalone module.
+`IotsaRequest` inherits `IotsaApiModObject`: the same `getHandler(IotsaApiContext&)` /
+`putHandler(IotsaApiContext&)` as a module, but the module calls them inside an
+`IotsaApiContext::Scope` (no path, its own part of the request and reply). This is
+intentional: `IotsaRequest` is a helper object embedded in other modules, not a standalone
+module.
 
 ### 5. BLE access model
 

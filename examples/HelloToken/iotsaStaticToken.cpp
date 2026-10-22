@@ -30,20 +30,16 @@ void IotsaStaticTokenObject::configSave(IotsaConfigFileSave& cf, const String& f
   cf.put(f_name + ".rights", rights);
 }
 
-bool IotsaStaticTokenObject::putHandler(const JsonVariant& request, JsonObject& reply, bool *changed) {
-  if (!request.is<JsonObject>()) return apiError(400, "expected an object");
-  JsonObject reqObj = request.as<JsonObject>();
-  bool any = false;
-  any |= getFromRequest<String>(reqObj, "token", token);
-  any |= getFromRequest<String>(reqObj, "rights", rights);
-  if (any && changed) *changed = true;
-  return true;
+void IotsaStaticTokenObject::putHandler(IotsaApiContext& ctx) {
+  ctx.argPassword("token", token, IotsaApiContext::Saved);
+  ctx.arg("rights", rights, IotsaApiContext::Saved);
 }
 
-bool IotsaStaticTokenObject::getHandler(JsonObject& reply) {
-  reply["token"] = token;
-  reply["rights"] = rights;
-  return true;
+// The token itself is a secret: only whether it is set.
+void IotsaStaticTokenObject::getHandler(IotsaApiContext& ctx) {
+  ctx.show("rights", rights);
+  ctx.showsNeedRight(IOTSA_RIGHT_NEVER);
+  ctx.show("token", token);
 }
 
 #ifdef IOTSA_WITH_WEB
@@ -98,30 +94,27 @@ void IotsaStaticTokenMod::loop() {
 }
 
 // May this request do something that needs the right "right"? Yes if it
-// carries a token that has the right; otherwise ask the users.
-bool IotsaStaticTokenMod::allows(const char *right) {
-  if (app.server->hasHeader("Authorization")) {
-    String authHeader = app.server->header("Authorization");
-    if (authHeader.startsWith("Bearer ")) {
-      String token = authHeader.substring(7);
-      String rightField("/");
-      rightField += right;
-      rightField += "/";
-      for (auto& t : tokens) {
-        if (t.token == token) {
-          if (t.rights == "*" || t.rights.indexOf(rightField) >= 0) {
-            return true;
-          }
+// carries a token that has the right; otherwise ask the users. right ==
+// nullptr is a REST call, such as a PUT on /api/hello: that needs "api".
+IotsaAccess IotsaStaticTokenMod::allows(IotsaContext& ctx, const char *right) {
+  String token = ctx.bearerToken();
+  if (token != "") {
+    String rightField("/");
+    rightField += right ? right : "api";
+    rightField += "/";
+    for (auto& t : tokens) {
+      if (t.token == token) {
+        if (t.rights == "*" || t.rights.indexOf(rightField) >= 0) {
+          return IotsaAccess::Granted;
         }
+        // A known token without the right: the users may still have it, but
+        // logging in won't help the token.
+        IotsaAccess access = chain.allows(ctx, right);
+        return access == IotsaAccess::NeedsCredentials ? IotsaAccess::Forbidden : access;
       }
     }
   }
-  return chain.allows(right);
-}
-
-// The same question for a REST call.
-bool IotsaStaticTokenMod::allows(const char *obj, IotsaApiOperation verb) {
-  return allows("api");
+  return chain.allows(ctx, right);
 }
 
 // The tokens are kept in a file, so they survive a reboot.
@@ -146,13 +139,13 @@ void IotsaStaticTokenMod::configSave() {
 }
 
 // The tokens themselves are secrets: only their rights are sent.
-bool IotsaStaticTokenMod::getHandler(const char *path, JsonObject& reply) {
-  JsonArray list = reply["tokens"].to<JsonArray>();
+void IotsaStaticTokenMod::getHandler(IotsaApiContext& ctx) {
+  JsonArray list = ctx.reply()["tokens"].to<JsonArray>();
+  int i = 0;
   for (auto& t : tokens) {
-    JsonObject o = list.add<JsonObject>();
-    o["rights"] = t.rights;
+    IotsaApiContext::Scope s(ctx, String(i++), JsonObject(), list.add<JsonObject>());
+    t.getHandler(ctx);
   }
-  return true;
 }
 
 #ifdef IOTSA_WITH_WEB
@@ -164,6 +157,7 @@ void IotsaStaticTokenMod::formHandler_args(IotsaWebContext& ctx) {
 }
 
 void IotsaStaticTokenMod::formHandler_fields(IotsaWebContext& ctx) {
+  ctx.argsNeedRight("tokens");
   // The tokens are configuration, there is no everyday part.
   if (!ctx.includesSettings()) return;
   IotsaWebContext::Scope s(ctx, "tokens");

@@ -45,35 +45,22 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
     IotsaSerial.print("messageid "); IotsaSerial.println(int(pkt.messageid));
     IotsaSerial.print("optionnum "); IotsaSerial.println(int(pkt.optionnum));
 #endif
-    // One request = one iotsaApiBegin()/iotsaApiEnd() pair, like REST and HPS (cwi-dis/iotsa#280).
+    // One request, the same as over REST and HPS (cwi-dis/iotsa#280).
     const char *method = pkt.code == COAP_GET ? "GET" : pkt.code == COAP_PUT ? "PUT" : pkt.code == COAP_POST ? "POST" : "?";
-    iotsaApiBegin("coap", method, path.c_str());
-    bool ok = false;
-    JsonDocument replyDocument;
-    JsonObject reply = replyDocument.to<JsonObject>();
+    String body;
+    int status;
     bool allowed = (pkt.code == COAP_GET && get) || (pkt.code == COAP_PUT && put) || (pkt.code == COAP_POST && post);
     if (!allowed) {
-        iotsaApiError(405, "method not allowed");
-    } else if (pkt.code == COAP_GET) {
-        ok = provider->getHandler(path.c_str(), reply);
+        status = iotsaApiRefusal("coap", method, path.c_str(), 405, "method not allowed", body);
     } else {
         // xxxjack Should look through pkt.options looking for mimetype=application/json
         char dataBuffer[pkt.payloadlen+1];
         memcpy(dataBuffer, pkt.payload, pkt.payloadlen);
         dataBuffer[pkt.payloadlen] = 0;
-        JsonDocument requestDocument;
-        DeserializationError err = deserializeJson(requestDocument, dataBuffer);
-        if (err == DeserializationError::NoMemory || requestDocument.overflowed()) {
-            iotsaApiError(413, "request too big");
-        } else if (err && err != DeserializationError::EmptyInput) {
-            iotsaApiError(400, "invalid JSON");
-        } else {
-            JsonObject request = requestDocument.as<JsonObject>();
-            ok = pkt.code == COAP_PUT ? provider->putHandler(path.c_str(), request, reply) : provider->postHandler(path.c_str(), request, reply);
-        }
+        IotsaApiOperation verb = pkt.code == COAP_GET ? IOTSA_API_GET : pkt.code == COAP_PUT ? IOTSA_API_PUT : IOTSA_API_POST;
+        bool responded;
+        status = iotsaApiRequest(provider, "coap", verb, path.c_str(), dataBuffer, false, body, responded);
     }
-    String body;
-    int status = iotsaApiEnd(ok, replyDocument, body);
     // CoAP codes are class.detail, the same numbers as HTTP: 404 -> 4.04, 409 -> 4.09.
     COAP_RESPONSE_CODE code = status == 200 ? COAP_CONTENT : (COAP_RESPONSE_CODE)RESPONSE_CODE(status / 100, status % 100);
     if (!coap->sendResponse(ip, port, pkt.messageid, body.c_str(), body.length(), code, COAP_APPLICATION_JSON, pkt.token, pkt.tokenlen)) {

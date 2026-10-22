@@ -59,34 +59,27 @@ void IotsaBLEClientMod::setupScanner() {
 
 }
 
-bool IotsaBLEClientMod::getHandler(const char *path, JsonObject& reply) {
-  reply["scan_interval"] = scan_interval;
-  reply["scan_window"] = scan_window;
-  reply["scan_duration_discovery"] = scanDurationDiscoveryMillis;
-  reply["scan_cooldown_discovery"] = scanCooldownDiscoveryMillis;
-  reply["connect_settle_time"] = connectSettleTimeMillis;
-  reply["connect_timeout"] = connectTimeoutMillis;
-  return true;
+void IotsaBLEClientMod::getHandler(IotsaApiContext& ctx) {
+  ctx.show("scan_interval", scan_interval);
+  ctx.show("scan_window", scan_window);
+  ctx.show("scan_duration_discovery", scanDurationDiscoveryMillis);
+  ctx.show("scan_cooldown_discovery", scanCooldownDiscoveryMillis);
+  ctx.show("connect_settle_time", connectSettleTimeMillis);
+  ctx.show("connect_timeout", connectTimeoutMillis);
 }
 
-bool IotsaBLEClientMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  bool anyChanged = false;
-  JsonObject reqObj = request.as<JsonObject>();
-  // (These used to read the field a second time after getFromRequest() had
-  // consumed it, which set them to 0.)
-  if (getFromRequest<int>(reqObj, "scan_interval", scan_interval)) anyChanged = true;
-  if (getFromRequest<int>(reqObj, "scan_window", scan_window)) anyChanged = true;
-  if (getFromRequest<int>(reqObj, "scan_duration_discovery", scanDurationDiscoveryMillis)) anyChanged = true;
-  if (getFromRequest<int>(reqObj, "scan_cooldown_discovery", scanCooldownDiscoveryMillis)) anyChanged = true;
-  if (getFromRequest<int>(reqObj, "connect_settle_time", connectSettleTimeMillis)) anyChanged = true;
-  if (getFromRequest<int>(reqObj, "connect_timeout", connectTimeoutMillis)) anyChanged = true;
-  if (anyChanged) {
-    saveClientConfig();
-    setupScanner();
-    if (changed) *changed = true;
-  }
-  // No checkUnhandled() here: subclasses handle more fields after calling this.
-  return true;
+// Subclasses read more fields after calling this.
+void IotsaBLEClientMod::putHandler(IotsaApiContext& ctx) {
+  bool changed = ctx.arg("scan_interval", scan_interval, IotsaApiContext::Saved);
+  changed |= ctx.arg("scan_window", scan_window, IotsaApiContext::Saved);
+  changed |= ctx.arg("scan_duration_discovery", scanDurationDiscoveryMillis, IotsaApiContext::Saved);
+  changed |= ctx.arg("scan_cooldown_discovery", scanCooldownDiscoveryMillis, IotsaApiContext::Saved);
+  changed |= ctx.arg("connect_settle_time", connectSettleTimeMillis, IotsaApiContext::Saved);
+  changed |= ctx.arg("connect_timeout", connectTimeoutMillis, IotsaApiContext::Saved);
+  // Our own file, not configSave() (see saveClientConfig()).
+  if (changed) saveClientConfig();
+  if (ctx.failed()) return;
+  if (changed) setupScanner();
 }
 
 bool IotsaBLEClientMod::isScanning() {

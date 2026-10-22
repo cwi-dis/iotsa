@@ -91,14 +91,16 @@ private:
 
 #ifdef IOTSA_WITH_WEB
 void IotsaBLEServerMod::formHandler_args(IotsaWebContext& ctx) {
-  if (ctx.argCheckbox("isEnabled", isEnabled, IotsaWebContext::Saved)) {
-    iotsaController.requestReboot(REBOOT_DELAY_BLE_REINIT_MS);
-    ctx.feedback("Rebooting to switch BLE on or off.");
-  }
+  bool enabledChanged = ctx.argCheckbox("isEnabled", isEnabled, IotsaWebContext::Saved);
   ctx.arg("adv_min", adv_min, IotsaWebContext::Saved);
   ctx.arg("adv_max", adv_max, IotsaWebContext::Saved);
   ctx.arg("tx_power_dbm", tx_power_dbm, IotsaWebContext::Saved);
   ctx.arg("idle_timeout", idle_timeout, IotsaWebContext::Saved);
+  if (ctx.failed()) return;
+  if (enabledChanged) {
+    iotsaController.requestReboot(REBOOT_DELAY_BLE_REINIT_MS);
+    ctx.feedback("Rebooting to switch BLE on or off.");
+  }
 }
 
 void IotsaBLEServerMod::formHandler_fields(IotsaWebContext& ctx) {
@@ -296,42 +298,31 @@ void IotsaBLEServerMod::setup() {
   }
 }
 
-bool IotsaBLEServerMod::getHandler(const char *path, JsonObject& reply) {
-  reply["isEnabled"] = isEnabled;
-  reply["adv_min"] = adv_min;
-  reply["adv_max"] = adv_max;
-  reply["tx_power_dbm"] = tx_power_dbm;
-  reply["tx_power_dbm_actual"] = tx_power_dbm_actual;
-  reply["idle_timeout"] = idle_timeout;
+void IotsaBLEServerMod::getHandler(IotsaApiContext& ctx) {
+  ctx.show("isEnabled", isEnabled);
+  ctx.show("adv_min", adv_min);
+  ctx.show("adv_max", adv_max);
+  ctx.show("tx_power_dbm", tx_power_dbm);
+  ctx.show("tx_power_dbm_actual", tx_power_dbm_actual);
+  ctx.show("idle_timeout", idle_timeout);
   // Read-only state, so a stuck connection (cwi-dis/iotsa#265) is visible over WiFi.
-  reply["connected_peers"] = s_server ? (int)s_server->getConnectedCount() : 0;
+  ctx.show("connected_peers", s_server ? (int)s_server->getConnectedCount() : 0);
   NimBLEAdvertising *pAdvertising = NimBLEDevice::isInitialized() ? NimBLEDevice::getAdvertising() : nullptr;
-  reply["advertising"] = pAdvertising != nullptr && pAdvertising->isAdvertising();
+  ctx.show("advertising", pAdvertising != nullptr && pAdvertising->isAdvertising());
   // Why not, when it isn't (cwi-dis/iotsa#263): IotsaBLERadioArbiter pause
   // reasons, 1=sleep 2=scan 4=GATT build. 0 with advertising false means the
   // policy (bleRadioWanted) or a failed start.
-  reply["advertising_paused"] = IotsaBLERadioArbiter::advertisingPauseReasons();
-  return true;
+  ctx.show("advertising_paused", IotsaBLERadioArbiter::advertisingPauseReasons());
 }
 
-bool IotsaBLEServerMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  JsonObject reqObj = request.as<JsonObject>();
-  bool anyChanged = false;
-  bool newEnabled = isEnabled;
-  if (getFromRequest<int>(reqObj, "isEnabled", newEnabled) && newEnabled != isEnabled) {
-    anyChanged = true;
-    // (Used to read request["isEnabled"] again here, after getFromRequest()
-    // had consumed it, so BLE could never be switched back on.)
-    isEnabled = newEnabled;
-    iotsaController.requestReboot(REBOOT_DELAY_BLE_REINIT_MS);
-  }
-  if (getFromRequest<int>(reqObj, "adv_min", adv_min)) anyChanged = true;
-  if (getFromRequest<int>(reqObj, "adv_max", adv_max)) anyChanged = true;
-  if (getFromRequest<int>(reqObj, "tx_power_dbm", tx_power_dbm)) anyChanged = true;
-  if (getFromRequest<int>(reqObj, "idle_timeout", idle_timeout)) anyChanged = true;
-  if (anyChanged) { configSave(); if (changed) *changed = true; }
-  checkUnhandled(reqObj);
-  return true;
+void IotsaBLEServerMod::putHandler(IotsaApiContext& ctx) {
+  bool enabledChanged = ctx.arg("isEnabled", isEnabled, IotsaApiContext::Saved);
+  ctx.arg("adv_min", adv_min, IotsaApiContext::Saved);
+  ctx.arg("adv_max", adv_max, IotsaApiContext::Saved);
+  ctx.arg("tx_power_dbm", tx_power_dbm, IotsaApiContext::Saved);
+  ctx.arg("idle_timeout", idle_timeout, IotsaApiContext::Saved);
+  if (ctx.failed()) return;
+  if (enabledChanged) iotsaController.requestReboot(REBOOT_DELAY_BLE_REINIT_MS);
 }
 
 void IotsaBLEServerMod::lateSetup() {

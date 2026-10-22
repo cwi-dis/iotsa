@@ -1,39 +1,14 @@
 #include "iotsa.h"
 #include "iotsaApi.h"
+#ifdef IOTSA_HAS_WEBSERVER
+#include "iotsaHttpServer.h"
+#endif
 
 //
-// The outcome of the API request being handled, shared by the REST, HPS and
-// CoAP transports (cwi-dis/iotsa#280). See IotsaApiResult in iotsa.h.
+// One API request, the same over REST, HPS and CoAP (cwi-dis/iotsa#280,
+// cwi-dis/iotsa#296). All handlers run in the loop task, one request at a time
+// (#236).
 //
-IotsaApiResult iotsaApiResult;
-
-bool iotsaApiError(int status, const char *message) {
-  // The first error wins: it is usually the most specific one.
-  if (iotsaApiResult.status == 0) {
-    iotsaApiResult.status = status;
-    iotsaApiResult.message = message;
-  }
-  return false;
-}
-
-void _iotsaApiNoteType(const char *name, bool rightType) {
-  std::vector<String>& wt = iotsaApiResult.wrongType;
-  for (auto it = wt.begin(); it != wt.end(); ++it) {
-    if (*it == name) {
-      if (rightType) wt.erase(it);
-      return;
-    }
-  }
-  if (!rightType) wt.push_back(name);
-}
-
-void iotsaApiBegin(const char *transport, const char *method, const char *path) {
-  iotsaApiResult = IotsaApiResult();
-  iotsaApiResult.transport = transport;
-  iotsaApiResult.method = method;
-  iotsaApiResult.path = path;
-  IOTSA_LOG("iotsaApi", "%s: %s %s", transport, method, path);
-}
 
 static String _joined(const std::vector<String>& names) {
   String rv;
@@ -44,40 +19,98 @@ static String _joined(const std::vector<String>& names) {
   return rv;
 }
 
-int iotsaApiEnd(bool ok, JsonDocument& replyDocument, String& body) {
-  IotsaApiResult& r = iotsaApiResult;
-  int status = 200;
-  String message;
-  if (r.authResponded) {
-    status = r.status ? r.status : 401;
-    message = r.message.length() ? r.message : "not authorized";
-  } else if (!r.wrongType.empty()) {
-    status = 400;
-    message = "wrong type: " + _joined(r.wrongType);
-  } else if (!ok) {
-    status = r.status ? r.status : 400;
-    message = r.message.length() ? r.message : "bad request";
-  } else if (replyDocument.overflowed()) {
-    status = 413;
-    message = "reply too big";
-  }
-  body = "";
-  if (status == 200) {
-    if (!r.ignored.empty()) {
-      JsonArray ignored = replyDocument["iotsa_api_ignored"].to<JsonArray>();
-      for (const String& n : r.ignored) ignored.add(n);
-    }
-    serializeJson(replyDocument, body);
-    if (r.ignored.empty()) {
-      IOTSA_LOG("iotsaApi", "%s: %s %s -> ok", r.transport, r.method, r.path.c_str());
-    } else {
-      IOTSA_LOG("iotsaApi", "%s: %s %s -> ok, ignored %s", r.transport, r.method, r.path.c_str(), _joined(r.ignored).c_str());
-    }
-  } else {
-    JsonDocument errorDocument;
-    errorDocument["iotsa_api_error"] = message;
-    serializeJson(errorDocument, body);
-    IOTSA_LOG("iotsaApi", "%s: %s %s -> %d %s", r.transport, r.method, r.path.c_str(), status, message.c_str());
-  }
+static const char *_methodName(IotsaApiOperation verb) {
+  return verb == IOTSA_API_GET ? "GET" : verb == IOTSA_API_PUT ? "PUT" : "POST";
+}
+
+static int _errorReply(const char *transport, const char *method, const char *path, int status, const String& message, String& reply) {
+  JsonDocument errorDocument;
+  errorDocument["iotsa_api_error"] = message;
+  reply = "";
+  serializeJson(errorDocument, reply);
+  IOTSA_LOG("iotsaApi", "%s: %s %s -> %d %s", transport, method, path, status, message.c_str());
   return status;
+}
+
+int iotsaApiRefusal(const char *transport, const char *method, const char *path, int status, const char *message, String& reply) {
+  IOTSA_LOG("iotsaApi", "%s: %s %s", transport, method, path);
+  return _errorReply(transport, method, path, status, message, reply);
+}
+
+// The defaults, for a verb the module registered but doesn't handle.
+void IotsaApiProvider::getHandler(IotsaApiContext& ctx) {
+  ctx.error(405, "method not allowed");
+}
+
+void IotsaApiProvider::putHandler(IotsaApiContext& ctx) {
+  ctx.error(405, "method not allowed");
+}
+
+void IotsaApiProvider::postHandler(IotsaApiContext& ctx) {
+  ctx.error(405, "method not allowed");
+}
+
+int iotsaApiRequest(IotsaApiProvider *provider, const char *transport, IotsaApiOperation verb, const char *path, const char *body, bool http, String& reply, bool& responded) {
+  const char *method = _methodName(verb);
+  IOTSA_LOG("iotsaApi", "%s: %s %s", transport, method, path);
+  responded = false;
+  IotsaBaseModule *mod = provider->asModule();
+  if (mod == nullptr) return _errorReply(transport, method, path, 500, "no module", reply);
+  JsonDocument requestDocument;
+  JsonVariant request;
+  if (verb != IOTSA_API_GET) {
+    DeserializationError err = deserializeJson(requestDocument, body ? body : "");
+    if (err == DeserializationError::NoMemory || requestDocument.overflowed()) {
+      return _errorReply(transport, method, path, 413, "request too big", reply);
+    } else if (err && err != DeserializationError::EmptyInput) {
+      return _errorReply(transport, method, path, 400, "invalid JSON", reply);
+    }
+    request = requestDocument.as<JsonVariant>();
+  }
+  JsonDocument replyDocument;
+  JsonObject replyObject = replyDocument.to<JsonObject>();
+#ifdef IOTSA_HAS_WEBSERVER
+  IotsaWebServer *server = http ? IotsaHttpServiceMod::instance()->server : nullptr;
+  IotsaApiContext ctx(*mod, transport, verb, path, request, replyObject, server);
+#else
+  IotsaApiContext ctx(*mod, transport, verb, path, request, replyObject);
+#endif
+  if (verb == IOTSA_API_GET) {
+    provider->getHandler(ctx);
+  } else if (verb == IOTSA_API_PUT) {
+    provider->putHandler(ctx);
+  } else {
+    provider->postHandler(ctx);
+  }
+  // Fields read before an error were changed, so a Saved one is saved anyway.
+  if (ctx.configChanged) {
+    mod->configSave();
+    iotsaController.extendCurrentMode();
+    iotsaStatus.setStatusPulse(IotsaStatus::COLOUR_MAGENTA, 0, 0, 2000, "Settings saved");  // cwi-dis/iotsa#176
+  }
+  if (ctx.responded()) {
+    // A 401 challenge, already sent.
+    responded = true;
+    IOTSA_LOG("iotsaApi", "%s: %s %s -> %d %s", transport, method, path, ctx.errorStatus(), ctx.errorMessage().c_str());
+    return ctx.errorStatus();
+  }
+  if (ctx.failed()) return _errorReply(transport, method, path, ctx.errorStatus(), ctx.errorMessage(), reply);
+  ctx.reportUnused();
+  if (replyDocument.overflowed()) return _errorReply(transport, method, path, 413, "reply too big", reply);
+  if (!ctx.ignored().empty()) {
+    JsonArray ignored = replyDocument["iotsa_api_ignored"].to<JsonArray>();
+    for (const String& n : ctx.ignored()) ignored.add(n);
+  }
+  if (!ctx.redacted().empty()) {
+    JsonArray redacted = replyDocument["iotsa_api_redacted"].to<JsonArray>();
+    for (const String& n : ctx.redacted()) redacted.add(n);
+  }
+  reply = "";
+  serializeJson(replyDocument, reply);
+  if (ctx.ignored().empty()) {
+    IOTSA_LOG("iotsaApi", "%s: %s %s -> ok", transport, method, path);
+  } else {
+    IOTSA_LOG("iotsaApi", "%s: %s %s -> ok, ignored %s", transport, method, path, _joined(ctx.ignored()).c_str());
+  }
+  return 200;
 }

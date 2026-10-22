@@ -1003,7 +1003,7 @@ class Main(object):
         """Show all information for all modules for target"""
         self.loadDevice()
         assert self.device
-        all = self.device.getAll()
+        all = self.device.getAll(withRedacted=True)
         self._printall(all, 0)
 
     def _printall(self, d : Any, indent : int) -> None:

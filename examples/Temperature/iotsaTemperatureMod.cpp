@@ -41,11 +41,10 @@ void IotsaTemperatureMod::_update() {
 // No putHandler(): lateSetup() asked for no PUT, so it would never be called.
 
 // A value that is NAN is sent as null.
-bool IotsaTemperatureMod::getHandler(const char *path, JsonObject& reply) {
+void IotsaTemperatureMod::getHandler(IotsaApiContext& ctx) {
   _update();
-  reply["temperature"] = temperature;
-  reply["humidity"] = humidity;
-  return true;
+  ctx.show("temperature", temperature);
+  ctx.show("humidity", humidity);
 }
 
 #ifdef IOTSA_WITH_WEB

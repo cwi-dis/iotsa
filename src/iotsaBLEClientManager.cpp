@@ -97,18 +97,20 @@ void IotsaBLEClientManagerMod::setUnknownDeviceFoundCallback(BleDeviceFoundCallb
   unknownDeviceCallback = _callback;
 }
 
-bool IotsaBLEClientManagerMod::getHandler(const char *path, JsonObject& reply) {
-  bool rv = IotsaBLEClientMod::getHandler(path, reply);
+void IotsaBLEClientManagerMod::getHandler(IotsaApiContext& ctx) {
+  IotsaBLEClientMod::getHandler(ctx);
+  JsonObject reply = ctx.reply();
   if (unknownDevices.size()) {
     JsonArray unknownReply = reply["unassigned"].to<JsonArray>();
+    int i = 0;
     for (auto it : unknownDevices) {
-      JsonObject devReply = unknownReply.add<JsonObject>();
-      it.second->getHandler(devReply);
+      IotsaApiContext::Scope s(ctx, "unassigned" + String(i++), JsonObject(), unknownReply.add<JsonObject>());
+      it.second->getHandler(ctx);
     }
   }
-  reply["scanUnknown"] = (char *)NULL;
-  reply["scanning"] = isScanning();
-  if (!isScanning() && scanStoppedAtMillis != 0) reply["lastScanSecondsAgo"] = (millis() - scanStoppedAtMillis) / 1000;
+  ctx.show("scanUnknown", (const char *)NULL);
+  ctx.show("scanning", isScanning());
+  if (!isScanning() && scanStoppedAtMillis != 0) ctx.show("lastScanSecondsAgo", (millis() - scanStoppedAtMillis) / 1000);
   if (unrecognizedDevices.size()) {
     JsonArray unrecognizedReply = reply["unrecognized"].to<JsonArray>();
     uint32_t now = millis();
@@ -125,55 +127,47 @@ bool IotsaBLEClientManagerMod::getHandler(const char *path, JsonObject& reply) {
   if (devices.size()) {
     JsonObject devicesReply = reply["devices"].to<JsonObject>();
     for (auto it : devices) {
-      JsonObject devReply = devicesReply[String(it.first.c_str())].to<JsonObject>();
-      it.second->getHandler(devReply);
+      String key(it.first.c_str());
+      IotsaApiContext::Scope s(ctx, key, JsonObject(), devicesReply[key].to<JsonObject>());
+      it.second->getHandler(ctx);
     }
   }
-  return rv;
 }
 
-bool IotsaBLEClientManagerMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  if (!IotsaBLEClientMod::putHandler(path, request, reply, changed)) return false;
-  JsonObject reqObj = request.as<JsonObject>();
-  if (getFromRequest<int>(reqObj, "scan_unknown_duration", scanUnknownDurationMillis)) {
-    saveClientConfig();
-    if (changed) *changed = true;
-  }
-  bool scanUnknown;
-  if (getFromRequest<bool>(reqObj, "scanUnknown", scanUnknown) && scanUnknown) {
-    startScanUnknown();
-  }
-  // Known-devices management (cwi-dis/iotsa#264): add/remove by name, or
-  // route a sub-object keyed by an existing device's name to that device's
-  // own putHandler() (e.g. renaming, via its cwi-dis/iotsa#268 surface).
+void IotsaBLEClientManagerMod::putHandler(IotsaApiContext& ctx) {
+  IotsaBLEClientMod::putHandler(ctx);
+  if (ctx.arg("scan_unknown_duration", scanUnknownDurationMillis, IotsaApiContext::Saved)) saveClientConfig();
+  bool scanUnknown = false;
+  ctx.arg("scanUnknown", scanUnknown, IotsaApiContext::Transient);
+  // Known-devices management (cwi-dis/iotsa#264): add/remove by name, or a
+  // sub-object keyed by an existing device's name for that device's own
+  // putHandler() (e.g. renaming, via its cwi-dis/iotsa#268 surface).
   String addName;
-  if (getFromRequest<String>(reqObj, "add", addName) && addName != "") {
-    if (addDeviceByName(addName.c_str()) && changed) *changed = true;
-  }
+  bool add = ctx.arg("add", addName, IotsaApiContext::Saved);
   String removeName;
-  if (getFromRequest<String>(reqObj, "remove", removeName) && removeName != "") {
-    if (!removeDeviceByName(removeName.c_str())) return apiError(404, "remove: no such device");
-    if (changed) *changed = true;
-  }
+  bool remove = ctx.arg("remove", removeName, IotsaApiContext::Saved);
   // Snapshot first: a device's own putHandler() may call retarget(), which
   // re-keys `devices` -- mutating a std::map while iterating it directly
   // would be undefined behavior.
   std::vector<std::pair<std::string, IotsaBLEClientDevice*>> snapshot(devices.begin(), devices.end());
-  bool deviceChanged = false;
   for (auto& kv : snapshot) {
     String key(kv.first.c_str());
-    JsonVariant devRequest = reqObj[key];
+    JsonVariant devRequest = ctx.request()[key];
     if (devRequest.isNull()) continue;
-    if (!kv.second->putHandler(devRequest, reply, &deviceChanged)) return false;
-    reqObj.remove(key);
+    ctx.used(key.c_str());
+    if (!devRequest.is<JsonObject>()) {
+      ctx.error(400, key + ": expected an object");
+      break;
+    }
+    IotsaApiContext::Scope s(ctx, key, devRequest.as<JsonObject>(), JsonObject());
+    kv.second->putHandler(ctx);
   }
-  if (deviceChanged) {
-    // A rename: our devices are saved by name.
-    saveClientConfig();
-    if (changed) *changed = true;
-  }
-  checkUnhandled(reqObj);
-  return true;
+  // A rename: our devices are saved by name.
+  if (ctx.configChanged) saveClientConfig();
+  if (ctx.failed()) return;
+  if (scanUnknown) startScanUnknown();
+  if (add) addDeviceByName(addName.c_str());
+  if (remove && !removeDeviceByName(removeName.c_str())) ctx.error(404, "remove: no such device");
 }
 
 #ifdef IOTSA_WITH_WEB
@@ -188,6 +182,8 @@ void IotsaBLEClientManagerMod::formHandler_args(IotsaWebContext& ctx) {
     if (add) {
       String name;
       ctx.arg("name", name, IotsaWebContext::Saved);
+      // A refused field fails the whole add.
+      if (!add) return;
       if (name == "") {
         ctx.error("A new device needs a name.");
       } else if (getDevice(name) != nullptr) {

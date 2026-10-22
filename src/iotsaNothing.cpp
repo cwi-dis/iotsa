@@ -25,20 +25,12 @@ void IotsaNothingMod::configSave() {
   cf.put("argument", argument);
 }
 
-bool IotsaNothingMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  bool anyChanged = false;
-  JsonObject reqObj = request.as<JsonObject>();
-  if (getFromRequest<const char *>(reqObj, "argument", argument)) {
-    anyChanged = true;
-  }
-  if (anyChanged) { configSave(); if (changed) *changed = true; }
-  checkUnhandled(reqObj);
-  return true;
+void IotsaNothingMod::putHandler(IotsaApiContext& ctx) {
+  ctx.arg("argument", argument, IotsaApiContext::Saved);
 }
 
-bool IotsaNothingMod::getHandler(const char *path, JsonObject& reply) {
-  reply["argument"] = argument;
-  return true;
+void IotsaNothingMod::getHandler(IotsaApiContext& ctx) {
+  ctx.show("argument", argument);
 }
 
 #ifdef IOTSA_WITH_WEB

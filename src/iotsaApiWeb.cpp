@@ -37,13 +37,16 @@ void IotsaModule::webHandler() {
         iotsaController.extendCurrentMode();
         iotsaStatus.setStatusPulse(IotsaStatus::COLOUR_MAGENTA, 0, 0, 2000, "Settings saved");  // cwi-dis/iotsa#176
         ctx.feedback("Settings saved.");
-    } else if (ctx.stateChanged && !ctx.hasFeedback()) {
+    } else if (ctx.stateChanged && !ctx.hasFeedback() && !ctx.failed()) {
         ctx.feedback("Done.");
     }
+    ctx.reportUnused();
     ctx.setParts(true, false);
+    ctx.resetRights();
     formHandler_fields(ctx);
     String everyday = ctx.takeOutput();
     ctx.setParts(false, true);
+    ctx.resetRights();
     formHandler_fields(ctx);
     String settings = ctx.takeOutput();
     ctx.sendPage(webTitle(), everyday, settings);
@@ -58,8 +61,10 @@ void IotsaModule::addTrigger(const char *path, TriggerHandler handler, const cha
         // Auth like the module's page: the REST rule for its API path.
         IotsaWebContext ctx(*this, server, "/api/" + api.webService->pagePath);
         if (right) ctx.argsNeedRight(right);
-        if (ctx.allowed()) handler(ctx);
+        // A trigger is a change by itself.
+        if (ctx._mayChange(IotsaContext::Transient)) handler(ctx);
         if (ctx.responded) return;
+        ctx.reportUnused();
         ctx.sendText();
     };
     // GET and POST, for the same reason as a page.

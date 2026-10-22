@@ -2,7 +2,7 @@
 #include "iotsaConfigFile.h"
 
 // Implementation of the Hello module. This is the same module as in
-// HelloIotsa, except for the ctx.argsNeedRight() line in formHandler_args().
+// HelloIotsa, except for the ctx.argsNeedRight() lines in putHandler() and formHandler_args().
 //
 // An iotsa module is somewhat like an Arduino sketch, except (1) it provides
 // a way for the "outside world" to see and change values (either through a
@@ -45,25 +45,20 @@ void IotsaHelloMod::configSave() {
   cf.put("personName", personName);
 }
 
-// The API PUT handler (REST or other protocols): pick up the
-// values the caller sent, and store or use them.
-bool IotsaHelloMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  JsonObject reqObj = request.as<JsonObject>();
-  if (getFromRequest<const char *>(reqObj, "personName", personName)) {
-    // The request set the name, so save it.
-    configSave();
-    if (changed) *changed = true;
-  }
-  // Anything else in the request is reported back as "iotsa_api_ignored".
-  checkUnhandled(reqObj);
-  // Success, also when nothing changed. On an error, return apiError(status, "why").
-  return true;
+// The API PUT handler (REST or other protocols): pick up the values the
+// caller sent, and store or use them. The ctx object handles the common
+// things, as on the web page: ctx.arg() checks the caller's rights, and
+// because personName is Saved, the framework calls configSave() when it
+// changed. Anything else in the request is reported back as
+// "iotsa_api_ignored". To refuse, call ctx.error(status, "why").
+void IotsaHelloMod::putHandler(IotsaApiContext& ctx) {
+  ctx.argsNeedRight("hello");
+  ctx.arg("personName", personName, IotsaApiContext::Saved);
 }
 
 // The API GET handler: the values you want to send back to the caller.
-bool IotsaHelloMod::getHandler(const char *path, JsonObject& reply) {
-  reply["personName"] = personName;
-  return true;
+void IotsaHelloMod::getHandler(IotsaApiContext& ctx) {
+  ctx.show("personName", personName);
 }
 
 #ifdef IOTSA_WITH_WEB // only with web pages
@@ -73,9 +68,9 @@ bool IotsaHelloMod::getHandler(const char *path, JsonObject& reply) {
 // formHandler_args() handles what the form sent: here you pick up the values
 // and store or use them. Similar to putHandler.
 void IotsaHelloMod::formHandler_args(IotsaWebContext& ctx) {
-  // Changing the name needs a user with the right "hello"; just looking
-  // doesn't. Without this line the page uses the rule for REST calls,
-  // which is also what a PUT on /api/hello needs: the right "api".
+  // Changing the name needs a user with the right "hello", here and
+  // in putHandler() alike; just looking doesn't. Without this line the rule
+  // for REST calls applies: the right "api".
   ctx.argsNeedRight("hello");
   // Config: when the name changes, the framework calls configSave().
   ctx.arg("personName", personName, IotsaWebContext::Saved);
@@ -87,6 +82,7 @@ void IotsaHelloMod::formHandler_args(IotsaWebContext& ctx) {
 // settings (ctx.includesEveryday(), ctx.includesSettings()). Hello only
 // has an everyday part.
 void IotsaHelloMod::formHandler_fields(IotsaWebContext& ctx) {
+  ctx.argsNeedRight("hello");
   if (!ctx.includesEveryday()) return;
   ctx << "<p>Hello, " + htmlEncode(personName) + "!</p>\n";
   IotsaWebContext::Form form(ctx, "Set");

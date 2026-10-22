@@ -7,8 +7,7 @@ void IotsaSimpleMod::setup() {
 
 void IotsaSimpleMod::lateSetup() {
 #ifdef IOTSA_HAS_WEBSERVER
-  // Connection: close, as for every page (cwi-dis/iotsa#293).
-  app.server->on(url, [this]() { iotsaNoKeepAlive(app.server); hfun(); });
+  addWebHandler(url, [this]() { hfun(); }, right);
 #endif
 }
 

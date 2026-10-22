@@ -28,9 +28,6 @@ static bool stringContainedIn(const char *wanted, JsonVariant& got) {
 #endif
 
 // Get a scope indicator from a JSON variant
-// Only used by loadCapabilitiesFromRequest() below, which is itself
-// entirely guarded by IOTSA_HAS_WEBSERVER.
-#ifdef IOTSA_HAS_WEBSERVER
 static IotsaCapabilityObjectScope getRightFrom(const JsonVariant& arg) {
   if (!arg.is<const char*>()) return IOTSA_SCOPE_NONE;
   const char *argStr = arg.as<const char*>();
@@ -40,7 +37,6 @@ static IotsaCapabilityObjectScope getRightFrom(const JsonVariant& arg) {
   if (strcmp(argStr, "child") == 0) return IOTSA_SCOPE_CHILD;
   return IOTSA_SCOPE_NONE;
 }
-#endif
 
 bool IotsaCapability::allows(const char *_obj, IotsaApiOperation verb) {
   IotsaCapabilityObjectScope scope = scopes[int(verb)];
@@ -94,36 +90,26 @@ void IotsaCapabilityMod::lateSetup() {
 void IotsaCapabilityMod::loop() {
 }
 
-bool IotsaCapabilityMod::allows(const char *obj, IotsaApiOperation verb) {
-#ifdef IOTSA_HAS_WEBSERVER
-  loadCapabilitiesFromRequest();
-#endif
-#ifdef IOTSA_HAS_COAPSERVER
-  // Need to load capability from coap headers, somehow...
-#endif
-#ifdef IOTSA_HAS_HPSSERVER
-  // Need to load capabilit from hps headers.
-#endif
-  if (capabilities) {
-    if (capabilities->allows(obj, verb)) {
-      IFDEBUGX IotsaSerial.print("Capability allows operation on ");
+IotsaAccess IotsaCapabilityMod::allows(IotsaContext& ctx, const char *right) {
+  // Capabilities are about API paths and verbs: only the REST rule.
+  if (right == nullptr) {
+    loadCapabilitiesFromRequest(ctx);
+    if (capabilities) {
+      const char *obj = ctx.apiPath().c_str();
+      if (capabilities->allows(obj, ctx.verb())) {
+        IFDEBUGX IotsaSerial.print("Capability allows operation on ");
+        IFDEBUGX IotsaSerial.println(obj);
+        return IotsaAccess::Granted;
+      }
+      IFDEBUGX IotsaSerial.print("Capability does NOT allow operation on ");
       IFDEBUGX IotsaSerial.println(obj);
-      return true;
     }
-    IFDEBUGX IotsaSerial.print("Capability does NOT allow operation on ");
-    IFDEBUGX IotsaSerial.println(obj);
   }
-  // If no rights fall back to username/password authentication
-  return chain.allows(obj, verb);
+  // Otherwise fall back to username/password authentication
+  return chain.allows(ctx, right);
 }
 
-bool IotsaCapabilityMod::allows(const char *right) {
-  // If no rights fall back to username/password authentication
-  return chain.allows(right);
-}
-
-#ifdef IOTSA_HAS_WEBSERVER
-void IotsaCapabilityMod::loadCapabilitiesFromRequest() {
+void IotsaCapabilityMod::loadCapabilitiesFromRequest(IotsaContext& ctx) {
 
   // Free old capabilities
   IotsaCapability **cpp;
@@ -133,21 +119,12 @@ void IotsaCapabilityMod::loadCapabilitiesFromRequest() {
   // Check that we can load and verify capabilities
   if (trustedIssuer == "" || issuerKey == "") return;
 
-  // Load the bearer token from the request. Reaches app.server directly rather than
-  // through api.webService: this is called from allows(), the transport-agnostic
-  // IotsaAuthenticationProvider interface used for every module/transport, not just
-  // this one's own web page -- a known wart pending cwi-dis/iotsa#107's context-object
-  // redesign, see cwi-dis/iotsa#211.
-  if (!app.server->hasHeader("Authorization")) {
-    IFDEBUGX Serial.println("No authorization header in request");
-    return;
-  }
-  String authHeader = app.server->header("Authorization");
-  if (!authHeader.startsWith("Bearer ")) {
+  // Load the bearer token from the request.
+  String token = ctx.bearerToken();
+  if (token == "") {
     IFDEBUGX Serial.println("No bearer token in request");
     return;
   }
-  String token = authHeader.substring(7);
 
   // Decode the bearer token
   ArduinoJWT decoder(issuerKey);
@@ -203,7 +180,6 @@ void IotsaCapabilityMod::loadCapabilitiesFromRequest() {
   IFDEBUGX IotsaSerial.println(" loaded");
   capabilities = new IotsaCapability(obj, get, put, post);
 }
-#endif // IOTSA_HAS_WEBSERVER
 
 void IotsaCapabilityMod::configLoad() {
   IotsaConfigFileLoad cf("/config/capabilities.cfg");
@@ -221,33 +197,17 @@ void IotsaCapabilityMod::configSave() {
   IotsaSerial.println(issuerKey.length());
 }
 
-bool IotsaCapabilityMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  if (strcmp(path, "/api/capabilities") != 0) return apiError(404, "not found");
-  if (!iotsaConfigSettingsWritable()) return apiError(409, "not in configuration mode");
-  bool anyChanged = false;
-  JsonObject reqObj = request.as<JsonObject>();
-  if (getFromRequest<const char *>(reqObj, "trustedIssuer", trustedIssuer)) {
-    anyChanged = true;
-  }
-  if (getFromRequest<const char *>(reqObj, "issuerKey", issuerKey)) {
-    anyChanged = true;
-  }
-  if (anyChanged) {
-    configSave();
-    if (changed) *changed = true;
-  }
-  return true;
+void IotsaCapabilityMod::putHandler(IotsaApiContext& ctx) {
+  ctx.argsNeedRight("capabilities");
+  ctx.arg("trustedIssuer", trustedIssuer, IotsaApiContext::SavedInConfigMode);
+  ctx.argPassword("issuerKey", issuerKey, IotsaApiContext::SavedInConfigMode);
 }
 
-bool IotsaCapabilityMod::postHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  return false;
-}
 
-bool IotsaCapabilityMod::getHandler(const char *path, JsonObject& reply) {
-  if (strcmp(path, "/api/capabilities") != 0) return false;
-  reply["trustedIssuer"] = trustedIssuer;
-  reply["has_issuerKey"] = (issuerKey.length() > 0);
-  return true;
+void IotsaCapabilityMod::getHandler(IotsaApiContext& ctx) {
+  ctx.show("trustedIssuer", trustedIssuer);
+  ctx.showsNeedRight(IOTSA_RIGHT_NEVER);
+  ctx.show("issuerKey", issuerKey);
 }
 
 #ifdef IOTSA_WITH_WEB
@@ -259,10 +219,8 @@ void IotsaCapabilityMod::formHandler_args(IotsaWebContext& ctx) {
 }
 
 void IotsaCapabilityMod::formHandler_fields(IotsaWebContext& ctx) {
+  ctx.argsNeedRight("capabilities");
   if (!ctx.includesSettings()) return;
-  if (!ctx.editable(IotsaWebContext::SavedInConfigMode)) {
-    ctx << "<p>Issuer and key can only be changed in configuration mode, see <a href='/runmode'>/runmode</a>.</p>\n";
-  }
   IotsaWebContext::Form form(ctx);
   ctx.showField("Issuer", "trustedIssuer", trustedIssuer, IotsaWebContext::SavedInConfigMode);
   ctx.showStatus("Shared key", "has_issuerKey", issuerKey.length() ? "set" : "not set");

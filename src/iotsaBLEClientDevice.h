@@ -86,13 +86,13 @@ public:
   // Renaming via REST: {"name": "<newName>"}. Nothing else about this
   // object is meaningfully settable from outside (address is discovered,
   // not configured).
-  bool putHandler(const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
+  void putHandler(IotsaApiContext& ctx) override;
   // Adds connect-specific fields (on top of the base class's
   // name/bleAddress/rssi/lastSeenMillisAgo) to reply: lastConnectAttemptMillisAgo,
   // numConnectCalls, numConnectSkipped, numConnectAttempts, numConnectFailed,
   // numConnectSucceeded, numConnectionOpen, numConnectionFailed,
   // numConnectionClosedLocally, lastDisconnectReason, lastDisconnectMillisAgo.
-  bool getHandler(JsonObject& reply) override;
+  void getHandler(IotsaApiContext& ctx) override;
 #ifdef IOTSA_WITH_WEB
   // A found/connected status line on the everyday side; renaming (a form
   // with a Rename button) on the configuration side.

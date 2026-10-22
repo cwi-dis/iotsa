@@ -9,6 +9,7 @@
 #include "iotsaFS.h"
 #if defined(IOTSA_HAS_COAPSERVER) || defined(IOTSA_HAS_HPSSERVER)
 #include "iotsaApi.h"
+#include "iotsaContext.h"
 #endif
 #ifdef IOTSA_WITH_BLE
 #include "iotsaBLEServer.h"
@@ -46,8 +47,7 @@ IotsaApplication::IotsaApplication(const char *_title)
 // Default when the application has no auth provider: everything is allowed.
 class IotsaAllowAllAuth : public IotsaAuthenticationProvider {
 public:
-  bool allows(const char *right=NULL) override { return true; }
-  bool allows(const char *obj, IotsaApiOperation verb) override { return true; }
+  IotsaAccess allows(IotsaContext& ctx, const char *right) override { return IotsaAccess::Granted; }
 };
 static IotsaAllowAllAuth iotsaAllowAllAuth;
 
@@ -430,18 +430,67 @@ void IotsaBaseModule::percentDecode(const String &src, String &dst) {
     }
 }
 
-bool IotsaBaseModule::needsAuthentication(const char *object, IotsaApiOperation verb) {
-  bool denied = !app.getAuth()->allows(object, verb);
-  if (denied) iotsaApiResult.authResponded = true;
-  return denied;
+#ifdef IOTSA_HAS_WEBSERVER
+bool IotsaBaseModule::_webRefused(const char *right) {
+  IotsaHttpContext ctx(*this, app.server, "");
+  return ctx._refuse(right);
 }
 
-bool IotsaBaseModule::needsAuthentication(const char *right) {
-  if (right && strcmp(right, IOTSA_RIGHT_NONE) == 0) return false;
-  bool denied = !app.getAuth()->allows(right);
-  if (denied) iotsaApiResult.authResponded = true;
-  return denied;
+void IotsaBaseModule::addWebHandler(const char *path, WebHandler handler, const char *right, bool getOnly) {
+  IotsaWebServer *server = app.server;
+  auto wrapper = [this, server, handler, right]() {
+    iotsaNoKeepAlive(server);  // cwi-dis/iotsa#293
+    if (_webRefused(right)) return;
+    handler();
+  };
+  // Both explicitly: the HTTPS server's on(path, handler) registers GET only.
+  server->on(path, HTTP_GET, wrapper);
+  if (!getOnly) server->on(path, HTTP_POST, wrapper);
 }
+
+void IotsaBaseModule::addWebHandler(const char *path, WebHandler done, WebHandler upload, const char *right) {
+  IotsaWebServer *server = app.server;
+  auto doneWrapper = [this, server, done, right]() {
+    iotsaNoKeepAlive(server);  // cwi-dis/iotsa#293
+    if (_webRefused(right)) return;
+    done();
+  };
+  // Only asks: the refusal is answered once, by doneWrapper.
+  auto uploadWrapper = [this, server, upload, right]() {
+    IotsaHttpContext ctx(*this, server, "");
+    if (ctx._access(right) != IotsaAccess::Granted) return;
+    upload();
+  };
+  server->on(path, HTTP_POST, doneWrapper, uploadWrapper);
+}
+
+struct IotsaWebPrefixHandler {
+  String prefix;
+  std::function<void()> handler;
+};
+static std::vector<IotsaWebPrefixHandler> iotsaWebPrefixHandlers;
+
+void IotsaBaseModule::addWebPrefixHandler(const char *prefix, WebHandler handler, const char *right) {
+  IotsaWebServer *server = app.server;
+  if (iotsaWebPrefixHandlers.empty()) {
+    server->onNotFound([server]() {
+      iotsaNoKeepAlive(server);  // cwi-dis/iotsa#293
+      String uri = server->uri();
+      for (auto& h : iotsaWebPrefixHandlers) {
+        if (uri.startsWith(h.prefix)) {
+          h.handler();
+          return;
+        }
+      }
+      server->send(404, "text/plain", "Not found: " + uri + "\n");
+    });
+  }
+  iotsaWebPrefixHandlers.push_back({prefix, [this, handler, right]() {
+    if (_webRefused(right)) return;
+    handler();
+  }});
+}
+#endif // IOTSA_HAS_WEBSERVER
 
 void IotsaBaseModule::lateSetup() {
   // setup method that does nothing, usually overridden for IotsaBaseModule modules

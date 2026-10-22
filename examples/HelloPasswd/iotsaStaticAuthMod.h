@@ -13,8 +13,7 @@ public:
   using IotsaAuthMod::IotsaAuthMod;
   void setup() override;
   void loop() override;
-  bool allows(const char *right=NULL) override;
-  bool allows(const char *obj, IotsaApiOperation verb) override;
+  IotsaAccess allows(IotsaContext& ctx, const char *right) override;
 };
 
 #endif

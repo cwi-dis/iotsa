@@ -22,8 +22,8 @@ public:
   void formHandler_fields(IotsaWebContext& ctx) override;
   void formHandler_row(IotsaWebContext& ctx) override;
 #endif
-  bool getHandler(JsonObject& reply) override;
-  bool putHandler(const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
+  void putHandler(IotsaApiContext& ctx) override;
+  void getHandler(IotsaApiContext& ctx) override;
 };
 
 // The authenticator: the list of tokens, and the users to ask when a request
@@ -34,15 +34,14 @@ public:
   void setup() override;
   void lateSetup() override;
   void loop() override;
-  bool allows(const char *right=NULL) override;
-  bool allows(const char *obj, IotsaApiOperation verb) override;
+  IotsaAccess allows(IotsaContext& ctx, const char *right) override;
 #ifdef IOTSA_WITH_WEB
   String info() override;
 #endif
 protected:
   void configLoad() override;
   void configSave() override;
-  bool getHandler(const char *path, JsonObject& reply) override;
+  void getHandler(IotsaApiContext& ctx) override;
 #ifdef IOTSA_WITH_WEB
   String webTitle() override { return "Tokens"; }
   void formHandler_args(IotsaWebContext& ctx) override;

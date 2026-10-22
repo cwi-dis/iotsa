@@ -11,7 +11,6 @@ static bool _uploadOK;
 
 void
 IotsaFilesUploadMod::uploadHandler() {
-  if (needsAuthentication("uploadfiles")) return;
   HTTPUpload& upload = app.server->upload();
   _uploadOK = false;
   if(upload.status == UPLOAD_FILE_START){
@@ -39,7 +38,6 @@ IotsaFilesUploadMod::uploadHandler() {
 
 void
 IotsaFilesUploadMod::uploadOkHandler() {
-  iotsaNoKeepAlive(app.server);  // cwi-dis/iotsa#293
   String message;
   if (_uploadOK) {
     IFDEBUG IotsaSerial.println("upload ok");
@@ -52,17 +50,15 @@ IotsaFilesUploadMod::uploadOkHandler() {
 
 #ifdef IOTSA_WITH_WEB
 void IotsaFilesUploadMod::uploadFormHandler() {
-  iotsaNoKeepAlive(app.server);  // cwi-dis/iotsa#293
-  if (needsAuthentication("uploadfiles")) return;
   String message = "<form method='POST' action='/upload' enctype='multipart/form-data'>Select file to upload:<input type='file' name='blob'><br>Filename:<input name='filename'><br><input type='submit' value='Update'></form>";
   app.server->send(200, "text/html", message);
 }
 #endif // IOTSA_WITH_WEB
 
 void IotsaFilesUploadMod::lateSetup() {
-  app.server->on("/upload", HTTP_POST, std::bind(&IotsaFilesUploadMod::uploadOkHandler, this), std::bind(&IotsaFilesUploadMod::uploadHandler, this));
+  addWebHandler("/upload", std::bind(&IotsaFilesUploadMod::uploadOkHandler, this), std::bind(&IotsaFilesUploadMod::uploadHandler, this), "uploadfiles");
 #ifdef IOTSA_WITH_WEB
-  app.server->on("/upload", HTTP_GET, std::bind(&IotsaFilesUploadMod::uploadFormHandler, this));
+  addWebHandler("/upload", std::bind(&IotsaFilesUploadMod::uploadFormHandler, this), "uploadfiles", true);
 #endif
   name = "filesupload";
 }

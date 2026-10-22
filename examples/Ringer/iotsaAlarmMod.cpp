@@ -35,32 +35,32 @@ void IotsaAlarmMod::_ring(int dur) {
   }
 }
 
-bool IotsaAlarmMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  JsonObject reqObj = request.as<JsonObject>();
-  int dur;
-  if (getFromRequest<int>(reqObj, "alarm", dur)) _ring(dur);
-  checkUnhandled(reqObj);
-  return true;
+void IotsaAlarmMod::putHandler(IotsaApiContext& ctx) {
+  // -1: not asked; 0 stops the alarm.
+  int dur = -1;
+  bool ring = ctx.arg("alarm", dur, IotsaApiContext::Transient);
+  if (ctx.failed()) return;
+  if (ring) _ring(dur);
 }
 
 // The time left, in tenths of a second.
-bool IotsaAlarmMod::getHandler(const char *path, JsonObject& reply) {
+void IotsaAlarmMod::getHandler(IotsaApiContext& ctx) {
   int dur = 0;
   unsigned long elapsed = millis() - alarmStart;
   if (alarmDuration && elapsed < alarmDuration) dur = (alarmDuration - elapsed)/100;
-  reply["alarm"] = dur;
-  return true;
+  ctx.show("alarm", dur);
 }
 
 #ifdef IOTSA_WITH_WEB
 // Ringing happens now: Ring is an action, the duration its parameter.
 void IotsaAlarmMod::formHandler_args(IotsaWebContext& ctx) {
-  if (ctx.argAction("ring", IotsaWebContext::Transient)) {
-    int dur = 10;
-    ctx.arg("alarm", dur, IotsaWebContext::Transient);
-    _ring(dur);
-  }
-  if (ctx.argAction("stop", IotsaWebContext::Transient)) _ring(0);
+  bool ring = ctx.argAction("ring", IotsaWebContext::Transient);
+  int dur = 10;
+  if (ring) ctx.arg("alarm", dur, IotsaWebContext::Transient);
+  bool stop = ctx.argAction("stop", IotsaWebContext::Transient);
+  if (ctx.failed()) return;
+  if (ring) _ring(dur);
+  if (stop) _ring(0);
 }
 
 void IotsaAlarmMod::formHandler_fields(IotsaWebContext& ctx) {
@@ -80,6 +80,7 @@ void IotsaAlarmMod::formHandler_fields(IotsaWebContext& ctx) {
 void IotsaAlarmMod::ringTrigger(IotsaWebContext& ctx) {
   int dur = 10;
   ctx.arg("alarm", dur, IotsaWebContext::Transient);
+  if (ctx.failed()) return;
   _ring(dur);
   ctx.feedback("Ringing.");
 }

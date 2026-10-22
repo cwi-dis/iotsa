@@ -44,12 +44,11 @@ void IotsaLightMod::_update() {
 
 // No putHandler(): lateSetup() asked for no PUT, so it would never be called.
 
-bool IotsaLightMod::getHandler(const char *path, JsonObject& reply) {
-  reply["light"] = light;
-  reply["minLight"] = minLight;
-  reply["maxLight"] = maxLight;
-  reply["lightLevel"] = lightLevel;
-  return true;
+void IotsaLightMod::getHandler(IotsaApiContext& ctx) {
+  ctx.show("light", light);
+  ctx.show("minLight", minLight);
+  ctx.show("maxLight", maxLight);
+  ctx.show("lightLevel", lightLevel);
 }
 
 #ifdef IOTSA_WITH_WEB

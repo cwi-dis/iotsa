@@ -33,13 +33,11 @@ public:
 #ifdef IOTSA_WITH_WEB
   String info() override;
 #endif
-  bool allows(const char *obj, IotsaApiOperation verb) override;
-  bool allows(const char *right) override;
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
-  bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
-  bool getHandler(const char *path, JsonObject& reply) override;
+  IotsaAccess allows(IotsaContext& ctx, const char *right) override;
+  void putHandler(IotsaApiContext& ctx) override;
+  void getHandler(IotsaApiContext& ctx) override;
 protected:
-  void loadCapabilitiesFromRequest();
+  void loadCapabilitiesFromRequest(IotsaContext& ctx);
   void configLoad() override;
   void configSave() override;
 #ifdef IOTSA_WITH_WEB

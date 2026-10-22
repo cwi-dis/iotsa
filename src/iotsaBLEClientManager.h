@@ -27,8 +27,8 @@
 class IotsaBLEClientManagerMod : public IotsaBLEClientMod {
 public:
   using IotsaBLEClientMod::IotsaBLEClientMod;
-  virtual bool getHandler(const char *path, JsonObject& reply) override;
-  virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
+  void putHandler(IotsaApiContext& ctx) override;
+  void getHandler(IotsaApiContext& ctx) override;
   virtual void loop() override;
 #ifdef IOTSA_WITH_WEB
   // An unknown device in the list (HTML).

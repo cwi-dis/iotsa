@@ -38,10 +38,9 @@ void IotsaDimmerMod::_update() {
 
 // No putHandler(): lateSetup() asked for no PUT.
 
-bool IotsaDimmerMod::getHandler(const char *path, JsonObject& reply) {
-  reply["on"] = on;
-  reply["level"] = level;
-  return true;
+void IotsaDimmerMod::getHandler(IotsaApiContext& ctx) {
+  ctx.show("on", on);
+  ctx.show("level", level);
 }
 
 #ifdef IOTSA_WITH_WEB

@@ -372,8 +372,8 @@ public:
 protected:
   void configLoad() override;
   void configSave() override;
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
-  bool getHandler(const char *path, JsonObject& reply) override;
+  void putHandler(IotsaApiContext& ctx) override;
+  void getHandler(IotsaApiContext& ctx) override;
   String webTitle() override { return "Hello Server"; }
   void formHandler_args(IotsaWebContext& ctx) override;
   void formHandler_fields(IotsaWebContext& ctx) override;
@@ -401,26 +401,19 @@ Iotsa now calls your module's `setup()`, `lateSetup()` and `loop()` at the right
 
 ### The API
 
-The REST (or CoAP) API is two methods. `getHandler()` puts the values into the reply; `putHandler()` picks up what the caller sent:
+The REST (or CoAP, or BLE/HPS) API is two methods. `putHandler()` picks up what the caller sent; `getHandler()` puts the values into the reply:
 
 ```
-bool IotsaHelloMod::getHandler(const char *path, JsonObject& reply) {
-  reply["personName"] = personName;
-  return true;
+void IotsaHelloMod::putHandler(IotsaApiContext& ctx) {
+  ctx.arg("personName", personName, IotsaApiContext::Saved);
 }
 
-bool IotsaHelloMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  JsonObject reqObj = request.as<JsonObject>();
-  if (getFromRequest<const char *>(reqObj, "personName", personName)) {
-    configSave();
-    if (changed) *changed = true;
-  }
-  checkUnhandled(reqObj);
-  return true;
+void IotsaHelloMod::getHandler(IotsaApiContext& ctx) {
+  ctx.show("personName", personName);
 }
 ```
 
-`checkUnhandled()` reports any field the handler didn't use back to the caller, as `iotsa_api_ignored`. On an error, return `apiError(status, "why")`.
+The `ctx` object handles the common things: `ctx.arg()` checks the caller's rights and the type of the field, and because `personName` is `Saved` the framework calls `configSave()` when it changed. Fields nobody read are reported back to the caller as `iotsa_api_ignored`. To refuse, call `ctx.error(status, "why")`; the first error stops the rest of the request. Do anything that has an effect (start a flash, ring) after reading all fields, behind `if (ctx.failed()) return;`.
 
 ### The web page
 
@@ -495,15 +488,15 @@ Contains `IotsaModule`, the base class for a module with an API and a web page. 
 api.setup(const char* path, bool get=false, bool put=false, bool post=false);
 ```
 
-This registers `/api/<path>` for REST (and CoAP, and BLE/HPS when built in), and, when `get` is true, the web page `/<path>`. Call it several times if your module has several endpoints. Then implement the handlers for the methods you passed `true` for:
+This registers `/api/<path>` for REST (and CoAP, and BLE/HPS when built in), and, when `get` is true, the web page `/<path>`. Call it several times if your module has several endpoints (`ctx.path()` says which). Then implement the handlers for the methods you passed `true` for:
 
 ```
-bool getHandler(const char *path, JsonObject& reply);
-bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr);
-bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr);
+void getHandler(IotsaApiContext& ctx);
+void putHandler(IotsaApiContext& ctx);
+void postHandler(IotsaApiContext& ctx);
 ```
 
-The request is in `request`; store results in `reply` (an empty object). Return `true` on success, also when nothing changed, and set `*changed` when something changed that needs saving. On failure, `return apiError(status, "why")`. `getFromRequest()` reads a field and removes it from the request, so `checkUnhandled()` can report what's left.
+The put side reads fields with `ctx.arg()` (and `ctx.argPassword()` for secrets), the get side writes them with `ctx.show()`. Changing a field needs the REST rule (the right `api` with the standard user module), or the right named with `ctx.argsNeedRight("name")`; reading is open, unless `ctx.showsNeedRight()` says otherwise, and a field the caller may not read is listed in `iotsa_api_redacted` instead. A write-only value, such as a password, is `ctx.showsNeedRight(IOTSA_RIGHT_NEVER)`. Objects inside a module (users, buttons) get the same handlers, called inside an `IotsaApiContext::Scope`. See `iotsaContext.h` and the Decided comment on cwi-dis/iotsa#296.
 
 The web page is `formHandler_args()` and `formHandler_fields()`, see [The web page](#the-web-page) above and `iotsaWebContext.h`. A trigger is `addTrigger()`, see [Triggers](#triggers).
 
