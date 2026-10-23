@@ -222,6 +222,9 @@ private:
 // framework writes the table or the sections, the operation buttons and the add
 // form, and handles them. The module calls it inside a Scope, like any object.
 //
+// There is no Reorder on purpose: no collection has an order that means
+// something (cwi-dis/iotsa433#2), and a REST PUT of the whole list can reorder.
+//
 class IotsaWebCollection {
 public:
   enum Ops { Add = 1, Remove = 2 };
