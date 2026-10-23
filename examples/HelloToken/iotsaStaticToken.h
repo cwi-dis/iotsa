@@ -28,6 +28,20 @@ public:
 
 // The authenticator: the list of tokens, and the users to ask when a request
 // has no valid token.
+#ifdef IOTSA_WITH_WEB
+// The tokens on the web page, as a table with Add and Remove. Keyed by
+// index (a token is a secret, not a name): the list's version makes a stale
+// Remove harmless.
+class IotsaStaticTokenList : public IotsaWebVector<IotsaStaticTokenObject> {
+public:
+  IotsaStaticTokenList(std::vector<IotsaStaticTokenObject>& tokens)
+  : IotsaWebVector<IotsaStaticTokenObject>(tokens, Add | Remove, Table, IotsaWebContext::Saved)
+  {}
+protected:
+  bool accept(IotsaStaticTokenObject& token, IotsaWebContext& ctx) override;
+};
+#endif
+
 class IotsaStaticTokenMod : public IotsaAuthMod {
 public:
   IotsaStaticTokenMod(IotsaApplication &_app, IotsaAuthenticationProvider &_chain);
@@ -51,8 +65,7 @@ protected:
   IotsaAuthenticationProvider &chain;
   std::vector<IotsaStaticTokenObject> tokens;
 #ifdef IOTSA_WITH_WEB
-  // Keyed by index: the collection's version makes a stale Remove harmless.
-  IotsaWebVector<IotsaStaticTokenObject> webTokens;
+  IotsaStaticTokenList webTokens{tokens};
 #endif
 };
 

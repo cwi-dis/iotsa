@@ -14,7 +14,9 @@
 // users (see mainHelloToken.cpp). So people log in as before.
 //
 // The tokens are managed on the /tokens page. They are a list, so the page uses
-// IotsaWebVector, which gives each token its own row plus Add and Remove.
+// IotsaStaticTokenList, a subclass of IotsaWebVector, which gives each token
+// its own row plus Add and Remove; the subclass only says which new tokens to
+// refuse.
 
 //
 // One token.
@@ -68,17 +70,19 @@ void IotsaStaticTokenObject::formHandler_row(IotsaWebContext& ctx) {
 IotsaStaticTokenMod::IotsaStaticTokenMod(IotsaApplication &_app, IotsaAuthenticationProvider &_chain)
 :	IotsaAuthMod(_app),
 	chain(_chain)
-#ifdef IOTSA_WITH_WEB
-  , webTokens(tokens, IotsaWebCollection::Add | IotsaWebCollection::Remove, IotsaWebCollection::Table, IotsaWebContext::Saved,
-      nullptr,
-      // Refuse a new token that is empty.
-      [](IotsaStaticTokenObject& t, IotsaWebContext& ctx) {
-        if (t.token == "") ctx.error("A new token can't be empty.");
-        return t.token != "";
-      })
-#endif
 {
 }
+
+#ifdef IOTSA_WITH_WEB
+// Refuse a new token that is empty.
+bool IotsaStaticTokenList::accept(IotsaStaticTokenObject& token, IotsaWebContext& ctx) {
+  if (token.token == "") {
+    ctx.error("A new token can't be empty.");
+    return false;
+  }
+  return true;
+}
+#endif
 
 void IotsaStaticTokenMod::setup() {
   configLoad();

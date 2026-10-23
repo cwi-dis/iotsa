@@ -79,6 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `IotsaWebVector` is subclassed instead of given lambdas: a module names its list `<Element>List` and overrides `key()`/`accept()` (`IotsaUserList`, `IotsaStaticTokenList`) (#183, #309)
 - Rights: a change that names no right is open to everyone on the network, the REST rule and the right `api` are gone; a module can name rights for all its reads and changes (`readsNeedRight()`, `changesNeedRight()`), and web pages hide what the caller may not read, or ask for a login; BLE client management, the remote runmode commands and the buttons need `bleclient` and `buttons`, the BLE server and battery settings `config` (#183)
 - API handlers get a request context, shared with web pages: the same rights per field on every transport, reads open, secrets write-only (`iotsa_api_redacted`), the first error stops the request (#296)
 - README: the design and API sections describe the current interfaces (`IotsaModule`, `api.setup()`, web pages, triggers); the examples come in two strands; how to add a standard module (#183)

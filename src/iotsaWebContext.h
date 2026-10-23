@@ -267,29 +267,30 @@ protected:
   uint32_t _currentVersion();
 };
 
-// The common case: a std::vector of values (users, tokens). accept, if given,
-// checks (and may complete) a new element before it is added.
+// The common case: a std::vector of values (users, tokens). A module
+// subclasses it and names it after its elements, "<Element>List"
+// (IotsaUserList), overriding only what differs: key() when the elements
+// have a name, accept() to check (and complete) a new element before it is
+// added. Not "Web" in the name: the same list is meant to serve the API too
+// one day (cwi-dis/iotsa#309).
 template<typename T> class IotsaWebVector : public IotsaWebCollection {
 public:
-  typedef std::function<String(T&)> KeyFunc;
-  typedef std::function<bool(T&, IotsaWebContext&)> AcceptFunc;
-  IotsaWebVector(std::vector<T>& v, int ops, Presentation presentation, IotsaWebContext::Persistence persistence, KeyFunc keyFunc = nullptr, AcceptFunc accept = nullptr)
-  : IotsaWebCollection(ops, presentation, persistence), _v(v), _keyFunc(keyFunc), _accept(accept) {}
+  IotsaWebVector(std::vector<T>& v, int ops, Presentation presentation, IotsaWebContext::Persistence persistence)
+  : IotsaWebCollection(ops, presentation, persistence), _v(v) {}
   int size() override { return _v.size(); }
   IotsaModObject* at(int i) override { return &_v[i]; }
-  String key(int i) override { return _keyFunc ? _keyFunc(_v[i]) : String(i); }
   void withExample(std::function<void(IotsaModObject&)> fn) override { T example; fn(example); }
   bool add(IotsaModObject& obj, IotsaWebContext& ctx) override {
     T& t = static_cast<T&>(obj);
-    if (_accept && !_accept(t, ctx)) return false;
+    if (!accept(t, ctx)) return false;
     _v.push_back(t);
     return true;
   }
   bool remove(int i) override { _v.erase(_v.begin() + i); return true; }
-private:
+protected:
+  // A new element: refuse it with ctx.error() and false. Default: accepted.
+  virtual bool accept(T& t, IotsaWebContext& ctx) { return true; }
   std::vector<T>& _v;
-  KeyFunc _keyFunc;
-  AcceptFunc _accept;
 };
 
 #endif // IOTSA_WITH_WEB

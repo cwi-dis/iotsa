@@ -58,18 +58,17 @@ IotsaUserMod::IotsaUserMod(IotsaApplication &_app, const char *_defaultUsername,
 :	IotsaAuthMod(_app),
   defaultUsername(_defaultUsername),
   defaultPassword(_defaultPassword)
-#ifdef IOTSA_WITH_WEB
-  , webUsers(users, IotsaWebCollection::Add | IotsaWebCollection::Remove, IotsaWebCollection::Sections, IotsaWebContext::SavedInConfigMode,
-      [](IotsaUser& u) { return u.username; },
-      [this](IotsaUser& u, IotsaWebContext& ctx) {
-        const char *err = _refuseUser(u);
-        if (err) ctx.error(err);
-        return err == nullptr;
-      })
-#endif
 {
 	configLoad();
 }
+
+#ifdef IOTSA_WITH_WEB
+bool IotsaUserList::accept(IotsaUser& user, IotsaWebContext& ctx) {
+  const char *err = _mod._refuseUser(user);
+  if (err) ctx.error(err);
+  return err == nullptr;
+}
+#endif
 
 void IotsaUserMod::setup() {
   configLoad();
