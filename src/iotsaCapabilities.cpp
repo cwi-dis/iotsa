@@ -91,7 +91,10 @@ void IotsaCapabilityMod::loop() {
 }
 
 IotsaAccess IotsaCapabilityMod::allows(IotsaContext& ctx, const char *right) {
-  // Capabilities are about API paths and verbs: only the REST rule.
+  // Capabilities are about API paths and verbs, the REST rule (right ==
+  // nullptr). That rule is gone, so this is never taken any more: a
+  // capability grants nothing until it can name rights (cwi-dis/iotsa#107,
+  // #304; https://github.com/cwi-dis/iotsa/issues/183#issuecomment-6368033789).
   if (right == nullptr) {
     loadCapabilitiesFromRequest(ctx);
     if (capabilities) {

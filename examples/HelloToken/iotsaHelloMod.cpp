@@ -69,8 +69,8 @@ void IotsaHelloMod::getHandler(IotsaApiContext& ctx) {
 // and store or use them. Similar to putHandler.
 void IotsaHelloMod::formHandler_args(IotsaWebContext& ctx) {
   // Changing the name needs a user or token with the right "hello", here and
-  // in putHandler() alike; just looking doesn't. Without this line the rule
-  // for REST calls applies: the right "api".
+  // in putHandler() alike; just looking doesn't. Without this line anyone on
+  // the network could change it.
   ctx.argsNeedRight("hello");
   // Config: when the name changes, the framework calls configSave().
   ctx.arg("personName", personName, IotsaWebContext::Saved);

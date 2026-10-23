@@ -136,16 +136,23 @@ void IotsaBLEClientManagerMod::getHandler(IotsaApiContext& ctx) {
 
 void IotsaBLEClientManagerMod::putHandler(IotsaApiContext& ctx) {
   IotsaBLEClientMod::putHandler(ctx);
-  if (ctx.arg("scan_unknown_duration", scanUnknownDurationMillis, IotsaApiContext::Saved)) saveClientConfig();
-  bool scanUnknown = false;
-  ctx.arg("scanUnknown", scanUnknown, IotsaApiContext::Transient);
   // Known-devices management (cwi-dis/iotsa#264): add/remove by name, or a
   // sub-object keyed by an existing device's name for that device's own
   // putHandler() (e.g. renaming, via its cwi-dis/iotsa#268 surface).
+  // Managing needs "bleclient"; what a device offers itself is up to it.
+  bool scanUnknown = false;
   String addName;
-  bool add = ctx.arg("add", addName, IotsaApiContext::Saved);
+  bool add;
   String removeName;
-  bool remove = ctx.arg("remove", removeName, IotsaApiContext::Saved);
+  bool remove;
+  {
+    IotsaContext::RightsScope rights(ctx);
+    ctx.argsNeedRight("bleclient");
+    if (ctx.arg("scan_unknown_duration", scanUnknownDurationMillis, IotsaApiContext::Saved)) saveClientConfig();
+    ctx.arg("scanUnknown", scanUnknown, IotsaApiContext::Transient);
+    add = ctx.arg("add", addName, IotsaApiContext::Saved);
+    remove = ctx.arg("remove", removeName, IotsaApiContext::Saved);
+  }
   // Snapshot first: a device's own putHandler() may call retarget(), which
   // re-keys `devices` -- mutating a std::map while iterating it directly
   // would be undefined behavior.
@@ -172,6 +179,9 @@ void IotsaBLEClientManagerMod::putHandler(IotsaApiContext& ctx) {
 
 #ifdef IOTSA_WITH_WEB
 void IotsaBLEClientManagerMod::formHandler_args(IotsaWebContext& ctx) {
+  // Managing needs "bleclient"; what a device offers itself is up to it.
+  IotsaContext::RightsScope rights(ctx);
+  ctx.argsNeedRight("bleclient");
   if (ctx.argAction("scanUnknown", IotsaWebContext::Transient)) {
     startScanUnknown();
     ctx.feedback("Scanning for " + String(scanUnknownDurationMillis/1000) + " seconds.");
@@ -202,15 +212,19 @@ void IotsaBLEClientManagerMod::formHandler_args(IotsaWebContext& ctx) {
   std::vector<std::pair<std::string, IotsaBLEClientDevice*>> snapshot(devices.begin(), devices.end());
   for (auto& kv : snapshot) {
     IotsaWebContext::Scope s(ctx, String(kv.first.c_str()));
-    IotsaWebContext::Change remove(ctx, "remove", IotsaWebContext::Saved);
-    if (remove) {
-      if (removeDeviceByName(kv.first)) {
-        remove.done();
-      } else {
-        ctx.error("Device " + String(kv.first.c_str()) + " can't be removed here.");
+    {
+      IotsaWebContext::Change remove(ctx, "remove", IotsaWebContext::Saved);
+      if (remove) {
+        if (removeDeviceByName(kv.first)) {
+          remove.done();
+        } else {
+          ctx.error("Device " + String(kv.first.c_str()) + " can't be removed here.");
+        }
+        return;
       }
-      return;
     }
+    // The device's own fields start from the module's rights.
+    ctx.resetRights();
     kv.second->formHandler_args(ctx);
   }
   // A rename: our devices are saved by name.
@@ -219,13 +233,17 @@ void IotsaBLEClientManagerMod::formHandler_args(IotsaWebContext& ctx) {
 
 void IotsaBLEClientManagerMod::formHandler_fields(IotsaWebContext& ctx) {
   String label(devicesLabel());
+  // As in formHandler_args(): managing needs "bleclient", each device's own
+  // fields start from the module's rights.
   if (ctx.includesSettings()) {
     for (auto& kv : devices) {
       IotsaWebContext::Scope s(ctx, String(kv.first.c_str()));
       kv.second->formHandler_fields(ctx);
+      ctx.argsNeedRight("bleclient");
       ctx.showButton("remove", "Remove", IotsaWebContext::Saved);
     }
     IotsaWebContext::Scope s(ctx, "new");
+    ctx.argsNeedRight("bleclient");
     IotsaWebContext::Form form(ctx, "Add", "Add a device", "add");
     ctx.showField("BLE device name", "name", "", IotsaWebContext::Saved);
     return;
@@ -241,7 +259,11 @@ void IotsaBLEClientManagerMod::formHandler_fields(IotsaWebContext& ctx) {
     kv.second->formHandler_fields(ctx);
   }
   ctx << "<h3>Unknown " + htmlEncode(label) + "</h3>\n";
-  ctx.showButton("scanUnknown", "Scan for " + String(scanUnknownDurationMillis/1000) + " seconds", IotsaWebContext::Transient);
+  {
+    IotsaContext::RightsScope rights(ctx);
+    ctx.argsNeedRight("bleclient");
+    ctx.showButton("scanUnknown", "Scan for " + String(scanUnknownDurationMillis/1000) + " seconds", IotsaWebContext::Transient);
+  }
   if (unknownDevices.size() == 0) {
     ctx << "<p>No unknown " + htmlEncode(label) + " seen recently.</p>\n";
   } else {

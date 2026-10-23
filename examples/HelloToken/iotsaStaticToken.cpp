@@ -94,13 +94,12 @@ void IotsaStaticTokenMod::loop() {
 }
 
 // May this request do something that needs the right "right"? Yes if it
-// carries a token that has the right; otherwise ask the users. right ==
-// nullptr is a REST call, such as a PUT on /api/hello: that needs "api".
+// carries a token that has the right; otherwise ask the users.
 IotsaAccess IotsaStaticTokenMod::allows(IotsaContext& ctx, const char *right) {
   String token = ctx.bearerToken();
   if (token != "") {
     String rightField("/");
-    rightField += right ? right : "api";
+    rightField += right;
     rightField += "/";
     for (auto& t : tokens) {
       if (t.token == token) {

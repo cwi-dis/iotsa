@@ -70,6 +70,9 @@ void IotsaBLEClientMod::getHandler(IotsaApiContext& ctx) {
 
 // Subclasses read more fields after calling this.
 void IotsaBLEClientMod::putHandler(IotsaApiContext& ctx) {
+  // How this device looks for the BLE devices it controls.
+  IotsaContext::RightsScope rights(ctx);
+  ctx.argsNeedRight("bleclient");
   bool changed = ctx.arg("scan_interval", scan_interval, IotsaApiContext::Saved);
   changed |= ctx.arg("scan_window", scan_window, IotsaApiContext::Saved);
   changed |= ctx.arg("scan_duration_discovery", scanDurationDiscoveryMillis, IotsaApiContext::Saved);

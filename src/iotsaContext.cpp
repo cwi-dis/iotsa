@@ -4,6 +4,13 @@ IotsaContext::IotsaContext(IotsaBaseModule& mod, const String& apiPath)
 : _mod(mod),
   _apiPath(apiPath)
 {
+  resetRights();
+}
+
+void IotsaContext::resetRights() {
+  _right = _mod.changeRight();
+  _readRight = _mod.readRight();
+  _authChecked = false;
 }
 
 void IotsaContext::error(int status, const String& message) {
@@ -14,8 +21,8 @@ void IotsaContext::error(int status, const String& message) {
 }
 
 IotsaAccess IotsaContext::_access(const char *right) {
-  if (right && strcmp(right, IOTSA_RIGHT_NEVER) == 0) return IotsaAccess::Forbidden;
-  if (right && strcmp(right, IOTSA_RIGHT_NONE) == 0) return IotsaAccess::Granted;
+  if (right == nullptr || strcmp(right, IOTSA_RIGHT_NONE) == 0) return IotsaAccess::Granted;
+  if (strcmp(right, IOTSA_RIGHT_NEVER) == 0) return IotsaAccess::Forbidden;
   return _mod.app.getAuth()->allows(*this, right);
 }
 
@@ -33,14 +40,14 @@ bool IotsaContext::_refuse(const char *right) {
 IotsaAccess IotsaContext::_writeAccess() {
   if (!_authChecked) {
     _authChecked = true;
-    _authAnswer = _access(_rule == NamedRight ? _right : nullptr);
+    _authAnswer = _access(_right);
   }
   return _authAnswer;
 }
 
 bool IotsaContext::_mayChange(Persistence persistence) {
   if (failed()) return false;
-  const char *right = _rule == NamedRight ? _right : nullptr;
+  const char *right = _right;
   _writeAccess();
   if (_authAnswer == IotsaAccess::NeedsCredentials) {
     if (!carriesCredentials()) {
@@ -75,10 +82,9 @@ bool IotsaContext::_modeAllows(Persistence persistence) const {
   return true;
 }
 
-void IotsaContext::_setRule(AuthRule rule, const char *right) {
+void IotsaContext::_setRight(const char *right) {
   bool sameRight = right == _right || (right && _right && strcmp(right, _right) == 0);
-  if (rule == _rule && (rule != NamedRight || sameRight)) return;
-  _rule = rule;
+  if (sameRight) return;
   _right = right;
   _authChecked = false;
 }
@@ -91,7 +97,9 @@ bool IotsaContext::_mayRead(bool empty) {
   if (_readRight == nullptr || strcmp(_readRight, IOTSA_RIGHT_NONE) == 0) return true;
   // An empty secret gives nothing away.
   if (strcmp(_readRight, IOTSA_RIGHT_NEVER) == 0) return empty;
-  return _access(_readRight) == IotsaAccess::Granted;
+  IotsaAccess access = _access(_readRight);
+  if (access == IotsaAccess::NeedsCredentials) _readNeedsCredentials = true;
+  return access == IotsaAccess::Granted;
 }
 
 void IotsaContext::_changed(Persistence persistence) {

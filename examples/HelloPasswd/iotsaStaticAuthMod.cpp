@@ -17,9 +17,9 @@ void IotsaStaticAuthMod::loop() {
 }
 
 // Called when a request wants to do something that needs the right "right"
-// (such as changing the name on the /hello page), or, with right nullptr, a
-// REST call (such as a PUT on /api/hello). This authenticator doesn't look at
-// the right, only at the login: whoever sent "admin" and "admin" may do it,
+// (such as "hello" for changing the name, or "config" for the WiFi
+// settings). This authenticator doesn't look at the right, only at the
+// login: whoever sent "admin" and "admin" may do it,
 // anybody else would need to log in. The framework asks the browser for the
 // login, this method only answers.
 IotsaAccess IotsaStaticAuthMod::allows(IotsaContext& ctx, const char *right) {

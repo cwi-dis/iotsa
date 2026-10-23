@@ -49,6 +49,12 @@ void IotsaModule::webHandler() {
     ctx.resetRights();
     formHandler_fields(ctx);
     String settings = ctx.takeOutput();
+    // A value was hidden for want of credentials: ask for them, instead of
+    // a page with holes (cwi-dis/iotsa#183, read rights).
+    if (ctx._readNeedsCredentials) {
+        static_cast<IotsaContext&>(ctx)._challenge();
+        return;
+    }
     ctx.sendPage(webTitle(), everyday, settings);
 }
 
@@ -58,7 +64,7 @@ void IotsaModule::addTrigger(const char *path, TriggerHandler handler, const cha
     String *fullPath = new String(String("/") + path);
     auto wrapper = [this, server, handler, right]() {
         iotsaNoKeepAlive(server);
-        // Auth like the module's page: the REST rule for its API path.
+        // Auth like the module's page: the module's right, or the one given.
         IotsaWebContext ctx(*this, server, "/api/" + api.webService->pagePath);
         if (right) ctx.argsNeedRight(right);
         // A trigger is a change by itself.

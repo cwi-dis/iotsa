@@ -328,6 +328,9 @@ void IotsaBLEServerMod::putHandler(IotsaApiContext& ctx) {
 void IotsaBLEServerMod::lateSetup() {
   api.setup("bleserver", true, true);
   name = "bleserver";
+  // Whether and how well the device can be reached over BLE: a device
+  // setting, like WiFi.
+  changesNeedRight("config");
 }
 
 void IotsaBLEServerMod::lateSetupDone() {

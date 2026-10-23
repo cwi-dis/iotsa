@@ -496,7 +496,7 @@ void putHandler(IotsaApiContext& ctx);
 void postHandler(IotsaApiContext& ctx);
 ```
 
-The put side reads fields with `ctx.arg()` (and `ctx.argPassword()` for secrets), the get side writes them with `ctx.show()`. Changing a field needs the REST rule (the right `api` with the standard user module), or the right named with `ctx.argsNeedRight("name")`; reading is open, unless `ctx.showsNeedRight()` says otherwise, and a field the caller may not read is listed in `iotsa_api_redacted` instead. A write-only value, such as a password, is `ctx.showsNeedRight(IOTSA_RIGHT_NEVER)`. Objects inside a module (users, buttons) get the same handlers, called inside an `IotsaApiContext::Scope`. See `iotsaContext.h` and the Decided comment on cwi-dis/iotsa#296.
+The put side reads fields with `ctx.arg()` (and `ctx.argPassword()` for secrets), the get side writes them with `ctx.show()`. Changing and reading a field is open to everyone on the network, unless a right is named: `ctx.argsNeedRight("name")` for changes, `ctx.showsNeedRight("name")` for reads, or once for the whole module with `changesNeedRight()`/`readsNeedRight()` in `lateSetup()`. A field the caller may not read is listed in `iotsa_api_redacted`, or shown as "(hidden)" on a web page; without credentials, a web page asks for them. A write-only value, such as a password, is `ctx.showsNeedRight(IOTSA_RIGHT_NEVER)`. Objects inside a module (users, buttons) get the same handlers, called inside an `IotsaApiContext::Scope`. See `iotsaContext.h` and the Decided comment on cwi-dis/iotsa#296.
 
 The web page is `formHandler_args()` and `formHandler_fields()`, see [The web page](#the-web-page) above and `iotsaWebContext.h`. A trigger is `addTrigger()`, see [Triggers](#triggers).
 

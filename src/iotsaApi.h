@@ -116,7 +116,7 @@ protected:
   // for curl or another device, like GET /ring?alarm=20. The handler reads the
   // arguments with ctx.arg() (Transient), as formHandler_args() does. Every
   // call is a change, so the right is checked before the handler runs: the
-  // REST rule for the module's API path, or the named right if given. The
+  // module's (changesNeedRight(), default everyone), or the named right if given. The
   // answer is plain text: the ctx.feedback() lines, or "OK"; an error with
   // its own status. Call it in lateSetup(), next to api.setup().
   typedef std::function<void(IotsaWebContext& ctx)> TriggerHandler;

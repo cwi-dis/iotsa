@@ -24,7 +24,7 @@ public:
   // Whether the transport can carry credentials at all (HTTP can, HPS and
   // CoAP can't yet, cwi-dis/iotsa#303).
   virtual bool carriesCredentials() const { return false; }
-  // What the REST rule is asked about: this verb on this API path.
+  // This verb on this API path: what a capability is checked against.
   const String& apiPath() const { return _apiPath; }
   IotsaApiOperation verb() const { return _verb; }
   void setVerb(IotsaApiOperation verb) { _verb = verb; }
@@ -38,19 +38,21 @@ public:
                       // device's own AP, iotsaConfigSettingsWritable() (hostName, ssid)
   };
 
-  // Changes after this need this named right (as in IotsaUserMod), instead of
-  // the REST rule (PUT on the module's API path). Checked lazily, at the first
-  // change, so just reading needs no right. Can change halfway through the put
-  // side: the calls after it use the new right. IOTSA_RIGHT_NONE: the changes
-  // after it need no right at all.
-  void argsNeedRight(const char *right) { _setRule(NamedRight, right); }
-  // Reading the fields after this needs this right (default IOTSA_RIGHT_NONE:
-  // open). IOTSA_RIGHT_NEVER: a write-only value, such as a password.
+  // Changes after this need this named right (as in IotsaUserMod). The
+  // default is the module's (changesNeedRight()), which is IOTSA_RIGHT_NONE
+  // unless the module says otherwise: a change that names no right is open to
+  // everyone on the network (https://github.com/cwi-dis/iotsa/issues/183#issuecomment-6368033789).
+  // Checked lazily, at the first change, so just reading needs no right. Can
+  // change halfway through the put side: the calls after it use the new right.
+  void argsNeedRight(const char *right) { _setRight(right); }
+  // Reading the fields after this needs this right. The default is the
+  // module's (readsNeedRight()), IOTSA_RIGHT_NONE unless it says otherwise.
+  // IOTSA_RIGHT_NEVER: a write-only value, such as a password.
   void showsNeedRight(const char *right) { _readRight = right; }
-  // Back to the defaults (the REST rule, reads open). The framework does this
-  // between the put side and each part of the get side, so formHandler_fields()
-  // declares its rights itself, the same ones as formHandler_args().
-  void resetRights() { _rule = RestRule; _right = nullptr; _readRight = IOTSA_RIGHT_NONE; _authChecked = false; }
+  // Back to the module's rights. The framework does this between the put
+  // side and each part of the get side, so formHandler_fields() declares its
+  // rights itself, the same ones as formHandler_args().
+  void resetRights();
 
   // The first error stops the rest of the request: later arg*() calls do
   // nothing and return false, a later error() is ignored, and the reply
@@ -87,19 +89,32 @@ public:
   };
 
 protected:
-  enum AuthRule { RestRule, NamedRight };
   // The declared rights, saved and restored around an object, so the
   // object's argsNeedRight()/showsNeedRight() don't leak into its module.
   struct _Rights {
-    AuthRule rule;
     const char *right;
     const char *readRight;
     bool authChecked;
     IotsaAccess authAnswer;
   };
-  _Rights _saveRights() const { return {_rule, _right, _readRight, _authChecked, _authAnswer}; }
-  void _restoreRights(const _Rights& r) { _rule = r.rule; _right = r.right; _readRight = r.readRight; _authChecked = r.authChecked; _authAnswer = r.authAnswer; }
+  _Rights _saveRights() const { return {_right, _readRight, _authChecked, _authAnswer}; }
+  void _restoreRights(const _Rights& r) { _right = r.right; _readRight = r.readRight; _authChecked = r.authChecked; _authAnswer = r.authAnswer; }
 
+public:
+  // While it lives, the rights declared (argsNeedRight(), showsNeedRight())
+  // are its own: they end with it. For a part of a handler that needs a
+  // right the rest doesn't (renaming a device, next to the device's own
+  // fields).
+  class RightsScope {
+  public:
+    RightsScope(IotsaContext& ctx) : _ctx(ctx), _saved(ctx._saveRights()) {}
+    ~RightsScope() { _ctx._restoreRights(_saved); }
+  private:
+    IotsaContext& _ctx;
+    _Rights _saved;
+  };
+
+protected:
   // Is the (scoped) argument in the request? Marks it as used.
   virtual bool _hasArg(const char *name) { return false; }
   // Ask for credentials (a 401 with WWW-Authenticate), refuse (a 403): only a
@@ -111,7 +126,8 @@ protected:
   // For messages: "rest", "hps", ...
   virtual const char *_transport() const { return "this transport"; }
 
-  // A right, asked of the auth provider; nullptr: the REST rule.
+  // A right, asked of the auth provider. nullptr: no right needed, as
+  // IOTSA_RIGHT_NONE.
   IotsaAccess _access(const char *right);
   // For raw web handlers: refused means the reply was sent.
   bool _refuse(const char *right);
@@ -130,6 +146,9 @@ protected:
   // May the caller read the fields after showsNeedRight()? empty: the value
   // is empty, which a write-only (IOTSA_RIGHT_NEVER) value may show.
   bool _mayRead(bool empty);
+  // A read was refused because the request had no credentials: logging in
+  // would help. A web page then asks for them.
+  bool _readNeedsCredentials = false;
 
   void _use(const String& name);
   bool _isUsed(const String& name) const;
@@ -138,10 +157,9 @@ protected:
   String _apiPath;
 
 private:
-  void _setRule(AuthRule rule, const char *right);
+  void _setRight(const char *right);
 
-  AuthRule _rule = RestRule;
-  const char *_right = nullptr;
+  const char *_right = IOTSA_RIGHT_NONE;
   const char *_readRight = IOTSA_RIGHT_NONE;
   IotsaApiOperation _verb = IOTSA_API_PUT;
   bool _authChecked = false;

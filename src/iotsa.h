@@ -189,9 +189,10 @@ public:
   IotsaAuthenticationProvider& operator=(const IotsaAuthenticationProvider& that) = delete;
 
   virtual ~IotsaAuthenticationProvider() {}
-  // May the caller of this request do what needs this right? right == nullptr
-  // asks for the REST rule: ctx.verb() on ctx.apiPath(). Only answers: the
-  // request context sends the challenge or the refusal. The credentials come
+  // May the caller of this request do what needs this right? Never asked
+  // about IOTSA_RIGHT_NONE or IOTSA_RIGHT_NEVER: the request context answers
+  // those itself. Only answers: the request context sends the challenge or
+  // the refusal. The credentials come
   // from the context (ctx.hasBasicAuth(), ctx.bearerToken()).
   virtual IotsaAccess allows(IotsaContext& ctx, const char *right) = 0;
 };
@@ -321,8 +322,20 @@ public:
   virtual void sleepWakeupNotification(bool sleep) {}
   // Whether this module exposes a REST/CoAP/HPS API (overridden by IotsaModule).
   virtual bool hasApi() const { return false; }
+  // The rights a request to this module starts with, see readsNeedRight().
+  const char *readRight() const { return _readRight; }
+  const char *changeRight() const { return _changeRight; }
 
 protected:
+  // Rights for the whole module, page and API alike: every read, or every
+  // change, needs this right, unless a handler names another one with
+  // ctx.showsNeedRight()/ctx.argsNeedRight(). The default for both is
+  // IOTSA_RIGHT_NONE: open to everyone on the network
+  // (https://github.com/cwi-dis/iotsa/issues/183#issuecomment-6368033789).
+  // For a module whose content is private as a whole (RFID cards). Call
+  // them in lateSetup(), next to api.setup().
+  void readsNeedRight(const char *right) { _readRight = right; }
+  void changesNeedRight(const char *right) { _changeRight = right; }
 #ifdef IOTSA_HAS_WEBSERVER
   // A raw web handler (cwi-dis/iotsa#296): it answers the request itself (a
   // file, a tar, an upload), outside the page machinery. The framework checks
@@ -341,6 +354,9 @@ protected:
   IotsaApplication &app;
   IotsaBaseModule *nextModule;
   String name;
+private:
+  const char *_readRight = IOTSA_RIGHT_NONE;
+  const char *_changeRight = IOTSA_RIGHT_NONE;
 };
 
 class IotsaConfigFileLoad;

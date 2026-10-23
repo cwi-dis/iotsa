@@ -154,13 +154,15 @@ bool IotsaWebContext::_parse(const String& s, float& v) {
 
 IotsaWebContext::Scope::Scope(IotsaWebContext& ctx, const String& prefix)
 : _ctx(ctx),
-  _saved(ctx._prefix)
+  _saved(ctx._prefix),
+  _savedRights(ctx._saveRights())
 {
   _ctx._prefix = _saved + prefix + ".";
 }
 
 IotsaWebContext::Scope::~Scope() {
   _ctx._prefix = _saved;
+  _ctx._restoreRights(_savedRights);
 }
 
 String IotsaWebContext::_scoped(const char *name) const {
@@ -258,10 +260,17 @@ void IotsaWebContext::_closeForm() {
   }
 }
 
+bool IotsaWebContext::_readable(bool empty) {
+  if (_mayRead(empty)) return true;
+  _hiddenForRight = true;
+  return false;
+}
+
 void IotsaWebContext::showStatus(const IotsaWebLabel& label, const char *name, const String& value) {
+  String shown = _readable(value.length() == 0) ? value : String("(hidden)");
   String line = "<div";
   if (name && *name) line += " id='" + _scoped(name) + "'";
-  line += ">" + IotsaBaseModule::htmlEncode(label.text) + ": " + IotsaBaseModule::htmlEncode(value) + "</div>\n";
+  line += ">" + IotsaBaseModule::htmlEncode(label.text) + ": " + IotsaBaseModule::htmlEncode(shown) + "</div>\n";
   _out() += line;
 }
 
@@ -270,7 +279,7 @@ void IotsaWebContext::showField(const IotsaWebLabel& label, const char *name, co
 }
 
 void IotsaWebContext::_field(const IotsaWebLabel& label, const char *name, const String& value, const char *type, Persistence persistence, const char *hint) {
-  if (!editable(persistence)) {
+  if (!editable(persistence) || !_readable(value.length() == 0)) {
     showStatus(label, name, value);
     return;
   }
@@ -283,7 +292,7 @@ void IotsaWebContext::_field(const IotsaWebLabel& label, const char *name, const
 }
 
 void IotsaWebContext::showCheckbox(const IotsaWebLabel& label, const char *name, bool value, Persistence persistence, const char *hint) {
-  if (!editable(persistence)) {
+  if (!editable(persistence) || !_readable(false)) {
     showStatus(label, name, value ? "yes" : "no");
     return;
   }
@@ -325,7 +334,7 @@ void IotsaWebContext::showTextarea(const IotsaWebLabel& label, const char *name,
 }
 
 void IotsaWebContext::showChoice(const IotsaWebLabel& label, const char *name, int value, const char * const *options, int count, Persistence persistence) {
-  if (!editable(persistence)) {
+  if (!editable(persistence) || !_readable(false)) {
     showStatus(label, name, (value >= 0 && value < count) ? options[value] : String(value));
     return;
   }
@@ -366,6 +375,8 @@ void IotsaWebContext::showCell(const IotsaWebLabel& label, const String& value, 
     _out() += "<th>" + IotsaBaseModule::htmlEncode(label.text) + "</th>";
   } else if (flags & Secret) {
     _out() += String("<td>") + (value.length() ? "(set)" : "") + "</td>";
+  } else if (!_readable(value.length() == 0)) {
+    _out() += "<td>(hidden)</td>";
   } else {
     _out() += "<td>" + IotsaBaseModule::htmlEncode(value) + "</td>";
   }
@@ -376,10 +387,12 @@ String IotsaWebContext::takeOutput() {
   String rv;
   if (_plainForMode) rv += "<p>Some of these can only be changed in configuration mode, see <a href='/runmode'>/runmode</a>.</p>\n";
   if (_plainForRight) rv += "<p>Some of these can't be changed with the rights you have.</p>\n";
+  if (_hiddenForRight) rv += "<p>Some of these are hidden: they need a right you don't have.</p>\n";
   rv += _output;
   _output = "";
   _plainForMode = false;
   _plainForRight = false;
+  _hiddenForRight = false;
   return rv;
 }
 

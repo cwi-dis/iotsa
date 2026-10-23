@@ -24,6 +24,8 @@ void IotsaBatteryMod::lateSetup() {
 #endif
   api.setup("battery", true, true);
   name = "battery";
+  // The voltage calibration is a property of this device's hardware.
+  changesNeedRight("config");
 }
 
 void IotsaBatteryMod::loop() {

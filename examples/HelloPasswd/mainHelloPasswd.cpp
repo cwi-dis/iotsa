@@ -1,8 +1,9 @@
 //
 // The Hello example with a password: changing the name needs a login with
 // the fixed username "admin" and password "admin" (see iotsaStaticAuthMod.cpp).
-// The login protects the whole device: the WiFi settings, over-the-air
-// updates and so on need it too.
+// The login protects everything that needs a right: the name (the hello
+// module says so, see iotsaHelloMod.cpp) and the standard modules' settings,
+// such as WiFi and the switch to over-the-air updates.
 //
 
 #include "iotsa.h"
@@ -15,7 +16,8 @@ IotsaApplication application("Iotsa Hello World Server");
 // Our authenticator, see iotsaStaticAuthMod.cpp.
 IotsaStaticAuthMod myAuthenticator(application);
 
-// Our module, the same as in HelloIotsa. It doesn't know about the password.
+// Our module, the same as in HelloIotsa except that changing the name needs a
+// right. It doesn't know about the password.
 IotsaHelloMod helloMod(application);
 
 // Standard setup() method, hands off everything to the application framework

@@ -477,6 +477,9 @@ void IotsaBLEClientDevice::configSave(IotsaConfigFileSave& cf, const String& f_n
 }
 
 void IotsaBLEClientDevice::putHandler(IotsaApiContext& ctx) {
+  // Which device this is: managing the known devices needs "bleclient".
+  IotsaContext::RightsScope rights(ctx);
+  ctx.argsNeedRight("bleclient");
   String newName(bleName.c_str());
   bool rename = ctx.arg("name", newName, IotsaApiContext::Saved);
   if (ctx.failed()) return;
@@ -512,6 +515,9 @@ void IotsaBLEClientDevice::getHandler(IotsaApiContext& ctx) {
 
 #ifdef IOTSA_WITH_WEB
 void IotsaBLEClientDevice::formHandler_args(IotsaWebContext& ctx) {
+  // As in putHandler(): renaming needs "bleclient".
+  IotsaContext::RightsScope rights(ctx);
+  ctx.argsNeedRight("bleclient");
   IotsaWebContext::Change rename(ctx, "rename", IotsaWebContext::Saved);
   if (!rename) return;
   String newName(bleName.c_str());
@@ -541,6 +547,8 @@ void IotsaBLEClientDevice::formHandler_fields(IotsaWebContext& ctx) {
     }
     ctx.showStatus(name == "" ? String("BLE device") : name, "", name == "" ? String("not set") : status);
   } else {
+    IotsaContext::RightsScope rights(ctx);
+    ctx.argsNeedRight("bleclient");
     IotsaWebContext::Form form(ctx, name == "" ? "Set" : "Rename", name, "rename");
     ctx.showField("BLE device name", "name", name, IotsaWebContext::Saved);
   }

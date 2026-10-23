@@ -82,7 +82,8 @@ public:
   // ---- objects inside a module ----
 
   // While a Scope lives, names get "<prefix>." in front, so an object writes
-  // ctx.arg("url", url) and the page sends "button1.url".
+  // ctx.arg("url", url) and the page sends "button1.url". The rights the
+  // object declares end with the Scope, as in IotsaApiContext::Scope.
   class Scope {
   public:
     Scope(IotsaWebContext& ctx, const String& prefix);
@@ -90,6 +91,7 @@ public:
   private:
     IotsaWebContext& _ctx;
     String _saved;
+    _Rights _savedRights;
   };
 
   // ---- get side ----
@@ -132,7 +134,9 @@ public:
   };
 
   // Read-only line. name is the REST field it comes from (written as the id),
-  // or "" when it has no REST counterpart.
+  // or "" when it has no REST counterpart. Like the other show*() calls, it
+  // shows "(hidden)" when showsNeedRight() names a right the caller doesn't
+  // have; with no credentials at all, the page asks for them instead.
   void showStatus(const IotsaWebLabel& label, const char *name, const String& value);
   // An input when editable, otherwise the same as showStatus().
   void showField(const IotsaWebLabel& label, const char *name, const String& value, Persistence persistence, const char *hint = nullptr);
@@ -188,6 +192,9 @@ private:
   void _authRefused() override { responded = true; }
   void _field(const IotsaWebLabel& label, const char *name, const String& value, const char *type, Persistence persistence, const char *hint);
   String _scoped(const char *name) const;
+  // May the caller read the value (showsNeedRight())? If not, the part gets
+  // a line saying some values are hidden.
+  bool _readable(bool empty);
   String& _out();
   void _markEditable(bool post, bool field = true);
   void _closeForm();
@@ -205,6 +212,7 @@ private:
   bool _includesSettings = true;
   bool _plainForMode = false;   // a field was plain text: configuration mode
   bool _plainForRight = false;  // ... or a right the caller doesn't have
+  bool _hiddenForRight = false; // a value was hidden: a right to read it is missing
   String _prefix;
   String _formHidden;       // hidden fields for every form, see FormHidden
   bool _headerRow = false;  // showCell() writes <th>, see IotsaWebCollection

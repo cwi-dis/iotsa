@@ -2,7 +2,9 @@
 #include "iotsaConfigFile.h"
 
 // Implementation of the Hello module. This is the same module as in
-// HelloIotsa: the password check is not here but in iotsaStaticAuthMod.cpp.
+// HelloIotsa, with one line more in lateSetup(): it says that changing
+// anything needs a right. Which caller has that right is decided in
+// iotsaStaticAuthMod.cpp.
 //
 // An iotsa module is somewhat like an Arduino sketch, except (1) it provides
 // a way for the "outside world" to see and change values (either through a
@@ -23,9 +25,12 @@ void IotsaHelloMod::setup() {
 // api.setup("hello", true, true) gives GET and PUT on /api/hello, and the
 // web page /hello. Apart from that you rarely need lateSetup(), unless your
 // module depends on other modules already being set up.
+// Without changesNeedRight(), anyone on the network could change the name:
+// what isn't protected by a right is open to everyone.
 void IotsaHelloMod::lateSetup() {
   api.setup("hello", true, true);
   name = "hello";
+  changesNeedRight("hello");
 }
 
 // Called all the time, like the Arduino loop(). Don't block.

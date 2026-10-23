@@ -13,6 +13,10 @@ void IotsaButtonMod::setup() {
 void IotsaButtonMod::lateSetup() {
   api.setup("buttons", true, true);
   name = "buttons";
+  // What a button does to other devices (its URL, credentials, token): not
+  // for everyone on the network. Reading stays open; the secrets are
+  // write-only anyway.
+  changesNeedRight("buttons");
 }
 
 void IotsaButtonMod::loop() {

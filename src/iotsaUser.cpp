@@ -86,8 +86,6 @@ void IotsaUserMod::loop() {
 IotsaAccess IotsaUserMod::allows(IotsaContext& ctx, const char *right) {
   // No users means everything is allowed.
   if (users.empty()) return IotsaAccess::Granted;
-  // The REST rule: every API path and verb needs the right "api".
-  if (right == nullptr) right = "api";
   String rightField = String("/") + right + "/";
   for (auto& u: users) {
     if (ctx.hasBasicAuth(u.username.c_str(), u.password.c_str())) {

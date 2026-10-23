@@ -74,6 +74,9 @@ void IotsaRunmodeBLEClient::putHandler(IotsaApiContext& ctx) {
   IotsaBLEClientDevice::putHandler(ctx);
   bool identify = false;
   ctx.arg("identify", identify, IotsaApiContext::Transient);
+  // Identify is harmless, as on the device itself. The rest acts on another
+  // device: it needs the right to control the BLE devices this one knows.
+  ctx.argsNeedRight("bleclient");
   bool reboot = false;
   ctx.arg("reboot", reboot, IotsaApiContext::Transient);
   bool promoteMode = false;
@@ -104,6 +107,7 @@ static void _queued(IotsaWebContext& ctx, bool ok) {
 void IotsaRunmodeBLEClient::formHandler_args(IotsaWebContext& ctx) {
   IotsaBLEClientDevice::formHandler_args(ctx);
   if (ctx.argAction("identify", IotsaWebContext::Transient)) _queued(ctx, queueIdentify());
+  ctx.argsNeedRight("bleclient");
   if (ctx.argAction("reboot", IotsaWebContext::Transient)) _queued(ctx, queueReboot());
   if (ctx.argAction("promoteMode", IotsaWebContext::Transient)) _queued(ctx, queuePromoteMode());
   if (ctx.argAction("enableWifi", IotsaWebContext::Transient)) _queued(ctx, queueSetWifiDisabled(false));
@@ -119,6 +123,7 @@ void IotsaRunmodeBLEClient::formHandler_fields(IotsaWebContext& ctx) {
     ctx.showStatus("Last command", "", lastWorkStatus);
   }
   ctx.showButton("identify", "Identify", IotsaWebContext::Transient);
+  ctx.argsNeedRight("bleclient");
   ctx.showButton("reboot", "Reboot", IotsaWebContext::Transient);
   ctx.showButton("promoteMode", "Confirm requested mode", IotsaWebContext::Transient);
   ctx.showButton("enableWifi", "Enable WiFi", IotsaWebContext::Transient);
