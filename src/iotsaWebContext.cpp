@@ -383,25 +383,31 @@ String IotsaWebContext::takeOutput() {
   return rv;
 }
 
+// Sent in pieces, not concatenated: a page with a long list (a door's RFID
+// cards) would otherwise be in memory twice (cwi-dis/iotsaDoorOpener#1).
 void IotsaWebContext::sendPage(const String& title, const String& everyday, const String& settings) {
-  String page = "<!DOCTYPE html>\n<html><head><meta charset='utf-8'>\n";
-  page += "<meta name='viewport' content='width=device-width, initial-scale=1'>\n";
-  page += "<title>" + IotsaBaseModule::htmlEncode(title) + "</title>\n";
-  page += "</head><body>\n";
-  page += "<h1>" + IotsaBaseModule::htmlEncode(title) + "</h1>\n";
+  String head = "<!DOCTYPE html>\n<html><head><meta charset='utf-8'>\n";
+  head += "<meta name='viewport' content='width=device-width, initial-scale=1'>\n";
+  head += "<title>" + IotsaBaseModule::htmlEncode(title) + "</title>\n";
+  head += "</head><body>\n";
+  head += "<h1>" + IotsaBaseModule::htmlEncode(title) + "</h1>\n";
   if (failed()) {
-    page += "<p class='error'><strong>" + IotsaBaseModule::htmlEncode(errorMessage()) + "</strong></p>\n";
+    head += "<p class='error'><strong>" + IotsaBaseModule::htmlEncode(errorMessage()) + "</strong></p>\n";
   }
   for (auto& f : _feedback) {
-    page += "<p>" + IotsaBaseModule::htmlEncode(f.text) + "</p>\n";
+    head += "<p>" + IotsaBaseModule::htmlEncode(f.text) + "</p>\n";
   }
-  page += everyday;
+#ifdef CONTENT_LENGTH_UNKNOWN
+  _server->setContentLength(CONTENT_LENGTH_UNKNOWN);
+#endif
+  _server->send(200, "text/html", head);
+  // An empty chunk would end the response.
+  if (everyday.length() > 0) _server->sendContent(everyday);
   if (settings.length() > 0) {
-    page += "<h2>Settings</h2>\n";
-    page += settings;
+    _server->sendContent("<h2>Settings</h2>\n");
+    _server->sendContent(settings);
   }
-  page += "<p><a href='/'>Home</a></p>\n</body></html>\n";
-  _server->send(200, "text/html", page);
+  _server->sendContent("<p><a href='/'>Home</a></p>\n</body></html>\n");
 }
 
 void IotsaWebContext::sendText() {
