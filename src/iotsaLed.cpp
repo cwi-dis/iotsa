@@ -62,6 +62,10 @@ void IotsaLedMod::setup() {
   }
 }
 
+void IotsaLedMod::lateSetup() {
+	name = "led";
+}
+
 void IotsaLedMod::loop() {
   // Breathe needs ~20-30fps to read smoothly; a single-pixel strip.show() is
   // ~30us, so polling every loop() call is free (design comment, section 5).
@@ -88,10 +92,6 @@ void IotsaLedMod::_show(uint32_t colour) {
   if (brightness > 255) brightness = 255;
   analogWrite(pin, activeLow ? 255 - brightness : brightness);
 #endif
-}
-
-void IotsaLedMod::lateSetup() {
-	name = "led";
 }
 
 #ifdef IOTSA_WITH_WEB

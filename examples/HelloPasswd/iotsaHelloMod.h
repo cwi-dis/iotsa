@@ -5,10 +5,9 @@
 #include "iotsaApi.h"
 
 //
-// Hello "name" module. Greets visitors to the /hello page, and allows them
-// to change the name by which they are greeted, through the web UI and/or
-// the REST API -- both gated on a hardcoded admin/admin check (see
-// IotsaStaticAuthMod).
+// "Hello, name" module. Greets visitors to the /hello page, and allows them
+// to change the name by which they are greeted, either through the web UI
+// or through the REST API (GET/PUT /api/hello). The name is kept over reboots.
 //
 class IotsaHelloMod : public IotsaModule {
 public:
@@ -17,13 +16,18 @@ public:
   void lateSetup() override;
   void loop() override;
   String info() override;
-  using IotsaBaseModule::needsAuthentication;
 protected:
-  bool getHandler(const char *path, JsonObject& reply) override;
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
+  void configLoad() override;
+  void configSave() override;
+  void putHandler(IotsaApiContext& ctx) override;
+  void getHandler(IotsaApiContext& ctx) override;
+#ifdef IOTSA_WITH_WEB
+  String webTitle() override { return "Hello Server"; }
+  void formHandler_args(IotsaWebContext& ctx) override;
+  void formHandler_fields(IotsaWebContext& ctx) override;
+#endif
 private:
-  void webHandler() override;
-  String greeting;
+  String personName;
 };
 
 #endif

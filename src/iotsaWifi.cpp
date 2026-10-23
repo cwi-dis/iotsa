@@ -159,94 +159,39 @@ bool IotsaWifiMod::_wifiStartMDNS() {
 }
 
 #ifdef IOTSA_WITH_WEB
-void
-IotsaWifiMod::webHandler() {
-  bool wrongMode = false;
-  if (needsAuthentication("config")) return;
-  bool anyChanged = false;
-  // The form always sends both fields. Only a changed network counts, and an
-  // empty password only when the network changes too (an open network);
-  // otherwise it is just the empty password field.
-  bool ssidChanged = false;
-  if( api.webService->server->hasArg("ssid") && api.webService->server->arg("ssid") != ssid) {
-    if (iotsaConfigSettingsWritable()) {
-      ssid = api.webService->server->arg("ssid");
-      ssidChanged = true;
-      anyChanged = true;
-    } else {
-      wrongMode = true;
-    }
-  }
-  if( api.webService->server->hasArg("ssidPassword") && (ssidChanged || api.webService->server->arg("ssidPassword") != "")) {
-    if (iotsaConfigSettingsWritable()) {
-      ssidPassword = api.webService->server->arg("ssidPassword");
-      anyChanged = true;
-    } else {
-      wrongMode = true;
-    }
-  }
-  if (api.webService->server->hasArg("wifiPowerReduction")) {
-    int val = api.webService->server->arg("wifiPowerReduction").toInt();
-    if ((bool) val != wifiPowerReduction) {
-      if (iotsaConfigSettingsWritable()) {
-        wifiPowerReduction = (bool)val;
-        anyChanged = true;
-      } else {
-        wrongMode = true;
-      }
-    }
-  }
-  if (anyChanged) {
-    configSave();
-  }
-  String message = "<html><head><title>WiFi configuration</title></head><body><h1>WiFi configuration</h1>";
-#if 0
-  if (anyChanged) {
-    message += "<p>Settings saved to EEPROM. <em>Rebooting device to activate new settings.</em></p>";
-  }
-#endif
-  if (wrongMode) {
-    message += "<p><em>Error:</em> must be in configuration mode to change WiFi settings. See <a href='/config'>/config</a> to enable.</p>";
-  } else if(!iotsaConfigSettingsWritable()) {
-    message += "<p><i>(Note: you must be in configuration mode to change WiFi settings)</i></p>";
-  }
-  message += "<p>Hostname: ";
-  message += htmlEncode(iotsaConfig.hostName);
-  message += ", see <a href='/config'>/config</a> to change.</p>";
-  message += "<form method='get'>Network: <input name='ssid' value='";
-  message += htmlEncode(ssid);
-  message += "'><br>Password: <input type='password' name='ssidPassword'>";
-  // The hidden field after the checkbox sends 0 when it is unchecked; arg()
-  // returns the first value, so a checked box wins.
-  message += "<br>WiFi Power Reduction: <input type='checkbox' name='wifiPowerReduction' value='1'";
-  if (wifiPowerReduction) message += " checked";
-  message += "><input type='hidden' name='wifiPowerReduction' value='0'><br> (work around issue on some esp32c3 boards)<br>";
-  message += "<br><input type='submit'>";
-  message += "</form>";
-  if (iotsaConfigSettingsWritable()) {
+void IotsaWifiMod::formHandler_args(IotsaWebContext& ctx) {
+  ctx.argsNeedRight("config");
+  bool ssidChanged = ctx.arg("ssid", ssid, IotsaWebContext::SavedInConfigMode);
+  // The form always sends the password field: empty means unchanged, except
+  // together with a new network (an open one). The clear box empties it.
+  ctx.argPassword("ssidPassword", ssidPassword, IotsaWebContext::SavedInConfigMode, ssidChanged, true);
+  ctx.argCheckbox("wifiPowerReduction", wifiPowerReduction, IotsaWebContext::SavedInConfigMode);
+}
+
+void IotsaWifiMod::formHandler_fields(IotsaWebContext& ctx) {
+  ctx.argsNeedRight("config");
+  if (ctx.includesEveryday()) {
+    ctx.showStatus("Hostname", "", iotsaConfig.hostName);
 #ifdef ESP32
     uint8_t baseMac[6];
     char baseMacStr[32];
-    esp_err_t ret = esp_wifi_get_mac(WIFI_IF_STA, baseMac);
-    if (ret == ESP_OK) {
+    if (esp_wifi_get_mac(WIFI_IF_STA, baseMac) == ESP_OK) {
       snprintf(baseMacStr, sizeof(baseMacStr), "%02x:%02x:%02x:%02x:%02x:%02x",
                     baseMac[0], baseMac[1], baseMac[2],
                     baseMac[3], baseMac[4], baseMac[5]);
-      message += "<p>WiFi MAC address: <code>";
-      message += baseMacStr;
-      message += "</code></p>";
-    } else {
-      message += "<p>Cannot determine MAC address.</p>";
+      ctx.showStatus("WiFi MAC address", "", baseMacStr);
     }
 #else
-    message += "<p>WiFi MAC address: <code>";
-    message += WiFi.macAddress();
-    message += "</code></p>";
+    ctx.showStatus("WiFi MAC address", "", WiFi.macAddress());
 #endif
+    ctx << "<p>See <a href='/config'>/config</a> to change the hostname.</p>\n";
+    return;
   }
-
-  message += "</body></html>";
-  api.webService->server->send(200, "text/html", message);
+  IotsaWebContext::Form form(ctx);
+  ctx.showField("Network", "ssid", ssid, IotsaWebContext::SavedInConfigMode);
+  // Never prefilled, so empty means unchanged; the clear box empties it.
+  ctx.showPassword("Password", "ssidPassword", IotsaWebContext::SavedInConfigMode, ssidPassword == "" ? "not set" : "set, empty: unchanged", ssidPassword != "");
+  ctx.showCheckbox("WiFi power reduction", "wifiPowerReduction", wifiPowerReduction, IotsaWebContext::SavedInConfigMode, "works around an issue on some ESP32-C3 boards");
 }
 
 String IotsaWifiMod::info() {
@@ -265,35 +210,21 @@ String IotsaWifiMod::info() {
 }
 #endif // IOTSA_WITH_WEB
 
-bool IotsaWifiMod::getHandler(const char *path, JsonObject& reply) {
-  reply["ssid"] = ssid;
-  reply["has_ssidPassword"] = ssidPassword.length() > 0;
-  reply["wifiPowerReduction"] = wifiPowerReduction;
-  return true;
-}
-
-bool IotsaWifiMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  bool anyChanged = false;
-  if (!iotsaConfigSettingsWritable()) {
-    IOTSA_LOG_DEBUG_WIFI("iotsaWifi", "wifiConfig write rejected, not in config mode");
-    return apiError(409, "not in configuration mode");
-  }
-  JsonObject reqObj = request.as<JsonObject>();
-  if (getFromRequest<const char *>(reqObj, "ssid", ssid)) {
-    anyChanged = true;
-  }
-  if (getFromRequest<const char *>(reqObj, "ssidPassword", ssidPassword)) {
-    anyChanged = true;
-  }
-  if (getFromRequest<bool>(reqObj, "wifiPowerReduction", wifiPowerReduction)) {
-    anyChanged = true;
-  }
-  if (anyChanged) { configSave(); if (changed) *changed = true; }
+void IotsaWifiMod::putHandler(IotsaApiContext& ctx) {
+  ctx.argsNeedRight("config");
   // No `reboot` key here (cwi-dis/iotsa#106): /api/runmode is the canonical place
   // to ask for a reboot; /api/config keeps it as a backward-compat forwarder.
   // A WiFi credential change takes effect live, so nothing here needs a reboot.
-  checkUnhandled(reqObj);
-  return true;
+  ctx.arg("ssid", ssid, IotsaApiContext::SavedInConfigMode);
+  ctx.argPassword("ssidPassword", ssidPassword, IotsaApiContext::SavedInConfigMode);
+  ctx.arg("wifiPowerReduction", wifiPowerReduction, IotsaApiContext::SavedInConfigMode);
+}
+
+void IotsaWifiMod::getHandler(IotsaApiContext& ctx) {
+  ctx.show("ssid", ssid);
+  ctx.show("wifiPowerReduction", wifiPowerReduction);
+  ctx.showsNeedRight(IOTSA_RIGHT_NEVER);
+  ctx.show("ssidPassword", ssidPassword);
 }
 
 void IotsaWifiMod::lateSetup() {

@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Triggers: `addTrigger("ring", handler)` gives a module a plain URL for curl or another device; the Ringer example rings on `/ring?alarm=20`, so Button and Ringer make a doorbell again (#183)
+- LedBattery example: the Led example on a battery, with sleep and configuration mode over BLE; Led itself is now only about the LED (#183)
+- Blink example: Arduino's Blink without `delay()`, interval settable over web and REST (#183)
+- Web pages: `IotsaWebContext` and a default `webHandler()`; a module writes `formHandler_args(ctx)`/`formHandler_fields(ctx)`, the framework builds the page and saves the settings. NTP and Runmode use it (#183, #292)
+- Right `none` (`IOTSA_RIGHT_NONE`): always granted, without logging in (#284)
 - BLE client manager lists the 32 most recent named BLE devices its filter turned down (`unrecognized`: address, name, RSSI, seconds ago), e.g. a device on old firmware (#286)
 - API errors say why: handlers `return apiError(status, "why")` (404, 409 not in configuration mode, ...), replies `{"iotsa_api_error": ...}` over REST/HPS/CoAP; unused fields are reported as `iotsa_api_ignored`, the CLI prints both (#280)
 - `IotsaConfigFileLoad::get()` returns whether the key was present (#39)
@@ -25,6 +30,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `PUT /api/users` compared the old password before checking rights and configuration mode (#296)
+- HTTPS on memory-tight ESP32s: the files, upload, backup, logger and simple-module pages, and not-found answers (a browser's favicon request), now also answer `Connection: close`, so they no longer hold the only TLS session for 20 s (#293)
+- Buttons: on a fresh device the constructor's "send on press/release" was ignored, so a button sent nothing until configured (#183)
+- Led example: built with BLE, the LED was never started and identify() had no handler (#183)
+- Temperature example: never read the sensor (`dht.begin()` was missing) (#183)
+- Web pages showed the credentials and token of outgoing requests (buttons), which REST already hid (#183)
+- Changing usernames and passwords on the web page needs configuration mode, as over REST: anyone on the network could set the password of a fresh device (#183)
 - HTTPS on a memory-tight ESP32 (C3 with BLE): every second request failed, the server kept an idle connection's TLS session for 20 s; iotsa now answers `Connection: close` (#293)
 - Web pages accept POST over HTTPS too (the compat server registered GET only, jackjansen/esp32_idf5_https_server_compat#6)
 - KitchenSink and the DateTime example: the RTC only on the classic ESP32; on the C3 its clock pin was the console's TX pin (garbled console)
@@ -66,6 +78,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- API handlers get a request context, shared with web pages: the same rights per field on every transport, reads open, secrets write-only (`iotsa_api_redacted`), the first error stops the request (#296)
+- README: the design and API sections describe the current interfaces (`IotsaModule`, `api.setup()`, web pages, triggers); the examples come in two strands; how to add a standard module (#183)
+- Input example is now a dimmer: a button and a rotary encoder dim an LED through `bindVar()`, shown on `/dimmer`; pins per chip (#183)
+- BLEButton, BLERinger and BLEManager examples: modules in their own files; the button calls its module directly, and `/ring` rings like the button (#183)
+- Ringer example: PUT `/api/alarm` takes only `{"alarm": n}`, no bare number; the pin comes from the main file (#183)
+- The transport build matrix (`tests/Led`) is now `tests/Transports`, built from `sandbox/Infra`, so the Led example carries no test machinery (#183)
+- Hello examples: the name to greet is `personName` (was `greeting`, also in `/api/hello`) and starts as "human"; HelloIotsa and the auth examples keep it over reboots (#183)
+- `IotsaUserMod` is the former `IotsaMultiUserMod`: several users with rights, add and remove on the web page, users addressed by username in REST (`PUT /api/users`); stored users of the old single-user module are not read, re-add them (#183, #217)
+- `IotsaAuthMod` is an `IotsaModule`: `users` and `capabilities` are listed as modules with an API, so backups include them (restoring an older backup needs `--force` or a fresh backup) (#183)
 - CLI: one HTTP(S) session per device (reuses the connection when the device allows keep-alive) and retries a TLS handshake the device broke off (#293)
 - BLE client devices report `presence` (unknown, searching, notFound, remembered, seen) instead of `found`, which said "not found" for a device nobody had looked for yet (#286)
 - `IotsaBLEClientCollectionMod` is now `IotsaBLEClientManagerMod` (`iotsaBLEClientManager.h`), the example `BLEController` is now `BLEManager`; the device registry no longer creates or owns devices (#286)
@@ -85,6 +106,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- `/configupload`: `iotsa certificate` sends key and certificate in one PUT on `/api/config` (#296)
+- Skeleton, DateTime and FileShare examples: HelloIotsa is the starting point, and the README lists the standard modules you can add (#183)
+- The Log example: using the logger is one line, see the README; an example comes with the new logger (#183, #294)
+- The HelloRights example: HelloUser now shows rights (#183)
+- `IotsaMultiUserMod` (`iotsaMultiUser.h`): use `IotsaUserMod` (#183)
+- Per-item REST paths `/api/users/N` and `/api/buttons/N`: `PUT /api/buttons` takes the array, `null` leaves a button alone (#217)
 - `IOTSA_WITHOUT_API` (now an `#error`): API handlers are always compiled; leave out a transport with `IOTSA_WITHOUT_REST`/`IOTSA_WITHOUT_HPS` instead (#225)
 - `iotsaStatus.mdnsEnabled` and the `mdns` entry in `/api/config`'s `features` (#237)
 - `IotsaNtpMod`: the dead pre-libc NTP client, `IOTSA_WITHOUT_TIMEZONE`, the always-zero `minutesWest` API field, and `localTime()` (which returned UTC) (#283)

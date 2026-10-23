@@ -8,7 +8,7 @@
 // app.server rather than an IotsaApiServiceWeb link (which exists to let an API
 // also have a page) -- see cwi-dis/iotsa#211.
 //
-// notFoundHandler() serves raw static file content (or a plain-text 404), which
+// fileHandler() serves raw static file content under /data/ (or a plain-text 404), which
 // has nothing to do with a web UI -- only needs an HTTP transport
 // (IOTSA_HAS_WEBSERVER), so a REST-only build can still serve files. Only info()
 // is IOTSA_WITH_WEB-gated -- see cwi-dis/iotsa#205. listHandler()/_listDir()
@@ -24,10 +24,9 @@ public:
 #ifdef IOTSA_WITH_WEB
   String info() override;
 #endif
-  virtual bool accessAllowed(String &path);	// Return true if allowed, default only for /data/*
 private:
   void listHandler();
-  void notFoundHandler();
+  void fileHandler();
   void _listDir(String& message, const char *name);
 };
 #elif IOTSA_WITH_PLACEHOLDERS

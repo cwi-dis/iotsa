@@ -1,10 +1,24 @@
-#include "iotsaUser.h"
 #include "iotsaConfigFile.h"
 #include "iotsaStaticToken.h"
 
-#undef PASSWORD_DEBUGGING	// Enables admin1/admin1 to always log in
+// An authenticator for tokens. A token is a secret that a program sends with
+// its request, in an HTTP header:
+//
+//   Authorization: Bearer <token>
+//
+// Each token has its own rights, like a user (see HelloUser). It is for a
+// program that should be able to do one thing, such as changing the name,
+// without knowing a user's password.
+//
+// Requests without a valid token are passed on to the next authenticator, the
+// users (see mainHelloToken.cpp). So people log in as before.
+//
+// The tokens are managed on the /tokens page. They are a list, so the page uses
+// IotsaWebVector, which gives each token its own row plus Add and Remove.
 
-
+//
+// One token.
+//
 bool IotsaStaticTokenObject::configLoad(IotsaConfigFileLoad& cf, const String& f_name) {
   cf.get(f_name + ".token", token, "");
   cf.get(f_name + ".rights", rights, "");
@@ -16,97 +30,54 @@ void IotsaStaticTokenObject::configSave(IotsaConfigFileSave& cf, const String& f
   cf.put(f_name + ".rights", rights);
 }
 
+void IotsaStaticTokenObject::putHandler(IotsaApiContext& ctx) {
+  ctx.argPassword("token", token, IotsaApiContext::Saved);
+  ctx.arg("rights", rights, IotsaApiContext::Saved);
+}
+
+// The token itself is a secret: only whether it is set.
+void IotsaStaticTokenObject::getHandler(IotsaApiContext& ctx) {
+  ctx.show("rights", rights);
+  ctx.showsNeedRight(IOTSA_RIGHT_NEVER);
+  ctx.show("token", token);
+}
+
 #ifdef IOTSA_WITH_WEB
-void IotsaStaticTokenObject::formHandler_emptyfields(String& message) {
-  message += "Token: <input name='token'><br>";
-  message += "Rights: <input name='rights'><br>";
+void IotsaStaticTokenObject::formHandler_args(IotsaWebContext& ctx) {
+  ctx.arg("token", token, IotsaWebContext::Saved);
+  ctx.arg("rights", rights, IotsaWebContext::Saved);
 }
 
-void IotsaStaticTokenObject::formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) {
-  IotsaSerial.println("IotsaStaticTokenObject::formHandler not implemented");
+// The fields for adding a new token.
+void IotsaStaticTokenObject::formHandler_fields(IotsaWebContext& ctx) {
+  ctx.showField("Token", "token", token, IotsaWebContext::Saved);
+  ctx.showField("Rights", "rights", rights, IotsaWebContext::Saved, "* for all, or /right/right/");
 }
 
-void IotsaStaticTokenObject::formHandler_TH(String& message, bool includeConfig) {
-  message += "<th>Token</th><th>rights</th>";
+// One row of the table of existing tokens. The token is a secret: the page
+// only shows that it is there.
+void IotsaStaticTokenObject::formHandler_row(IotsaWebContext& ctx) {
+  ctx.showCell("Token", token, IotsaWebContext::Secret);
+  ctx.showCell("Rights", rights);
 }
-
-void IotsaStaticTokenObject::formHandler_TD(String& message, bool includeConfig) {
-  message += "<td>";
-  message += IotsaBaseModule::htmlEncode(token);
-  message += "</td><td>";
-  message += IotsaBaseModule::htmlEncode(rights);
-  message += "</td>";
-}
-
-bool IotsaStaticTokenObject::formHandler_args(IotsaWebServer *server, const String& name, bool includeConfig) {
-  // name=="" for IotsaUser
-  token = server->arg("token");
-  rights = server->arg("rights");
-  return token != "";
-}
-
 #endif // IOTSA_WITH_WEB
 
-bool IotsaStaticTokenObject::getHandler(JsonObject& reply) {
-  reply["token"] = token;
-  reply["rights"] = rights;
-  return true;
-}
-
-bool IotsaStaticTokenObject::putHandler(const JsonVariant& request, JsonObject& reply, bool *changed) {
-  if (!request.is<JsonObject>()) return apiError(400, "expected an object");
-  JsonObject reqObj = request.as<JsonObject>();
-  bool any = false;
-  any |= getFromRequest<String>(reqObj, "token", token);
-  any |= getFromRequest<String>(reqObj, "rights", rights);
-  if (any && changed) *changed = true;
-  return true;
-}
-
+//
+// The module.
+//
 IotsaStaticTokenMod::IotsaStaticTokenMod(IotsaApplication &_app, IotsaAuthenticationProvider &_chain)
 :	IotsaAuthMod(_app),
 	chain(_chain)
+#ifdef IOTSA_WITH_WEB
+  , webTokens(tokens, IotsaWebCollection::Add | IotsaWebCollection::Remove, IotsaWebCollection::Table, IotsaWebContext::Saved,
+      nullptr,
+      // Refuse a new token that is empty.
+      [](IotsaStaticTokenObject& t, IotsaWebContext& ctx) {
+        if (t.token == "") ctx.error("A new token can't be empty.");
+        return t.token != "";
+      })
+#endif
 {
-	configLoad();
-}
-	
-void
-IotsaStaticTokenMod::handler() {
-  if (needsAuthentication("tokens")) return;
-  String command = app.server->arg("command");
-
-  if (command == "add") {
-    IotsaStaticTokenObject newToken;
-    if (newToken.formHandler_args(app.server, "", true)) {
-      _addToken(newToken);
-      configSave();
-    }
-  } else if (command == "del") {
-    int index = app.server->arg("index").toInt();
-    _delToken(index);
-    configSave();
-  }
-
-
-  String message = "<html><head><title>Tokens</title><style>table, th, td {border: 1px solid black;padding:5px;border-collapse: collapse;}</style></head><body><h1>Tokens</h1>";
-  message += "<h2>Existing tokens</h2><table><tr>";
-  IotsaStaticTokenObject::formHandler_TH(message, true);
-  message += "<th>Operation</th></tr>";
-  int index=0;
-  for(auto t: tokens) {
-    message += "<tr>";
-    t.formHandler_TD(message, true);
-    message += "<td><form><input type='hidden' name='index' value='" + String(index++) + "'><input type='submit' name='command' value='del'></form></td>";
-    message += "</tr>";
-  }
-  message += "</table><br>";
-
-  message += "<h2>Add new token</h2><form method='get'>";
-  IotsaStaticTokenObject::formHandler_emptyfields(message);
-  message += "<input type='submit' name='command' value='add'>";
-  message += "</form><hr>";
-
-  app.server->send(200, "text/html", message);
 }
 
 void IotsaStaticTokenMod::setup() {
@@ -114,19 +85,39 @@ void IotsaStaticTokenMod::setup() {
 }
 
 void IotsaStaticTokenMod::lateSetup() {
-  app.server->on("/tokens", std::bind(&IotsaStaticTokenMod::handler, this));
+  // Only GET: the tokens are changed on the web page.
+  api.setup("tokens", true);
+  name = "tokens";
 }
 
-int IotsaStaticTokenMod::_addToken(IotsaStaticTokenObject& newToken) {
-  tokens.push_back(newToken);
-  return tokens.size()-1;
+void IotsaStaticTokenMod::loop() {
 }
 
-bool IotsaStaticTokenMod::_delToken(int index) {
-  tokens.erase(tokens.begin()+index);
-  return true;
+// May this request do something that needs the right "right"? Yes if it
+// carries a token that has the right; otherwise ask the users. right ==
+// nullptr is a REST call, such as a PUT on /api/hello: that needs "api".
+IotsaAccess IotsaStaticTokenMod::allows(IotsaContext& ctx, const char *right) {
+  String token = ctx.bearerToken();
+  if (token != "") {
+    String rightField("/");
+    rightField += right ? right : "api";
+    rightField += "/";
+    for (auto& t : tokens) {
+      if (t.token == token) {
+        if (t.rights == "*" || t.rights.indexOf(rightField) >= 0) {
+          return IotsaAccess::Granted;
+        }
+        // A known token without the right: the users may still have it, but
+        // logging in won't help the token.
+        IotsaAccess access = chain.allows(ctx, right);
+        return access == IotsaAccess::NeedsCredentials ? IotsaAccess::Forbidden : access;
+      }
+    }
+  }
+  return chain.allows(ctx, right);
 }
 
+// The tokens are kept in a file, so they survive a reboot.
 void IotsaStaticTokenMod::configLoad() {
   IotsaConfigFileLoad cf("/config/statictokens.cfg");
   tokens.clear();
@@ -141,16 +132,38 @@ void IotsaStaticTokenMod::configLoad() {
 void IotsaStaticTokenMod::configSave() {
   IotsaConfigFileSave cf("/config/statictokens.cfg");
   int i = 0;
-  for(auto it: tokens) {
+  for(auto& it: tokens) {
     String f_name = String(i++);
     it.configSave(cf, f_name);
   }
 }
 
-void IotsaStaticTokenMod::loop() {
+// The tokens themselves are secrets: only their rights are sent.
+void IotsaStaticTokenMod::getHandler(IotsaApiContext& ctx) {
+  JsonArray list = ctx.reply()["tokens"].to<JsonArray>();
+  int i = 0;
+  for (auto& t : tokens) {
+    IotsaApiContext::Scope s(ctx, String(i++), JsonObject(), list.add<JsonObject>());
+    t.getHandler(ctx);
+  }
 }
 
 #ifdef IOTSA_WITH_WEB
+void IotsaStaticTokenMod::formHandler_args(IotsaWebContext& ctx) {
+  // Changing the tokens needs the right "tokens".
+  ctx.argsNeedRight("tokens");
+  IotsaWebContext::Scope s(ctx, "tokens");
+  webTokens.formHandler_args(ctx);
+}
+
+void IotsaStaticTokenMod::formHandler_fields(IotsaWebContext& ctx) {
+  ctx.argsNeedRight("tokens");
+  // The tokens are configuration, there is no everyday part.
+  if (!ctx.includesSettings()) return;
+  IotsaWebContext::Scope s(ctx, "tokens");
+  webTokens.formHandler_fields(ctx);
+}
+
 String IotsaStaticTokenMod::info() {
   String message = "<p>Static tokens enabled.";
   message += " See <a href=\"/tokens\">/tokens</a> to change.";
@@ -158,32 +171,3 @@ String IotsaStaticTokenMod::info() {
   return message;
 }
 #endif
-
-bool IotsaStaticTokenMod::allows(const char *right) {
-  if (app.server->hasHeader("Authorization")) {
-    String authHeader = app.server->header("Authorization");
-    if (authHeader.startsWith("Bearer ")) {
-      String token = authHeader.substring(7);
-      String rightField("/");
-      rightField += right;
-      rightField += "/";
-      // Loop over all tokens.
-      for(auto t:tokens){
-        if (t.token == token) {
-          // The token matches. Check the rights.
-          if (t.rights == "*" || t.rights.indexOf(rightField) >= 0) {
-            return true;
-          }
-        }
-      }
-    }
-  }
-  Serial.println("No token match, try user/password");
-  // If no rights fall back to username/password authentication
-  return chain.allows(right);
-}
-
-bool IotsaStaticTokenMod::allows(const char *obj, IotsaApiOperation verb) {
-  return allows("api");
-}
-

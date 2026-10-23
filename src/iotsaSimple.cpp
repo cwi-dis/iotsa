@@ -7,7 +7,7 @@ void IotsaSimpleMod::setup() {
 
 void IotsaSimpleMod::lateSetup() {
 #ifdef IOTSA_HAS_WEBSERVER
-  app.server->on(url, hfun);
+  addWebHandler(url, [this]() { hfun(); }, right);
 #endif
 }
 

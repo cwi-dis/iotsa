@@ -3,6 +3,42 @@
 
 #define DEBOUNCE_DELAY 50 // 50 ms debouncing
 
+void IotsaButtonMod::setup() {
+  for (int i=0; i<nButton; i++) {
+    pinMode(buttons[i].pin, INPUT_PULLUP);
+  }
+  configLoad();
+}
+
+void IotsaButtonMod::lateSetup() {
+  api.setup("buttons", true, true);
+  name = "buttons";
+}
+
+void IotsaButtonMod::loop() {
+  for (int i=0; i<nButton; i++) {
+    int state = digitalRead(buttons[i].pin);
+    if (state != buttons[i].debounceState) {
+      buttons[i].debounceTime = millis();
+    }
+    buttons[i].debounceState = state;
+    if (millis() > buttons[i].debounceTime + DEBOUNCE_DELAY) {
+      int newButtonState = (state == LOW);
+      if (newButtonState != buttons[i].buttonState) {
+        buttons[i].buttonState = newButtonState;
+        bool doSend = (buttons[i].buttonState && buttons[i].sendOnPress) || (!buttons[i].buttonState && buttons[i].sendOnRelease);
+        if (doSend && buttons[i].req.url != "") {
+          if (buttons[i].req.send()) {
+            if (successCallback) successCallback();
+          } else {
+            if (failureCallback) failureCallback();
+          }
+        }
+      }
+    }
+  }
+}
+
 void IotsaButtonMod::configLoad() {
   IotsaConfigFileLoad cf("/config/buttons.cfg");
   for (int i=0; i<nButton; i++) {
@@ -10,6 +46,7 @@ void IotsaButtonMod::configLoad() {
     buttons[i].req.configLoad(cf, name);
     name = name + "on";
     String sendOn;
+    // Not saved yet: keep what the constructor said.
     cf.get(name, sendOn, "");
     if (sendOn == "press") {
       buttons[i].sendOnPress = true;
@@ -22,7 +59,8 @@ void IotsaButtonMod::configLoad() {
     if (sendOn == "change") {
       buttons[i].sendOnPress = true;
       buttons[i].sendOnRelease = true;
-    } else {
+    } else
+    if (sendOn == "none") {
       buttons[i].sendOnPress = false;
       buttons[i].sendOnRelease = false;
     }
@@ -51,170 +89,73 @@ void IotsaButtonMod::configSave() {
   }
 }
 
-void IotsaButtonMod::setup() {
-  for (int i=0; i<nButton; i++) {
-    pinMode(buttons[i].pin, INPUT_PULLUP);
+// An array with one entry per button, by position (cwi-dis/iotsa#217); null
+// or missing entries leave that button alone.
+// An array with an element per button; null leaves that button alone.
+void IotsaButtonMod::putHandler(IotsaApiContext& ctx) {
+  JsonVariant body = ctx.requestVariant();
+  if (!body.is<JsonArray>()) {
+    ctx.error(400, "expected an array of buttons");
+    return;
   }
-  configLoad();
+  JsonArray all = body.as<JsonArray>();
+  for (int i=0; i<nButton; i++) {
+    JsonVariant r = all[i];
+    if (r.isNull()) continue;
+    if (!r.is<JsonObject>()) {
+      ctx.error(400, "expected an object for each button");
+      return;
+    }
+    IotsaApiContext::Scope s(ctx, String(i), r.as<JsonObject>(), JsonObject());
+    buttons[i].req.putHandler(ctx);
+    ctx.arg("onPress", buttons[i].sendOnPress, IotsaApiContext::Saved);
+    ctx.arg("onRelease", buttons[i].sendOnRelease, IotsaApiContext::Saved);
+  }
+}
+
+void IotsaButtonMod::getHandler(IotsaApiContext& ctx) {
+  JsonArray rv = ctx.reply()["buttons"].to<JsonArray>();
+  for (int i=0; i<nButton; i++) {
+    IotsaApiContext::Scope s(ctx, String(i), JsonObject(), rv.add<JsonObject>());
+    buttons[i].req.getHandler(ctx);
+    ctx.show("state", buttons[i].buttonState);
+    ctx.show("onPress", buttons[i].sendOnPress);
+    ctx.show("onRelease", buttons[i].sendOnRelease);
+  }
 }
 
 #ifdef IOTSA_WITH_WEB
-void IotsaButtonMod::webHandler() {
-  bool any = false;
-  // xxxjack do this different with args like button2.on, etc
-  for (int j=0; j<nButton; j++) {
-    if (buttons[j].req.formHandler_args(api.webService->server, "button" + String(j+1), true)) {
-        any = true;
-    }
-    String wtdName = "button" + String(j+1) + "on";
-    if (api.webService->server->hasArg(wtdName)) {
-      String arg = api.webService->server->arg(wtdName);
-      if (arg == "press") {
-        buttons[j].sendOnPress = true;
-        buttons[j].sendOnRelease = false;
-      } else if (arg == "release") {
-        buttons[j].sendOnPress = false;
-        buttons[j].sendOnRelease = true;
-      } else if (arg == "change") {
-        buttons[j].sendOnPress = true;
-        buttons[j].sendOnRelease = true;
-      } else {
-        buttons[j].sendOnPress = false;
-        buttons[j].sendOnRelease = false;
-      }
-      any = true;
-    }
-  }
-  if (any) configSave();
+// "Call URL on" as a choice: bit 0 press, bit 1 release.
+static const char * const sendOnNames[] = {"Never", "Press", "Release", "Press and release"};
 
-  String message = "<html><head><title>Buttons</title></head><body><h1>Buttons</h1>";
+void IotsaButtonMod::formHandler_args(IotsaWebContext& ctx) {
   for (int i=0; i<nButton; i++) {
-    message += "<p>Button " + String(i+1) + ": ";
-    if (buttons[i].buttonState) message += "on"; else message += "off";
-    message += "</p>";
+    IotsaWebContext::Scope s(ctx, "button" + String(i+1));
+    buttons[i].req.formHandler_args(ctx);
+    int sendOn = (buttons[i].sendOnPress ? 1 : 0) | (buttons[i].sendOnRelease ? 2 : 0);
+    if (ctx.argChoice("on", sendOn, 4, IotsaWebContext::Saved)) {
+      buttons[i].sendOnPress = (sendOn & 1) != 0;
+      buttons[i].sendOnRelease = (sendOn & 2) != 0;
+    }
   }
-  message += "<form method='get'>";
+}
+
+void IotsaButtonMod::formHandler_fields(IotsaWebContext& ctx) {
   for (int i=0; i<nButton; i++) {
-    buttons[i].req.formHandler_fields(message, "Button " + String(i+1), "button" + String(i+1), true);
-    message += "Call URL on: ";
-    message += "<input name='button" + String(i+1) + "on' type='radio' value='press'";
-    if (buttons[i].sendOnPress && !buttons[i].sendOnRelease) message += " checked";
-    message += "> Press ";
-    
-    message += "<input name='button" + String(i+1) + "on' type='radio' value='release'";
-    if (!buttons[i].sendOnPress && buttons[i].sendOnRelease) message += " checked";
-    message += "> Release ";
-    
-    message += "<input name='button" + String(i+1) + "on' type='radio' value='change'";
-    if (buttons[i].sendOnPress && buttons[i].sendOnRelease) message += " checked";
-    message += "> Press and release ";
-    
-    message += "<input name='button" + String(i+1) + "on' type='radio' value='none'";
-    if (!buttons[i].sendOnPress && !buttons[i].sendOnRelease) message += " checked";
-    message += "> Never<br>\n";
+    String label = "Button " + String(i+1);
+    IotsaWebContext::Scope s(ctx, "button" + String(i+1));
+    if (ctx.includesEveryday()) {
+      ctx.showStatus(label, "state", buttons[i].buttonState ? "pressed" : "released");
+    } else {
+      IotsaWebContext::Form form(ctx, "Save", label);
+      buttons[i].req.formHandler_fields(ctx);
+      int sendOn = (buttons[i].sendOnPress ? 1 : 0) | (buttons[i].sendOnRelease ? 2 : 0);
+      ctx.showChoice("Call URL on", "on", sendOn, sendOnNames, 4, IotsaWebContext::Saved);
+    }
   }
-  message += "<input type='submit'></form></body></html>";
-  api.webService->server->send(200, "text/html", message);
 }
 
 String IotsaButtonMod::info() {
-  return "<p>See <a href='/buttons'>/buttons</a> to program URLs for button presses, <a href='/api/buttons'>/api/buttons</a> for REST interface..</a>";
+  return "<p>See <a href='/buttons'>/buttons</a> to program URLs for button presses, <a href='/api/buttons'>/api/buttons</a> for REST interface.</p>";
 }
 #endif // IOTSA_WITH_WEB
-
-void IotsaButtonMod::loop() {
-  for (int i=0; i<nButton; i++) {
-    int state = digitalRead(buttons[i].pin);
-    if (state != buttons[i].debounceState) {
-      buttons[i].debounceTime = millis();
-    }
-    buttons[i].debounceState = state;
-    if (millis() > buttons[i].debounceTime + DEBOUNCE_DELAY) {
-      int newButtonState = (state == LOW);
-      if (newButtonState != buttons[i].buttonState) {
-        buttons[i].buttonState = newButtonState;
-        bool doSend = (buttons[i].buttonState && buttons[i].sendOnPress) || (!buttons[i].buttonState && buttons[i].sendOnRelease);
-        if (doSend && buttons[i].req.url != "") {
-          if (buttons[i].req.send()) {
-            if (successCallback) successCallback();
-          } else {
-            if (failureCallback) failureCallback();
-          }
-        }
-      }
-    }
-  }
-}
-
-bool IotsaButtonMod::getHandler(const char *path, JsonObject& reply) {
-  if (strcmp(path, "/api/buttons") == 0) {
-    JsonArray rv = reply["buttons"].to<JsonArray>();
-    for (Button *b=buttons; b<buttons+nButton; b++) {
-        JsonObject bRv = rv.add<JsonObject>();
-        b->req.getHandler(bRv);
-        bRv["state"] = b->buttonState;
-        bRv["onPress"] = b->sendOnPress;
-        bRv["onRelease"] = b->sendOnRelease;
-    }
-  } else {
-      String num(path);
-      num.remove(0, 13);
-      int idx = num.toInt();
-      if (idx < 0 || idx >= nButton) return apiError(404, "no such button");
-      Button *b = buttons + idx;
-      b->req.getHandler(reply);
-      reply["state"] = b->buttonState;
-      reply["onPress"] = b->sendOnPress;
-      reply["onRelease"] = b->sendOnRelease;
-  }
-  return true;
-}
-
-bool IotsaButtonMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  bool anyChanged = false;
-  if (strcmp(path, "/api/buttons") == 0) {
-      if (!request.is<JsonArray>()) {
-        return apiError(400, "expected an array of buttons");
-      }
-      const JsonArray all = request.as<JsonArray>();
-      for (int i=0; i<nButton; i++) {
-          const JsonVariant r = all[i];
-          if (!buttons[i].req.putHandler(r, reply, &anyChanged)) return false;
-          const JsonObject reqObj = r.as<JsonObject>();
-          if (getFromRequest<int>(reqObj, "onPress", buttons[i].sendOnPress)) {
-            anyChanged = true;
-          }
-          if (getFromRequest<int>(reqObj, "onRelease", buttons[i].sendOnRelease)) {
-            anyChanged = true;
-          }
-      }
-  } else {
-      String num(path);
-      num.remove(0, 13);
-      int idx = num.toInt();
-      if (idx < 0 || idx >= nButton) return apiError(404, "no such button");
-      Button *b = buttons + idx;
-      if (!b->req.putHandler(request, reply, &anyChanged)) return false;
-      const JsonObject reqObj = request.as<JsonObject>();
-      if (getFromRequest<int>(reqObj, "onPress", buttons[idx].sendOnPress)) {
-        anyChanged = true;
-      }
-      if (getFromRequest<int>(reqObj, "onRelease", buttons[idx].sendOnRelease)) {
-        anyChanged = true;
-      }
-  }
-  // xxxjack cannot use checkUnhandled() because of the array of buttons
-  if (anyChanged) { configSave(); if (changed) *changed = true; }
-  return true;
-}
-
-void IotsaButtonMod::lateSetup() {
-  api.setup("buttons", true, true);
-  for(int i=0; i<nButton; i++) {
-      String p = "buttons/" + String(i);
-      // webPage=false: webHandler() doesn't distinguish by path, so a page here would
-      // just duplicate "buttons" -- see cwi-dis/iotsa#217.
-      api.setup(p.c_str(), true, true, false, false);
-  }
-  name = "buttons";
-}

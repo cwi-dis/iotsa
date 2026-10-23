@@ -3,6 +3,13 @@
 #include "iotsa.h"
 #include "iotsaApi.h"
 
+//
+// A test fixture: a module that does nothing, with one setting ("argument"),
+// a web page /nothing and GET/PUT /api/nothing. sandbox/Infra uses it as its
+// one trivial application module, tests/KitchenSink as the target of its
+// IotsaRequest loopback. Not a template: start your own module from
+// examples/HelloIotsa.
+//
 class IotsaNothingMod : public IotsaModule {
 public:
   using IotsaModule::IotsaModule;
@@ -13,12 +20,14 @@ public:
   String info() override;
 #endif
 protected:
-  bool getHandler(const char *path, JsonObject& reply) override;
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
   void configLoad() override;
   void configSave() override;
+  void putHandler(IotsaApiContext& ctx) override;
+  void getHandler(IotsaApiContext& ctx) override;
 #ifdef IOTSA_WITH_WEB
-  void webHandler() override;
+  String webTitle() override { return "Boilerplate module"; }
+  void formHandler_args(IotsaWebContext& ctx) override;
+  void formHandler_fields(IotsaWebContext& ctx) override;
 #endif
   String argument;
 };

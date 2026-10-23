@@ -28,102 +28,6 @@ static String _hostFromUrl(const String &url) {
 }
 #endif
 
-
-bool IotsaRequest::configLoad(IotsaConfigFileLoad& cf, const String& f_name) {
-    cf.get(f_name + ".url", url, "");
-    cf.get(f_name + "." + SSL_INFO_NAME, sslInfo, "");
-    cf.get(f_name + ".credentials", credentials, "");
-    cf.get(f_name + ".token", token, "");
-    return url != "";
-}
-
-void IotsaRequest::configSave(IotsaConfigFileSave& cf, const String& f_name) {
-    cf.put(f_name + ".url", url);
-    cf.put(f_name + "." + SSL_INFO_NAME, sslInfo);
-    cf.put(f_name + ".credentials", credentials);
-    cf.put(f_name + ".token", token);
-}
-
-#ifdef IOTSA_WITH_WEB
-void IotsaRequest::formHandler_emptyfields(String& message) {
-  message += "Activation URL: <input name='url'><br>\n";
-  message += "Root CA cert <i>(https only)</i>: <input name='rootCA'><br>\n";
-
-  message += "Bearer token <i>(optional)</i>: <input name='token'><br>\n";
-  message += "Credentials <i>(optional, user:pass)</i>: <input name='credentials'><br>\n";
-}
-
-void IotsaRequest::formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) { 
-  message += "Activation URL: <input name='" + f_name +  ".url' value='";
-  message += url;
-  message += "'><br>\n";
-  message += "Root CA cert <i>(https only)</i>: <input name='" + f_name + ".rootCA' value='";
-  message += sslInfo;
-  message += "'><br>\n";
-
-  message += "Bearer token <i>(optional)</i>: <input name='" + f_name + ".token' value='";
-  message += token;
-  message += "'><br>\n";
-
-  message += "Credentials <i>(optional, user:pass)</i>: <input name='" + f_name + ".credentials' value='";
-  message += credentials;
-  message += "'><br>\n";
-}
-
-void IotsaRequest::formHandler_TH(String& message, bool includeConfig) {
-  message += "<th>URL</th><th>" SSL_INFO_NAME "</th><th>credentials</th><th>token</th>";
-}
-
-void IotsaRequest::formHandler_TD(String& message, bool includeConfig) {
-  message += "<td>";
-  message += url;
-  message += "</td><td>";
-  message += sslInfo;
-  message += "</td><td>";
-  message += credentials;
-  message += "</td><td>";
-  message += token;
-  message += "</td>";
-}
-
-bool IotsaRequest::formHandler_args(IotsaWebServer *server, const String& name, bool includeConfig) {
-  bool any = false;
-  String wtdName = name + ".url";
-  if (server->hasArg(wtdName)) {
-    IotsaBaseModule::percentDecode(server->arg(wtdName), url);
-    IFDEBUG IotsaSerial.print(wtdName);
-    IFDEBUG IotsaSerial.print("=");
-    IFDEBUG IotsaSerial.println(url);
-    any = true;
-  }
-  wtdName = name + "." + SSL_INFO_NAME;
-  if (server->hasArg(wtdName)) {
-    IotsaBaseModule::percentDecode(server->arg(wtdName), sslInfo);
-    IFDEBUG IotsaSerial.print(wtdName);
-    IFDEBUG IotsaSerial.print("=");
-    IFDEBUG IotsaSerial.println(sslInfo);
-    any = true;
-  }
-  wtdName = name + ".credentials";
-  if (server->hasArg(wtdName)) {
-    IotsaBaseModule::percentDecode(server->arg(wtdName), credentials);
-    IFDEBUG IotsaSerial.print(wtdName);
-    IFDEBUG IotsaSerial.print("=");
-    IFDEBUG IotsaSerial.println(credentials);
-    any = true;
-    }
-  wtdName = name + ".token";
-  if (server->hasArg(wtdName)) {
-    IotsaBaseModule::percentDecode(server->arg(wtdName), token);
-    IFDEBUG IotsaSerial.print(wtdName);
-    IFDEBUG IotsaSerial.print("=");
-    IFDEBUG IotsaSerial.println(token);
-    any = true;
-  }
-  return any;
-}
-#endif // IOTSA_WITH_WEB
-
 bool IotsaRequest::send(const char *query, String *responseBody) {
   bool rv = true;
   WiFiClient client;
@@ -221,22 +125,55 @@ bool IotsaRequest::send(const char *query, String *responseBody) {
   return rv;
 }
 
-bool IotsaRequest::getHandler(JsonObject& reply) {
-  reply["url"] = url;
-  reply[SSL_INFO_NAME] = sslInfo;
-  reply["hasCredentials"] = credentials != "";
-  reply["hasToken"] = token != "";
-  return true;
+bool IotsaRequest::configLoad(IotsaConfigFileLoad& cf, const String& f_name) {
+    cf.get(f_name + ".url", url, "");
+    cf.get(f_name + "." + SSL_INFO_NAME, sslInfo, "");
+    cf.get(f_name + ".credentials", credentials, "");
+    cf.get(f_name + ".token", token, "");
+    return url != "";
 }
 
-bool IotsaRequest::putHandler(const JsonVariant& request, JsonObject& reply, bool *changed) {
-  if (!request.is<JsonObject>()) return apiError(400, "expected an object");
-  const JsonObject& reqObj = request.as<JsonObject>();
-  bool any = false;
-  any |= getFromRequest<const char *>(reqObj, "url", url);
-  any |= getFromRequest<const char *>(reqObj, SSL_INFO_NAME, sslInfo);
-  any |= getFromRequest<const char *>(reqObj, "credentials", credentials);
-  any |= getFromRequest<const char *>(reqObj, "token", token);
-  if (any && changed) *changed = true;
-  return true;
+void IotsaRequest::configSave(IotsaConfigFileSave& cf, const String& f_name) {
+    cf.put(f_name + ".url", url);
+    cf.put(f_name + "." + SSL_INFO_NAME, sslInfo);
+    cf.put(f_name + ".credentials", credentials);
+    cf.put(f_name + ".token", token);
 }
+
+void IotsaRequest::putHandler(IotsaApiContext& ctx) {
+  ctx.arg("url", url, IotsaApiContext::Saved);
+  ctx.argPassword(SSL_INFO_NAME, sslInfo, IotsaApiContext::Saved);
+  ctx.argPassword("credentials", credentials, IotsaApiContext::Saved);
+  ctx.argPassword("token", token, IotsaApiContext::Saved);
+}
+
+void IotsaRequest::getHandler(IotsaApiContext& ctx) {
+  ctx.show("url", url);
+  ctx.showsNeedRight(IOTSA_RIGHT_NEVER);
+  ctx.show(SSL_INFO_NAME, sslInfo);
+  ctx.show("credentials", credentials);
+  ctx.show("token", token);
+}
+
+#ifdef IOTSA_WITH_WEB
+void IotsaRequest::formHandler_args(IotsaWebContext& ctx) {
+  ctx.arg("url", url, IotsaWebContext::Saved);
+  ctx.argPassword(SSL_INFO_NAME, sslInfo, IotsaWebContext::Saved, false, true);
+  ctx.argPassword("credentials", credentials, IotsaWebContext::Saved, false, true);
+  ctx.argPassword("token", token, IotsaWebContext::Saved, false, true);
+}
+
+void IotsaRequest::formHandler_fields(IotsaWebContext& ctx) {
+  ctx.showField("URL", "url", url, IotsaWebContext::Saved);
+  ctx.showTextarea("Root CA certificate (https only, PEM)", SSL_INFO_NAME, IotsaWebContext::Saved, sslInfo == "" ? "not set" : "set, empty: unchanged", sslInfo != "");
+  ctx.showPassword("Credentials (user:pass)", "credentials", IotsaWebContext::Saved, credentials == "" ? "optional" : "set, empty: unchanged", credentials != "");
+  ctx.showPassword("Bearer token", "token", IotsaWebContext::Saved, token == "" ? "optional" : "set, empty: unchanged", token != "");
+}
+
+void IotsaRequest::formHandler_row(IotsaWebContext& ctx) {
+  ctx.showCell("URL", url);
+  ctx.showCell("Root CA", sslInfo, IotsaWebContext::Secret);
+  ctx.showCell("Credentials", credentials, IotsaWebContext::Secret);
+  ctx.showCell("Token", token, IotsaWebContext::Secret);
+}
+#endif // IOTSA_WITH_WEB

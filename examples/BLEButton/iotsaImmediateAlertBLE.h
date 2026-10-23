@@ -4,26 +4,14 @@
 
 #ifdef IOTSA_WITH_BLE
 
-// Deliberately duplicated (identically) in examples/BLEButton -- not in iotsa
-// core. This protocol only has one real consumer pair (this example and
-// BLEButton) so far; it hasn't earned a shared home yet (same reasoning as
-// not generalizing Lissabon::DimmerCollection before it had proven use
-// beyond one app). Move it to iotsa/src/ if/when something else needs it.
-//
-// Bluetooth SIG-adopted Immediate Alert Service (IAS) -- not iotsa-specific,
-// a real standard GATT service (part of the "Find Me" profile: a client
-// writes an alert level, the peripheral alerts at that intensity). Using
-// the real SIG UUIDs means any generic BLE tool (nRF Connect, etc.)
-// recognizes this service by name instead of showing an opaque custom one.
+// The Immediate Alert Service (IAS), shared by BLEButton and BLERinger; the
+// two copies are identical. It is a Bluetooth standard, not iotsa's own: a
+// client writes an alert level, the device alerts. Because it is standard,
+// generic BLE tools such as nRF Connect know it by name.
 // https://www.bluetooth.com/specifications/specs/immediate-alert-service-1-0/
 //
-// Short (16-bit) form, not the full 128-bit Bluetooth-Base-UUID string --
-// NimBLEUUID's string constructor treats a 4-hex-digit string as a real
-// 16-bit UUID (2 bytes on the wire, vs 16 for the 128-bit form), matching
-// how iotsaApiHps.h's own SIG-assigned UUIDs are already written. Every
-// byte counts in the advertisement/scan-response payload (see
-// IotsaRunmodeMod::setup()'s comment on why registration order matters
-// there too) -- this is the other half of making that budget less tight.
+// The UUIDs are the short 16-bit form, which takes 2 bytes in an
+// advertisement instead of 16.
 namespace IotsaImmediateAlertBLE {
   static constexpr UUIDstring serviceUUID    = "1802";
   static constexpr UUIDstring alertLevelUUID = "2A06";

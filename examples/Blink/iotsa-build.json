@@ -15,17 +15,14 @@
       }
     },
     {
-      "board": "vanilla_esp32c3",
+      "board": "esp32c3supermini",
+      "build_flags": [
+        "-DIOTSA_WITHOUT_STATUS_LED",
+        "-DBLINK_PIN=8"
+      ],
       "ci": {
         "platformio": true,
         "arduino": false
-      }
-    },
-    {
-      "board": "vanilla_esp32s3",
-      "ci": {
-        "platformio": true,
-        "arduino": true
       }
     }
   ]

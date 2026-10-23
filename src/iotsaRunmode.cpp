@@ -118,169 +118,144 @@ bool IotsaRunmodeMod::_otaAvailable() const {
 }
 
 #ifdef IOTSA_WITH_WEB
-void IotsaRunmodeMod::webHandler() {
-  String action;
-  if (api.webService->server->hasArg("action")) {
-    action = api.webService->server->arg("action");
-  }
-  String message = "<html><head><title>Iotsa runmode</title></head><body><h1>Iotsa runmode</h1>";
+// The names are the /api/runmode field names, so the page and REST read alike.
+// Auth as in putHandler(): identify and the mode request are open (harmless, or
+// confirmed at the device), the rest needs the "config" right (cwi-dis/iotsa#284).
 
-  if (action == "identify") {
-    // No auth: identify is harmless and is used *before* you authenticate / OTA
-    // (cwi-dis/iotsa#133).
+static const char * const requestableModeNames[] = {"Normal", "Configuration", "Over-the-air update"};
+#ifdef IOTSA_HAS_SLEEP
+static const char * const sleepModeNames[] = {"None", "Delay", "Light sleep", "Deep sleep", "Hibernate"};
+#endif
+
+void IotsaRunmodeMod::formHandler_args(IotsaWebContext& ctx) {
+  // The protected fields first, then the open ones: a refusal comes before
+  // anything happened, so the browser's retry after a login repeats nothing.
+  // The actions come last, after ctx.failed() (cwi-dis/iotsa#296).
+  ctx.argsNeedRight("config");
+  bool reboot = ctx.argAction("reboot", IotsaWebContext::Transient);
+  bool wifiDisabled = !iotsaStatus.wifiEnabled;
+  bool wifiChanged = ctx.arg("wifiDisabled", wifiDisabled, IotsaWebContext::Transient);
+#ifdef IOTSA_WITH_BLE
+  bool bleDisabled = !iotsaController.bleRadioWanted();
+  bool bleChanged = ctx.arg("bleDisabled", bleDisabled, IotsaWebContext::Transient);
+#endif
+  ctx.argCheckbox("debugLog", iotsaLogDebugEnabled, IotsaWebContext::Saved);
+#ifdef IOTSA_HAS_SLEEP
+  IotsaSleepPolicy& sp = iotsaController.sleep();
+  int sleepMode = int(_sleepConfig.mode);
+  if (ctx.argChoice("sleepMode", sleepMode, _IOTSA_SLEEP_MAX, IotsaWebContext::Saved)) {
+    _sleepConfig.mode = IotsaSleepMode(sleepMode);
+  }
+  ctx.arg("sleepDuration", _sleepConfig.sleepDuration, IotsaWebContext::Saved);
+  ctx.arg("wakeDuration", _sleepConfig.wakeDuration, IotsaWebContext::Saved);
+  ctx.arg("activityExtraWakeDuration", sp.activityExtraWakeDuration, IotsaWebContext::Saved);
+  ctx.arg("bootExtraWakeDuration", _sleepConfig.bootExtraWakeDuration, IotsaWebContext::Saved);
+  ctx.argCheckbox("disableSleepOnWiFi", _sleepConfig.disableSleepOnWiFi, IotsaWebContext::Saved);
+  ctx.argCheckbox("disableWiFiOnSleep", _sleepConfig.disableWiFiOnSleep, IotsaWebContext::Saved);
+  ctx.argCheckbox("disableSleepOnUSBPower", _sleepConfig.disableSleepOnUSBPower, IotsaWebContext::Saved);
+#ifdef ESP32
+  ctx.arg("cpuFrequencyBoot", _cpuFrequencyBoot, IotsaWebContext::Saved);
+  ctx.arg("cpuFrequencySleep", _cpuFrequencySleep, IotsaWebContext::Saved);
+  int cpuFrequency = getCpuFrequencyMhz();
+  bool cpuChanged = ctx.arg("cpuFrequency", cpuFrequency, IotsaWebContext::Transient) && cpuFrequency != 0;
+#endif
+#endif // IOTSA_HAS_SLEEP
+
+  ctx.argsNeedRight(IOTSA_RIGHT_NONE);
+  bool identify = ctx.argAction("identify", IotsaWebContext::Transient);
+  // Factory reset is not one of the choices: it has its own confirmed button.
+  int requested = int(iotsaController.requestedMode());
+  bool requestChanged = ctx.argChoice("requestedMode", requested, _otaAvailable() ? 3 : 2, IotsaWebContext::Transient);
+  bool factoryReset = ctx.argConfirmedAction("factoryReset");
+
+  if (ctx.failed()) return;
+  if (reboot) {
+    iotsaController.requestReboot(IotsaController::REBOOT_DELAY_HTTP_MS);
+    ctx.feedback("Rebooting in 2 seconds.");
+  }
+  if (wifiChanged) iotsaController.setWifiRadioEnabled(!wifiDisabled);
+#ifdef IOTSA_WITH_BLE
+  if (bleChanged) iotsaController.setBleRadioEnabled(!bleDisabled);
+#endif
+#if defined(IOTSA_HAS_SLEEP) && defined(ESP32)
+  if (cpuChanged) setCpuFrequencyMhz(cpuFrequency);
+#endif
+  if (identify) {
     _pendingIdentify = true;
-    message += "<p><em>Identifying.</em></p>";
-  } else if (action != "") {
-    // Requesting a mode needs no auth either: it only takes effect after a reset
-    // at the device. Same rules as the REST API, see needsAuthentication().
-    if (action != "setmode" && needsAuthentication("config")) return;
-    if (action == "setmode") {
-      if (api.webService->server->hasArg("mode")) {
-        String argValue = api.webService->server->arg("mode");
-        if (argValue != "0") {
-          iotsaController.requestMode(iotsa_mode(atoi(argValue.c_str())));
-        }
-      }
-      if (api.webService->server->hasArg("factoryreset") && api.webService->server->hasArg("iamsure")
-          && api.webService->server->arg("factoryreset") == "1" && api.webService->server->arg("iamsure") == "1") {
-        iotsaController.requestMode(IOTSA_MODE_FACTORY_RESET);
-      }
-      if (iotsaController.requestedMode()) {
-        message += "<p><em>Special mode ";
-        message += iotsaController.modeName(iotsaController.requestedMode());
-        message += " has been requested. Enable within ";
-        message += String((iotsaController.requestedModeEndTime() - millis())/1000);
-        message += " seconds by power cycling";
-        if (iotsaController.rcmInteractionDescription()) {
-          message += " or ";
-          message += iotsaController.rcmInteractionDescription();
-        }
-        message += ".</em></p>";
-      }
-    } else if (action == "save-debug") {
-      iotsaLogDebugEnabled = api.webService->server->arg("debugLog") == "1";
-      configSave();
-      message += "<p><em>Debug logging ";
-      message += iotsaLogDebugEnabled ? "on" : "off";
-      message += ".</em></p>";
-    } else if (action == "reboot") {
-      iotsaController.requestReboot(IotsaController::REBOOT_DELAY_HTTP_MS);
-      message += "<p><em>Rebooting in 2 seconds.</em></p>";
-    } else if (action == "wifi-disable") {
-      iotsaController.setWifiRadioEnabled(false);
-      message += "<p><em>WiFi radio disabled.</em></p>";
-    } else if (action == "wifi-enable") {
-      iotsaController.setWifiRadioEnabled(true);
-      message += "<p><em>WiFi radio enabled.</em></p>";
-#ifdef IOTSA_WITH_BLE
-    } else if (action == "ble-disable") {
-      iotsaController.setBleRadioEnabled(false);
-      message += "<p><em>BLE radio disabled.</em></p>";
-    } else if (action == "ble-enable") {
-      iotsaController.setBleRadioEnabled(true);
-      message += "<p><em>BLE radio enabled.</em></p>";
-#endif
-#ifdef IOTSA_HAS_SLEEP
-    } else if (action == "save-sleep") {
-      auto *srv = api.webService->server;
-      IotsaSleepPolicy& sp = iotsaController.sleep();
-      if (srv->hasArg("sleepMode")) _sleepConfig.mode = (IotsaSleepMode)srv->arg("sleepMode").toInt();
-      if (srv->hasArg("sleepDuration")) _sleepConfig.sleepDuration = srv->arg("sleepDuration").toInt();
-      if (srv->hasArg("wakeDuration")) _sleepConfig.wakeDuration = srv->arg("wakeDuration").toInt();
-      if (srv->hasArg("bootExtraWakeDuration")) _sleepConfig.bootExtraWakeDuration = srv->arg("bootExtraWakeDuration").toInt();
-      if (srv->hasArg("activityExtraWakeDuration")) sp.activityExtraWakeDuration = srv->arg("activityExtraWakeDuration").toInt();
-      if (srv->hasArg("disableSleepOnWiFi")) _sleepConfig.disableSleepOnWiFi = srv->arg("disableSleepOnWiFi").toInt();
-      if (srv->hasArg("disableWiFiOnSleep")) _sleepConfig.disableWiFiOnSleep = srv->arg("disableWiFiOnSleep").toInt();
-      if (srv->hasArg("disableSleepOnUSBPower")) _sleepConfig.disableSleepOnUSBPower = srv->arg("disableSleepOnUSBPower").toInt();
-#ifdef ESP32
-      if (srv->hasArg("cpuFrequencyBoot")) _cpuFrequencyBoot = srv->arg("cpuFrequencyBoot").toInt();
-      if (srv->hasArg("cpuFrequencySleep")) _cpuFrequencySleep = srv->arg("cpuFrequencySleep").toInt();
-      if (srv->hasArg("cpuFrequency") && srv->arg("cpuFrequency").toInt() != 0) {
-        setCpuFrequencyMhz(srv->arg("cpuFrequency").toInt());
-      }
-#endif
-      iotsaController.extendCurrentMode();
-      configSave();
-      message += "<p><em>Sleep settings saved.</em></p>";
-#endif // IOTSA_HAS_SLEEP
-    }
+    ctx.feedback("Identifying.");
   }
+  if (requestChanged) iotsaController.requestMode(iotsa_mode(requested));
+  if (factoryReset) iotsaController.requestMode(IOTSA_MODE_FACTORY_RESET);
+}
 
-  // Status.
-  if (iotsaController.currentMode()) {
-    message += "<p>Currently in mode <b>";
-    message += iotsaController.modeName(iotsaController.currentMode());
-    message += "</b>, times out in ";
-    message += String((iotsaController.currentModeEndTime() - millis())/1000);
-    message += " seconds.</p>";
+void IotsaRunmodeMod::formHandler_fields(IotsaWebContext& ctx) {
+  if (ctx.includesEveryday()) {
+    String current = iotsaController.modeName(iotsaController.currentMode());
+    if (iotsaController.currentMode()) {
+      current += ", times out in " + String((iotsaController.currentModeEndTime() - millis())/1000) + " seconds";
+    }
+    ctx.showStatus("Current mode", "currentMode", current);
+    if (iotsaController.requestedMode()) {
+      String requested = iotsaController.modeName(iotsaController.requestedMode());
+      requested += ", enable within " + String((iotsaController.requestedModeEndTime() - millis())/1000) + " seconds by power cycling";
+      if (iotsaController.rcmInteractionDescription()) {
+        requested += " or " + String(iotsaController.rcmInteractionDescription());
+      }
+      ctx.showStatus("Requested mode", "requestedMode", requested);
+    } else {
+      ctx.showStatus("Requested mode", "requestedMode", "none");
+    }
+    ctx.showStatus("Configuration mode timeout", "", String(iotsaController.modeTimeout()) + " seconds");
+    ctx.showStatus("WiFi radio", "wifiDisabled", iotsaStatus.wifiEnabled ? "enabled" : "disabled");
+#ifdef IOTSA_WITH_BLE
+    ctx.showStatus("BLE radio", "bleDisabled", iotsaController.bleRadioWanted() ? "enabled" : "disabled");
+#endif
+
+    // The same rights as in formHandler_args().
+    ctx.argsNeedRight(IOTSA_RIGHT_NONE);
+    ctx.showButton("identify", "Identify", IotsaWebContext::Transient);
+    ctx.argsNeedRight("config");
+    ctx.showButton("reboot", "Reboot now", IotsaWebContext::Transient);
+    ctx.showButton("wifiDisabled", iotsaStatus.wifiEnabled ? "Disable WiFi radio" : "Enable WiFi radio", IotsaWebContext::Transient, iotsaStatus.wifiEnabled ? "1" : "0");
+#ifdef IOTSA_WITH_BLE
+    ctx.showButton("bleDisabled", iotsaController.bleRadioWanted() ? "Disable BLE radio" : "Enable BLE radio", IotsaWebContext::Transient, iotsaController.bleRadioWanted() ? "1" : "0");
+#endif
+    ctx.argsNeedRight(IOTSA_RIGHT_NONE);
+    {
+      IotsaWebContext::Form form(ctx, "Request", "Mode after the next reboot");
+      int requested = int(iotsaController.requestedMode());
+      ctx.showChoice("Mode", "requestedMode", requested, requestableModeNames, _otaAvailable() ? 3 : 2, IotsaWebContext::Transient);
+    }
+    {
+      IotsaWebContext::Form form(ctx, "", "Factory reset");
+      ctx.showConfirmedButton("factoryReset", "Factory reset and clear all files", IotsaWebContext::Transient);
+    }
   } else {
-    message += "<p>Currently in normal mode.</p>";
-  }
-  message += "<p>WiFi radio: ";
-  message += iotsaStatus.wifiEnabled ? "enabled" : "disabled";
-  message += ". Configuration-mode timeout: ";
-  message += String(iotsaController.modeTimeout());
-  message += " seconds.</p>";
-
-  // Request a maintenance mode for the next boot.
-  message += "<form method='post'>";
-  message += "<input name='mode' type='radio' value='0' checked> Normal mode after next reboot.<br>";
-  message += "<input name='mode' type='radio' value='1'> Configuration mode after next reboot.<br>";
-  if (_otaAvailable()) {
-    message += "<input name='mode' type='radio' value='2'> Over-the-air update mode after next reboot.<br>";
-  }
-  message += "<br><input name='factoryreset' type='checkbox' value='1'> Factory-reset and clear all files. ";
-  message += "<input name='iamsure' type='checkbox' value='1'> Yes, I am sure.<br>";
-  message += "<input type='submit' name='action' value='setmode'></form>";
-
-  // Immediate actions.
-  message += "<form method='post'>";
-  message += "<input type='submit' name='action' value='identify'> Identify (blink/flash) this device.<br>";
-  message += "<input type='submit' name='action' value='reboot'> Reboot now.<br>";
-  message += "<input type='submit' name='action' value='wifi-disable'> ";
-  message += "<input type='submit' name='action' value='wifi-enable'> Disable / enable WiFi radio now.<br>";
-#ifdef IOTSA_WITH_BLE
-  message += "<input type='submit' name='action' value='ble-disable'> ";
-  message += "<input type='submit' name='action' value='ble-enable'> Disable / enable BLE radio now.<br>";
-#endif
-  message += "</form>";
-
-  message += "<h2>Debug logging</h2><form method='post'>";
-  message += "<input type='radio' name='debugLog' value='1'" + String(iotsaLogDebugEnabled ? " checked" : "") + ">On ";
-  message += "<input type='radio' name='debugLog' value='0'" + String(iotsaLogDebugEnabled ? "" : " checked") + ">Off<br>";
-  message += "<input type='submit' name='action' value='save-debug'></form>";
-
-#ifdef IOTSA_HAS_SLEEP
-  {
-    IotsaSleepPolicy& sp = iotsaController.sleep();
-    message += "<h2>Sleep / wake</h2><form method='post'>";
-    message += "Sleep mode: <select name='sleepMode'>";
-    static const char *sleepModeNames[] = {"None", "Delay", "Light sleep", "Deep sleep", "Hibernate"};
-    for (int i = 0; i < _IOTSA_SLEEP_MAX; i++) {
-      message += "<option value='" + String(i) + "'" + ((int)_sleepConfig.mode == i ? " selected" : "") + ">" + sleepModeNames[i] + "</option>";
+    ctx.argsNeedRight("config");
+    {
+      IotsaWebContext::Form form(ctx, "Save", "Debug logging");
+      ctx.showCheckbox("Debug logging", "debugLog", iotsaLogDebugEnabled, IotsaWebContext::Saved);
     }
-    message += "</select><br>";
-    message += "Sleep duration (ms): <input name='sleepDuration' value='" + String(_sleepConfig.sleepDuration) + "'><br>";
-    message += "Wake duration (ms): <input name='wakeDuration' value='" + String(_sleepConfig.wakeDuration) + "'><br>";
-    message += "Extra wake after activity (ms): <input name='activityExtraWakeDuration' value='" + String(sp.activityExtraWakeDuration) + "'><br>";
-    message += "Extra wake after poweron/reset (ms): <input name='bootExtraWakeDuration' value='" + String(_sleepConfig.bootExtraWakeDuration) + "'><br>";
-    message += "<input type='radio' name='disableSleepOnWiFi' value='0'" + String(_sleepConfig.disableSleepOnWiFi ? "" : " checked") + ">Sleep independent of WiFi ";
-    message += "<input type='radio' name='disableSleepOnWiFi' value='1'" + String(_sleepConfig.disableSleepOnWiFi ? " checked" : "") + ">Don't sleep while WiFi active<br>";
-    message += "<input type='radio' name='disableWiFiOnSleep' value='0'" + String(_sleepConfig.disableWiFiOnSleep ? "" : " checked") + ">Keep WiFi state on sleep ";
-    message += "<input type='radio' name='disableWiFiOnSleep' value='1'" + String(_sleepConfig.disableWiFiOnSleep ? " checked" : "") + ">Disable WiFi before sleep<br>";
-    message += "<input type='radio' name='disableSleepOnUSBPower' value='0'" + String(_sleepConfig.disableSleepOnUSBPower ? "" : " checked") + ">Sleep on USB or battery ";
-    message += "<input type='radio' name='disableSleepOnUSBPower' value='1'" + String(_sleepConfig.disableSleepOnUSBPower ? " checked" : "") + ">Don't sleep on USB power<br>";
+#ifndef IOTSA_HAS_SLEEP
+    ctx << "<h3>Sleep / wake</h3>\n<p>Not available: this firmware is built without sleep support.</p>\n";
+#else
+    IotsaSleepPolicy& sp = iotsaController.sleep();
+    IotsaWebContext::Form form(ctx, "Save", "Sleep / wake");
+    ctx.showChoice("Sleep mode", "sleepMode", int(_sleepConfig.mode), sleepModeNames, _IOTSA_SLEEP_MAX, IotsaWebContext::Saved);
+    ctx.showField("Sleep duration", "sleepDuration", _sleepConfig.sleepDuration, IotsaWebContext::Saved, "ms");
+    ctx.showField("Wake duration", "wakeDuration", _sleepConfig.wakeDuration, IotsaWebContext::Saved, "ms");
+    ctx.showField("Extra wake after activity", "activityExtraWakeDuration", sp.activityExtraWakeDuration, IotsaWebContext::Saved, "ms");
+    ctx.showField("Extra wake after power-on or reset", "bootExtraWakeDuration", _sleepConfig.bootExtraWakeDuration, IotsaWebContext::Saved, "ms");
+    ctx.showCheckbox("Don't sleep while WiFi is active", "disableSleepOnWiFi", _sleepConfig.disableSleepOnWiFi, IotsaWebContext::Saved);
+    ctx.showCheckbox("Disable WiFi before sleeping", "disableWiFiOnSleep", _sleepConfig.disableWiFiOnSleep, IotsaWebContext::Saved);
+    ctx.showCheckbox("Don't sleep on USB power", "disableSleepOnUSBPower", _sleepConfig.disableSleepOnUSBPower, IotsaWebContext::Saved);
 #ifdef ESP32
-    message += "CPU frequency on boot (MHz): <input name='cpuFrequencyBoot' value='" + String(_cpuFrequencyBoot) + "'><br>";
-    message += "CPU frequency on first sleep (MHz): <input name='cpuFrequencySleep' value='" + String(_cpuFrequencySleep) + "'><br>";
-    message += "Current CPU frequency (MHz): <input name='cpuFrequency' value='" + String(getCpuFrequencyMhz()) + "'><br>";
+    ctx.showField("CPU frequency on boot", "cpuFrequencyBoot", _cpuFrequencyBoot, IotsaWebContext::Saved, "MHz, 0: unchanged");
+    ctx.showField("CPU frequency on first sleep", "cpuFrequencySleep", _cpuFrequencySleep, IotsaWebContext::Saved, "MHz, 0: unchanged");
+    ctx.showField("Current CPU frequency", "cpuFrequency", getCpuFrequencyMhz(), IotsaWebContext::Transient, "MHz");
 #endif
-    message += "<input type='submit' name='action' value='save-sleep'></form>";
-  }
 #endif // IOTSA_HAS_SLEEP
-
-  message += "</body></html>";
-  api.webService->server->send(200, "text/html", message);
+  }
 }
 #endif // IOTSA_WITH_WEB
 
@@ -306,22 +281,6 @@ String IotsaRunmodeMod::info() {
 }
 #endif // IOTSA_WITH_WEB
 
-// Which requests need the application's auth provider (cwi-dis/iotsa#284). Reads
-// are open (status and mode information, nothing secret). So are the writes that
-// are harmless or confirmed at the device itself, which is also what BLE allows:
-// identify, postponeSleep, and requestedMode (a requested mode only takes effect
-// after a reset at the device). reboot, wifiDisabled, bleDisabled, the CPU clock
-// and the saved sleep settings need the "config" right. So the REST transport's
-// per-endpoint check is switched off here, and putHandler() checks the request
-// itself, before executing anything. The web page applies the same rules.
-bool IotsaRunmodeMod::needsAuthentication(const char *obj, IotsaApiOperation verb) {
-  return false;
-}
-
-static bool isOpenField(const char *key) {
-  return strcmp(key, "identify") == 0 || strcmp(key, "requestedMode") == 0 || strcmp(key, "postponeSleep") == 0;
-}
-
 // Runmode's own settings: just the debug log switch (cwi-dis/iotsa#182), in
 // runmode.cfg. The sleep settings keep their own sleep.cfg.
 void IotsaRunmodeMod::configLoad() {
@@ -342,8 +301,10 @@ void IotsaRunmodeMod::configSave() {
 #endif
 }
 
-bool IotsaRunmodeMod::getHandler(const char *path, JsonObject& reply) {
-  if (strcmp(path, "/api/status") == 0) {
+void IotsaRunmodeMod::getHandler(IotsaApiContext& ctx) {
+  if (ctx.path() == "/api/status") {
+    // Nested objects, nothing protected: written into the reply directly.
+    JsonObject reply = ctx.reply();
     // Every-tick runtime observations -- the volatile counterpart of /api/config's
     // identity + persisted knobs (cwi-dis/iotsa#106 step 5e). Hosted here because
     // this is the runtime-control module and iotsaStatus has no module of its own.
@@ -408,115 +369,117 @@ bool IotsaRunmodeMod::getHandler(const char *path, JsonObject& reply) {
         if (m) event["module"] = m->name;
       }
     }
-    return true;
+    return;
   }
-  reply["currentMode"] = int(iotsaController.currentMode());
+  ctx.show("currentMode", int(iotsaController.currentMode()));
   if (iotsaController.currentMode()) {
-    reply["currentModeTimeout"] = (iotsaController.currentModeEndTime() - millis())/1000;
+    ctx.show("currentModeTimeout", (iotsaController.currentModeEndTime() - millis())/1000);
   }
-  reply["requestedMode"] = int(iotsaController.requestedMode());
+  ctx.show("requestedMode", int(iotsaController.requestedMode()));
   if (iotsaController.requestedMode()) {
-    reply["requestedModeTimeout"] = (iotsaController.requestedModeEndTime() - millis())/1000;
+    ctx.show("requestedModeTimeout", (iotsaController.requestedModeEndTime() - millis())/1000);
   }
-  reply["wifiDisabled"] = !iotsaStatus.wifiEnabled;
+  ctx.show("wifiDisabled", !iotsaStatus.wifiEnabled);
 #ifdef IOTSA_WITH_BLE
-  reply["bleDisabled"] = !iotsaController.bleRadioWanted();
+  ctx.show("bleDisabled", !iotsaController.bleRadioWanted());
 #endif
-  reply["identifyAvailable"] = !_identifyCallbacks.empty();   // cwi-dis/iotsa#133
-  reply["debugLog"] = iotsaLogDebugEnabled;   // cwi-dis/iotsa#182
+  ctx.show("identifyAvailable", !_identifyCallbacks.empty());   // cwi-dis/iotsa#133
+  ctx.show("debugLog", iotsaLogDebugEnabled);   // cwi-dis/iotsa#182
 #ifdef IOTSA_HAS_SLEEP
   IotsaSleepPolicy& sp = iotsaController.sleep();
-  reply["sleepMode"] = (int)_sleepConfig.mode;
-  reply["sleepDuration"] = _sleepConfig.sleepDuration;
-  reply["wakeDuration"] = _sleepConfig.wakeDuration;
-  reply["bootExtraWakeDuration"] = _sleepConfig.bootExtraWakeDuration;
-  reply["activityExtraWakeDuration"] = sp.activityExtraWakeDuration;
-  reply["postponeSleep"] = sp.millisUntilSleepAllowed();
-  reply["disableSleepOnWiFi"] = _sleepConfig.disableSleepOnWiFi;
-  reply["disableWiFiOnSleep"] = _sleepConfig.disableWiFiOnSleep;
-  reply["disableSleepOnUSBPower"] = _sleepConfig.disableSleepOnUSBPower;
+  ctx.show("sleepMode", (int)_sleepConfig.mode);
+  ctx.show("sleepDuration", _sleepConfig.sleepDuration);
+  ctx.show("wakeDuration", _sleepConfig.wakeDuration);
+  ctx.show("bootExtraWakeDuration", _sleepConfig.bootExtraWakeDuration);
+  ctx.show("activityExtraWakeDuration", sp.activityExtraWakeDuration);
+  ctx.show("postponeSleep", sp.millisUntilSleepAllowed());
+  ctx.show("disableSleepOnWiFi", _sleepConfig.disableSleepOnWiFi);
+  ctx.show("disableWiFiOnSleep", _sleepConfig.disableWiFiOnSleep);
+  ctx.show("disableSleepOnUSBPower", _sleepConfig.disableSleepOnUSBPower);
 #ifdef ESP32
-  reply["cpuFrequency"] = getCpuFrequencyMhz();
-  reply["cpuFrequencyBoot"] = _cpuFrequencyBoot;
-  reply["cpuFrequencySleep"] = _cpuFrequencySleep;
+  ctx.show("cpuFrequency", getCpuFrequencyMhz());
+  ctx.show("cpuFrequencyBoot", _cpuFrequencyBoot);
+  ctx.show("cpuFrequencySleep", _cpuFrequencySleep);
 #endif
 #endif // IOTSA_HAS_SLEEP
-  return true;
 }
 
-bool IotsaRunmodeMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  JsonObject reqObj = request.as<JsonObject>();
-  // Anything beyond the open fields needs the config right, and then the whole
-  // request is refused before anything is executed (cwi-dis/iotsa#284).
-  for (JsonPair kv : reqObj) {
-    if (!isOpenField(kv.key().c_str())) {
-      if (needsAuthentication("config")) return apiError(401, "needs the config right");
-      break;
-    }
-  }
-
-  bool wifiDisabled;
-  if (getFromRequest<int>(reqObj, "wifiDisabled", wifiDisabled)) {
-    iotsaController.setWifiRadioEnabled(!wifiDisabled);
-  }
+void IotsaRunmodeMod::putHandler(IotsaApiContext& ctx) {
+  // As on the web page: the protected fields first, then the open ones
+  // (harmless, or confirmed at the device, which is also what BLE allows), and
+  // the actions after ctx.failed(). So a refusal comes before anything
+  // happened (cwi-dis/iotsa#284, cwi-dis/iotsa#296).
+  ctx.argsNeedRight("config");
+  bool reboot = false;
+  ctx.arg("reboot", reboot, IotsaApiContext::Transient);
+  bool wifiDisabled = !iotsaStatus.wifiEnabled;
+  bool wifiChanged = ctx.arg("wifiDisabled", wifiDisabled, IotsaApiContext::Transient);
 #ifdef IOTSA_WITH_BLE
-  bool bleDisabled;
-  if (getFromRequest<int>(reqObj, "bleDisabled", bleDisabled)) {
-    iotsaController.setBleRadioEnabled(!bleDisabled);
-  }
+  bool bleDisabled = !iotsaController.bleRadioWanted();
+  bool bleChanged = ctx.arg("bleDisabled", bleDisabled, IotsaApiContext::Transient);
 #endif
-  int reqModeInt;
-  if (getFromRequest<int>(reqObj, "requestedMode", reqModeInt)) {
-    if (reqModeInt < IOTSA_MODE_NORMAL || reqModeInt > IOTSA_MODE_FACTORY_RESET) return apiError(400, "requestedMode: no such mode");
-    // requestMode() writes the pending-mode mailbox itself (cwi-dis/iotsa#106).
-    iotsaController.requestMode(iotsa_mode(reqModeInt));
-    if (iotsaController.requestedMode() != iotsa_mode(0)) {
-      reply["requestedMode"] = int(iotsaController.requestedMode());
-      reply["requestedModeTimeout"] = (iotsaController.requestedModeEndTime() - millis())/1000;
-      reply["needsReboot"] = true;
-    }
-  }
-  bool flag;
-  if (getFromRequest<bool>(reqObj, "reboot", flag) && flag) {
-    iotsaController.requestReboot(IotsaController::REBOOT_DELAY_HTTP_MS);
-  }
-  if (getFromRequest<bool>(reqObj, "identify", flag) && flag) {
-    _pendingIdentify = true;   // cwi-dis/iotsa#133; acted on in loop(), no auth
-  }
-  if (getFromRequest<bool>(reqObj, "debugLog", iotsaLogDebugEnabled)) {
-    configSave();
-    if (changed) *changed = true;
-  }
+  ctx.arg("debugLog", iotsaLogDebugEnabled, IotsaApiContext::Saved);
 #ifdef IOTSA_HAS_SLEEP
   IotsaSleepPolicy& sp = iotsaController.sleep();
-  bool sleepChanged = false;
-  int intValue;
-  if (getFromRequest<int>(reqObj, "postponeSleep", intValue)) {
-    iotsaController.postponeSleep(intValue);
+  int sleepMode = int(_sleepConfig.mode);
+  if (ctx.arg("sleepMode", sleepMode, IotsaApiContext::Saved)) {
+    _sleepConfig.mode = IotsaSleepMode(sleepMode);
   }
-  if (getFromRequest<int>(reqObj, "sleepMode", intValue))              { _sleepConfig.mode = (IotsaSleepMode)intValue; sleepChanged = true; }
-  if (getFromRequest<int>(reqObj, "sleepDuration", _sleepConfig.sleepDuration))  { sleepChanged = true; }
-  if (getFromRequest<int>(reqObj, "wakeDuration", _sleepConfig.wakeDuration))    { sleepChanged = true; }
-  if (getFromRequest<int>(reqObj, "bootExtraWakeDuration", _sleepConfig.bootExtraWakeDuration)) { sleepChanged = true; }
-  if (getFromRequest<int>(reqObj, "activityExtraWakeDuration", sp.activityExtraWakeDuration)) { sleepChanged = true; }
-  if (getFromRequest<int>(reqObj, "disableSleepOnWiFi", _sleepConfig.disableSleepOnWiFi)) { sleepChanged = true; }
-  if (getFromRequest<int>(reqObj, "disableWiFiOnSleep", _sleepConfig.disableWiFiOnSleep)) { sleepChanged = true; }
-  if (getFromRequest<int>(reqObj, "disableSleepOnUSBPower", _sleepConfig.disableSleepOnUSBPower)) { sleepChanged = true; }
+  ctx.arg("sleepDuration", _sleepConfig.sleepDuration, IotsaApiContext::Saved);
+  ctx.arg("wakeDuration", _sleepConfig.wakeDuration, IotsaApiContext::Saved);
+  ctx.arg("bootExtraWakeDuration", _sleepConfig.bootExtraWakeDuration, IotsaApiContext::Saved);
+  ctx.arg("activityExtraWakeDuration", sp.activityExtraWakeDuration, IotsaApiContext::Saved);
+  ctx.arg("disableSleepOnWiFi", _sleepConfig.disableSleepOnWiFi, IotsaApiContext::Saved);
+  ctx.arg("disableWiFiOnSleep", _sleepConfig.disableWiFiOnSleep, IotsaApiContext::Saved);
+  ctx.arg("disableSleepOnUSBPower", _sleepConfig.disableSleepOnUSBPower, IotsaApiContext::Saved);
 #ifdef ESP32
-  if (getFromRequest<int>(reqObj, "cpuFrequencyBoot", _cpuFrequencyBoot)) { sleepChanged = true; }
-  if (getFromRequest<int>(reqObj, "cpuFrequencySleep", _cpuFrequencySleep)) { sleepChanged = true; }
-  if (getFromRequest<int>(reqObj, "cpuFrequency", intValue)) {
-    setCpuFrequencyMhz(intValue);
-    IFDEBUG IotsaSerial.printf("Set CPU frequency to %d MHz\n", intValue);
+  ctx.arg("cpuFrequencyBoot", _cpuFrequencyBoot, IotsaApiContext::Saved);
+  ctx.arg("cpuFrequencySleep", _cpuFrequencySleep, IotsaApiContext::Saved);
+  int cpuFrequency = getCpuFrequencyMhz();
+  bool cpuChanged = ctx.arg("cpuFrequency", cpuFrequency, IotsaApiContext::Transient) && cpuFrequency != 0;
+#endif
+#endif // IOTSA_HAS_SLEEP
+
+  ctx.argsNeedRight(IOTSA_RIGHT_NONE);
+  bool identify = false;
+  ctx.arg("identify", identify, IotsaApiContext::Transient);
+  // -1: not asked. Asking for the same mode again restarts its window.
+  int requestedMode = -1;
+  bool requestChanged = ctx.arg("requestedMode", requestedMode, IotsaApiContext::Transient);
+  if (requestChanged && (requestedMode < IOTSA_MODE_NORMAL || requestedMode > IOTSA_MODE_FACTORY_RESET)) {
+    ctx.error(400, "requestedMode: no such mode");
+  }
+#ifdef IOTSA_HAS_SLEEP
+  int postponeSleep = -1;
+  bool postponeChanged = ctx.arg("postponeSleep", postponeSleep, IotsaApiContext::Transient);
+#endif
+
+  if (ctx.failed()) return;
+  if (reboot) iotsaController.requestReboot(IotsaController::REBOOT_DELAY_HTTP_MS);
+  if (wifiChanged) iotsaController.setWifiRadioEnabled(!wifiDisabled);
+#ifdef IOTSA_WITH_BLE
+  if (bleChanged) iotsaController.setBleRadioEnabled(!bleDisabled);
+#endif
+#ifdef IOTSA_HAS_SLEEP
+#ifdef ESP32
+  if (cpuChanged) {
+    setCpuFrequencyMhz(cpuFrequency);
+    IFDEBUG IotsaSerial.printf("Set CPU frequency to %d MHz\n", cpuFrequency);
   }
 #endif
-  if (sleepChanged) {
-    configSave();
-    if (changed) *changed = true;
+  if (postponeChanged) iotsaController.postponeSleep(postponeSleep);
+#endif
+  // Acted on in loop(), cwi-dis/iotsa#133.
+  if (identify) _pendingIdentify = true;
+  if (requestChanged) {
+    // requestMode() writes the pending-mode mailbox itself (cwi-dis/iotsa#106).
+    iotsaController.requestMode(iotsa_mode(requestedMode));
+    if (iotsaController.requestedMode() != iotsa_mode(0)) {
+      ctx.show("requestedMode", int(iotsaController.requestedMode()));
+      ctx.show("requestedModeTimeout", (iotsaController.requestedModeEndTime() - millis())/1000);
+      ctx.show("needsReboot", true);
+    }
   }
-#endif // IOTSA_HAS_SLEEP
-  checkUnhandled(reqObj);
-  return true;
 }
 
 #ifdef IOTSA_WITH_BLE

@@ -1,9 +1,6 @@
 //
 // Simplest Iotsa service.
 //
-// The standard modules (WiFi configuration, over-the-air updates, ...) are
-// included automatically, so the sketch only declares its own.
-//
 // A "hello" module is added, which greets the user with a name settable through
 // a web form (not kept over reboots).
 //
@@ -15,48 +12,15 @@
 #include "iotsa.h"
 #include "iotsaSimple.h"
 
-// CHANGE: Add application includes and declarations here
+// Because this is the simplest Hello example, and we want to greet people
+// by name, we need a variable holding that name, which they can change on
+// the web page.
+String personName = "human";
 
+// In iotsa, you need to instantiate an application and a module (to handle
+// the web page, created at the end of this file). The iotsa framework will
+// then handle WiFi, over-the-air programming and other goodies for you.
 IotsaApplication application("Iotsa Hello World Server");
-
-//
-// Hello "name" module. Greets visitors to the /hello page, and allows
-// them to change the name by which they are greeted.
-//
-
-String greeting;
-
-String helloInfo() {
-  // Return some information about this module, for the main page of the web server.
-  String rv = "<p>See <a href=\"/hello\">/hello</a> for info, ";
-  if (greeting == "") {
-  	rv += "and to set the name to be greeted by.";
-  } else {
-  	rv += "or to change the name \"";
-  	rv += IotsaBaseModule::htmlEncode(greeting);
-  	rv += "\" that is currently greeted.";
-  }
-  rv += "</p>";
-  return rv;
-}
-
-void
-helloHandler() {
-  // Handles the page that is specific to the Hello module, greets the user and
-  // optionally stores a new name to greet the next time.
-  if( application.server->hasArg("greeting")) {
-    greeting = application.server->arg("greeting");
-  }
-  String message = "<html><head><title>Hello Server</title></head><body><h1>Hello Server</h1>";
-  message += "<p>Hello, " + IotsaBaseModule::htmlEncode(greeting) + "!</p>";
-  message += "<form method='get'>Greeting: <input name='greeting' value='";
-  message += IotsaBaseModule::htmlEncode(greeting);
-  message += "'></form></body></html>";
-  application.server->send(200, "text/html", message);
-}
-
-// Instantiate the Hello module, and install it in the framework
-IotsaSimpleMod helloMod(application, "/hello", helloHandler, helloInfo);
 
 // Standard setup() method, hands off most work to the application framework
 void setup(void){
@@ -70,3 +34,32 @@ void loop(void){
   application.loop();
   // Add your loop code here.
 }
+
+// Now we get iotsa-specific code.
+// Handles the page that is specific to the Hello module, greets the user and
+// optionally stores a new name to greet the next time.
+void
+helloHandler() {
+  if( application.server->hasArg("personName")) {
+    personName = application.server->arg("personName");
+  }
+  String message = "<html><head><title>Hello Server</title></head><body><h1>Hello Server</h1>";
+  message += "<p>Hello, " + IotsaBaseModule::htmlEncode(personName) + "!</p>";
+  message += "<form method='get'>Name: <input name='personName' value='";
+  message += IotsaBaseModule::htmlEncode(personName);
+  message += "'></form></body></html>";
+  application.server->send(200, "text/html", message);
+}
+
+// Return some information about this module, for the main page of the web server.
+String helloInfo() {
+  String rv = "<p>See <a href=\"/hello\">/hello</a> to change the name \"";
+  rv += IotsaBaseModule::htmlEncode(personName);
+  rv += "\" that is currently greeted.";
+  rv += "</p>";
+  return rv;
+}
+
+// Finally we need to create an iotsa module with the two functions written
+// above and add it to the iotsa application.
+IotsaSimpleMod helloMod(application, "/hello", helloHandler, helloInfo);

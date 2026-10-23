@@ -443,34 +443,6 @@ const char *IotsaBLEClientDevice::presenceText(Presence p) {
   return texts[(int)p];
 }
 
-bool IotsaBLEClientDevice::getHandler(JsonObject& reply) {
-  IotsaBLEDeviceInfo::getHandler(reply);
-  if (lastConnectAttemptAtMillis != 0) {
-    reply["lastConnectAttemptMillisAgo"] = millis() - lastConnectAttemptAtMillis;
-  }
-  reply["numConnectCalls"] = numConnectCalls;
-  reply["numConnectSkipped"] = numConnectSkipped;
-  reply["numConnectAttempts"] = numConnectAttempts;
-  reply["numConnectFailed"] = numConnectFailed;
-  reply["numConnectSucceeded"] = numConnectSucceeded;
-  reply["numConnectionOpen"] = isConnected() ? 1 : 0;
-  reply["numConnectionFailed"] = numConnectionFailed;
-  reply["numConnectionClosedLocally"] = numConnectionClosedLocally;
-  if (lastDisconnectReason != -1) {
-    reply["lastDisconnectReason"] = NimBLEUtils::returnCodeToString(lastDisconnectReason);
-    reply["lastDisconnectMillisAgo"] = millis() - lastDisconnectAtMillis;
-  }
-  reply["presence"] = presenceName(getPresence());
-  reply["connected"] = isConnected();
-  static const char *linkStateNames[] = {"idle", "waitingForAddress", "waitingForRadio", "connecting", "lingering"};
-  reply["linkState"] = linkStateNames[(int)linkState];
-  reply["workPending"] = (bool)workPending;
-  if (lastWorkStatus) reply["lastWorkStatus"] = lastWorkStatus;
-  reply["lastWorkMillis"] = lastWorkMillis;
-  reply["maxWorkMillis"] = maxWorkMillis;
-  return true;
-}
-
 bool IotsaBLEClientDevice::retarget(const std::string& newName) {
   if (newName == bleName) return false;
   if (owner && bleName != "") owner->delDevice(bleName);
@@ -504,51 +476,80 @@ void IotsaBLEClientDevice::configSave(IotsaConfigFileSave& cf, const String& f_n
   if (addr != "") cf.put(f_name + ".address", addr);
 }
 
-bool IotsaBLEClientDevice::putHandler(const JsonVariant& request, JsonObject& reply, bool *changed) {
-  if (!request.is<JsonObject>()) return apiError(400, "expected an object");
-  const JsonObject& reqObj = request.as<JsonObject>();
-  String newName;
-  if (getFromRequest<String>(reqObj, "name", newName)) {
-    if (retarget(std::string(newName.c_str())) && changed) *changed = true;
+void IotsaBLEClientDevice::putHandler(IotsaApiContext& ctx) {
+  String newName(bleName.c_str());
+  bool rename = ctx.arg("name", newName, IotsaApiContext::Saved);
+  if (ctx.failed()) return;
+  if (rename) retarget(std::string(newName.c_str()));
+}
+
+void IotsaBLEClientDevice::getHandler(IotsaApiContext& ctx) {
+  IotsaBLEDeviceInfo::getHandler(ctx);
+  if (lastConnectAttemptAtMillis != 0) {
+    ctx.show("lastConnectAttemptMillisAgo", millis() - lastConnectAttemptAtMillis);
   }
-  return true;
+  ctx.show("numConnectCalls", numConnectCalls);
+  ctx.show("numConnectSkipped", numConnectSkipped);
+  ctx.show("numConnectAttempts", numConnectAttempts);
+  ctx.show("numConnectFailed", numConnectFailed);
+  ctx.show("numConnectSucceeded", numConnectSucceeded);
+  ctx.show("numConnectionOpen", isConnected() ? 1 : 0);
+  ctx.show("numConnectionFailed", numConnectionFailed);
+  ctx.show("numConnectionClosedLocally", numConnectionClosedLocally);
+  if (lastDisconnectReason != -1) {
+    ctx.show("lastDisconnectReason", NimBLEUtils::returnCodeToString(lastDisconnectReason));
+    ctx.show("lastDisconnectMillisAgo", millis() - lastDisconnectAtMillis);
+  }
+  ctx.show("presence", presenceName(getPresence()));
+  ctx.show("connected", isConnected());
+  static const char *linkStateNames[] = {"idle", "waitingForAddress", "waitingForRadio", "connecting", "lingering"};
+  ctx.show("linkState", linkStateNames[(int)linkState]);
+  ctx.show("workPending", (bool)workPending);
+  if (lastWorkStatus) ctx.show("lastWorkStatus", lastWorkStatus);
+  ctx.show("lastWorkMillis", lastWorkMillis);
+  ctx.show("maxWorkMillis", maxWorkMillis);
 }
 
 #ifdef IOTSA_WITH_WEB
-void IotsaBLEClientDevice::formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) {
-  message += text;
-  if (includeConfig) {
-    message += "BLE device name: <input name='" + f_name + ".name' value='" + String(bleName.c_str()) + "'><br>";
+void IotsaBLEClientDevice::formHandler_args(IotsaWebContext& ctx) {
+  IotsaWebContext::Change rename(ctx, "rename", IotsaWebContext::Saved);
+  if (!rename) return;
+  String newName(bleName.c_str());
+  ctx.arg("name", newName, IotsaWebContext::Saved);
+  // A refused field fails the whole rename.
+  if (!rename) return;
+  if (newName == "") {
+    ctx.error("A device needs a name.");
+  } else if (owner && owner->getDevice(newName) != nullptr) {
+    ctx.error("Device " + newName + " already exists.");
+  } else if (retarget(std::string(newName.c_str()))) {
+    rename.done();
   }
-  const char *presence = presenceText(getPresence());
-  if (available()) {
-    message += "BLE address " + String(getAddress().c_str()) + " (" + presence;
-    if (isConnected()) message += ", connected";
-    message += ")";
-  } else {
-    message += "<em>" + String(presence) + "</em>";
-  }
-  message += "<br>";
 }
 
-void IotsaBLEClientDevice::formHandler_TD(String& message, bool includeConfig) {
-  message += "<td>" + String(bleName.c_str()) + "</td><td>";
-  if (available()) {
-    message += String(getAddress().c_str());
-    message += isConnected() ? " (connected)" : "";
+void IotsaBLEClientDevice::formHandler_fields(IotsaWebContext& ctx) {
+  String name(bleName.c_str());
+  if (ctx.includesEveryday()) {
+    const char *presence = presenceText(getPresence());
+    String status;
+    if (available()) {
+      status = "BLE address " + String(getAddress().c_str()) + " (" + presence;
+      if (isConnected()) status += ", connected";
+      status += ")";
+    } else {
+      status = presence;
+    }
+    ctx.showStatus(name == "" ? String("BLE device") : name, "", name == "" ? String("not set") : status);
   } else {
-    message += "<em>" + String(presenceText(getPresence())) + "</em>";
+    IotsaWebContext::Form form(ctx, name == "" ? "Set" : "Rename", name, "rename");
+    ctx.showField("BLE device name", "name", name, IotsaWebContext::Saved);
   }
-  message += "</td>";
 }
 
-bool IotsaBLEClientDevice::formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig) {
-  if (!includeConfig) return false;
-  String n_name = f_name + ".name";
-  if (server->hasArg(n_name)) {
-    return retarget(std::string(server->arg(n_name).c_str()));
-  }
-  return false;
+void IotsaBLEClientDevice::formHandler_row(IotsaWebContext& ctx) {
+  ctx.showCell("Name", String(bleName.c_str()));
+  String where = available() ? String(getAddress().c_str()) + (isConnected() ? " (connected)" : "") : String(presenceText(getPresence()));
+  ctx.showCell("Address", where);
 }
 #endif // IOTSA_WITH_WEB
 

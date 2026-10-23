@@ -39,7 +39,7 @@ iotsa's own custom PCB: ESP-12 module, FTDI programming header. The reference ES
 - **Provenance:** iotsa-custom PCB
 - **Constraints:** No BLE. HTTPS unreliable on ESP8266 (see cwi-dis/iotsa#159).
 - **Reference:** `README.md#supported-hardware-variants`
-- **Example:** examples/Skeleton (built as vanilla_esp8266)
+- **Example:** examples/Led (built as vanilla_esp8266)
 - **Notes:** The canonical ESP8266 target; the vanilla_esp8266 alias points here. Status LED: NeoPixel on GPIO15 (a few boards were built without one).
 
 ### <a id="esp32thing"></a>`esp32thing` — SparkFun ESP32 Thing
@@ -149,7 +149,7 @@ Tiny cheap ESP32-C3 board, native USB-Serial/JTAG, 4 MB flash.
 - **Provenance:** off-the-shelf clone
 - **Constraints:** All ESP32-C3 limits (no PCNT / touch / analog Vbat / deep-sleep wakeup).
 - **Reference:** [https://www.espboards.dev/esp32/esp32-c3-super-mini/](https://www.espboards.dev/esp32/esp32-c3-super-mini/)
-- **Example:** examples/DateTime
+- **Example:** examples/Blink
 - **Notes:** The in-progress P1-port-powered iotsaSmartMeter build targets this (cwi-dis/iotsaSmartMeter#1). Status LED: plain blue LED on GPIO8, active-low (confirmed on blecontrol, cwi-dis/iotsa#272); rather dim next to the red power LED. A variant with a NeoPixel reportedly exists but has not been seen.
 
 ### <a id="crowpanel128"></a>`crowpanel128` — Elecrow CrowPanel 1.28" round LCD

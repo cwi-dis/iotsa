@@ -24,230 +24,101 @@ void IotsaConfigMod::setup() {
   // now polled continuously by renderers, not nudged here (cwi-dis/iotsa#176).
 }
 
+#ifdef IOTSA_WITH_HTTPS
+// PEM (as pasted in the web form or sent over REST) to DER. Returns nullptr on
+// success (der/derLength replaced, the old buffer freed), else why not.
+static const char *_pemToDer(String pem, const char *head, const char *tail, const uint8_t *&der, size_t &derLength) {
+  pem.trim();
+  int tailPos = pem.indexOf(tail);
+  if (!pem.startsWith(head) || tailPos < 0) return "not in PEM format";
+  String b64 = pem.substring(strlen(head), tailPos);
+  int b64len = b64.length();
+  char *tmp = (char *)malloc(base64_decode_expected_len(b64len));
+  if (!tmp) return "out of memory";
+  // libb64 skips the line breaks
+  int len = base64_decode_chars(b64.c_str(), b64len, tmp);
+  if (len <= 0) {
+    free(tmp);
+    return "could not decode";
+  }
+  free((void *)der);
+  der = (const uint8_t *)tmp;
+  derLength = len;
+  return nullptr;
+}
+static const char *_keyHead = "-----BEGIN RSA PRIVATE KEY-----";
+static const char *_keyTail = "-----END RSA PRIVATE KEY-----";
+static const char *_certHead = "-----BEGIN CERTIFICATE-----";
+static const char *_certTail = "-----END CERTIFICATE-----";
+#endif // IOTSA_WITH_HTTPS
+
 #ifdef IOTSA_WITH_WEB
-void
-IotsaConfigMod::webHandler() {
-  bool wrongMode = false;
-  bool anyChanged = false;
-  bool hostnameChanged = false;
-  if( api.webService->server->hasArg("hostName")) {
-    String argValue = api.webService->server->arg("hostName");
-    if (argValue != iotsaConfig.hostName) {
-      if (iotsaConfigSettingsWritable()) {
-        if (needsAuthentication("config")) return;
-        iotsaConfig.hostName = argValue;
-        anyChanged = true;
-        hostnameChanged = true;
-      } else {
-        wrongMode = true;
-      }
-    }
-  }
-  if( api.webService->server->hasArg("rebootTimeout")) {
-    int newValue = api.webService->server->arg("rebootTimeout").toInt();
-    if ((uint32_t)newValue != iotsaController.modeTimeout()) {
-      if (iotsaConfigSettingsWritable()) {
-        if (needsAuthentication("config")) return;
-        iotsaController.setModeTimeout(newValue);
-        anyChanged = true;
-      } else {
-        wrongMode = true;
-      }
-    }
-  }
-  // Mode requests + factory-reset moved to IotsaRunmodeMod / the /runmode page
-  // (cwi-dis/iotsa#106).
-#ifdef IOTSA_WITH_HTTPS
-  if (api.webService->server->hasArg("httpsKey") && api.webService->server->arg("httpsKey") != "") {
-    if (iotsaConfigSettingsWritable()) {
-      if (needsAuthentication("config")) return;
-      String b64String(api.webService->server->arg("httpsKey"));
-      if (b64String.startsWith("-----BEGIN RSA PRIVATE KEY-----")) {
-        // Strip DER header and footer
-        int first = b64String.indexOf('\n');
-        int last = b64String.lastIndexOf("-----END RSA PRIVATE KEY-----");
-        if (first >= 0 && last >= 0) {
-          b64String = b64String.substring(first, last);
-        } else {
-          IFDEBUG IotsaSerial.println("httpsKey bad format PEM");
-          b64String = "";
-        }
-      } else {
-        IFDEBUG IotsaSerial.println("httpsKey bad PEM header");
-        b64String = "";
-      }
-      const char *b64Value = b64String.c_str();
-      int b64len = strlen(b64Value);
-      int expDecodeLen = base64_decode_expected_len(b64len);
-      char *tmpValue = (char *)malloc(expDecodeLen);
-      if (tmpValue) {
-        int decLen = base64_decode_chars(b64Value, b64len, tmpValue);
-        if (decLen > 0) {
-          newKey = (uint8_t *)tmpValue;
-          newKeyLength = decLen;
-          IFDEBUG IotsaSerial.print("Decoded httpsKey len=");
-          IFDEBUG IotsaSerial.print(decLen);
-          IFDEBUG IotsaSerial.print(" expLen=");
-          IFDEBUG IotsaSerial.print(expDecodeLen);
-          IFDEBUG IotsaSerial.print(" b64len=");
-          IFDEBUG IotsaSerial.println(b64len);
-          anyChanged = true;
-        } else {
-          IFDEBUG IotsaSerial.println("Error base64 decoding httpsKey");
-        }
-      } else {
-        IFDEBUG IotsaSerial.println("httpsKey malloc failed");
-      }
-    } else {
-      wrongMode = true;
-    }
-  }
-  if (api.webService->server->hasArg("httpsCertificate") && api.webService->server->arg("httpsCertificate") != "") {
-    if (iotsaConfigSettingsWritable()) {
-      if (needsAuthentication("config")) return;
-      String b64String(api.webService->server->arg("httpsCertificate"));
-      if (b64String.startsWith("-----BEGIN CERTIFICATE-----")) {
-        // Strip DER header and footer
-        int first = b64String.indexOf('\n');
-        int last = b64String.lastIndexOf("-----END CERTIFICATE-----");
-        if (first >= 0 && last >= 0) {
-          b64String = b64String.substring(first, last);
-        } else {
-          IFDEBUG IotsaSerial.println("httpsCertificate bad format PEM");
-          b64String = "";
-        }
-      } else {
-        IFDEBUG IotsaSerial.println("httpsCertificate bad PEM header");
-        b64String = "";
-      }
-      const char *b64Value = b64String.c_str();
-      int b64len = strlen(b64Value);
-      int expDecodeLen = base64_decode_expected_len(b64len);
-      IFDEBUG IotsaSerial.print("httpsCertificate expected len=");
-      IFDEBUG IotsaSerial.println(expDecodeLen);
-      char *tmpValue = (char *)malloc(expDecodeLen);
-      if (tmpValue) {
-        int decLen = base64_decode_chars(b64Value, b64len, tmpValue);
-        if (decLen > 0) {
-          newCertificate = (uint8_t *)tmpValue;
-          newCertificateLength = decLen;
-          IFDEBUG IotsaSerial.print("Decoded httpsCertificate len=");
-          IFDEBUG IotsaSerial.print(decLen);
-          IFDEBUG IotsaSerial.print(" expLen=");
-          IFDEBUG IotsaSerial.print(expDecodeLen);
-          IFDEBUG IotsaSerial.print(" b64len=");
-          IFDEBUG IotsaSerial.println(b64len);
-          anyChanged = true;
-        } else {
-          IFDEBUG IotsaSerial.println("Error base64 decoding httpsCertificate");
-        }
-      } else {
-        IFDEBUG IotsaSerial.println("httpsCertificate malloc failed");
-      }
-    } else {
-      wrongMode = true;
-    }
-  }
-#endif // IOTSA_WITH_HTTPS
- if( api.webService->server->hasArg("wifiDisabledOnBoot")) {
-    int newValue = api.webService->server->arg("wifiDisabledOnBoot").toInt();
-    if ((bool)newValue != iotsaConfig.wifiDisabledOnBoot) {
-      if (iotsaConfigSettingsWritable()) {
-        if (needsAuthentication("config")) return;
-        iotsaConfig.wifiDisabledOnBoot = (bool)newValue;
-        anyChanged = true;
-      } else {
-        wrongMode = true;
-      }
-    }
-  }
+void IotsaConfigMod::formHandler_args(IotsaWebContext& ctx) {
+  ctx.argsNeedRight("config");
+  bool hostNameChanged = ctx.arg("hostName", iotsaConfig.hostName, IotsaWebContext::SavedInConfigMode);
+  uint32_t timeout = iotsaController.modeTimeout();
+  bool timeoutChanged = ctx.arg("modeTimeout", timeout, IotsaWebContext::SavedInConfigMode);
+  ctx.argCheckbox("wifiDisabledOnBoot", iotsaConfig.wifiDisabledOnBoot, IotsaWebContext::SavedInConfigMode);
 #ifdef IOTSA_WITH_BLE
- if( api.webService->server->hasArg("bleDisabledOnBoot")) {
-    int newValue = api.webService->server->arg("bleDisabledOnBoot").toInt();
-    if ((bool)newValue != iotsaConfig.bleDisabledOnBoot) {
-      if (iotsaConfigSettingsWritable()) {
-        if (needsAuthentication("config")) return;
-        iotsaConfig.bleDisabledOnBoot = (bool)newValue;
-        anyChanged = true;
-      } else {
-        wrongMode = true;
-      }
-    }
-  }
+  ctx.argCheckbox("bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot, IotsaWebContext::SavedInConfigMode);
 #endif
-  String message = "<html><head><title>Iotsa configuration</title></head><body><h1>Iotsa configuration</h1>";
-  if (wrongMode) {
-    message += "<p><em>Error:</em> must be in configuration mode to change some of these parameters.</p>";
-  }
-  if (anyChanged) {
-    configSave();
-    iotsaController.extendCurrentMode();   // an edit happened -> keep the window open (was inConfigurationMode(true), 5c)
-    iotsaStatus.setStatusPulse(IotsaStatus::COLOUR_MAGENTA, 0, 0, 2000, "Settings saved");  // cwi-dis/iotsa#176
-    message += "<p>Settings saved to Flash.</p>";
-    if (hostnameChanged) {
-      message += "<p><em>Rebooting device to change hostname</em>.</p>";
-    }
-  }
-  if (!iotsaController.inConfigurationMode()) {
-    message += "<p>Hostname: ";
-    message += htmlEncode(iotsaConfig.hostName);
-    message += " (goto configuration mode to change)<br>Configuration mode timeout: ";
-    message += String(iotsaController.modeTimeout());
-    message += " (goto configuration mode to change)";
-    if (iotsaConfig.wifiDisabledOnBoot) {
-      message += "Wifi disabled on boot.<br>";
-    }
-#ifdef IOTSA_WITH_BLE
-    if (iotsaConfig.bleDisabledOnBoot) {
-      message += "BLE disabled on boot.<br>";
-    }
-#endif
-    message += "</p>";
-    message += "<p>" IOTSA_FS_NAME " usage: ";
-    message += String(iotsaFSUsedBytes());
-    message += " / ";
-    message += String(iotsaFSTotalBytes());
-    message += " bytes</p>";
-#ifdef IOTSA_WITH_HTTPS
-    if (iotsaConfig.usingDefaultCertificate()) {
-      message += "<p>Using factory-installed (<b>not very secure</b>) https certificate</p>";
-    } else {
-      message += "<p>Using uploaded https certificate.</p>";
-    }
-#endif // IOTSA_WITH_HTTPS
-  }
-  message += "<form method='post'>";
-  if (iotsaConfigSettingsWritable()) {
-    message += "Hostname: <input name='hostName' value='";
-    message += htmlEncode(iotsaConfig.hostName);
-    message += "'><br>";
-  }
-  if (iotsaConfigSettingsWritable()) {
-    message += "Configuration mode timeout: <input name='rebootTimeout' value='";
-    message += String(iotsaController.modeTimeout());
-    message += "'><br>";
-#ifdef IOTSA_WITH_HTTPS
-    message += "HTTPS private key (PEM): <br><textarea name='httpsKey' rows='8' cols='60'></textarea><br>";
-    message += "HTTPS certificate (PEM): <br><textarea name='httpsCertificate' rows='8' cols='60'></textarea><br>";
-#endif
-  }
-  // The hidden field after each checkbox sends 0 when it is unchecked; arg()
-  // returns the first value, so a checked box wins.
-  message += "<input name='wifiDisabledOnBoot' type='checkbox' value='1'";
-  if (iotsaConfig.wifiDisabledOnBoot) message += " checked";
-  message += "><input name='wifiDisabledOnBoot' type='hidden' value='0'> Wifi disabled on boot.<br>";
-#ifdef IOTSA_WITH_BLE
-  message += "<input name='bleDisabledOnBoot' type='checkbox' value='1'";
-  if (iotsaConfig.bleDisabledOnBoot) message += " checked";
-  message += "><input name='bleDisabledOnBoot' type='hidden' value='0'> BLE disabled on boot.<br>";
-#endif
-  message += "<input type='submit'></form>";
-  message += "<p>Mode requests (configuration / OTA / factory-reset) moved to <a href=\"/runmode\">/runmode</a>.</p>";
-  message += "</body></html>";
-  api.webService->server->send(200, "text/html", message);
-  if (hostnameChanged) {
+  if (ctx.failed()) return;
+  if (timeoutChanged) iotsaController.setModeTimeout(timeout);
+  if (hostNameChanged) {
     iotsaController.requestReboot(IotsaController::REBOOT_DELAY_HTTP_MS);
+    ctx.feedback("Rebooting to change the hostname.");
   }
+#ifdef IOTSA_WITH_HTTPS
+  // The text fields aren't settings themselves: a valid key plus a valid
+  // certificate are, and configSave() saves them only together.
+  IotsaWebContext::Change upload(ctx, "uploadHttps", IotsaWebContext::SavedInConfigMode);
+  if (upload) {
+    String pem;
+    if (ctx.arg("httpsKey", pem, IotsaWebContext::Saved)) {
+      const char *err = _pemToDer(pem, _keyHead, _keyTail, newKey, newKeyLength);
+      if (err) ctx.error(String("HTTPS private key: ") + err);
+    }
+    pem = "";
+    if (ctx.arg("httpsCertificate", pem, IotsaWebContext::Saved)) {
+      const char *err = _pemToDer(pem, _certHead, _certTail, newCertificate, newCertificateLength);
+      if (err) ctx.error(String("HTTPS certificate: ") + err);
+    }
+    // A refused or invalid field fails the whole upload.
+    if (!upload) return;
+    if (newKey && newCertificate) {
+      upload.done();
+    } else if (!ctx.hasFeedback()) {
+      ctx.feedback("The HTTPS key and certificate are only saved together.");
+    }
+  }
+#endif
+}
+
+void IotsaConfigMod::formHandler_fields(IotsaWebContext& ctx) {
+  ctx.argsNeedRight("config");
+  if (ctx.includesEveryday()) {
+    ctx.showStatus(IOTSA_FS_NAME " usage", "", String(iotsaFSUsedBytes()) + " of " + String(iotsaFSTotalBytes()) + " bytes");
+#ifdef IOTSA_WITH_HTTPS
+    ctx.showStatus("HTTPS certificate", "defaultCert", iotsaConfig.usingDefaultCertificate() ? "factory-installed (not very secure)" : "uploaded");
+#endif
+    return;
+  }
+  {
+    IotsaWebContext::Form form(ctx);
+    ctx.showField("Hostname", "hostName", iotsaConfig.hostName, IotsaWebContext::SavedInConfigMode, "changing it reboots");
+    ctx.showField("Configuration mode timeout", "modeTimeout", iotsaController.modeTimeout(), IotsaWebContext::SavedInConfigMode, "seconds");
+    ctx.showCheckbox("WiFi disabled on boot", "wifiDisabledOnBoot", iotsaConfig.wifiDisabledOnBoot, IotsaWebContext::SavedInConfigMode);
+#ifdef IOTSA_WITH_BLE
+    ctx.showCheckbox("BLE disabled on boot", "bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot, IotsaWebContext::SavedInConfigMode);
+#endif
+  }
+#ifdef IOTSA_WITH_HTTPS
+  {
+    IotsaWebContext::Form form(ctx, "Upload", "HTTPS certificate", "uploadHttps");
+    ctx.showTextarea("Private key (PEM)", "httpsKey", IotsaWebContext::SavedInConfigMode, "both are needed");
+    ctx.showTextarea("Certificate (PEM)", "httpsCertificate", IotsaWebContext::SavedInConfigMode);
+  }
+#endif
 }
 
 String IotsaConfigMod::info() {
@@ -262,43 +133,46 @@ String IotsaConfigMod::info() {
 }
 #endif // IOTSA_WITH_WEB
 
-bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
-  if (strcmp(path, "/api/version") == 0) {
-    reply["iotsaVersion"] = IOTSA_VERSION;
-    reply["iotsaFullVersion"] = IOTSA_FULL_VERSION;
+void IotsaConfigMod::getHandler(IotsaApiContext& ctx) {
+  if (ctx.path() == "/api/version") {
+    ctx.show("iotsaVersion", IOTSA_VERSION);
+    ctx.show("iotsaFullVersion", IOTSA_FULL_VERSION);
 #ifdef IOTSA_CONFIG_PROGRAM_NAME
-    reply["programName"] = IOTSA_CONFIG_PROGRAM_NAME;
+    ctx.show("programName", IOTSA_CONFIG_PROGRAM_NAME);
 #endif
 #ifdef IOTSA_CONFIG_PROGRAM_VERSION
-    reply["programVersion"] = IOTSA_CONFIG_PROGRAM_VERSION;
+    ctx.show("programVersion", IOTSA_CONFIG_PROGRAM_VERSION);
 #endif
 #ifdef IOTSA_CONFIG_PROGRAM_REPO
-    reply["programRepo"] = IOTSA_CONFIG_PROGRAM_REPO;
+    ctx.show("programRepo", IOTSA_CONFIG_PROGRAM_REPO);
 #endif
 #ifdef ARDUINO_VARIANT
-    reply["board"] = ARDUINO_VARIANT;
+    ctx.show("board", ARDUINO_VARIANT);
 #elif defined(ARDUINO_BOARD)
-    reply["board"] = ARDUINO_BOARD;
+    ctx.show("board", ARDUINO_BOARD);
 #endif
-    return true;
+    return;
   }
   // Persisted identity + knobs only. Runtime mode state moved to /api/runmode and
   // /api/status; the one-release GET mirror of currentMode / requestedMode /
   // wifiDisabled / bleDisabled / privateWifi / mdnsEnabled / bootCause / uptime /
   // fs*Bytes was dropped in cwi-dis/iotsa#243 step D. PUT still accepts the mode
   // keys and forwards them (the new-CLI-to-old-board compat surface that stays).
-  reply["hostName"] = iotsaConfig.hostName;
-  reply["modeTimeout"] = iotsaController.modeTimeout();
-  reply["wifiDisabledOnBoot"] = iotsaConfig.wifiDisabledOnBoot;
+  ctx.show("hostName", iotsaConfig.hostName);
+  ctx.show("modeTimeout", iotsaController.modeTimeout());
+  ctx.show("wifiDisabledOnBoot", iotsaConfig.wifiDisabledOnBoot);
 #ifdef IOTSA_WITH_BLE
-  reply["bleDisabledOnBoot"] = iotsaConfig.bleDisabledOnBoot;
+  ctx.show("bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot);
 #endif
-  reply["program"] = app.title;
+  ctx.show("program", app.title);
 #ifdef IOTSA_WITH_HTTPS
-  reply["defaultCert"] = iotsaConfig.usingDefaultCertificate();
-  reply["has_httpsKey"] = IOTSA_FS.exists("/config/httpsKey.der");
-  reply["has_httpsCert"] = IOTSA_FS.exists("/config/httpsCert.der");
+  ctx.show("defaultCert", iotsaConfig.usingDefaultCertificate());
+  // Write-only, the certificate too: it isn't secret, but it is in the TLS
+  // handshake and in /backup.tar, and too big for an HPS reply (cwi-dis/iotsa#296).
+  ctx.showWriteOnly("httpsKey", IOTSA_FS.exists("/config/httpsKey.der"));
+  ctx.showWriteOnly("httpsCertificate", IOTSA_FS.exists("/config/httpsCert.der"));
 #endif
+  JsonObject reply = ctx.reply();
   JsonArray modules = reply["modules"].to<JsonArray>();
   JsonArray modulesNoApi = reply["modulesNoApi"].to<JsonArray>();
   // "version" and "status" are read-only API paths, not IotsaModules -- listed here
@@ -338,219 +212,77 @@ bool IotsaConfigMod::getHandler(const char *path, JsonObject& reply) {
   features.add("ble");
 #endif
   features.add("littlefs");
-
-  return true;
 }
 
-bool IotsaConfigMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  bool anyChanged = false;
-
-  JsonObject reqObj = request.as<JsonObject>();
-  // First look for arguments that are also valid in normal mode.
-  // wifiDisabled / bleDisabled / requestedMode / reboot are [[deprecated]]
-  // forwarders here -- canonical in /api/runmode (cwi-dis/iotsa#106). Kept for
-  // one release so existing scripts and the Python CLI keep working.
-  bool wifiDisabled;
-  if (getFromRequest<int>(reqObj, "wifiDisabled", wifiDisabled)) {
-    iotsaController.setWifiRadioEnabled(!wifiDisabled);  // cwi-dis/iotsa#106
-  }
+void IotsaConfigMod::putHandler(IotsaApiContext& ctx) {
+  // The settings, as on the web page: configuration mode and the "config" right.
+  ctx.argsNeedRight("config");
+  bool hostNameChanged = ctx.arg("hostName", iotsaConfig.hostName, IotsaApiContext::SavedInConfigMode);
+  ctx.arg("wifiDisabledOnBoot", iotsaConfig.wifiDisabledOnBoot, IotsaApiContext::SavedInConfigMode);
 #ifdef IOTSA_WITH_BLE
-  bool bleDisabled;
-  if (getFromRequest<int>(reqObj, "bleDisabled", bleDisabled)) {
-    iotsaController.setBleRadioEnabled(!bleDisabled);  // cwi-dis/iotsa#106
-  }
+  ctx.arg("bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot, IotsaApiContext::SavedInConfigMode);
 #endif
-  int reqModeInt;
-  if (getFromRequest<int>(reqObj, "requestedMode", reqModeInt)) {
-    // requestMode() writes the pending-mode mailbox itself (cwi-dis/iotsa#106), so no
-    // configSave() is needed here even though the early return below skips it.
-    if (reqModeInt < IOTSA_MODE_NORMAL || reqModeInt > IOTSA_MODE_FACTORY_RESET) return apiError(400, "requestedMode: no such mode");
-    iotsaController.requestMode(iotsa_mode(reqModeInt));
-    if (iotsaController.requestedMode() != iotsa_mode(0)) {
-      reply["requestedMode"] = int(iotsaController.requestedMode());
-      reply["requestedModeTimeout"] = (iotsaController.requestedModeEndTime() - millis())/1000;
-      reply["needsReboot"] = true;
-    }
-  }
-  bool reboot = false;
-  getFromRequest<bool>(reqObj, "reboot", reboot);   // backward-compat forwarder: /api/runmode is canonical (cwi-dis/iotsa#106)
-  if (!iotsaConfigSettingsWritable()) {
-    // The fields below need configuration mode: say so, rather than silently
-    // dropping them (cwi-dis/iotsa#280). Anything else is reported as ignored.
-    static const char *configModeFields[] = {
-      "hostName", "wifiDisabledOnBoot", "bleDisabledOnBoot", "modeTimeout",
-      "defaultCert", "httpsKey", "httpsCertificate"
-    };
-    String needConfig;
-    for (const char *f : configModeFields) {
-      if (reqObj[f].isNull()) continue;
-      if (needConfig.length()) needConfig += ", ";
-      needConfig += f;
-    }
-    if (needConfig.length()) {
-      needConfig += ": need configuration mode";
-      return apiError(409, needConfig.c_str());
-    }
-    if (reboot) iotsaController.requestReboot(IotsaController::REBOOT_DELAY_HTTP_MS);
-    checkUnhandled(reqObj);
-    return true;
-  }
-  if (getFromRequest<const char *>(reqObj, "hostName", iotsaConfig.hostName)) {
-    anyChanged = true;
-    reply["needsReboot"] = true;
-  }
-  if (getFromRequest<int>(reqObj, "wifiDisabledOnBoot", iotsaConfig.wifiDisabledOnBoot)) {
-    anyChanged = true;
-  }
-#ifdef IOTSA_WITH_BLE
-  if (getFromRequest<int>(reqObj, "bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot)) {
-    anyChanged = true;
-  }
-#endif
-  { int t; if (getFromRequest<int>(reqObj, "modeTimeout", t)) { iotsaController.setModeTimeout(t); anyChanged = true; } }
-
+  uint32_t timeout = iotsaController.modeTimeout();
+  bool timeoutChanged = ctx.arg("modeTimeout", timeout, IotsaApiContext::SavedInConfigMode);
 #ifdef IOTSA_WITH_HTTPS
-  // Set parameter defaultCert to true to remove any key/certificate
-  bool defaultCert;
-  if (getFromRequest<bool>(reqObj, "defaultCert", defaultCert) && defaultCert) {
+  // defaultCert: true removes any key and certificate.
+  bool defaultCert = false;
+  bool removeCert = ctx.arg("defaultCert", defaultCert, IotsaApiContext::SavedInConfigMode);
+  // The key and certificate as PEM; configSave() saves them only together.
+  String pem;
+  if (ctx.argPassword("httpsKey", pem, IotsaApiContext::SavedInConfigMode)) {
+    const char *err = _pemToDer(pem.c_str(), _keyHead, _keyTail, newKey, newKeyLength);
+    if (err) ctx.error(400, String("httpsKey: ") + err);
+  }
+  pem = "";
+  if (ctx.argPassword("httpsCertificate", pem, IotsaApiContext::SavedInConfigMode)) {
+    const char *err = _pemToDer(pem.c_str(), _certHead, _certTail, newCertificate, newCertificateLength);
+    if (err) ctx.error(400, String("httpsCertificate: ") + err);
+  }
+#endif // IOTSA_WITH_HTTPS
+  // Backward-compat forwarders: /api/runmode is canonical (cwi-dis/iotsa#106),
+  // and they get the same rights as there.
+  bool wifiDisabled = !iotsaStatus.wifiEnabled;
+  bool wifiChanged = ctx.arg("wifiDisabled", wifiDisabled, IotsaApiContext::Transient);
+#ifdef IOTSA_WITH_BLE
+  bool bleDisabled = !iotsaController.bleRadioWanted();
+  bool bleChanged = ctx.arg("bleDisabled", bleDisabled, IotsaApiContext::Transient);
+#endif
+  bool reboot = false;
+  ctx.arg("reboot", reboot, IotsaApiContext::Transient);
+  ctx.argsNeedRight(IOTSA_RIGHT_NONE);
+  int requestedMode = -1;
+  bool requestChanged = ctx.arg("requestedMode", requestedMode, IotsaApiContext::Transient);
+  if (requestChanged && (requestedMode < IOTSA_MODE_NORMAL || requestedMode > IOTSA_MODE_FACTORY_RESET)) {
+    ctx.error(400, "requestedMode: no such mode");
+  }
+
+  if (ctx.failed()) return;
+  if (timeoutChanged) iotsaController.setModeTimeout(timeout);
+#ifdef IOTSA_WITH_HTTPS
+  if (removeCert && defaultCert) {
     IOTSA_FS.remove("/config/httpsKey.der");
     IOTSA_FS.remove("/config/httpsCert.der");
   }
-  // Allow setting of https key as PEM. Note that using POST with file upload will
-  // work more often due to memory constraints and the size of keys and certificates.
-  const char *b64Value = nullptr;
-  if (getFromRequest<const char *>(reqObj, "httpsKey", b64Value) && b64Value) {
-    static const char *head = "-----BEGIN RSA PRIVATE KEY-----";
-    static const char *tail = "-----END RSA PRIVATE KEY-----";
-    char *headPos = strstr(b64Value, head);
-    char *tailPos = strstr(b64Value, tail);
-    if (headPos == b64Value && tailPos) {
-      b64Value += strlen(head);
-      *tailPos = '\0';
-    } else {
-      return apiError(400, "httpsKey: not a PEM RSA private key");
+#endif
+  if (hostNameChanged) ctx.show("needsReboot", true);
+  if (wifiChanged) iotsaController.setWifiRadioEnabled(!wifiDisabled);
+#ifdef IOTSA_WITH_BLE
+  if (bleChanged) iotsaController.setBleRadioEnabled(!bleDisabled);
+#endif
+  if (requestChanged) {
+    // requestMode() writes the pending-mode mailbox itself (cwi-dis/iotsa#106).
+    iotsaController.requestMode(iotsa_mode(requestedMode));
+    if (iotsaController.requestedMode() != iotsa_mode(0)) {
+      ctx.show("requestedMode", int(iotsaController.requestedMode()));
+      ctx.show("requestedModeTimeout", (iotsaController.requestedModeEndTime() - millis())/1000);
+      ctx.show("needsReboot", true);
     }
-    int b64len = strlen(b64Value);
-    IFDEBUG IotsaSerial.println("req has httpsKey");
-    char *tmpValue = (char *)malloc(base64_decode_expected_len(b64len));
-    if (tmpValue) {
-      int decodedLen = base64_decode_chars(b64Value, b64len, tmpValue);
-      if (decodedLen > 0) {
-        newKey = (uint8_t *)tmpValue;
-        newKeyLength = decodedLen;
-        anyChanged = true;
-      } else {
-        free(tmpValue);
-        return apiError(400, "httpsKey: could not decode");
-      }
-    } else {
-      return apiError(500, "httpsKey: out of memory");
-    }
-  }
-  // Allow setting of https certificate as PEM. Note that using POST with file upload will
-  // work more often due to memory constraints and the size of keys and certificates.
-  b64Value = nullptr;
-  if (getFromRequest<const char *>(reqObj, "httpsCertificate", b64Value) && b64Value) {
-    // (was a redundant inner `const char *b64Value = reqObj["httpsCertificate"];`
-    // shadowing the just-fetched one -- the httpsKey branch above doesn't do that)
-    static const char *head = "-----BEGIN CERTIFICATE-----";
-    static const char *tail = "-----END CERTIFICATE-----";
-    char *headPos = strstr(b64Value, head);
-    char *tailPos = strstr(b64Value, tail);
-    if (headPos == b64Value && tailPos) {
-      b64Value += strlen(head);
-      *tailPos = '\0';
-    } else {
-      return apiError(400, "httpsCertificate: not a PEM certificate");
-    }
-    int b64len = strlen(b64Value);
-    IFDEBUG IotsaSerial.println("req has httpsCertificate");
-    char *tmpValue = (char *)malloc(base64_decode_expected_len(b64len));
-    if (tmpValue) {
-      int decodedLen = base64_decode_chars(b64Value, b64len, tmpValue);
-      if (decodedLen > 0) {
-        newCertificate = (uint8_t *)tmpValue;
-        newCertificateLength = decodedLen;
-        anyChanged = true;
-      } else {
-        free(tmpValue);
-        return apiError(400, "httpsCertificate: could not decode");
-      }
-    } else {
-      return apiError(500, "httpsCertificate: out of memory");
-    }
-  }
-#endif // IOTSA_WITH_HTTPS
-  if (anyChanged) {
-    configSave();
-    if (changed) *changed = true;
-    iotsaController.extendCurrentMode();   // an edit happened -> keep the window open (5c)
-    iotsaStatus.setStatusPulse(IotsaStatus::COLOUR_MAGENTA, 0, 0, 2000, "Settings saved");  // cwi-dis/iotsa#176
   }
   if (reboot) iotsaController.requestReboot(IotsaController::REBOOT_DELAY_HTTP_MS);
-  checkUnhandled(reqObj);
-  return true;
 }
-#if defined(IOTSA_HAS_WEBSERVER)
-// Raw multipart upload, not a rendered page -- needs only an HTTP transport, not
-// IOTSA_WITH_WEB's web UI. See cwi-dis/iotsa#205 (this exact conflation was the
-// issue's original motivating bug) and cwi-dis/iotsa#221 (this duplicates
-// IotsaFilesUploadMod, fixed the same way there).
-static File _uploadFile;
-static bool _uploadOK;
-
-void
-IotsaConfigMod::uploadHandler() {
-  if (needsAuthentication("config")) return;
-  HTTPUpload& upload = app.server->upload();
-  _uploadOK = false;
-  if(upload.status == UPLOAD_FILE_START){
-    if (upload.filename != "httpsKey.der" && upload.filename != "httpsCert.der") {
-      IFDEBUG IotsaSerial.println("Incorrect filename");
-      return;
-    }
-    String _uploadfilename = "/config/" + upload.filename;
-    IFDEBUG IotsaSerial.print("Uploading ");
-    IFDEBUG IotsaSerial.println(_uploadfilename);
-    if(IOTSA_FS.exists(_uploadfilename)) IOTSA_FS.remove(_uploadfilename);
-#ifndef IOTSA_FS_OPEN_2_ARGS
-    _uploadFile = IOTSA_FS.open(_uploadfilename, "w", true);
-#else
-    _uploadFile = IOTSA_FS.open(_uploadfilename, "w");
-#endif
-  } else if(upload.status == UPLOAD_FILE_WRITE){
-    if(_uploadFile) _uploadFile.write(upload.buf, upload.currentSize);
-  } else if(upload.status == UPLOAD_FILE_END){
-    if(_uploadFile) {
-        _uploadFile.close();
-        _uploadOK = true;
-    }
-  }
-}
-
-void
-IotsaConfigMod::uploadOkHandler() {
-  String message;
-  if (_uploadOK) {
-    IFDEBUG IotsaSerial.println("upload ok");
-    app.server->send(200, "text/plain", "OK");
-  } else {
-    IFDEBUG IotsaSerial.println("upload failed");
-    app.server->send(403, "text/plain", "FAIL");
-  }
-}
-#endif // defined(IOTSA_HAS_WEBSERVER)
 
 void IotsaConfigMod::lateSetup() {
-#ifdef IOTSA_HAS_WEBSERVER
-  // Two-callback upload shape (a completion handler plus a streaming upload
-  // handler): not something a plain api.setup() call can express, see
-  // cwi-dis/iotsa#213 -- registered directly via app.server instead, same as the
-  // web-server-extension modules (this upload machinery really is that category,
-  // just bolted onto the config API module -- near-duplicate of
-  // IotsaFilesUploadMod, see cwi-dis/iotsa#221 for splitting it out properly).
-  app.server->on("/configupload", HTTP_POST, std::bind(&IotsaConfigMod::uploadOkHandler, this), std::bind(&IotsaConfigMod::uploadHandler, this));
-#endif
   api.setup("config", true, true);
   api.setup("version", true);
   name = "config";

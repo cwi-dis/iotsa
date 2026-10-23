@@ -27,17 +27,20 @@
 class IotsaBLEClientManagerMod : public IotsaBLEClientMod {
 public:
   using IotsaBLEClientMod::IotsaBLEClientMod;
-  virtual bool getHandler(const char *path, JsonObject& reply) override;
-  virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
+  void putHandler(IotsaApiContext& ctx) override;
+  void getHandler(IotsaApiContext& ctx) override;
   virtual void loop() override;
 #ifdef IOTSA_WITH_WEB
+  // An unknown device in the list (HTML).
   virtual String formHandler_field_perdevice(const char *deviceName);
-  // text: what the devices are called, plural, used in the headings ("Known
-  // <text>", "Unknown <text>"). webHandler() passes devicesLabel().
-  virtual void formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig);
+  // What the devices are called, plural: the page title and the headings
+  // ("Known <label>", "Unknown <label>").
   virtual const char *devicesLabel() { return "BLE devices"; }
-  virtual void webHandler() override;
-  virtual bool formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig);
+  String webTitle() override { return devicesLabel(); }
+  // Known devices (each through its own formHandler_*), add, remove, and
+  // scanning for unknown ones. A subclass with more on its page calls these too.
+  void formHandler_args(IotsaWebContext& ctx) override;
+  void formHandler_fields(IotsaWebContext& ctx) override;
   virtual String info() override {
     return "<p>See <a href='/bleclient'>/bleclient</a> for known/unknown BLE devices, or <a href='/api/bleclient'>/api/bleclient</a> for the REST equivalent.</p>";
   }

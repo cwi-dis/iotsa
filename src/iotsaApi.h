@@ -7,16 +7,12 @@ class IotsaApiModObject : public IotsaModObject {
 public:
   virtual ~IotsaApiModObject() {}
 
-  // The same shape and rules as the module handlers, minus the path
-  // (cwi-dis/iotsa#280): return false (after apiError() if you can say why) on
-  // failure, true otherwise, also when nothing changed. changed, if given, is
-  // set to true (never to false) when state changed that needs saving.
-  virtual bool getHandler(JsonObject& reply) = 0;
-  virtual bool putHandler(const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) = 0;
-  template <typename JT, typename CT>  bool getFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
-    return iotsaGetFromRequest<JT>(reqObj, name, var);
-  }
-  static bool apiError(int status, const char *message) { return iotsaApiError(status, message); }
+  // The object's part of an API request (cwi-dis/iotsa#296), the same as a
+  // module's handlers: the module calls them inside an IotsaApiContext::Scope,
+  // so ctx.arg() and ctx.show() work on the object's own fields. Saved
+  // fields are saved by the module's configSave().
+  virtual void putHandler(IotsaApiContext& ctx) = 0;
+  virtual void getHandler(IotsaApiContext& ctx) = 0;
 };
 
 class IotsaApiServiceProvider {
@@ -50,8 +46,10 @@ class IotsaApiServiceWeb;
 #ifdef IOTSA_HAS_HPSSERVER
 #include "iotsaApiHps.h"
 #endif
+#include "iotsaContext.h"
 #ifdef IOTSA_WITH_WEB
 #include "iotsaApiWeb.h"
+#include "iotsaWebContext.h"
 #endif
 
 //
@@ -100,32 +98,44 @@ public:
   {}
   // See IotsaBaseModule: deleted so old code passing an auth provider fails to compile.
   IotsaModule(IotsaApplication &_app, IotsaAuthenticationProvider *_auth, bool early=false) = delete;
-  virtual bool getHandler(const char *path, JsonObject& reply) override { return false; }
-  virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override { return false; }
-  virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override { return false; }
   bool hasApi() const override { return true; }
+#ifdef IOTSA_WITH_WEB
+  // The default page (cwi-dis/iotsa#183): formHandler_args() handles the
+  // arguments, the framework saves the configuration when a Saved field
+  // changed, then formHandler_fields() is called once per part (everyday,
+  // settings) to fill the page. Override webHandler() itself only for a
+  // page that doesn't fit (streaming, a text interface).
+  void webHandler() override;
+  virtual String webTitle() { return name; }
+  virtual void formHandler_args(IotsaWebContext& ctx) {}
+  virtual void formHandler_fields(IotsaWebContext& ctx) {}
+#endif
 protected:
-  // Like the other getFromRequest() copies, but also removes a consumed field,
-  // so checkUnhandled() can report whatever is left over.
-  template <typename JT, typename CT>  bool getFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
-    if (!iotsaGetFromRequest<JT>(reqObj, name, var)) {
-      // IFDEBUG IotsaSerial.printf("xxxjack IotsaApi parameter %s not found\n", name);
-      return false;
-    }
-    reqObj.remove(name);
-    return true;
-  }
-  // Reports the fields still in reqObj (the ones getFromRequest() didn't consume)
-  // as "iotsa_api_ignored" in the reply (cwi-dis/iotsa#280). Returns true if any.
-  bool checkUnhandled(const JsonObject& reqObj) {
-    bool rv = false;
-    for (JsonPair kv : reqObj) {
-      rv = true;
-      iotsaApiResult.ignored.push_back(kv.key().c_str());
-    }
-    return rv;
-  }
+#ifdef IOTSA_WITH_WEB
+  // A trigger (cwi-dis/iotsa#183): a plain URL that does something right away,
+  // for curl or another device, like GET /ring?alarm=20. The handler reads the
+  // arguments with ctx.arg() (Transient), as formHandler_args() does. Every
+  // call is a change, so the right is checked before the handler runs: the
+  // REST rule for the module's API path, or the named right if given. The
+  // answer is plain text: the ctx.feedback() lines, or "OK"; an error with
+  // its own status. Call it in lateSetup(), next to api.setup().
+  typedef std::function<void(IotsaWebContext& ctx)> TriggerHandler;
+  void addTrigger(const char *path, TriggerHandler handler, const char *right = nullptr);
+#endif
   IotsaApiService api;
+};
+
+// An authentication provider is a module with an API (its users, its
+// capabilities), so it is an IotsaModule: it gets the shared api and the
+// default web page (cwi-dis/iotsa#183).
+class IotsaAuthMod : public IotsaModule, public IotsaAuthenticationProvider {
+public:
+  IotsaAuthMod(IotsaApplication &_app, bool early=false)
+  : IotsaModule(_app, early)
+  {
+    _app._haveAuthModule = true;
+  }
+  IotsaAuthMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth, bool early=false) = delete;
 };
 
 #endif // _IOTSAAPI_H_

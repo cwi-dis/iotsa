@@ -65,13 +65,13 @@ public:
   void addIdentifyCallback(IdentifyCallback cb) { _identifyCallbacks.push_back(cb); }
   // Not everything here needs the application's auth provider, see the .cpp
   // (cwi-dis/iotsa#284).
-  using IotsaModule::needsAuthentication;
-  bool needsAuthentication(const char *obj, IotsaApiOperation verb) override;
 protected:
-  bool getHandler(const char *path, JsonObject& reply) override;
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
+  void putHandler(IotsaApiContext& ctx) override;
+  void getHandler(IotsaApiContext& ctx) override;
 #ifdef IOTSA_WITH_WEB
-  void webHandler() override;
+  String webTitle() override { return "Iotsa runmode"; }
+  void formHandler_args(IotsaWebContext& ctx) override;
+  void formHandler_fields(IotsaWebContext& ctx) override;
 #endif
   // Identify (cwi-dis/iotsa#133): _pendingIdentify is set by any transport,
   // _doIdentify() runs the registered handlers from loop().

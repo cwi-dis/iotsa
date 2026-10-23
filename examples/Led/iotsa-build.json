@@ -1,4 +1,5 @@
 {
+  "_note": "BLE is ESP32-only (NimBLE isn't available for esp8266): the esp8266 variant builds without the BLE service.",
   "variants": [
     {
       "board": "vanilla_esp8266",
@@ -9,6 +10,9 @@
     },
     {
       "board": "vanilla_esp32",
+      "build_flags": [
+        "-DIOTSA_WITH_BLE"
+      ],
       "ci": {
         "platformio": true,
         "arduino": true
@@ -16,6 +20,9 @@
     },
     {
       "board": "vanilla_esp32c3",
+      "build_flags": [
+        "-DIOTSA_WITH_BLE"
+      ],
       "ci": {
         "platformio": true,
         "arduino": false
@@ -23,6 +30,9 @@
     },
     {
       "board": "vanilla_esp32s3",
+      "build_flags": [
+        "-DIOTSA_WITH_BLE"
+      ],
       "ci": {
         "platformio": true,
         "arduino": true

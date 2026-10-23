@@ -33,20 +33,19 @@ public:
 #ifdef IOTSA_WITH_WEB
   String info() override;
 #endif
-  bool allows(const char *obj, IotsaApiOperation verb) override;
-  bool allows(const char *right) override;
-  bool getHandler(const char *path, JsonObject& reply) override;
-  bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
-  bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) override;
+  IotsaAccess allows(IotsaContext& ctx, const char *right) override;
+  void putHandler(IotsaApiContext& ctx) override;
+  void getHandler(IotsaApiContext& ctx) override;
 protected:
-  void loadCapabilitiesFromRequest();
+  void loadCapabilitiesFromRequest(IotsaContext& ctx);
   void configLoad() override;
   void configSave() override;
 #ifdef IOTSA_WITH_WEB
-  void webHandler() override;
+  String webTitle() override { return "Capability Authority"; }
+  void formHandler_args(IotsaWebContext& ctx) override;
+  void formHandler_fields(IotsaWebContext& ctx) override;
 #endif
   IotsaCapability *capabilities;
-  IotsaApiService api;
   IotsaAuthenticationProvider &chain;
   String trustedIssuer;
   String issuerKey;

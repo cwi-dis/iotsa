@@ -1,57 +1,21 @@
 //
-// A "Led" server: the reference example for both halves of what iotsa's LED support
-// can do, in one sketch.
+// A "Led" server: the outside world can flash the LED, with a colour, on and
+// off times, and how long. On the web page /led, with PUT /api/led (REST, or
+// CoAP when built with IOTSA_WITH_COAP), and, built with IOTSA_WITH_BLE, with
+// a BLE service of its own. See iotsaLedControlMod.cpp.
 //
-// - LED control: full flash-pattern control over a single NeoPixel (color, on/off
-//   duration, repeat count) via a web UI, REST, and/or CoAP calls; plus, when built
-//   with IOTSA_WITH_BLE, a solid-color-only BLE characteristic. The web interface can
-//   be disabled by building iotsa with IOTSA_WITHOUT_WEB.
-// - Battery/sleep: also the reference example for battery-powered devices -- it wires
-//   up iotsaBattery (VBAT/VUSB voltage measurement, disable-sleep pin) and shows how to
-//   let a BLE command switch the device into config mode, for low-power operation
-//   without a permanent WiFi/web connection.
-//
-// Folded together from the formerly-separate Led/BLELed examples, which had drifted
-// into two different feature sets by accident rather than design -- see cwi-dis/iotsa#222.
-//
-// Optional startup blink: on a build with no network reachability at all (see the
-// "nonetworking" test variant), there's otherwise no way to tell from the outside
-// whether the device booted successfully. Opt in with
-// -DIOTSA_STARTUP_BLINK_COUNT=<n>; off by default.
+// The same on a battery-powered device, with sleep: see LedBattery.
 //
 
 #include "iotsa.h"
-#include "iotsaBattery.h"
 #include "iotsaLedControlMod.h"
 
-#ifndef WITHOUT_BATTERY
-#define WITH_BATTERY
-#endif
-#ifdef ESP32
-// ESP32-C3 and -S3 boards in this family don't have the 1:1 voltage-divider wiring
-// on these pins -- gate on the chip target directly (CONFIG_IDF_TARGET_xxx, the
-// ESP-IDF-provided macro, correct under both PlatformIO and Arduino IDE/arduino-cli)
-// rather than via a separate opt-out build flag.
-#if !defined(CONFIG_IDF_TARGET_ESP32C3) && !defined(CONFIG_IDF_TARGET_ESP32S3)
-#define IOTSA_PIN_VBAT 36 // Undefine to disable battery voltage measurements. Use 1:1 voltage divider.
-#define IOTSA_PIN_VUSB 37 // Undefine to disable USB voltage measurements. Use 1:1 voltage divider.
-#endif
-#ifdef CONFIG_IDF_TARGET_ESP32C3
-#define IOTSA_PIN_DISABLESLEEP 9 // Define as pin to disable sleep (active low to disable)
-#else
-#define IOTSA_PIN_DISABLESLEEP 0 // Define as pin to disable sleep (active low to disable)
-#endif
-#endif // ESP32
-
+// The application: handles WiFi, OTA and the other standard modules for you.
 IotsaApplication application("Iotsa LED Server");
 
-#ifdef WITH_BATTERY
-IotsaBatteryMod batteryMod(application);
-#endif
-
-// The board's own status LED where it has one (NeoPixel or plain LED, from its
-// IOTSA_PIN_LED/IOTSA_LED_* defines), otherwise a NeoPixel on GPIO15 (pulled
-// down during boot on esp8266, can be used for a LED afterwards).
+// Our module, see iotsaLedControlMod.cpp. It also is the status LED, so it
+// needs the LED: the board's own status LED if it has one (the board defines
+// IOTSA_PIN_LED), otherwise a NeoPixel whose data line you connect to GPIO15.
 #ifdef IOTSA_PIN_LED
 IotsaLedControlMod ledMod(application);
 #else
@@ -60,27 +24,8 @@ IotsaLedControlMod ledMod(application, 15);
 
 // Standard setup() method, hands off most work to the application framework
 void setup(void){
-#ifdef WITH_BATTERY
-#ifdef IOTSA_PIN_VBAT
-  batteryMod.setPinVBat(IOTSA_PIN_VBAT);
-#endif
-#ifdef IOTSA_PIN_VUSB
-  batteryMod.setPinVUSB(IOTSA_PIN_VUSB);
-#endif
-#ifdef IOTSA_PIN_DISABLESLEEP
-  batteryMod.setPinDisableSleep(IOTSA_PIN_DISABLESLEEP);
-#endif
-  // As an example, we allow switching to configuration mode by sending a BLE command
-  batteryMod.allowBLEConfigModeSwitch();
-#endif
   application.setup();
   application.lateSetup();
-#ifdef IOTSA_STARTUP_BLINK_COUNT
-  // Arm a self-test blink pattern via the status-pulse channel (cwi-dis/iotsa#176);
-  // ledMod.loop() (driven from the main loop() below) polls and renders it
-  // asynchronously from here. 150+150 per blink.
-  iotsaStatus.setStatusPulse(0xffffff, 150, 150, IOTSA_STARTUP_BLINK_COUNT * 300, "startup blink");
-#endif
 }
 
 // Standard loop() routine, hands off most work to the application framework

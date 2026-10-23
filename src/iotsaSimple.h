@@ -11,11 +11,13 @@ typedef String (*infofunc)();
 // also have a page) -- see cwi-dis/iotsa#211.
 class IotsaSimpleMod : public IotsaBaseModule {
   public:
-	IotsaSimpleMod(IotsaApplication &_app, const char *_url, handlerfunc _hfun, infofunc _ifun=NULL)
+	// right: what the page needs (cwi-dis/iotsa#296), default nothing.
+	IotsaSimpleMod(IotsaApplication &_app, const char *_url, handlerfunc _hfun, infofunc _ifun=NULL, const char *_right=IOTSA_RIGHT_NONE)
 	:	IotsaBaseModule(_app),
    		url(_url),
    		hfun(_hfun),
-   		ifun(_ifun)
+   		ifun(_ifun),
+   		right(_right)
 	{}
 	void setup() override;
 	void lateSetup() override;
@@ -27,6 +29,7 @@ class IotsaSimpleMod : public IotsaBaseModule {
   	const char *url;
   	handlerfunc hfun;
   	infofunc ifun;
+  	const char *right;
 };
 
 #endif

@@ -3,6 +3,20 @@
 #include <time.h>
 #include <stdlib.h>
 
+void IotsaNtpMod::setup() {
+  configLoad();
+}
+
+void IotsaNtpMod::lateSetup() {
+  api.setup("ntpconfig", true, true);
+  name = "ntpconfig";
+}
+
+void IotsaNtpMod::loop() {
+  // Nothing to do: the platform's SNTP client (started by parseTimezone())
+  // runs on its own.
+}
+
 unsigned long IotsaNtpMod::utcTime()
 {
   return time(NULL);
@@ -52,89 +66,15 @@ String IotsaNtpMod::isoTime()
   return String(buf);
 }
 
-#ifdef IOTSA_WITH_WEB
-void
-IotsaNtpMod::webHandler() {
-  bool anyChanged = false;
-  if( api.webService->server->hasArg("ntpServer")) {
-    if (needsAuthentication("ntp")) return;
-    ntpServer = api.webService->server->arg("ntpServer");
-    anyChanged = true;
-  }
-  if (api.webService->server->hasArg("tzDescription")) {
-    if (needsAuthentication("ntp")) return;
-    tzDescription = api.webService->server->arg("tzDescription");
-    anyChanged = true;
-  }
-  if (anyChanged) {
-    parseTimezone(tzDescription);  // also restarts SNTP, so a new server takes effect now
-    configSave();
-  }
-  
-  String message = "<html><head><title>NTP Client Settings</title></head><body><h1>NTP Client Settings</h1>";
-  message += "<p>Current UTC time is ";
-  message += String(utcTime());
-  message += ".<br>Current local time is ";
-  message += String(localHours());
-  message += ":";
-  message += String(localMinutes());
-  message += ":";
-  message += String(localSeconds());
-  message += " or ";
-  message += isoTime();
-  message += ".</p>";
-  message += "<form method='get'>NTP server: <input name='ntpServer' value='";
-  message += htmlEncode(ntpServer);
-  message += "'><br>";
-  message += "Timezone change information: <input name='tzDescription' value='";
-  message += htmlEncode(tzDescription);
-  message += "'><br>(format: unix TZ)<br>";
-  message += "<input type='submit'></form>";
-  api.webService->server->send(200, "text/html", message);
-}
-
-String IotsaNtpMod::info() {
-  String message = "<p>Local time is ";
-  message += isoTime();
-  message += ", timezone is ";
-  message += tzDescription;
-  message += ". ";
-  message += "See <a href=\"/ntpconfig\">/ntpconfig</a> to change time configuration.</p>";
-  return message;
-}
-#endif // IOTSA_WITH_WEB
-
-void IotsaNtpMod::setup() {
-  configLoad();
-}
-
-bool IotsaNtpMod::getHandler(const char *path, JsonObject& reply) {
-  reply["ntpServer"] = ntpServer;
-  reply["tzDescription"] = tzDescription;
-  return true;
-}
-
-bool IotsaNtpMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  bool anyChanged = false;
-  JsonObject reqObj = request.as<JsonObject>();
-  if (getFromRequest<const char *>(reqObj, "ntpServer", ntpServer)) {
-    anyChanged = true;
-  }
-  if (getFromRequest<const char *>(reqObj, "tzDescription", tzDescription)) {
-    anyChanged = true;
-  }
-  if (anyChanged) {
-    parseTimezone(tzDescription);  // also restarts SNTP, so a new server takes effect now
-    configSave();
-    if (changed) *changed = true;
-  }
-  checkUnhandled(reqObj);
-  return true;
-}
-
-void IotsaNtpMod::lateSetup() {
-  api.setup("ntpconfig", true, true);
-  name = "ntpconfig";
+// Installs the timezone and (re)starts the platform SNTP client with the
+// current server.
+void IotsaNtpMod::parseTimezone(const String& newDesc) {
+  tzDescription = newDesc;
+#ifdef ESP8266
+  configTime(newDesc.c_str(), ntpServer.c_str());
+#else
+  configTzTime(newDesc.c_str(), ntpServer.c_str());
+#endif
 }
 
 void IotsaNtpMod::configLoad() {
@@ -151,18 +91,51 @@ void IotsaNtpMod::configSave() {
   cf.put("tzDescription", tzDescription);
 }
 
-void IotsaNtpMod::loop() {
-  // Nothing to do: the platform's SNTP client (started by parseTimezone())
-  // runs on its own.
+void IotsaNtpMod::putHandler(IotsaApiContext& ctx) {
+  ctx.argsNeedRight("ntp");
+  bool changed = ctx.arg("ntpServer", ntpServer, IotsaApiContext::Saved);
+  changed |= ctx.arg("tzDescription", tzDescription, IotsaApiContext::Saved);
+  if (ctx.failed()) return;
+  if (changed) {
+    parseTimezone(tzDescription);  // also restarts SNTP, so a new server takes effect now
+  }
 }
 
-// Installs the timezone and (re)starts the platform SNTP client with the
-// current server.
-void IotsaNtpMod::parseTimezone(const String& newDesc) {
-  tzDescription = newDesc;
-#ifdef ESP8266
-  configTime(newDesc.c_str(), ntpServer.c_str());
-#else
-  configTzTime(newDesc.c_str(), ntpServer.c_str());
-#endif
+void IotsaNtpMod::getHandler(IotsaApiContext& ctx) {
+  ctx.show("ntpServer", ntpServer);
+  ctx.show("tzDescription", tzDescription);
 }
+
+#ifdef IOTSA_WITH_WEB
+void IotsaNtpMod::formHandler_args(IotsaWebContext& ctx) {
+  ctx.argsNeedRight("ntp");
+  bool changed = ctx.arg("ntpServer", ntpServer, IotsaWebContext::Saved);
+  changed |= ctx.arg("tzDescription", tzDescription, IotsaWebContext::Saved);
+  if (ctx.failed()) return;
+  if (changed) {
+    parseTimezone(tzDescription);  // also restarts SNTP, so a new server takes effect now
+  }
+}
+
+void IotsaNtpMod::formHandler_fields(IotsaWebContext& ctx) {
+  ctx.argsNeedRight("ntp");
+  if (ctx.includesEveryday()) {
+    ctx.showStatus("UTC time", "", String(utcTime()));
+    ctx.showStatus("Local time", "", isoTime());
+  } else {
+    IotsaWebContext::Form form(ctx);
+    ctx.showField("NTP server", "ntpServer", ntpServer, IotsaWebContext::Saved);
+    ctx.showField("Timezone", "tzDescription", tzDescription, IotsaWebContext::Saved, "POSIX TZ, for example CET-1CEST,M3.5.0,M10.5.0/3");
+  }
+}
+
+String IotsaNtpMod::info() {
+  String message = "<p>Local time is ";
+  message += isoTime();
+  message += ", timezone is ";
+  message += tzDescription;
+  message += ". ";
+  message += "See <a href=\"/ntpconfig\">/ntpconfig</a> to change time configuration.</p>";
+  return message;
+}
+#endif // IOTSA_WITH_WEB

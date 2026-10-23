@@ -1,75 +1,91 @@
 #include "iotsaAlarmMod.h"
 
+// Implementation of the Alarm module. It is built like the Blink module (read
+// that one first), with one new thing: a trigger, see ringTrigger().
+
 void IotsaAlarmMod::setup() {
-  pinMode(PIN_ALARM, OUTPUT); // Trick: we configure to input so we make the pin go Hi-Z.
-}
-
-#ifdef IOTSA_WITH_WEB
-void IotsaAlarmMod::webHandler() {
-
-  // An empty field (the form submitted without a value) changes nothing.
-  if (api.webService->server->hasArg("alarm") && api.webService->server->arg("alarm") != "") {
-    int dur = api.webService->server->arg("alarm").toInt();
-    if (dur) {
-      alarmEndTime = millis() + dur*100;
-      IotsaSerial.println("alarm on");
-      digitalWrite(PIN_ALARM, HIGH);
-    } else {
-      alarmEndTime = 0;
-    }
-  }
-  String message = "<html><head><title>Alarm Server</title></head><body><h1>Alarm Server</h1>";
-  message += "<form method='get'>";
-  message += "Alarm: <input name='alarm' value=''> (times 0.1 second)<br>\n";
-  message += "<input type='submit'></form></body></html>";
-  api.webService->server->send(200, "text/html", message);
-
-}
-
-String IotsaAlarmMod::info() {
-  return "<p>See <a href='/alarm'>/alarm</a> to use the buzzer. REST interface on <a href='/api/alarm'>/api/alarm</a>";
-}
-#endif // IOTSA_WITH_WEB
-
-bool IotsaAlarmMod::getHandler(const char *path, JsonObject& reply) {
-  int dur = 0;
-  if (alarmEndTime) {
-    dur = (alarmEndTime - millis())/100;
-  }
-  reply["alarm"] = dur;
-  return true;
-}
-
-bool IotsaAlarmMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  int dur = 0;
-  if (request.is<int>()) {
-    dur = request.as<int>();
-  } else if (request.is<JsonObject>()) {
-    JsonObject reqObj = request.as<JsonObject>();
-    dur = reqObj["alarm"];
-  } else {
-    return apiError(400, "expected a duration, or {\"alarm\": duration}");
-  }
-  if (dur) {
-    alarmEndTime = millis() + dur*100;
-    IotsaSerial.println("alarm on");
-    digitalWrite(PIN_ALARM, HIGH);
-  } else {
-    alarmEndTime = 0;
-  }
-  return true;
+  pinMode(pin, OUTPUT);
 }
 
 void IotsaAlarmMod::lateSetup() {
-  // Setup the web server hooks for this module.
   api.setup("alarm", true, true);
   name = "alarm";
+#ifdef IOTSA_WITH_WEB
+  addTrigger("ring", [this](IotsaWebContext& ctx) { ringTrigger(ctx); });
+#endif
 }
 
+// Stop when the time is up. millis() - alarmStart is right even when millis()
+// wraps around (after 49 days); comparing millis() with an end time is not.
 void IotsaAlarmMod::loop() {
-  if (alarmEndTime && millis() > alarmEndTime) {
-    alarmEndTime = 0;
-    IotsaSerial.println("alarm off");
-    digitalWrite(PIN_ALARM, LOW);
+  if (alarmDuration && millis() - alarmStart >= alarmDuration) _ring(0);
+}
+
+// No configLoad()/configSave(): there is nothing to keep over reboots.
+
+// Ring for dur tenths of a second; 0 stops it.
+void IotsaAlarmMod::_ring(int dur) {
+  if (dur > 0) {
+    alarmStart = millis();
+    alarmDuration = dur*100;
+    digitalWrite(pin, HIGH);
+  } else {
+    alarmDuration = 0;
+    digitalWrite(pin, LOW);
   }
+}
+
+void IotsaAlarmMod::putHandler(IotsaApiContext& ctx) {
+  // -1: not asked; 0 stops the alarm.
+  int dur = -1;
+  bool ring = ctx.arg("alarm", dur, IotsaApiContext::Transient);
+  if (ctx.failed()) return;
+  if (ring) _ring(dur);
+}
+
+// The time left, in tenths of a second.
+void IotsaAlarmMod::getHandler(IotsaApiContext& ctx) {
+  int dur = 0;
+  unsigned long elapsed = millis() - alarmStart;
+  if (alarmDuration && elapsed < alarmDuration) dur = (alarmDuration - elapsed)/100;
+  ctx.show("alarm", dur);
+}
+
+#ifdef IOTSA_WITH_WEB
+// Ringing happens now: Ring is an action, the duration its parameter.
+void IotsaAlarmMod::formHandler_args(IotsaWebContext& ctx) {
+  bool ring = ctx.argAction("ring", IotsaWebContext::Transient);
+  int dur = 10;
+  if (ring) ctx.arg("alarm", dur, IotsaWebContext::Transient);
+  bool stop = ctx.argAction("stop", IotsaWebContext::Transient);
+  if (ctx.failed()) return;
+  if (ring) _ring(dur);
+  if (stop) _ring(0);
+}
+
+void IotsaAlarmMod::formHandler_fields(IotsaWebContext& ctx) {
+  if (!ctx.includesEveryday()) return;
+  ctx.showStatus("Alarm", "alarm", alarmDuration ? "ringing" : "off");
+  {
+    IotsaWebContext::Form form(ctx, "Ring", "", "ring");
+    ctx.showField("Duration", "alarm", 10, IotsaWebContext::Transient, "times 0.1 second");
+  }
+  if (alarmDuration) ctx.showButton("stop", "Stop", IotsaWebContext::Transient);
+}
+
+// The trigger, /ring: a plain URL that rings right away, for curl or another
+// device. curl 'http://ringer.local/ring?alarm=20' rings for 2 seconds. The
+// web page above is for people: it only rings when its Ring button was
+// pressed (ring=1 in the URL). The trigger needs no such thing.
+void IotsaAlarmMod::ringTrigger(IotsaWebContext& ctx) {
+  int dur = 10;
+  ctx.arg("alarm", dur, IotsaWebContext::Transient);
+  if (ctx.failed()) return;
+  _ring(dur);
+  ctx.feedback("Ringing.");
+}
+#endif // IOTSA_WITH_WEB
+
+String IotsaAlarmMod::info() {
+  return "<p>See <a href='/alarm'>/alarm</a> to sound the buzzer, or call <a href='/ring'>/ring</a>.</p>";
 }

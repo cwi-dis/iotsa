@@ -24,8 +24,7 @@
 //    than multi-transport API providers (IotsaFilesUploadMod, IotsaFilesBackupMod,
 //    IotsaFilesMod, IotsaLoggerMod, IotsaSimpleMod), a module's own registrations
 //    that fall outside its page (IotsaConfigMod's cert upload, cwi-dis/iotsa#221),
-//    the three auth-provider modules (IotsaUserMod/IotsaMultiUserMod/
-//    IotsaCapabilityMod, a known wart pending cwi-dis/iotsa#107's context-object
+//    the auth-provider modules (IotsaUserMod/IotsaCapabilityMod, a known wart pending cwi-dis/iotsa#107's context-object
 //    redesign), and app-level sketch code -- reads IotsaApplication::server, which
 //    is populated from this same object once in IotsaApplication's constructor.
 //  - IotsaApiServiceRest/Web themselves reach it via instance()->server.

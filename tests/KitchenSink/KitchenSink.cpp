@@ -10,8 +10,6 @@
 // - iotsaButton: superseded by iotsaInput (iotsa#160), and the two headers can't even
 //   be included together (both define a top-level `class Button`, with different
 //   bases -- a straight ODR collision, not just redundancy).
-// - IotsaUserMod: IotsaMultiUserMod is used as the sole auth provider instead; the two
-//   are mutually exclusive as documented in iotsa#151 (both derive IotsaAuthMod).
 // - iotsaLedControlMod-style REST/web wrapper: that's app-specific UX layered on top
 //   of iotsaLed in each example that needs it, not something iotsa itself ships.
 //
@@ -22,7 +20,7 @@
 //
 
 #include "iotsa.h"
-#include "iotsaMultiUser.h"
+#include "iotsaUser.h"
 #include "iotsaCapabilities.h"
 #include "iotsaBattery.h"
 #include "iotsaFiles.h"
@@ -64,7 +62,7 @@
 #endif
 #endif // ESP32
 
-// Real-time clock pins (DS1302), same as examples/DateTime. Only on the classic
+// Real-time clock pins (DS1302). Only on the classic
 // ESP32: the ESP8266, C3 and S3 don't have these pins, and on the C3 GPIO21 is the
 // console's TX pin (the RTC clock on it turned the console into garbage).
 #ifdef CONFIG_IDF_TARGET_ESP32
@@ -78,8 +76,8 @@ IotsaApplication application("Iotsa KitchenSink Test Rig");
 
 // Multi-user auth, with capabilities chained on top. The top of that stack is the
 // application's auth provider (setAuth() in setup()), used by every module.
-IotsaMultiUserMod multiUserMod(application);
-IotsaCapabilityMod capabilityMod(application, multiUserMod);
+IotsaUserMod userMod(application);
+IotsaCapabilityMod capabilityMod(application, userMod);
 #define authProvider (&capabilityMod)
 
 IotsaBatteryMod batteryMod(application);

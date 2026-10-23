@@ -52,9 +52,20 @@ IotsaLoggerMod::IotsaLoggerMod(IotsaApplication &_app)
   iotsaOverrideSerial->println("iotsa logger enabled");
 }
 
+void IotsaLoggerMod::setup() {
+  configLoad();
+}
+
+void IotsaLoggerMod::lateSetup() {
+  addWebHandler("/logger", std::bind(&IotsaLoggerMod::handler, this), "logger");
+  name = "logger";
+}
+
+void IotsaLoggerMod::loop() {
+}
+
 void
 IotsaLoggerMod::handler() {
-  if (needsAuthentication("logger")) return;
 #ifdef CONTENT_LENGTH_UNKNOWN
   app.server->setContentLength(CONTENT_LENGTH_UNKNOWN);
 #endif
@@ -71,15 +82,6 @@ IotsaLoggerMod::handler() {
   }
 }
 
-void IotsaLoggerMod::setup() {
-  configLoad();
-}
-
-void IotsaLoggerMod::lateSetup() {
-  app.server->on("/logger", std::bind(&IotsaLoggerMod::handler, this));
-  name = "logger";
-}
-
 void IotsaLoggerMod::configLoad() {
   IotsaConfigFileLoad cf("/config/logger.cfg");
   cf.get("argument", argument, "");
@@ -89,9 +91,6 @@ void IotsaLoggerMod::configLoad() {
 void IotsaLoggerMod::configSave() {
   IotsaConfigFileSave cf("/config/logger.cfg");
   cf.put("argument", argument);
-}
-
-void IotsaLoggerMod::loop() {
 }
 
 String IotsaLoggerMod::info() {

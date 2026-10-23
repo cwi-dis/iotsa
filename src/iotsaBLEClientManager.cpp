@@ -97,18 +97,20 @@ void IotsaBLEClientManagerMod::setUnknownDeviceFoundCallback(BleDeviceFoundCallb
   unknownDeviceCallback = _callback;
 }
 
-bool IotsaBLEClientManagerMod::getHandler(const char *path, JsonObject& reply) {
-  bool rv = IotsaBLEClientMod::getHandler(path, reply);
+void IotsaBLEClientManagerMod::getHandler(IotsaApiContext& ctx) {
+  IotsaBLEClientMod::getHandler(ctx);
+  JsonObject reply = ctx.reply();
   if (unknownDevices.size()) {
     JsonArray unknownReply = reply["unassigned"].to<JsonArray>();
+    int i = 0;
     for (auto it : unknownDevices) {
-      JsonObject devReply = unknownReply.add<JsonObject>();
-      it.second->getHandler(devReply);
+      IotsaApiContext::Scope s(ctx, "unassigned" + String(i++), JsonObject(), unknownReply.add<JsonObject>());
+      it.second->getHandler(ctx);
     }
   }
-  reply["scanUnknown"] = (char *)NULL;
-  reply["scanning"] = isScanning();
-  if (!isScanning() && scanStoppedAtMillis != 0) reply["lastScanSecondsAgo"] = (millis() - scanStoppedAtMillis) / 1000;
+  ctx.show("scanUnknown", (const char *)NULL);
+  ctx.show("scanning", isScanning());
+  if (!isScanning() && scanStoppedAtMillis != 0) ctx.show("lastScanSecondsAgo", (millis() - scanStoppedAtMillis) / 1000);
   if (unrecognizedDevices.size()) {
     JsonArray unrecognizedReply = reply["unrecognized"].to<JsonArray>();
     uint32_t now = millis();
@@ -125,142 +127,146 @@ bool IotsaBLEClientManagerMod::getHandler(const char *path, JsonObject& reply) {
   if (devices.size()) {
     JsonObject devicesReply = reply["devices"].to<JsonObject>();
     for (auto it : devices) {
-      JsonObject devReply = devicesReply[String(it.first.c_str())].to<JsonObject>();
-      it.second->getHandler(devReply);
+      String key(it.first.c_str());
+      IotsaApiContext::Scope s(ctx, key, JsonObject(), devicesReply[key].to<JsonObject>());
+      it.second->getHandler(ctx);
     }
   }
-  return rv;
 }
 
-bool IotsaBLEClientManagerMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  if (!IotsaBLEClientMod::putHandler(path, request, reply, changed)) return false;
-  JsonObject reqObj = request.as<JsonObject>();
-  if (getFromRequest<int>(reqObj, "scan_unknown_duration", scanUnknownDurationMillis)) {
-    saveClientConfig();
-    if (changed) *changed = true;
-  }
-  bool scanUnknown;
-  if (getFromRequest<bool>(reqObj, "scanUnknown", scanUnknown) && scanUnknown) {
-    startScanUnknown();
-  }
-  // Known-devices management (cwi-dis/iotsa#264): add/remove by name, or
-  // route a sub-object keyed by an existing device's name to that device's
-  // own putHandler() (e.g. renaming, via its cwi-dis/iotsa#268 surface).
+void IotsaBLEClientManagerMod::putHandler(IotsaApiContext& ctx) {
+  IotsaBLEClientMod::putHandler(ctx);
+  if (ctx.arg("scan_unknown_duration", scanUnknownDurationMillis, IotsaApiContext::Saved)) saveClientConfig();
+  bool scanUnknown = false;
+  ctx.arg("scanUnknown", scanUnknown, IotsaApiContext::Transient);
+  // Known-devices management (cwi-dis/iotsa#264): add/remove by name, or a
+  // sub-object keyed by an existing device's name for that device's own
+  // putHandler() (e.g. renaming, via its cwi-dis/iotsa#268 surface).
   String addName;
-  if (getFromRequest<String>(reqObj, "add", addName) && addName != "") {
-    if (addDeviceByName(addName.c_str()) && changed) *changed = true;
-  }
+  bool add = ctx.arg("add", addName, IotsaApiContext::Saved);
   String removeName;
-  if (getFromRequest<String>(reqObj, "remove", removeName) && removeName != "") {
-    if (!removeDeviceByName(removeName.c_str())) return apiError(404, "remove: no such device");
-    if (changed) *changed = true;
-  }
+  bool remove = ctx.arg("remove", removeName, IotsaApiContext::Saved);
   // Snapshot first: a device's own putHandler() may call retarget(), which
   // re-keys `devices` -- mutating a std::map while iterating it directly
   // would be undefined behavior.
   std::vector<std::pair<std::string, IotsaBLEClientDevice*>> snapshot(devices.begin(), devices.end());
-  bool deviceChanged = false;
   for (auto& kv : snapshot) {
     String key(kv.first.c_str());
-    JsonVariant devRequest = reqObj[key];
+    JsonVariant devRequest = ctx.request()[key];
     if (devRequest.isNull()) continue;
-    if (!kv.second->putHandler(devRequest, reply, &deviceChanged)) return false;
-    reqObj.remove(key);
+    ctx.used(key.c_str());
+    if (!devRequest.is<JsonObject>()) {
+      ctx.error(400, key + ": expected an object");
+      break;
+    }
+    IotsaApiContext::Scope s(ctx, key, devRequest.as<JsonObject>(), JsonObject());
+    kv.second->putHandler(ctx);
   }
-  if (deviceChanged) {
-    // A rename: our devices are saved by name.
-    saveClientConfig();
-    if (changed) *changed = true;
-  }
-  checkUnhandled(reqObj);
-  return true;
+  // A rename: our devices are saved by name.
+  if (ctx.configChanged) saveClientConfig();
+  if (ctx.failed()) return;
+  if (scanUnknown) startScanUnknown();
+  if (add) addDeviceByName(addName.c_str());
+  if (remove && !removeDeviceByName(removeName.c_str())) ctx.error(404, "remove: no such device");
 }
 
 #ifdef IOTSA_WITH_WEB
-void IotsaBLEClientManagerMod::webHandler() {
-  bool anyChanged = false;
-  anyChanged |= formHandler_args(api.webService->server, "", true);
-  if (anyChanged) saveClientConfig();
-  String message = "<html><head><title>BLE Devices</title></head><body><h1>BLE Devices</h1>";
-
-  formHandler_fields(message, devicesLabel(), "bledevice", true);
-
-  message += "<form method='get'><input type='submit' name='refresh' value='Refresh'></form>";
-  message += "</body></html>";
-  api.webService->server->send(200, "text/html", message);
-}
-
-void IotsaBLEClientManagerMod::formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) {
-  // Known-devices listing (cwi-dis/iotsa#264): generalizes what lissabon's
-  // DimmerCollection/DimmerDynamicCollection used to build for itself --
-  // each device already knows how to render its own name/found/connected
-  // status and (if includeConfig) an editable name field, via its own
-  // IotsaApiModObject surface (cwi-dis/iotsa#268). This mod just lists them.
-  message += "<h2>Known " + text + "</h2>";
-  if (devices.size() == 0) {
-    message += "<p>No known " + text + " yet.</p>";
-  } else {
-    for (auto it : devices) {
-      String name(it.first.c_str());
-      it.second->formHandler_fields(message, name + ": ", name, includeConfig);
-      if (includeConfig) {
-        message += "<form method='get'><input type='hidden' name='remove' value='" + name + "'><input type='submit' value='Remove'></form>";
+void IotsaBLEClientManagerMod::formHandler_args(IotsaWebContext& ctx) {
+  if (ctx.argAction("scanUnknown", IotsaWebContext::Transient)) {
+    startScanUnknown();
+    ctx.feedback("Scanning for " + String(scanUnknownDurationMillis/1000) + " seconds.");
+  }
+  {
+    IotsaWebContext::Scope s(ctx, "new");
+    IotsaWebContext::Change add(ctx, "add", IotsaWebContext::Saved);
+    if (add) {
+      String name;
+      ctx.arg("name", name, IotsaWebContext::Saved);
+      // A refused field fails the whole add.
+      if (!add) return;
+      if (name == "") {
+        ctx.error("A new device needs a name.");
+      } else if (getDevice(name) != nullptr) {
+        ctx.error("Device " + name + " already exists.");
+      } else if (addDeviceByName(name.c_str())) {
+        add.done();
+      } else {
+        ctx.error("Device " + name + " can't be added here.");
       }
+      return;
     }
-  }
-  if (includeConfig) {
-    message += "<form method='get'>Add device by name: <input name='add'><input type='submit' value='Add'></form>";
-  }
-  message += "<h2>Unknown " + text + "</h2>";
-  message += "<form method='get'><input type='submit' name='scanUnknown' value='Scan for " + String(scanUnknownDurationMillis/1000) + " seconds'></form>";
-  message += "<form method='get'><input type='submit' name='refresh' value='Refresh'></form>";
-  if (unknownDevices.size() == 0) {
-    message += "<p>No unknown " + text + " seen recently.</p>";
-  } else {
-    message += "<ul>";
-    for (auto it: unknownDevices) {
-      message += "<li>" + formHandler_field_perdevice(it.first.c_str()) + " (RSSI " + String(it.second->getRSSI()) + ")</li>";
-    }
-    message += "</ul>";
-  }
-  message += "<h2>Recent unrecognized BLE devices</h2>";
-  if (unrecognizedDevices.size() == 0) {
-    message += "<p>None seen recently.</p>";
-  } else {
-    message += "<table><tr><th>Address</th><th>Name</th><th>Seconds ago</th><th>RSSI</th></tr>";
-    uint32_t now = millis();
-    for (auto& entry : unrecognizedDevices) {
-      message += "<tr><td>" + String(entry.address.toString().c_str()) + "</td><td>" + htmlEncode(entry.name) + "</td><td>" + String((now - entry.lastSeenAtMillis) / 1000) + "</td><td>" + String(entry.rssi) + "</td></tr>";
-    }
-    message += "</table>";
-  }
-}
-
-String IotsaBLEClientManagerMod::formHandler_field_perdevice(const char *deviceName) {
-  // Advertised names come from anyone nearby.
-  return htmlEncode(deviceName);
-}
-
-bool IotsaBLEClientManagerMod::formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig) {
-  bool anyChanged = false;
-  if (server->hasArg("scanUnknown")) startScanUnknown();
-  if (includeConfig && server->hasArg("add")) {
-    String addName = server->arg("add");
-    if (addName != "" && addDeviceByName(addName.c_str())) anyChanged = true;
-  }
-  if (includeConfig && server->hasArg("remove")) {
-    String removeName = server->arg("remove");
-    if (removeName != "" && removeDeviceByName(removeName.c_str())) anyChanged = true;
   }
   // Snapshot first: a device's own formHandler_args() may call retarget(),
   // which re-keys `devices` -- mutating a std::map while iterating it
   // directly would be undefined behavior.
   std::vector<std::pair<std::string, IotsaBLEClientDevice*>> snapshot(devices.begin(), devices.end());
   for (auto& kv : snapshot) {
-    String name(kv.first.c_str());
-    if (kv.second->formHandler_args(server, name, includeConfig)) anyChanged = true;
+    IotsaWebContext::Scope s(ctx, String(kv.first.c_str()));
+    IotsaWebContext::Change remove(ctx, "remove", IotsaWebContext::Saved);
+    if (remove) {
+      if (removeDeviceByName(kv.first)) {
+        remove.done();
+      } else {
+        ctx.error("Device " + String(kv.first.c_str()) + " can't be removed here.");
+      }
+      return;
+    }
+    kv.second->formHandler_args(ctx);
   }
-  return anyChanged;
+  // A rename: our devices are saved by name.
+  if (ctx.configChanged) saveClientConfig();
+}
+
+void IotsaBLEClientManagerMod::formHandler_fields(IotsaWebContext& ctx) {
+  String label(devicesLabel());
+  if (ctx.includesSettings()) {
+    for (auto& kv : devices) {
+      IotsaWebContext::Scope s(ctx, String(kv.first.c_str()));
+      kv.second->formHandler_fields(ctx);
+      ctx.showButton("remove", "Remove", IotsaWebContext::Saved);
+    }
+    IotsaWebContext::Scope s(ctx, "new");
+    IotsaWebContext::Form form(ctx, "Add", "Add a device", "add");
+    ctx.showField("BLE device name", "name", "", IotsaWebContext::Saved);
+    return;
+  }
+  // Known-devices listing (cwi-dis/iotsa#264): each device renders its own
+  // status (cwi-dis/iotsa#268), this module just lists them.
+  ctx << "<h3>Known " + htmlEncode(label) + "</h3>\n";
+  if (devices.size() == 0) {
+    ctx << "<p>No known " + htmlEncode(label) + " yet.</p>\n";
+  }
+  for (auto& kv : devices) {
+    IotsaWebContext::Scope s(ctx, String(kv.first.c_str()));
+    kv.second->formHandler_fields(ctx);
+  }
+  ctx << "<h3>Unknown " + htmlEncode(label) + "</h3>\n";
+  ctx.showButton("scanUnknown", "Scan for " + String(scanUnknownDurationMillis/1000) + " seconds", IotsaWebContext::Transient);
+  if (unknownDevices.size() == 0) {
+    ctx << "<p>No unknown " + htmlEncode(label) + " seen recently.</p>\n";
+  } else {
+    ctx << "<ul>\n";
+    for (auto it: unknownDevices) {
+      ctx << "<li>" + formHandler_field_perdevice(it.first.c_str()) + " (RSSI " + String(it.second->getRSSI()) + ")</li>\n";
+    }
+    ctx << "</ul>\n";
+  }
+  ctx << "<h3>Recent unrecognized BLE devices</h3>\n";
+  if (unrecognizedDevices.size() == 0) {
+    ctx << "<p>None seen recently.</p>\n";
+  } else {
+    ctx << "<table><tr><th>Address</th><th>Name</th><th>Seconds ago</th><th>RSSI</th></tr>\n";
+    uint32_t now = millis();
+    for (auto& entry : unrecognizedDevices) {
+      ctx << "<tr><td>" + String(entry.address.toString().c_str()) + "</td><td>" + htmlEncode(entry.name) + "</td><td>" + String((now - entry.lastSeenAtMillis) / 1000) + "</td><td>" + String(entry.rssi) + "</td></tr>\n";
+    }
+    ctx << "</table>\n";
+  }
+}
+
+String IotsaBLEClientManagerMod::formHandler_field_perdevice(const char *deviceName) {
+  // Advertised names come from anyone nearby.
+  return htmlEncode(deviceName);
 }
 #endif // IOTSA_WITH_WEB
 

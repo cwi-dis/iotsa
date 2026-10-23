@@ -104,18 +104,13 @@ public:
   static bool runInLoop(std::function<void()> fn, uint32_t timeoutMs);
   static bool inLoopTask();
 #ifdef IOTSA_HAS_WEBSERVER
-  // Convenience for app-level sketch code (e.g. tests/KitchenSink, examples/Hello,
-  // examples/Log) that registers its own raw handler outside of any module method,
+  // Convenience for app-level sketch code (e.g. tests/KitchenSink, examples/Hello)
+  // that registers its own raw handler outside of any module method,
   // and for any module that isn't itself an API-having module with a webHandler()
   // (web-server-extension modules like IotsaFilesUploadMod/IotsaLoggerMod/
   // IotsaSimpleMod, and a module's own registrations that fall outside its page,
   // like IotsaConfigMod's cert upload, cwi-dis/iotsa#221) -- forwards to the shared
   // IotsaHttpServiceMod, set once in the constructor.
-  // Also still used by the auth-provider modules (IotsaUserMod/IotsaMultiUserMod/
-  // IotsaCapabilityMod), whose allows() implementations need to read credentials
-  // off the live HTTP request regardless of which module they're authenticating for
-  // -- a known wart, see cwi-dis/iotsa#107 (rights-earning redesign), which will
-  // replace this with a proper per-request context instead.
   // API-having modules' webHandler() bodies reach the shared server through their
   // own IotsaApiServiceWeb link instead (e.g. `api.webService->server`); see
   // cwi-dis/iotsa#207/#211.
@@ -178,6 +173,15 @@ template <class T> T *IotsaSingletonModule<T>::_instance = nullptr;
 
 class IotsaAuthMod;
 
+class IotsaContext;
+
+// An auth provider's answer (cwi-dis/iotsa#296).
+enum class IotsaAccess {
+  Granted,
+  NeedsCredentials,   // unknown caller: logging in might help
+  Forbidden           // known caller without the right: logging in won't help
+};
+
 class IotsaAuthenticationProvider {
 public:
   IotsaAuthenticationProvider() {}
@@ -185,100 +189,53 @@ public:
   IotsaAuthenticationProvider& operator=(const IotsaAuthenticationProvider& that) = delete;
 
   virtual ~IotsaAuthenticationProvider() {}
-  virtual bool allows(const char *right=NULL) = 0;
-  virtual bool allows(const char *obj, IotsaApiOperation verb) = 0;
+  // May the caller of this request do what needs this right? right == nullptr
+  // asks for the REST rule: ctx.verb() on ctx.apiPath(). Only answers: the
+  // request context sends the challenge or the refusal. The credentials come
+  // from the context (ctx.hasBasicAuth(), ctx.bearerToken()).
+  virtual IotsaAccess allows(IotsaContext& ctx, const char *right) = 0;
 };
 
-// Fetch field `name` from an API request into `var`, if it has JSON type JT.
+class IotsaApiProvider;
 //
-// Outcome of the API request being handled (cwi-dis/iotsa#280). A handler that
-// fails calls iotsaApiError() (or the apiError() member) and returns false; the
-// transport turns that into a status code and a {"iotsa_api_error": "..."} body,
-// the same over REST, HPS and CoAP. Fields a handler didn't use are reported in
-// the reply as "iotsa_api_ignored" (see checkUnhandled()). All handlers run in the
-// loop task, one request at a time (#236), so one global is enough.
+// One API request, the same over REST, CoAP and HPS (cwi-dis/iotsa#280,
+// cwi-dis/iotsa#296): parse the body, call the handler with a request context,
+// save when a Saved field changed, and build the reply: the JSON reply, or
+// {"iotsa_api_error": "..."}. http: the request came over the HTTP server
+// (REST), which carries credentials. Returns the status; responded: the reply
+// was already sent (a 401 challenge), the transport sends nothing.
 //
-struct IotsaApiResult {
-  const char *transport = "";
-  const char *method = "";
-  String path;
-  int status = 0;                  // 0: no error recorded
-  String message;
-  bool authResponded = false;      // the auth provider already sent its own reply (REST)
-  std::vector<String> wrongType;   // fields present with the wrong type
-  std::vector<String> ignored;     // fields the handler didn't use
-};
-extern IotsaApiResult iotsaApiResult;
-// Record an error for the request being handled. Always returns false, so a
-// handler can `return iotsaApiError(409, "not in configuration mode");`.
-bool iotsaApiError(int status, const char *message);
-// Called by the transports around a request: begin resets the result and logs the
-// request, end decides the status, fills body (the reply, or the error) and logs
-// the outcome. ok is the handler's return value.
-void iotsaApiBegin(const char *transport, const char *method, const char *path);
-int iotsaApiEnd(bool ok, JsonDocument& replyDocument, String& body);
-void _iotsaApiNoteType(const char *name, bool rightType);
-
-// The single implementation behind every getFromRequest() member (#261).
-// A bool target accepts both a JSON bool and a JSON integer, whatever JT
-// says, so both `true` and `1` work for every boolean field. A field that is
-// present with the wrong type makes the request fail with 400 (#280), unless a
-// later getFromRequest() of the same field (with another type) succeeds.
-template <typename JT, typename CT> bool iotsaGetFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
-  // Not via a JsonVariantConst: CT can be a mutable JsonArray/JsonObject.
-  if (reqObj[name].isNull()) return false;
-  if (!reqObj[name].is<JT>()) {
-    _iotsaApiNoteType(name, false);
-    return false;
-  }
-  _iotsaApiNoteType(name, true);
-  var = reqObj[name].as<CT>();
-  return true;
-}
-
-template <typename JT> bool iotsaGetFromRequest(const JsonObject& reqObj, const char *name, bool& var) {
-  JsonVariantConst v = reqObj[name];
-  if (v.isNull()) return false;
-  if (v.is<bool>()) {
-    var = v.as<bool>();
-  } else if (v.is<int>()) {
-    var = (v.as<int>() != 0);
-  } else {
-    _iotsaApiNoteType(name, false);
-    return false;
-  }
-  _iotsaApiNoteType(name, true);
-  return true;
-}
+int iotsaApiRequest(IotsaApiProvider *provider, const char *transport, IotsaApiOperation verb, const char *path, const char *body, bool http, String& reply, bool& responded);
+// A transport's own refusal (no such path, method not allowed), as the same
+// kind of error reply. Returns status.
+int iotsaApiRefusal(const char *transport, const char *method, const char *path, int status, const char *message, String& reply);
 
 //
 // REST/CoAP/HPS API provider interface. Every module implements this (with
 // harmless do-nothing defaults) whether or not it actually registers any
 // endpoint with a transport -- see cwi-dis/iotsa#206.
 //
+class IotsaApiContext;
+class IotsaBaseModule;
+
 class IotsaApiProvider {
 public:
   IotsaApiProvider() {}
   virtual ~IotsaApiProvider() {}
-  // Asked by the transports before calling a handler: true means "refuse"
-  // (the auth provider has already sent its challenge, if any). Modules ask
-  // the application's provider; override to exempt specific paths.
-  virtual bool needsAuthentication(const char *obj, IotsaApiOperation verb) { return false; }
-  // put/post: return true on success (also when nothing changed), else false
-  // after apiError() (cwi-dis/iotsa#280). changed, if given, is set to true (never
-  // to false) when state changed that needs saving; the transports don't pass it.
-  virtual bool getHandler(const char *path, JsonObject& reply) { return false; }
-  virtual bool putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) { return false; }
-  virtual bool postHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed = nullptr) { return false; }
+  // The API handlers, with a request context (cwi-dis/iotsa#296): read the
+  // request with ctx.arg*(), write the reply with ctx.show(), refuse with
+  // ctx.error(). The framework checks the rights, saves when a Saved field
+  // changed, and reports unused fields. The defaults answer 405.
+  virtual void getHandler(IotsaApiContext& ctx);
+  virtual void putHandler(IotsaApiContext& ctx);
+  virtual void postHandler(IotsaApiContext& ctx);
+  // The module behind this provider, for the request context.
+  virtual IotsaBaseModule *asModule() { return nullptr; }
   // Web page handler, invoked by IotsaApiServiceWeb for modules that opt in (see
   // cwi-dis/iotsa#213) -- structurally different from the JSON get/put/post handlers
   // above: no path argument (a module has at most one page), reads its own arguments
   // straight off the server, and does its own auth check internally.
   virtual void webHandler() {}
-  template <typename JT, typename CT>  bool getFromRequest(const JsonObject& reqObj, const char *name, CT& var) {
-    return iotsaGetFromRequest<JT>(reqObj, name, var);
-  }
-  static bool apiError(int status, const char *message) { return iotsaApiError(status, message); }
 };
 
 //
@@ -307,8 +264,17 @@ public:
 // an obviously incomplete module, not a subtle bug -- so this used to be two
 // classes (one lenient, one forcing overrides via `= 0`) purely to catch
 // that mistake at compile time; merged back into one, see cwi-dis/iotsa#206.
+// The right everyone has, also without logging in: for things that are
+// harmless or confirmed at the device (Runmode's identify). Handled by the
+// request context, not by the auth providers (cwi-dis/iotsa#284).
+#define IOTSA_RIGHT_NONE "none"
+// The right nobody has: a value that can be written but never read back, such
+// as a password (cwi-dis/iotsa#296). Handled by the request context.
+#define IOTSA_RIGHT_NEVER "never"
+
 class IotsaBaseModule : public IotsaApiProvider, public IotsaBLEProvider {
   friend class IotsaApplication;
+  friend class IotsaContext;
   friend class IotsaConfigMod;
   friend class IotsaWifiMod;
   friend class IotsaHttpServiceMod;
@@ -351,30 +317,38 @@ public:
   // must not go "live" (e.g. start BLE advertising) until every other module has had a
   // chance to register with them during setup()/lateSetup() -- see cwi-dis/iotsa#113.
   virtual void lateSetupDone() {}
-  virtual bool needsAuthentication(const char *right=NULL);
-  bool needsAuthentication(const char *obj, IotsaApiOperation verb) override;
+  IotsaBaseModule *asModule() override { return this; }
   virtual void sleepWakeupNotification(bool sleep) {}
   // Whether this module exposes a REST/CoAP/HPS API (overridden by IotsaModule).
   virtual bool hasApi() const { return false; }
 
 protected:
+#ifdef IOTSA_HAS_WEBSERVER
+  // A raw web handler (cwi-dis/iotsa#296): it answers the request itself (a
+  // file, a tar, an upload), outside the page machinery. The framework checks
+  // the right first, and answers a refusal itself (401 or 403);
+  // IOTSA_RIGHT_NONE: no check. GET and POST, or GET only. Call it in lateSetup().
+  typedef std::function<void()> WebHandler;
+  void addWebHandler(const char *path, WebHandler handler, const char *right, bool getOnly = false);
+  // A file upload (POST, multipart): upload is called for every part as it
+  // arrives, done at the end, to answer. A refused upload writes nothing.
+  void addWebHandler(const char *path, WebHandler done, WebHandler upload, const char *right);
+  // Every path under prefix that no other handler takes (Files' /data/...).
+  void addWebPrefixHandler(const char *prefix, WebHandler handler, const char *right);
+  // Refused (and answered) for this right?
+  bool _webRefused(const char *right);
+#endif
   IotsaApplication &app;
   IotsaBaseModule *nextModule;
   String name;
 };
 
-class IotsaAuthMod : public IotsaBaseModule, public IotsaAuthenticationProvider {
-public:
-  IotsaAuthMod(IotsaApplication &_app, bool early=false)
-  : IotsaBaseModule(_app, early)
-  {
-    _app._haveAuthModule = true;
-  }
-  IotsaAuthMod(IotsaApplication &_app, IotsaAuthenticationProvider *_auth, bool early=false) = delete;
-};
-
 class IotsaConfigFileLoad;
 class IotsaConfigFileSave;
+
+#ifdef IOTSA_WITH_WEB
+class IotsaWebContext;
+#endif
 
 class IotsaModObject {
 public:
@@ -382,11 +356,18 @@ public:
   virtual bool configLoad(IotsaConfigFileLoad& cf, const String& name) = 0;
   virtual void configSave(IotsaConfigFileSave& cf, const String& name) = 0;
 #ifdef IOTSA_WITH_WEB
-  // static virtual void formHandler_emptyfields(String& message) = 0;
-  virtual void formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) = 0;
-  // static virtual void formHandler_TH(String& message, bool includeConfig) = 0;
-  virtual void formHandler_TD(String& message, bool includeConfig) = 0;
-  virtual bool formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig) = 0;
+  // The web interface (cwi-dis/iotsa#183), the same shape as a module's.
+  // Names are relative: whoever holds the object puts it in a Scope.
+  // A field group implements args and fields, a table row implements row
+  // (ctx.showCell(), once in header mode, then once per element).
+  virtual void formHandler_args(IotsaWebContext& ctx) {}
+  virtual void formHandler_fields(IotsaWebContext& ctx) {}
+  virtual void formHandler_row(IotsaWebContext& ctx) {}
+  // The old String-based interface: nothing in iotsa uses it any more, it goes
+  // once the downstream repos are converted.
+  virtual void formHandler_fields(String& message, const String& text, const String& f_name, bool includeConfig) {}
+  virtual void formHandler_TD(String& message, bool includeConfig) {}
+  virtual bool formHandler_args(IotsaWebServer *server, const String& f_name, bool includeConfig) { return false; }
 #endif
 };
 

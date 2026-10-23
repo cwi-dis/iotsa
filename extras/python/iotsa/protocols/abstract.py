@@ -6,6 +6,8 @@ from typing import Any, List, Optional, Tuple, Type
 # Framework metadata in API replies (cwi-dis/iotsa#280), the same over every transport.
 API_ERROR_KEY = "iotsa_api_error"
 API_IGNORED_KEY = "iotsa_api_ignored"
+API_REDACTED_KEY = "iotsa_api_redacted"   # cwi-dis/iotsa#296
+REDACTED_TEXT = "(redacted)"
 
 def apiErrorMessage(body: Any) -> Optional[str]:
     """The device's explanation of a failed request, if the error body has one."""

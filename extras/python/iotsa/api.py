@@ -4,7 +4,6 @@ import subprocess
 import copy
 import time
 import binascii
-import io
 import urllib.request
 import requests.exceptions
 from typing import Any, Optional, Tuple, Union
@@ -14,6 +13,7 @@ from .dfu import DFU
 from .ble import BLE
 from .wifi import IotsaWifi
 from .protocols import HandlerForProto, IotsaAbstractProtocolHandler
+from .protocols.abstract import API_REDACTED_KEY, REDACTED_TEXT
 
 # Marks "no default given" for IotsaEndpoint.get(); any real value, even the
 # string "no default", is a legitimate default (cwi-dis/iotsa#122).
@@ -39,6 +39,7 @@ class IotsaEndpoint:
         self.device = device
         self.endpoint = api
         self.status = {}
+        self.redacted = []
         self.settings = {}
         self.cache = cache
         self.didLoad = False
@@ -57,6 +58,11 @@ class IotsaEndpoint:
         if self.status == "" or self.status == None:
             print(f"Warning: GET {self.endpoint} returned empty response")
             self.status = {}
+        # Fields the device didn't show us (cwi-dis/iotsa#296): kept apart, so a
+        # backup never contains a placeholder that a restore would write back.
+        self.redacted = []
+        if isinstance(self.status, dict):
+            self.redacted = self.status.pop(API_REDACTED_KEY, [])
         self.didLoad = True
 
     def flush(self) -> None:
@@ -103,10 +109,16 @@ class IotsaEndpoint:
     def __getattr__(self, name):
         return self.get(name)
 
-    def getAll(self) -> dict[str, Any]:
-        """Return dictionary with all values"""
+    def getAll(self, withRedacted: bool = False) -> dict[str, Any]:
+        """Return dictionary with all values
+
+        :param withRedacted: also the fields the device didn't show, as "(redacted)" (for people, not for backups)
+        """
         self.load()
         rv = copy.deepcopy(self.status)
+        if withRedacted:
+            for name in self.redacted:
+                rv[name] = REDACTED_TEXT
         return rv
 
     def set(self, name: str, value: Any) -> None:
@@ -124,8 +136,17 @@ class IotsaEndpoint:
         self.load()
         print("%s:" % self.device.ipAddress)
         print("  %s:" % self.endpoint)
-        for k, v in list(self.status.items()):
+        for k, v in list(self.getAll(withRedacted=True).items()):
             print("    %-16s %s" % (str(k) + ":", v))
+
+
+def _toPem(data: Union[str, bytes], label: str) -> str:
+    """PEM text as is; DER bytes wrapped as PEM with this label (what the device expects)"""
+    if isinstance(data, str):
+        return data
+    b64 = binascii.b2a_base64(data, newline=False).decode("ascii")
+    lines = [b64[i : i + 64] for i in range(0, len(b64), 64)]
+    return "-----BEGIN %s-----\n%s\n-----END %s-----\n" % (label, "\n".join(lines), label)
 
 
 class IotsaDevice:
@@ -281,9 +302,12 @@ class IotsaDevice:
     def __getattr__(self, name):
         return self.getApi(name)
 
-    def getAll(self) -> dict[str, Any]:
-        """Get dictionary of all modules (except config, which is already in self.config)"""
-        all = self.config.getAll()
+    def getAll(self, withRedacted: bool = False) -> dict[str, Any]:
+        """Get dictionary of all modules (except config, which is already in self.config)
+
+        :param withRedacted: also the fields the device didn't show, as "(redacted)" (for people, not for backups)
+        """
+        all = self.config.getAll(withRedacted)
         moduleNames = all.get("modules", [])
         modules = {}
         for m in moduleNames:
@@ -292,7 +316,7 @@ class IotsaDevice:
             api = self.getApi(m)
             modData = None
             try:
-                modData = api.getAll()
+                modData = api.getAll(withRedacted)
             except (IotsaError, requests.exceptions.HTTPError) as arg:
                 print(f"getAll: module {m}: {arg}", file=sys.stderr)
             modules[m] = modData
@@ -308,7 +332,7 @@ class IotsaDevice:
         `iotsa xInfo status` / `iotsa allInfo` for those. The .pop() defaults
         below keep this working (with fewer lines) against 3.0+ firmware.
         """
-        status = self.config.getAll()
+        status = self.config.getAll(withRedacted=True)
         print("%s:" % self.ipAddress)
         print("  program:           ", status.pop("program", "unknown"))
         print("  last boot:         ", end=" ")
@@ -496,26 +520,11 @@ class IotsaDevice:
     ) -> None:
         """Upload new SSL key and certificate to the device
 
-        Note that device must be in mode config for this call to succeed
+        Both in one PUT on /api/config, in PEM, so the device checks them and
+        saves them together. Note that device must be in mode config for this call to succeed
         """
         assert self.protocolHandler
-        if isinstance(keyData, str) and keyData.startswith("---"):
-            keyDataSplit = keyData.splitlines()
-            keyDataSplit = keyDataSplit[1:-1]
-            keyDataJoin = "\n".join(keyDataSplit)
-            keyData = binascii.a2b_base64(keyDataJoin)
-        assert isinstance(keyData, bytes)
-        if isinstance(certificateData, str) and certificateData.startswith("---"):
-            certificateDataSplit = certificateData.splitlines()
-            certificateDataSplit = certificateDataSplit[1:-1]
-            certificateDataJoin = "\n".join(certificateDataSplit)
-            certificateData = binascii.a2b_base64(certificateDataJoin)
-        assert isinstance(certificateData, bytes)
-        keyFile = io.BytesIO(keyData)
-        files = {
-            "keyFile": ("httpsKey.der", keyFile, "application/binary"),
-        }
-        self.protocolHandler.post("/configupload", files=files)
-        certificateFile = io.BytesIO(certificateData)
-        files = {"certfile": ("httpsCert.der", certificateFile, "application/binary")}
-        self.protocolHandler.post("/configupload", files=files)
+        key = _toPem(keyData, "RSA PRIVATE KEY")
+        certificate = _toPem(certificateData, "CERTIFICATE")
+        self.flush()
+        self.protocolHandler.put("config", json={"httpsKey": key, "httpsCertificate": certificate})

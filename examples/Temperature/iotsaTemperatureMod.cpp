@@ -1,43 +1,74 @@
 #include "iotsaTemperatureMod.h"
 
+// Implementation of the Temperature module. Like Light (read that one first)
+// it only measures, so it has a getHandler() but no putHandler(), and a web
+// page without a form.
+//
+// The sensor is handled by a library, DHT (see mainTemperature.cpp for how to
+// install it). The module only calls it: dht.begin() in setup(), and
+// dht.readTemperature()/readHumidity() in _update(). This is how you would use
+// most sensor libraries in iotsa.
+//
+// Unlike Light it doesn't measure in loop(), but only when someone asks: on
+// the web page, GET /api/temperature, or the main page. A DHT sensor is slow
+// and may only be read every 2 seconds; the DHT library takes care of that,
+// and gives the previous values when asked sooner.
+
+void IotsaTemperatureMod::setup() {
+  dht.begin();
+}
+
+void IotsaTemperatureMod::lateSetup() {
+  // api.setup("temperature", true) gives GET on /api/temperature and the web
+  // page /temperature. No PUT: there is nothing to set.
+  api.setup("temperature", true);
+  name = "temperature";
+}
+
+void IotsaTemperatureMod::loop() {
+  // Nothing to do: we measure when asked, see _update().
+}
+
+// No configLoad()/configSave(): nothing is saved.
+
+// Read the sensor. If it doesn't answer (not connected, wrong pin or type)
+// the values are NAN, "not a number".
 void IotsaTemperatureMod::_update() {
   temperature = dht.readTemperature();
   humidity = dht.readHumidity();
 }
 
-// Implementation of the Temperature module
-void IotsaTemperatureMod::setup() {
-  // Nothing to do during early initialization for this module
-}
+// No putHandler(): lateSetup() asked for no PUT, so it would never be called.
 
-void
-IotsaTemperatureMod::handler() {
-  // Handles the page that is specific to the Temperature module, greets the user and
-  // optionally stores a new name to greet the next time.
+// A value that is NAN is sent as null.
+void IotsaTemperatureMod::getHandler(IotsaApiContext& ctx) {
   _update();
-  String message = "{\"temperature\":";
-  message += String(temperature);
-  message += ",\"humidity\":";
-  message += String(humidity);
-  message += "}\n";
-  app.server->send(200, "application/json", message);
+  ctx.show("temperature", temperature);
+  ctx.show("humidity", humidity);
 }
 
-void IotsaTemperatureMod::lateSetup() {
-  // Setup the web server hooks for this module.
-  app.server->on("/temperature", std::bind(&IotsaTemperatureMod::handler, this));
+#ifdef IOTSA_WITH_WEB
+// No formHandler_args(): the page has no form, so there is nothing to pick up.
+
+// The page only shows the values, so there is only an everyday part.
+void IotsaTemperatureMod::formHandler_fields(IotsaWebContext& ctx) {
+  if (!ctx.includesEveryday()) return;
+  _update();
+  if (isnan(temperature)) {
+    ctx.showStatus("Temperature", "temperature", "no reading, check the sensor");
+    return;
+  }
+  ctx.showStatus("Temperature", "temperature", String(temperature) + " °C");
+  ctx.showStatus("Humidity", "humidity", String(humidity) + "%");
 }
+#endif // IOTSA_WITH_WEB
 
 String IotsaTemperatureMod::info() {
-  // Return some information about this module, for the main page of the web server.
+  _update();
   String rv = "<p>Temperature is ";
   rv += String(temperature);
-  rv += ", humidity is ";
+  rv += " °C, humidity is ";
   rv += String(humidity);
-  rv += ". See <a href=\"/temperature\">/temperature</a> for JSON data.</p>";
+  rv += "%. See <a href=\"/temperature\">/temperature</a>, or <a href=\"/api/temperature\">/api/temperature</a> for JSON data.</p>";
   return rv;
-}
-
-void IotsaTemperatureMod::loop() {
-  // Nothing to do in the loop, for this module
 }

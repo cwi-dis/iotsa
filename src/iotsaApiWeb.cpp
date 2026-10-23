@@ -10,6 +10,7 @@ void IotsaApiServiceWeb::setup(const char* path, bool get, bool put, bool post, 
     if (get && webPage) {
         // Leaked deliberately: server->on() and the bound wrapper need this to
         // outlive this call, same reasoning as IotsaApiServiceRest.
+        if (pagePath.length() == 0) pagePath = path;
         String *fullPath = new String(String("/") + path);
         // GET and POST explicitly: a page doesn't distinguish them (cwi-dis/iotsa#183),
         // and on(path, handler) without a method only means "any method" on the
@@ -25,5 +26,49 @@ void IotsaApiServiceWeb::setup(const char* path, bool get, bool put, bool post, 
 void IotsaApiServiceWeb::_webHandlerWrapper() {
     iotsaNoKeepAlive(server);
     provider->webHandler();
+}
+
+void IotsaModule::webHandler() {
+    IotsaWebContext ctx(*this, api.webService->server, "/api/" + api.webService->pagePath);
+    formHandler_args(ctx);
+    if (ctx.responded) return;
+    if (ctx.configChanged) {
+        configSave();
+        iotsaController.extendCurrentMode();
+        iotsaStatus.setStatusPulse(IotsaStatus::COLOUR_MAGENTA, 0, 0, 2000, "Settings saved");  // cwi-dis/iotsa#176
+        ctx.feedback("Settings saved.");
+    } else if (ctx.stateChanged && !ctx.hasFeedback() && !ctx.failed()) {
+        ctx.feedback("Done.");
+    }
+    ctx.reportUnused();
+    ctx.setParts(true, false);
+    ctx.resetRights();
+    formHandler_fields(ctx);
+    String everyday = ctx.takeOutput();
+    ctx.setParts(false, true);
+    ctx.resetRights();
+    formHandler_fields(ctx);
+    String settings = ctx.takeOutput();
+    ctx.sendPage(webTitle(), everyday, settings);
+}
+
+void IotsaModule::addTrigger(const char *path, TriggerHandler handler, const char *right) {
+    IotsaWebServer *server = api.webService->server;
+    // Leaked deliberately, like the page's path in IotsaApiServiceWeb::setup().
+    String *fullPath = new String(String("/") + path);
+    auto wrapper = [this, server, handler, right]() {
+        iotsaNoKeepAlive(server);
+        // Auth like the module's page: the REST rule for its API path.
+        IotsaWebContext ctx(*this, server, "/api/" + api.webService->pagePath);
+        if (right) ctx.argsNeedRight(right);
+        // A trigger is a change by itself.
+        if (ctx._mayChange(IotsaContext::Transient)) handler(ctx);
+        if (ctx.responded) return;
+        ctx.reportUnused();
+        ctx.sendText();
+    };
+    // GET and POST, for the same reason as a page.
+    server->on(fullPath->c_str(), HTTP_GET, wrapper);
+    server->on(fullPath->c_str(), HTTP_POST, wrapper);
 }
 #endif // IOTSA_WITH_WEB

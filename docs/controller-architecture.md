@@ -175,30 +175,31 @@ All module code (`setup()`, `loop()`, the API handlers, the BLE handlers) runs i
   (OTA, #259). Outbound HTTP (`IotsaRequest::send()`) can hold it ~10 s; a BLE client's
   `doWork()` ~150 ms (#274, #287).
 
-## API results (#280)
+## API results (#280, #296)
 
-Module handlers (`get`/`put`/`postHandler(path, ...)`) and sub-object handlers
-(`IotsaApiModObject`: `getHandler(reply)`, `putHandler(request, reply)`) return `bool`:
+Module handlers (`get`/`put`/`postHandler(IotsaApiContext& ctx)`) and the handlers of
+objects inside a module (`IotsaApiModObject`, called inside an `IotsaApiContext::Scope`)
+return nothing; the request context carries the outcome:
 
-- **`true` on success**, also when nothing changed.
-- **Optional output `bool *changed = nullptr`** on every put/post handler (module and
-  sub-object): set to `true` (never to `false`) when state changed that needs saving. The
-  transports don't pass it; a module calling another handler (a parent class's, or its
-  sub-objects') passes its own flag and decides from it whether to `configSave()`.
-- **On failure `return apiError(status, "why")`**. A bare `false` is a 400 "bad request".
-  Statuses: 400 the request is wrong, 401/403 authentication / not allowed, 404 no such path
-  or object, 409 wrong mode (e.g. "not in configuration mode"), 413 too big, 500 internal,
-  503 busy.
-- **A field with the wrong type** is a 400 automatically: `getFromRequest()` notes it (a later
-  successful `getFromRequest()` of the same field, with another type, cancels it).
-- **Unused fields** are not an error: a module that calls `checkUnhandled(reqObj)` gets them
-  listed as `"iotsa_api_ignored": [...]` in the reply (restoring an old backup keeps working;
-  the CLI warns). Sub-objects don't report them yet.
+- **Fields** are read with `ctx.arg*()` and written with `ctx.show()`. The framework
+  checks the rights and configuration mode per field, and calls `configSave()` after a
+  `Saved` field changed.
+- **On failure `ctx.error(status, "why")`.** The first error stops the rest of the request
+  (later `arg*()` calls do nothing); side effects come after `if (ctx.failed()) return;`.
+  Statuses: 400 the request is wrong (also a field of the wrong type), 401 credentials
+  needed, 403 not allowed, 404 no such path or object, 405 a registered verb the module
+  doesn't handle, 409 wrong mode (e.g. configuration mode), 413 too big, 500 internal,
+  501 credentials needed but the transport can't carry them (HPS, CoAP, #303), 503 busy.
+- **Unused fields** are not an error: they are listed as `"iotsa_api_ignored": [...]` in
+  the reply (restoring an old backup keeps working; the CLI warns). Objects' fields as
+  `"<prefix>.<name>"`.
+- **Redacted fields**, which the caller may not read, are left out and listed as
+  `"iotsa_api_redacted": [...]`.
 - **Error replies** are `{"iotsa_api_error": "<message>"}`, with the status, over REST, HPS
   and CoAP alike (CoAP: 409 -> 4.09). The CLI prints the message.
 
-The transports share `iotsaApiBegin()` / `iotsaApiEnd()` (`iotsaApi.cpp`), which also log
-every request in two lines (#182): `iotsaApi: rest: PUT /api/config` and `... -> 409 ...`.
+The transports share `iotsaApiRequest()` (`iotsaApi.cpp`), which also logs every request in
+two lines (#182): `iotsaApi: rest: PUT /api/config` and `... -> 409 ...`.
 
 ## Transition strategy
 

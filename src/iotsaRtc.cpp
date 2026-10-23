@@ -22,6 +22,23 @@ static time_t utcTimeFromTm(const struct tm &tm) {
   return (time_t)days * 86400 + tm.tm_hour * 3600L + tm.tm_min * 60L + tm.tm_sec;
 }
 
+void IotsaRtcMod::setup() {
+  ds1302.init();
+  _updateSysTime();
+}
+
+void IotsaRtcMod::lateSetup() {
+  api.setup("rtcconfig", true, true);
+  name = "rtcconfig";
+}
+
+void IotsaRtcMod::loop() {
+  if (millis() > nextUpdateMillis) {
+    _updateFromSysTime();
+    nextUpdateMillis = millis() + UPDATE_INTERVAL;
+  }
+}
+
 const char * IotsaRtcMod::isoTime()
 {
   static char buf[32];
@@ -66,74 +83,6 @@ void IotsaRtcMod::_updateCurrentTime() {
   }
 }
 
-#ifdef IOTSA_WITH_WEB
-void
-IotsaRtcMod::webHandler() {
-  bool ok = true;
-  if( api.webService->server->hasArg("isoTime")) {
-    if (needsAuthentication("rtc")) return;
-    ok = setIsoTime(api.webService->server->arg("isoTime"));
-  }
-  String message = "<html><head><title>Realtime Clock Settings</title></head><body><h1>Realtime Clock Settings</h1>";
-  if (!ok) {
-    message += "<p><em>Error setting RTC time</em></p>";
-  }
-  message += "<p>Current RTC time (UTC) is ";
-  message += isoTime();
-  message += "<form method='get'>Set RTC time: <input name='isoTime' value='";
-  message += isoTime();
-  message += "'><br>";
-  message += "<input type='submit'></form>";
-  api.webService->server->send(200, "text/html", message);
-}
-
-String IotsaRtcMod::info() {
-  String message = "<p>RTC time (UTC) is ";
-  message += isoTime();
-
-  message += ". See <a href=\"/rtcconfig\">/rtcconfig</a> to change time configuration.</p>";
-  return message;
-}
-#endif // IOTSA_WITH_WEB
-
-void IotsaRtcMod::setup() {
-  ds1302.init();
-  _updateSysTime();
-}
-
-bool IotsaRtcMod::getHandler(const char *path, JsonObject& reply) {
-  reply["isoTime"] = isoTime();
-  return true;
-}
-
-bool IotsaRtcMod::putHandler(const char *path, const JsonVariant& request, JsonObject& reply, bool *changed) {
-  JsonObject reqObj = request.as<JsonObject>();
-  const char *time = nullptr;
-  if (getFromRequest<const char *>(reqObj, "isoTime", time)) {
-    if (!setIsoTime(time)) return apiError(400, "isoTime: not an ISO 8601 time");
-  }
-  checkUnhandled(reqObj);
-  return true;
-}
-
-void IotsaRtcMod::lateSetup() {
-  api.setup("rtcconfig", true, true);
-  name = "rtcconfig";
-}
-
-void IotsaRtcMod::configLoad() {
-}
-
-void IotsaRtcMod::configSave() {
-}
-
-void IotsaRtcMod::loop() {
-  if (millis() > nextUpdateMillis) {
-    _updateFromSysTime();
-    nextUpdateMillis = millis() + UPDATE_INTERVAL;
-  }
-}
-
 void IotsaRtcMod::_updateSysTime() {
   if (time(NULL) < 3600*24*366) {
     struct tm tm;
@@ -163,3 +112,50 @@ void IotsaRtcMod::_updateFromSysTime() {
   setIsoTime(buf); 
   IotsaSerial.printf("RTC: Saved from system UTC time %s\n", buf); 
 }
+
+void IotsaRtcMod::configLoad() {
+}
+
+void IotsaRtcMod::configSave() {
+}
+
+void IotsaRtcMod::putHandler(IotsaApiContext& ctx) {
+  ctx.argsNeedRight("rtc");
+  String time;
+  if (ctx.arg("isoTime", time, IotsaApiContext::Transient)) {
+    if (!setIsoTime(time)) ctx.error(400, "isoTime: not an ISO 8601 time");
+  }
+}
+
+void IotsaRtcMod::getHandler(IotsaApiContext& ctx) {
+  ctx.show("isoTime", isoTime());
+}
+
+#ifdef IOTSA_WITH_WEB
+void IotsaRtcMod::formHandler_args(IotsaWebContext& ctx) {
+  ctx.argsNeedRight("rtc");
+  String time;
+  if (ctx.arg("isoTime", time, IotsaWebContext::Transient)) {
+    if (!setIsoTime(time)) ctx.error("Not an ISO 8601 time: " + time);
+  }
+}
+
+void IotsaRtcMod::formHandler_fields(IotsaWebContext& ctx) {
+  ctx.argsNeedRight("rtc");
+  if (ctx.includesEveryday()) {
+    ctx.showStatus("RTC time (UTC)", "isoTime", isoTime());
+  } else {
+    // Empty, not the current time: that would be stale by the time it is sent.
+    IotsaWebContext::Form form(ctx, "Set");
+    ctx.showField("Set RTC time", "isoTime", "", IotsaWebContext::Transient, "UTC, YYYY-MM-DDTHH:MM:SS");
+  }
+}
+
+String IotsaRtcMod::info() {
+  String message = "<p>RTC time (UTC) is ";
+  message += isoTime();
+
+  message += ". See <a href=\"/rtcconfig\">/rtcconfig</a> to change time configuration.</p>";
+  return message;
+}
+#endif // IOTSA_WITH_WEB
