@@ -99,6 +99,7 @@ private:
 #ifdef IOTSA_WITH_WEB
 void IotsaBLEServerMod::formHandler_args(IotsaWebContext& ctx) {
   bool enabledChanged = ctx.argCheckbox("isEnabled", isEnabled, IotsaWebContext::Saved);
+  ctx.argCheckbox("promoteAllowed", _promoteAllowed, IotsaWebContext::Saved);
   ctx.arg("adv_min", adv_min, IotsaWebContext::Saved);
   ctx.arg("adv_max", adv_max, IotsaWebContext::Saved);
   ctx.arg("tx_power_dbm", tx_power_dbm, IotsaWebContext::Saved);
@@ -117,6 +118,7 @@ void IotsaBLEServerMod::formHandler_fields(IotsaWebContext& ctx) {
   } else {
     IotsaWebContext::Form form(ctx);
     ctx.showCheckbox("BLE enabled", "isEnabled", isEnabled, IotsaWebContext::Saved, "changing it reboots");
+    ctx.showCheckbox("Mode switch over BLE", "promoteAllowed", _promoteAllowed, IotsaWebContext::Saved, "a BLE client may confirm a requested mode switch, instead of a power cycle: being within BLE range counts as being at the device");
     ctx.showField("Advertising interval (min)", "adv_min", adv_min, IotsaWebContext::Saved, "unit 0.625 ms, 32..16384; -1: default");
     ctx.showField("Advertising interval (max)", "adv_max", adv_max, IotsaWebContext::Saved, "unit 0.625 ms, 32..16384; -1: default");
     ctx.showField("Transmit power level", "tx_power_dbm", tx_power_dbm, IotsaWebContext::Saved, "dBm; -1: hardware default; range depends on the chip, e.g. -12..+9 on the ESP32, -24..+21 on the C3/S3/C6");
@@ -127,7 +129,9 @@ void IotsaBLEServerMod::formHandler_fields(IotsaWebContext& ctx) {
 String IotsaBLEServerMod::info() {
   String message = "<p>Built with BLE server module";
   if (!isEnabled) message += " (currently disabled)";
-  message += ". See <a href=\"/bleserver\">/bleserver</a> to change settings.</p>";
+  message += ".";
+  if (isEnabled && _promoteAllowed) message += " A BLE client may confirm a requested mode switch.";
+  message += " See <a href=\"/bleserver\">/bleserver</a> to change settings.</p>";
   return message;
 }
 #endif // IOTSA_WITH_WEB
@@ -306,6 +310,7 @@ void IotsaBLEServerMod::setup() {
 
 void IotsaBLEServerMod::getHandler(IotsaApiContext& ctx) {
   ctx.show("isEnabled", isEnabled);
+  ctx.show("promoteAllowed", _promoteAllowed);
   ctx.show("adv_min", adv_min);
   ctx.show("adv_max", adv_max);
   ctx.show("tx_power_dbm", tx_power_dbm);
@@ -323,6 +328,7 @@ void IotsaBLEServerMod::getHandler(IotsaApiContext& ctx) {
 
 void IotsaBLEServerMod::putHandler(IotsaApiContext& ctx) {
   bool enabledChanged = ctx.arg("isEnabled", isEnabled, IotsaApiContext::Saved);
+  ctx.arg("promoteAllowed", _promoteAllowed, IotsaApiContext::Saved);
   ctx.arg("adv_min", adv_min, IotsaApiContext::Saved);
   ctx.arg("adv_max", adv_max, IotsaApiContext::Saved);
   ctx.arg("tx_power_dbm", tx_power_dbm, IotsaApiContext::Saved);
@@ -354,6 +360,7 @@ void IotsaBLEServerMod::configLoad() {
   NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
   IotsaConfigFileLoad cf("/config/bleserver.cfg");
   cf.get("isEnabled", isEnabled, true);
+  cf.get("promoteAllowed", _promoteAllowed, true);
   cf.get("adv_min", adv_min, adv_min);
   if (adv_min >= 0) pAdvertising->setMinInterval(adv_min);
   cf.get("adv_max", adv_max, adv_max);
@@ -371,6 +378,7 @@ void IotsaBLEServerMod::configLoad() {
 void IotsaBLEServerMod::configSave() {
   IotsaConfigFileSave cf("/config/bleserver.cfg");
   cf.put("isEnabled", isEnabled);
+  cf.put("promoteAllowed", _promoteAllowed);
   cf.put("adv_min", adv_min);
   cf.put("adv_max", adv_max);
   cf.put("tx_power_dbm", tx_power_dbm);

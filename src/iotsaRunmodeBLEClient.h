@@ -24,9 +24,9 @@ public:
   bool reboot();
   // Applies whatever mode was last set via requestMode() immediately, instead
   // of waiting for the next boot -- the remote treats a BLE connection as
-  // proof of physical presence (see IotsaRunmodeMod::allowBLEModeSwitch()).
-  // A remote that hasn't opted in via allowBLEModeSwitch() silently ignores
-  // this; there is no separate way to tell the two cases apart from here.
+  // proof of physical presence (see IotsaBLEServerMod::promoteAllowed()).
+  // A remote with that setting off refuses it (its log says so); there is no
+  // way to tell the two cases apart from here.
   bool promoteMode();
   bool setWifiDisabled(bool disabled);
   bool identify();

@@ -131,7 +131,7 @@ controller.
   | `…0002` currentMode | R | — |
   | `…0003` requestedMode | R/W | stage a mode for the next boot |
   | `…0004` reboot | W | deferred reboot |
-  | `…0005` promoteMode | W, gated by `allowBLEModeSwitch()` | apply the pending mode now |
+  | `…0005` promoteMode | W, gated by `promoteAllowed` on `/api/bleserver` ([#316](https://github.com/cwi-dis/iotsa/issues/316)) | apply the pending mode now |
   | `…0006` wifiDisabled | R/W | runtime WiFi radio toggle (mirrors the REST key) |
   | `…0007` identify | W | run the `addIdentifyCallback()` handlers ([#133](https://github.com/cwi-dis/iotsa/issues/133) scaffolding) |
 
@@ -146,7 +146,8 @@ controller.
   sleep policy; no longer hosts the sleep state machine, the sleep config, the watchdog,
   the `doSoftReboot` gesture, or the `extendCurrentModeCallback`. Its transitional
   `setPinDisableSleep()` / `allowBLEConfigModeSwitch()` forwarders were removed in
-  3.0: call `IotsaRunmodeMod`'s `setPinDisableSleep()` / `allowBLEModeSwitch()`.
+  3.0: call `IotsaRunmodeMod::setPinDisableSleep()`; confirming a mode switch over BLE
+  is the BLE server's `promoteAllowed` setting ([#316](https://github.com/cwi-dis/iotsa/issues/316)).
 - **`IotsaWifiMod`** -- unchanged from the `wifi-controller-design.md` outcome: thin
   glue over `IotsaWifiDriver` + `IotsaWifiController`.
 

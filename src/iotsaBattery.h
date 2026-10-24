@@ -8,8 +8,9 @@
 // 180F BLE battery service (cwi-dis/iotsa#106). The sleep/wake config + decision
 // moved to IotsaController's IotsaSleepPolicy and the executor to IotsaRunmodeMod
 // (which owns IOTSA_HAS_SLEEP). This module publishes iotsaStatus.onUsbPower for
-// the sleep policy to read. pinDisableSleep and the BLE mode-promote gesture are
-// IotsaRunmodeMod's (setPinDisableSleep(), allowBLEModeSwitch()).
+// the sleep policy to read. pinDisableSleep is IotsaRunmodeMod's
+// (setPinDisableSleep()), the BLE mode-promote gesture the runmode service's,
+// allowed by the BLE server's promoteAllowed setting.
 
 class IotsaBatteryMod : public IotsaModule {
 public:

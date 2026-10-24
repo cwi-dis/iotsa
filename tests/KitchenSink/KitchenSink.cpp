@@ -179,9 +179,6 @@ void setup(void) {
 #endif
 #ifdef IOTSA_WITH_BLE
   IotsaBLEClientMod::coordinateWithServer = true;
-  // A pending mode switch can be confirmed over BLE (promoteMode), so a test
-  // flash doesn't need the reset button.
-  runmodeMod.allowBLEModeSwitch();
 #endif
   button.setCallback(kitchenSinkButtonPressed);
   application.setAuth(authProvider);  // every module, the standard ones included, uses this

@@ -197,9 +197,8 @@ void IotsaRunmodeMod::formHandler_fields(IotsaWebContext& ctx) {
     if (iotsaController.requestedMode()) {
       String requested = iotsaController.modeName(iotsaController.requestedMode());
       requested += ", enable within " + String(iotsaController.requestedModeRemainingMillis()/1000) + " seconds by power cycling";
-      if (iotsaController.rcmInteractionDescription()) {
-        requested += " or " + String(iotsaController.rcmInteractionDescription());
-      }
+      String how = confirmDescription();
+      if (how.length()) requested += " or " + how;
       ctx.showStatus("Requested mode", "requestedMode", requested);
     } else {
       ctx.showStatus("Requested mode", "requestedMode", "none");
@@ -265,10 +264,8 @@ String IotsaRunmodeMod::info() {
     message += "<p>Enable within ";
     message += String(iotsaController.requestedModeRemainingMillis()/1000);
     message += " seconds by power cycling";
-    if (iotsaController.rcmInteractionDescription()) {
-      message += " or ";
-      message += iotsaController.rcmInteractionDescription();
-    }
+    String how = confirmDescription();
+    if (how.length()) message += " or " + how;
     message += ".</p>";
   }
   message += "<p>See <a href=\"/runmode\">/runmode</a> to reboot or change mode.";
@@ -481,11 +478,20 @@ void IotsaRunmodeMod::putHandler(IotsaApiContext& ctx) {
   }
 }
 
+String IotsaRunmodeMod::confirmDescription() {
+  String rv;
+  if (iotsaController.rcmInteractionDescription()) rv = iotsaController.rcmInteractionDescription();
 #ifdef IOTSA_WITH_BLE
-void IotsaRunmodeMod::allowBLEModeSwitch() {
-  _bleAllowModeSwitch = true;
-  iotsaController.allowRCMDescription("write promoteMode on the BLE runmode service");
+  IotsaBLEServerMod *ble = IotsaBLEServerMod::instance();
+  if (ble && ble->promoteAllowed()) {
+    if (rv.length()) rv += " or ";
+    rv += "write promoteMode on the BLE runmode service";
+  }
+#endif
+  return rv;
 }
+
+#ifdef IOTSA_WITH_BLE
 
 bool IotsaRunmodeMod::blePutHandler(UUIDstring charUUID) {
   if (charUUID == IotsaRunmodeBLE::requestedModeUUID) {
@@ -500,7 +506,8 @@ bool IotsaRunmodeMod::blePutHandler(UUIDstring charUUID) {
   }
   if (charUUID == IotsaRunmodeBLE::promoteModeUUID) {
     if (bleApi.getAsInt(IotsaRunmodeBLE::promoteModeUUID)) {
-      if (!_bleAllowModeSwitch) {
+      IotsaBLEServerMod *ble = IotsaBLEServerMod::instance();
+      if (!ble || !ble->promoteAllowed()) {
         IOTSA_LOG_DEBUG("iotsaRunmode", "BLE: promote mode not allowed");
         return false;
       }

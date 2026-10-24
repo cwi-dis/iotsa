@@ -45,13 +45,10 @@ public:
   // A pin that, held LOW, blocks sleep (was IotsaBatteryMod::setPinDisableSleep).
   void setPinDisableSleep(int pin) { _pinDisableSleep = pin; }
 #endif
-#ifdef IOTSA_WITH_BLE
-  // Opt in to letting a BLE client promote the pending requested mode to active
-  // *now* (via the promoteMode characteristic) -- a BLE connection is taken as
-  // proof of physical presence. Was IotsaBatteryMod::allowBLEConfigModeSwitch()
-  // (cwi-dis/iotsa#106); the "is BLE presence enough" call is left to #107.
-  void allowBLEModeSwitch();
-#endif
+  // How a requested mode switch can be confirmed besides a power cycle, for
+  // the pages: the application's own way (iotsaController.allowRCMDescription())
+  // and, if the BLE server allows it, over BLE (cwi-dis/iotsa#316). Empty if neither.
+  static String confirmDescription();
 
   // "Identify" -- make this device physically announce itself (blink an LED,
   // beep, flash the output, ...) so a human can pick it out among several
@@ -101,7 +98,6 @@ protected:
   bool _pendingBleReboot = false;
   bool _pendingBlePromoteMode = false;
   int _pendingBleWifiDisabled = -1; // -1: nothing pending; 0: enable radio; 1: disable
-  bool _bleAllowModeSwitch = false; // set by allowBLEModeSwitch()
   // UUIDs live in IotsaRunmodeBLE (iotsaBLE.h) now, not here -- that's the
   // shared home a BLE client can also see, not just this server-side class.
 #endif // IOTSA_WITH_BLE

@@ -103,8 +103,14 @@ public:
   static void _notePeerConnected(uint16_t connHandle);
   static void _notePeerActivity(uint16_t connHandle);
   static void _notePeerDisconnected(uint16_t connHandle);
+  // May a BLE client confirm a pending mode switch (promoteMode on the runmode
+  // service)? A BLE connection is then taken as proof of physical presence.
+  // A setting, default on (cwi-dis/iotsa#316); whether that is enough proof
+  // at all is left to cwi-dis/iotsa#107.
+  bool promoteAllowed() const { return _promoteAllowed; }
 protected:
   bool isEnabled = true;   // config.cfg overrides in configLoad()
+  bool _promoteAllowed = true;
   // Last iotsaController.bleRadioWanted() applied by loop(), so a policy change
   // is acted on once (cwi-dis/iotsa#106). Starts true; lateSetupDone() resyncs it.
   bool _lastBleRadioWanted = true;

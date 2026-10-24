@@ -71,10 +71,6 @@ void setup(void){
   // Battery: while this pin is LOW (the BOOT button held down) the device
   // doesn't go to sleep. Handy when you want to reach it.
   runmodeMod.setPinDisableSleep(BATTERY_PIN_DISABLESLEEP);
-  // Battery: a BLE client may switch the device into the mode it requested,
-  // such as configuration mode, right away. Being close enough for BLE counts
-  // as being allowed to.
-  runmodeMod.allowBLEModeSwitch();
   application.setup();
   application.lateSetup();
 }

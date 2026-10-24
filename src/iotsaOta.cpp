@@ -1,6 +1,7 @@
 #include "iotsaOta.h"
 #ifdef IOTSA_WITH_OTA
 #include <ArduinoOTA.h>
+#include "iotsaRunmode.h"
 #ifdef IOTSA_WITH_BLE
 #include "iotsaBLE.h"
 #endif
@@ -86,10 +87,8 @@ String IotsaOtaMod::info() {
     rv = "<p>Over the air (OTA) programming is enabled, will timeout in " + String(iotsaController.currentModeRemainingMillis()/1000) + " seconds.</p>";
   } else if (iotsaController.requestedMode() == IOTSA_MODE_OTA) {
   	rv = "<p>Over the air (OTA) programming has been requested. Enable within " + String(iotsaController.requestedModeRemainingMillis()/1000) + " seconds by power cycling";
-    if (iotsaController.rcmInteractionDescription()) {
-      rv += " or ";
-      rv += iotsaController.rcmInteractionDescription();
-    }
+    String how = IotsaRunmodeMod::confirmDescription();
+    if (how.length()) rv += " or " + how;
     rv += ".</p>";
   } else {
     rv = "<p>Over the air (OTA) programming possible, visit <a href=\"/runmode\">/runmode</a> to enable.</p>";

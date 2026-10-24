@@ -103,6 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `IotsaBLEClientCollectionMod` is now `IotsaBLEClientManagerMod` (`iotsaBLEClientManager.h`), the example `BLEController` is now `BLEManager`; the device registry no longer creates or owns devices (#286)
 - `IotsaApiModObject` handlers have the module handlers' shape: `bool getHandler(reply)`, `bool putHandler(request, reply, bool *changed = nullptr)`; module `put`/`postHandler` also get the optional `changed` output (hard break) (#280)
 - `IOTSA_WIFI_DEBUG` is now `IOTSA_DEBUG_WIFI` (#182)
+- A BLE client may confirm a requested mode switch on every BLE device: `promoteAllowed` on `/api/bleserver`, default on (#316)
 - One log line per request, the same for REST, web pages, CoAP, HPS and BLE writes (`iotsaApi: rest: PUT /api/runmode -> ok, saved`), and for outgoing HTTP requests and BLE client jobs; `IOTSA_DEBUG_API` shows request and reply bodies (#182)
 - All of iotsa logs through `iotsaLog.h`: one line per event, tagged with the source file (`iotsaRunmode: ...`); `IOTSA_BLE_DEBUG` is now `IOTSA_DEBUG_BLE`, new `IOTSA_DEBUG_SLEEP`; on ESP8266 log strings stay in flash (#182)
 - The status LED is created automatically from the board definition (`IOTSA_PIN_LED`, `IOTSA_LED_NEOPIXEL`, `IOTSA_LED_ACTIVE_LOW`, replacing `IOTSA_PIN_NEOPIXEL`), and can be a plain LED; `-DIOTSA_WITHOUT_STATUS_LED` opts out (#272)
@@ -138,6 +139,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `IotsaLedMod::set()`/`showStatus()` and its pattern-in-flight state -- an app-level side-channel that predates and bypassed the status-pulse precedence chain. Anything that wants to override the pixel temporarily (the default `identify()` handler, `examples/Led`'s `IotsaLedControlMod`) now calls `iotsaStatus.setStatusPulse()` like any other transient signal. Breaking for any downstream app calling `ledMod.set()`/`showStatus()` directly -- use `iotsaStatus.setStatusPulse(rgb, onDuration, offDuration, durationMs, reason)` instead (#256)
 - `IFDEBUG`/`IFDEBUGX`: use `IOTSA_LOG_DEBUG` (#182)
 - `IOTSA_DEBUG_BLE_PRINT_ALL_CLIENTS` (#182)
+- `IotsaRunmodeMod::allowBLEModeSwitch()`: the BLE server's `promoteAllowed` setting replaces it (#316)
 - `IotsaBatteryMod::setPinDisableSleep()`/`allowBLEConfigModeSwitch()`: use `IotsaRunmodeMod`'s `setPinDisableSleep()`/`allowBLEModeSwitch()` (#106)
 
 ## [3.0a2] - 2026-08-31
