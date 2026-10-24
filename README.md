@@ -606,7 +606,7 @@ Note that this file can be included if BLE is not supported (such as on an esp82
 
 ### iotsaButton.h
 
-A generalized module for handling buttons and switches attached to GPIO pins. Uses _iotsaRequest.h_ to call a URL when a button is pressed. See the [Button](examples/Button/Button.ino) example. Will be merged into _iotsaInput.h_ (#160).
+A generalized module for handling buttons and switches attached to GPIO pins. Uses _iotsaRequest.h_ to call a URL when a button is pressed. See the [Button](examples/Button/Button.ino) example. Deprecated: will be merged into _iotsaInput.h_ and removed (#160).
 
 ### iotsaCapabilities.h
 
@@ -615,7 +615,7 @@ the _issuer_, to determine access rights to this board.
 
 The _issuer_ and this board share a secret key.
 
-More documentation will be forthcoming.
+**Does not work in 3.0:** every token is rejected (#304), and since the rights redesign a token could not grant a named right anyway. Capabilities come back with the new permission model (#107).
 
 ### iotsaFiles.h
 
