@@ -45,6 +45,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v7
 
+    # Unit tests on the runner itself, no device (tests/host/README.md). Here,
+    # in the first job, so a failure stops the build matrix early.
+    - name: Run host tests
+      run: tests/host/run.sh
+
     - name: Set up Python
       uses: actions/setup-python@v7
 

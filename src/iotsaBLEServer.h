@@ -135,10 +135,10 @@ protected:
   // variant, so this is what's really in effect, not just what was asked
   // for). Read-only -- not settable via REST/web, not persisted to flash.
   static int tx_power_dbm_actual;
-  // 0 means no retry pending. Set by _noteAdvertisingStartResult() on
-  // failure, cleared by it on success and whenever _reconcileAdvertising()
-  // decides advertising should be off. loop() is the only reader.
-  static volatile uint32_t advertisingRetryAtMillis;
+  // Armed by _noteAdvertisingStartResult() on failure, disarmed by it on
+  // success and whenever _reconcileAdvertising() decides advertising should
+  // be off. Only the loop task touches it (cwi-dis/iotsa#263).
+  static IotsaDeadline advertisingRetry;
   // Duration to retry with (0 = indefinite) -- whatever the failed call used.
   static volatile uint32_t advertisingRetryDuration;
   // Set by _requestReconcile(), consumed by loop().

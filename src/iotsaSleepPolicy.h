@@ -1,6 +1,7 @@
 #ifndef _IOTSASLEEPPOLICY_H_
 #define _IOTSASLEEPPOLICY_H_
 #include <stdint.h>
+#include "iotsaDeadline.h"
 
 // Intended to be included from iotsaController.h
 
@@ -99,6 +100,6 @@ public:
 
 private:
   int _pauseSleepCount = 0;
-  uint32_t _postponeSleepMillis = 0;
+  IotsaDeadline _noSleepBefore;   // activity and postponeSleep() move it later, never earlier
 };
 #endif

@@ -84,8 +84,8 @@ public:
   const char *modeName(iotsa_mode mode) const { return _modes.modeName(mode); }
   iotsa_mode currentMode() const { return _modes.currentMode(); }
   iotsa_mode requestedMode() const { return _modes.requestedMode(); }
-  uint32_t currentModeEndTime() const { return _modes.currentModeEndTime(); }
-  uint32_t requestedModeEndTime() const { return _modes.requestedModeEndTime(); }
+  uint32_t currentModeRemainingMillis() const { return _modes.currentModeRemainingMillis(); }
+  uint32_t requestedModeRemainingMillis() const { return _modes.requestedModeRemainingMillis(); }
 
   // Auto-expiry duration (seconds). A persisted, user-edited knob -- it lives on
   // iotsaConfig (config.cfg "rebootTimeout"); these are read/write forwarders.
@@ -97,7 +97,7 @@ public:
 
 private:
   void _startWatchdog();
-  uint32_t _rebootAtMillis = 0;
+  IotsaDeadline _rebootDeadline;
   IotsaModeMachine _modes;
   IotsaRadioPolicy _radio;
   IotsaSleepPolicy _sleep;

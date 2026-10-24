@@ -65,12 +65,12 @@ protected:
   virtual bool _getState();
   int pin;
   bool debounceState;
-  unsigned int debounceTime;
+  uint32_t debounceTime;   // millis() of the last raw change; elapsed-time rule (cwi-dis/iotsa#235)
   uint32_t lastChangeMillis;
   uint32_t firstRepeat;
   uint32_t minRepeat;
   uint32_t curRepeat;
-  uint32_t nextRepeat;
+  IotsaDeadline nextRepeat;
   bool *boolVar;
   bool toggle;
 };

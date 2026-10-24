@@ -2,6 +2,7 @@
 #define _IOTSAMODEMACHINE_H_
 #include <stdint.h>
 #include "iotsaConfig.h"   // iotsa_mode
+#include "iotsaDeadline.h"
 
 // Intended to be included from iotsaController.h
 
@@ -32,8 +33,10 @@ public:
 
   iotsa_mode currentMode() const { return _mode; }
   iotsa_mode requestedMode() const { return _nextMode; }
-  uint32_t currentModeEndTime() const { return _modeEndTime; }
-  uint32_t requestedModeEndTime() const { return _nextModeEndTime; }
+  // Time left in the active mode's window and the pending request's window;
+  // 0 when there is none (cwi-dis/iotsa#235).
+  uint32_t currentModeRemainingMillis() const { return _modeDeadline.remainingMillis(); }
+  uint32_t requestedModeRemainingMillis() const { return _nextModeDeadline.remainingMillis(); }
 
   // Mode effects, one place (cwi-dis/iotsa#106 smell E3). CONFIG/OTA keep WiFi up
   // (device reachable while worked on) and forbid sleep; CONFIG also keeps BLE up
@@ -51,8 +54,8 @@ private:
 
   iotsa_mode _mode = IOTSA_MODE_NORMAL;
   iotsa_mode _nextMode = IOTSA_MODE_NORMAL;
-  uint32_t _modeEndTime = 0;
-  uint32_t _nextModeEndTime = 0;
+  IotsaDeadline _modeDeadline;       // the active mode's window
+  IotsaDeadline _nextModeDeadline;   // the pending request's window
   const char *_rcmDescription = nullptr;
 };
 #endif

@@ -90,10 +90,8 @@ bool IotsaBLEClientMod::isScanning() {
 }
 
 unsigned int IotsaBLEClientMod::maxConnectionKeepOpen() {
-  if (shouldUpdateScanAtMillis == 0) return noScheduledScanKeepOpenCapMillis;
-  int32_t millisUntilScanDeadline = (int32_t)(shouldUpdateScanAtMillis - millis());
-  if (millisUntilScanDeadline < 0) millisUntilScanDeadline = 0;
-  return (unsigned int)millisUntilScanDeadline;
+  if (!scanUpdate.armed()) return noScheduledScanKeepOpenCapMillis;
+  return scanUpdate.remainingMillis();
 }
 
 bool IotsaBLEClientMod::mayOpenLink() {
@@ -129,7 +127,7 @@ void IotsaBLEClientMod::updateScanning() {
   // holdOffNewWork() (OTA) -- see IotsaBLERadioArbiter. Don't start a scan
   // now, but don't forget to look again either.
   if (!IotsaBLERadioArbiter::canBeginScan()) {
-    shouldUpdateScanAtMillis = millis() + SCAN_START_RETRY_MS;
+    scanUpdate.arm(SCAN_START_RETRY_MS);
     return;
   }
   if (!needsDiscovery()) return;
@@ -154,7 +152,7 @@ void IotsaBLEClientMod::startScanning() {
   }
   if (!IotsaBLERadioArbiter::tryBeginScan()) {
     // Lost the race against a connect that started since updateScanning()'s peek.
-    shouldUpdateScanAtMillis = millis() + SCAN_START_RETRY_MS;
+    scanUpdate.arm(SCAN_START_RETRY_MS);
     return;
   }
   IFDEBUG IotsaSerial.println("IotsaBLEClientMod: BLE scan start");
@@ -178,7 +176,7 @@ void IotsaBLEClientMod::startScanning() {
       IotsaBLERadioArbiter::resumeAdvertising(IotsaBLERadioArbiter::PAUSE_SCAN);
     }
     IFDEBUG IotsaSerial.println("NimBLEClient: cannot start scan, retry in 1s");
-    shouldUpdateScanAtMillis = millis() + SCAN_START_RETRY_MS;
+    scanUpdate.arm(SCAN_START_RETRY_MS);
     return;
   }
   scanningChanged();
@@ -201,7 +199,7 @@ void IotsaBLEClientMod::stopScanning() {
     scanningChanged();
   }
   // Next time through loop, check whether we should scan again.
-  shouldUpdateScanAtMillis = millis() + scanCooldownDiscoveryMillis;
+  scanUpdate.arm(scanCooldownDiscoveryMillis);
 }
 
 bool IotsaBLEClientMod::canConnect() {
@@ -227,7 +225,7 @@ void IotsaBLEClientMod::releaseConnectSlot() {
 }
 
 void IotsaBLEClientMod::requestScanUpdate() {
-  shouldUpdateScanAtMillis = millis();
+  scanUpdate.arm(0);
 }
 
 IotsaBLEClientMod* IotsaBLEClientMod::scanningMod = NULL;
@@ -267,8 +265,7 @@ void IotsaBLEClientMod::loop() {
   if (wantStop && scanner != nullptr) {
     stopScanning();
   }
-  if (shouldUpdateScanAtMillis != 0 && millis() >= shouldUpdateScanAtMillis) {
-    shouldUpdateScanAtMillis = 0;
+  if (scanUpdate.fired()) {
     updateScanning();
   }
   // The one driver of every device's connection state machine
@@ -328,7 +325,7 @@ void IotsaBLEClientMod::_handleAdvertisement(const NimBLEAdvertisedDevice *adver
         onDeviceAddressChanged(dev);
         if (knownDeviceCallback) knownDeviceCallback(*advertisedDevice);
       }
-      shouldUpdateScanAtMillis = millis(); // We may have found what we were looking for
+      scanUpdate.arm(0); // We may have found what we were looking for
       return;
     }
   }
@@ -346,7 +343,7 @@ void IotsaBLEClientMod::_handleAdvertisement(const NimBLEAdvertisedDevice *adver
       IFDEBUG IotsaSerial.printf("BLEClientMod: advertisement update byaddress for %s\n", addr.c_str());
       if (knownDeviceCallback) knownDeviceCallback(*advertisedDevice);
     }
-    shouldUpdateScanAtMillis = millis(); // We may have found what we were looking for
+    scanUpdate.arm(0); // We may have found what we were looking for
     return;
   }
   if (deviceName == "") return;
@@ -354,7 +351,7 @@ void IotsaBLEClientMod::_handleAdvertisement(const NimBLEAdvertisedDevice *adver
 }
 
 IotsaBLEClientDevice* IotsaBLEClientMod::addDevice(std::string id, IotsaBLEClientDevice* device) {
-  shouldUpdateScanAtMillis = millis(); // We probably want to scan for the new device
+  scanUpdate.arm(0); // We probably want to scan for the new device
   auto it = devices.find(id);
   if (it == devices.end()) {
     if (device == nullptr) return nullptr;
@@ -379,11 +376,11 @@ void IotsaBLEClientMod::noteKnownAddress(std::string id, std::string address) {
   if (dev == NULL) return;
   dev->setKnownAddress(address);
   devicesByAddress[address] = dev;
-  shouldUpdateScanAtMillis = millis(); // We may be able to connect right away
+  scanUpdate.arm(0); // We may be able to connect right away
 }
 
 void IotsaBLEClientMod::delDevice(std::string id) {
-  shouldUpdateScanAtMillis = millis();  // We may be able to stop scanning
+  scanUpdate.arm(0);  // We may be able to stop scanning
   auto it = devices.find(id);
   if (it != devices.end()) {
     // Also drop the devicesByAddress entry, if any -- otherwise it's left

@@ -26,7 +26,7 @@ void IotsaButtonMod::loop() {
       buttons[i].debounceTime = millis();
     }
     buttons[i].debounceState = state;
-    if (millis() > buttons[i].debounceTime + DEBOUNCE_DELAY) {
+    if (millis() - buttons[i].debounceTime > DEBOUNCE_DELAY) {
       int newButtonState = (state == LOW);
       if (newButtonState != buttons[i].buttonState) {
         buttons[i].buttonState = newButtonState;

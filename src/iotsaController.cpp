@@ -102,7 +102,7 @@ void IotsaController::begin() {
 
 void IotsaController::tick() {
   feedWatchdog();
-  if (_rebootAtMillis && millis() > _rebootAtMillis) {
+  if (_rebootDeadline.fired()) {
     IFDEBUG IotsaSerial.println("Software requested reboot.");
     iotsaBreadcrumbs.addBreadcrumb(IOTSA_CRUMB_REBOOT);
     ESP.restart();
@@ -112,5 +112,5 @@ void IotsaController::tick() {
 
 void IotsaController::requestReboot(uint32_t ms) {
   IFDEBUG IotsaSerial.println("Restart requested");
-  _rebootAtMillis = millis() + ms;
+  _rebootDeadline.arm(ms);
 }

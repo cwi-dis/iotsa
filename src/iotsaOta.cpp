@@ -85,9 +85,9 @@ void IotsaOtaMod::loop() {
 String IotsaOtaMod::info() {
   String rv;
   if (iotsaController.currentMode() == IOTSA_MODE_OTA) {
-    rv = "<p>Over the air (OTA) programming is enabled, will timeout in " + String((iotsaController.currentModeEndTime() - millis())/1000) + " seconds.</p>";
+    rv = "<p>Over the air (OTA) programming is enabled, will timeout in " + String(iotsaController.currentModeRemainingMillis()/1000) + " seconds.</p>";
   } else if (iotsaController.requestedMode() == IOTSA_MODE_OTA) {
-  	rv = "<p>Over the air (OTA) programming has been requested. Enable within " + String((iotsaController.requestedModeEndTime() - millis())/1000) + " seconds by power cycling";
+  	rv = "<p>Over the air (OTA) programming has been requested. Enable within " + String(iotsaController.requestedModeRemainingMillis()/1000) + " seconds by power cycling";
     if (iotsaController.rcmInteractionDescription()) {
       rv += " or ";
       rv += iotsaController.rcmInteractionDescription();

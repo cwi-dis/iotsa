@@ -102,7 +102,9 @@ private:
   uint32_t _pulseOnMs = 0;
   uint32_t _pulseOffMs = 0;
   uint32_t _pulseStartMs = 0;
-  uint32_t _pulseExpiryMs = 0;   // 0 = no active pulse (mirrors iotsaLed.cpp's nextChangeTime==0 sentinel)
+  uint32_t _pulseDurationMs = 0;   // 0 = no active pulse
+  // Elapsed-time rule (cwi-dis/iotsa#235): survives millis() wrapping.
+  bool _pulseActive(uint32_t now) const { return _pulseDurationMs != 0 && now - _pulseStartMs < _pulseDurationMs; }
   const char *_pulseReason = nullptr;
 };
 

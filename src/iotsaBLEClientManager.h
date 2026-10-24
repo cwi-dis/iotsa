@@ -100,7 +100,7 @@ protected:
   void _noteUnrecognized(const NimBLEAdvertisedDevice* advertisedDevice, const std::string& deviceName);
   BleDeviceFoundCallback unknownDeviceCallback = NULL;
   bool scanForUnknownClients = false;
-  uint32_t scanUnknownUntilMillis = 0;
+  IotsaDeadline scanUnknownEnd;   // end of a scan for unknown devices
   // How long the manual "scan for unknown devices" session (REST scanUnknown
   // flag, or the web form's "Scan for Nms" button) stays active before
   // findUnknownDevices(false) turns it back off. This is a session length,

@@ -192,12 +192,12 @@ void IotsaRunmodeMod::formHandler_fields(IotsaWebContext& ctx) {
   if (ctx.includesEveryday()) {
     String current = iotsaController.modeName(iotsaController.currentMode());
     if (iotsaController.currentMode()) {
-      current += ", times out in " + String((iotsaController.currentModeEndTime() - millis())/1000) + " seconds";
+      current += ", times out in " + String(iotsaController.currentModeRemainingMillis()/1000) + " seconds";
     }
     ctx.showStatus("Current mode", "currentMode", current);
     if (iotsaController.requestedMode()) {
       String requested = iotsaController.modeName(iotsaController.requestedMode());
-      requested += ", enable within " + String((iotsaController.requestedModeEndTime() - millis())/1000) + " seconds by power cycling";
+      requested += ", enable within " + String(iotsaController.requestedModeRemainingMillis()/1000) + " seconds by power cycling";
       if (iotsaController.rcmInteractionDescription()) {
         requested += " or " + String(iotsaController.rcmInteractionDescription());
       }
@@ -264,7 +264,7 @@ String IotsaRunmodeMod::info() {
   String message = "<p><b>Status:</b> " + htmlEncode(iotsaStatus.statusText()) + ".</p>";
   if (iotsaController.requestedMode()) {
     message += "<p>Enable within ";
-    message += String((iotsaController.requestedModeEndTime() - millis())/1000);
+    message += String(iotsaController.requestedModeRemainingMillis()/1000);
     message += " seconds by power cycling";
     if (iotsaController.rcmInteractionDescription()) {
       message += " or ";
@@ -373,11 +373,11 @@ void IotsaRunmodeMod::getHandler(IotsaApiContext& ctx) {
   }
   ctx.show("currentMode", int(iotsaController.currentMode()));
   if (iotsaController.currentMode()) {
-    ctx.show("currentModeTimeout", (iotsaController.currentModeEndTime() - millis())/1000);
+    ctx.show("currentModeTimeout", iotsaController.currentModeRemainingMillis()/1000);
   }
   ctx.show("requestedMode", int(iotsaController.requestedMode()));
   if (iotsaController.requestedMode()) {
-    ctx.show("requestedModeTimeout", (iotsaController.requestedModeEndTime() - millis())/1000);
+    ctx.show("requestedModeTimeout", iotsaController.requestedModeRemainingMillis()/1000);
   }
   ctx.show("wifiDisabled", !iotsaStatus.wifiEnabled);
 #ifdef IOTSA_WITH_BLE
@@ -476,7 +476,7 @@ void IotsaRunmodeMod::putHandler(IotsaApiContext& ctx) {
     iotsaController.requestMode(iotsa_mode(requestedMode));
     if (iotsaController.requestedMode() != iotsa_mode(0)) {
       ctx.show("requestedMode", int(iotsaController.requestedMode()));
-      ctx.show("requestedModeTimeout", (iotsaController.requestedModeEndTime() - millis())/1000);
+      ctx.show("requestedModeTimeout", iotsaController.requestedModeRemainingMillis()/1000);
       ctx.show("needsReboot", true);
     }
   }

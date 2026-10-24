@@ -44,7 +44,7 @@ protected:
 #endif
   void _updateSysTime();
   void _updateFromSysTime();
-  uint32_t nextUpdateMillis;
+  IotsaDeadline nextUpdate;
 };
 
 #endif

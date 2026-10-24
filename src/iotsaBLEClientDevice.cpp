@@ -220,7 +220,7 @@ bool IotsaBLEClientDevice::connect() {
       needsRescan = true;
       // Wake the scan scheduler: without this, nothing re-evaluates
       // needsDiscovery() until some unrelated event happens to touch
-      // shouldUpdateScanAtMillis, so needsRescan could go unnoticed indefinitely.
+      // scanUpdate, so needsRescan could go unnoticed indefinitely.
       if (owner) owner->requestScanUpdate();
     }
     // Give the slot back on a failed attempt too, not just after a successful
@@ -261,7 +261,7 @@ bool IotsaBLEClientDevice::isDisconnecting() {
 static const uint32_t ASYNC_CONNECT_BACKSTOP_MS = 2000;
 
 void IotsaBLEClientDevice::requestWork(uint32_t deadlineMs) {
-  workDeadlineAtMillis = millis() + deadlineMs;
+  workDeadline.arm(deadlineMs);
   workPending = true;
   // The address may need finding first.
   if (owner) owner->requestScanUpdate();
@@ -274,7 +274,7 @@ void IotsaBLEClientDevice::service() {
     if (result == 0) {
       // Work deadline passed mid-connect: cancel, onConnectFail() follows
       // and the give-up below happens on a later pass.
-      if (workPending && (int32_t)(now - workDeadlineAtMillis) >= 0 && pClient && !cancelRequested) {
+      if (workPending && workDeadline.expired() && pClient && !cancelRequested) {
         cancelRequested = true;
         pClient->cancelConnect();
       }
@@ -293,7 +293,7 @@ void IotsaBLEClientDevice::service() {
     numConnectSucceeded++;
     _noteConnected();
     linkState = LinkState::Lingering; // connected; the work runs below
-    lingerUntilMillis = now;
+    lingerEnd.arm(0);
   }
   if (linkState == LinkState::Lingering && !isConnected()) {
     // The peer (or the link) went away on its own.
@@ -302,13 +302,13 @@ void IotsaBLEClientDevice::service() {
   }
   if (!workPending) {
     if (linkState == LinkState::Lingering) {
-      if ((int32_t)(now - lingerUntilMillis) >= 0) _closeLink();
+      if (lingerEnd.expired()) _closeLink();
     } else {
       linkState = LinkState::Idle;
     }
     return;
   }
-  if ((int32_t)(now - workDeadlineAtMillis) >= 0) {
+  if (workDeadline.expired()) {
     workPending = false;
     if (linkState == LinkState::WaitingForAddress) searchGaveUp = true;
     lastWorkStatus = "gave up: device not reachable";
@@ -355,7 +355,7 @@ void IotsaBLEClientDevice::_runWork() {
   lastWorkStatus = ok ? "done" : "failed";
   uint32_t keepOpen = keepOpenMillis;
   if (owner && keepOpen > owner->maxConnectionKeepOpen()) keepOpen = owner->maxConnectionKeepOpen();
-  lingerUntilMillis = millis() + keepOpen;
+  lingerEnd.arm(keepOpen);
   if (keepOpen) iotsaController.postponeSleep(keepOpen + 1000);
 }
 

@@ -22,6 +22,11 @@ public:
     _dueAtMillis = millis() + fromNowMillis;
     _armed = true;
   }
+  // Arm to fire at least `fromNowMillis` from now: moves the deadline later,
+  // never earlier ("no sleep before ...", a reservation that others extend).
+  void armAtLeast(uint32_t fromNowMillis) {
+    if (!pending() || remainingMillis() < fromNowMillis) arm(fromNowMillis);
+  }
   void disarm() { _armed = false; }
   bool armed() const { return _armed; }
 

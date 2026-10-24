@@ -25,6 +25,7 @@ static time_t utcTimeFromTm(const struct tm &tm) {
 void IotsaRtcMod::setup() {
   ds1302.init();
   _updateSysTime();
+  nextUpdate.arm(0);   // the first update at the first loop() (not writing the RTC at boot is cwi-dis/iotsa#291)
 }
 
 void IotsaRtcMod::lateSetup() {
@@ -33,9 +34,9 @@ void IotsaRtcMod::lateSetup() {
 }
 
 void IotsaRtcMod::loop() {
-  if (millis() > nextUpdateMillis) {
+  if (nextUpdate.expired()) {
     _updateFromSysTime();
-    nextUpdateMillis = millis() + UPDATE_INTERVAL;
+    nextUpdate.arm(UPDATE_INTERVAL);
   }
 }
 
@@ -77,7 +78,7 @@ bool IotsaRtcMod::setIsoTime(const char *time)
 
 void IotsaRtcMod::_updateCurrentTime() {
   uint32_t now = millis();
-  if (currentTimeMillis == 0 || now < currentTimeMillis || now > currentTimeMillis + 1000) {
+  if (currentTimeMillis == 0 || now - currentTimeMillis > 1000) {
     currentTimeMillis = now;
     ds1302.getDateTime(&currentTime);
   }

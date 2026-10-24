@@ -275,7 +275,7 @@ void IotsaConfigMod::putHandler(IotsaApiContext& ctx) {
     iotsaController.requestMode(iotsa_mode(requestedMode));
     if (iotsaController.requestedMode() != iotsa_mode(0)) {
       ctx.show("requestedMode", int(iotsaController.requestedMode()));
-      ctx.show("requestedModeTimeout", (iotsaController.requestedModeEndTime() - millis())/1000);
+      ctx.show("requestedModeTimeout", iotsaController.requestedModeRemainingMillis()/1000);
       ctx.show("needsReboot", true);
     }
   }

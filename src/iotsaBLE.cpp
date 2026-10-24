@@ -18,16 +18,23 @@ void iotsaBLE_notifyScanningStateChanged(bool active) {
   IotsaSerial.printf("iotsaBLE: scanning %s\n", active ? "started" : "stopped");
 }
 
-uint32_t IotsaBLERadioArbiter::s_serverReservedUntilMillis = 0;
+volatile uint32_t IotsaBLERadioArbiter::s_serverReservedUntilMillis = 0;
 bool IotsaBLERadioArbiter::s_holdOffNewBLEWork = false;
 
+// Not an IotsaDeadline (cwi-dis/iotsa#235): reserveConnectionForServer() runs on
+// the NimBLE host task and serverReservationActive() on the loop task, so the
+// state is one uint32_t, written in one go. 0 = no reservation; the
+// comparisons are signed differences, so they survive millis() wrapping.
 void IotsaBLERadioArbiter::reserveConnectionForServer(uint32_t graceMs) {
   uint32_t until = millis() + graceMs;
-  if (until > s_serverReservedUntilMillis) s_serverReservedUntilMillis = until;
+  if (s_serverReservedUntilMillis == 0 || (int32_t)(until - s_serverReservedUntilMillis) > 0) {
+    s_serverReservedUntilMillis = until;
+  }
 }
 
 bool IotsaBLERadioArbiter::serverReservationActive() {
-  return millis() < s_serverReservedUntilMillis;
+  uint32_t until = s_serverReservedUntilMillis;
+  return until != 0 && (int32_t)(millis() - until) < 0;
 }
 
 void IotsaBLERadioArbiter::holdOffNewWork(bool hold) {

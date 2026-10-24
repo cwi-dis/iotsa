@@ -22,8 +22,7 @@ bool IotsaBLEClientManagerMod::needsDiscovery() {
 
 void IotsaBLEClientManagerMod::loop() {
   IotsaBLEClientMod::loop();
-  if (scanUnknownUntilMillis != 0 && millis() > scanUnknownUntilMillis) {
-    scanUnknownUntilMillis = 0;
+  if (scanUnknownEnd.fired()) {
     findUnknownDevices(false);
   }
 }
@@ -72,13 +71,13 @@ void IotsaBLEClientManagerMod::_noteUnrecognized(const NimBLEAdvertisedDevice* a
 
 void IotsaBLEClientManagerMod::startScanUnknown() {
   findUnknownDevices(true);
-  scanUnknownUntilMillis = millis() + scanUnknownDurationMillis;
+  scanUnknownEnd.arm(scanUnknownDurationMillis);
   iotsaController.postponeSleep(scanUnknownDurationMillis + IotsaSleepPolicy::SCAN_COMPLETION_MARGIN_MS);
 }
 
 void IotsaBLEClientManagerMod::findUnknownDevices(bool on) {
   scanForUnknownClients = on;
-  shouldUpdateScanAtMillis = millis();
+  scanUpdate.arm(0);
 }
 
 bool IotsaBLEClientManagerMod::addDeviceByName(const std::string& name) {

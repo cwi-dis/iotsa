@@ -131,7 +131,7 @@ int IotsaBLEServerMod::adv_min = -1;
 int IotsaBLEServerMod::adv_max = -1;
 int IotsaBLEServerMod::tx_power_dbm = -1;
 int IotsaBLEServerMod::tx_power_dbm_actual = -1;
-volatile uint32_t IotsaBLEServerMod::advertisingRetryAtMillis = 0;
+IotsaDeadline IotsaBLEServerMod::advertisingRetry;
 volatile uint32_t IotsaBLEServerMod::advertisingRetryDuration = 0;
 volatile bool IotsaBLEServerMod::s_reconcileRequested = false;
 bool IotsaBLEServerMod::s_enabled = true;
@@ -204,12 +204,12 @@ void IotsaBLEServerMod::_applyTxPower() {
 
 void IotsaBLEServerMod::_noteAdvertisingStartResult(bool ok, uint32_t duration) {
   if (ok) {
-    advertisingRetryAtMillis = 0;
+    advertisingRetry.disarm();
     return;
   }
   IotsaSerial.println("IotsaBLEServerMod: pAdvertising->start() failed (connection pool full?), will retry");
   advertisingRetryDuration = duration;
-  advertisingRetryAtMillis = millis() + ADVERTISING_RETRY_MS;
+  advertisingRetry.arm(ADVERTISING_RETRY_MS);
 }
 
 void IotsaBLEServerMod::createServer() {
@@ -243,7 +243,7 @@ void IotsaBLEServerMod::_reconcileAdvertising(uint32_t durationMs) {
   bool want = iotsaController.bleRadioWanted() && IotsaBLERadioArbiter::advertisingPauseReasons() == 0;
   bool active = pAdvertising->isAdvertising();
   if (!want) {
-    advertisingRetryAtMillis = 0; // a pending retry must not undo this
+    advertisingRetry.disarm(); // a pending retry must not undo this
     if (active) {
       IFBLEDEBUG IotsaSerial.printf("BLE stop advertising (wanted=%d, pause reasons=0x%x)\n",
         (int)iotsaController.bleRadioWanted(), IotsaBLERadioArbiter::advertisingPauseReasons());
@@ -395,8 +395,7 @@ void IotsaBLEServerMod::loop() {
     s_reconcileRequested = false;
     _reconcileAdvertising();
   }
-  if (advertisingRetryAtMillis != 0 && millis() >= advertisingRetryAtMillis) {
-    advertisingRetryAtMillis = 0;
+  if (advertisingRetry.fired()) {
     IFBLEDEBUG IotsaSerial.println("BLE retry start advertising");
     _reconcileAdvertising(advertisingRetryDuration);
   }

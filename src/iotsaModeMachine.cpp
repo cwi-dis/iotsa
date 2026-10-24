@@ -32,16 +32,16 @@ void IotsaModeMachine::begin(bool hardwareReset) {
   }
 
   _mode = pending;
-  _modeEndTime = millis() + _windowMillis();
-  IFDEBUG IotsaSerial.printf("iotsaModeMachine: entering mode %d, timeout at %u\n", (int)_mode, (unsigned)_modeEndTime);
+  _modeDeadline.arm(_windowMillis());
+  IFDEBUG IotsaSerial.printf("iotsaModeMachine: entering mode %d, timeout in %u ms\n", (int)_mode, (unsigned)_windowMillis());
   if (_mode == IOTSA_MODE_FACTORY_RESET) factoryReset();
 }
 
 void IotsaModeMachine::tick() {
   // Active mode timed out -> back to normal. Pending request timed out -> just
   // drop the request (+ its mailbox file); no mode was active to "end".
-  if (_modeEndTime && millis() > _modeEndTime) endConfigurationMode();
-  if (_nextModeEndTime && millis() > _nextModeEndTime) {
+  if (_modeDeadline.fired()) endConfigurationMode();
+  if (_nextModeDeadline.fired()) {
     IFDEBUG IotsaSerial.println("Pending mode request timed out");
     _clearPending();
   }
@@ -49,7 +49,7 @@ void IotsaModeMachine::tick() {
 
 void IotsaModeMachine::_clearPending() {
   _nextMode = IOTSA_MODE_NORMAL;
-  _nextModeEndTime = 0;
+  _nextModeDeadline.disarm();
   if (iotsaConfigFileExists(PENDING_MODE_FILE)) IOTSA_FS.remove(PENDING_MODE_FILE);
 }
 
@@ -59,7 +59,7 @@ void IotsaModeMachine::requestMode(iotsa_mode mode) {
     return;
   }
   _nextMode = mode;
-  _nextModeEndTime = millis() + _windowMillis();
+  _nextModeDeadline.arm(_windowMillis());
   IotsaConfigFileSave cf(PENDING_MODE_FILE);
   cf.put("mode", (int)mode);
 }
@@ -69,7 +69,7 @@ void IotsaModeMachine::allowRequestedConfigurationMode() {
   IFDEBUG IotsaSerial.print("Switching configurationMode to ");
   IFDEBUG IotsaSerial.println(_nextMode);
   _mode = _nextMode;
-  _modeEndTime = millis() + _windowMillis();
+  _modeDeadline.arm(_windowMillis());
   _clearPending();
   if (_mode == IOTSA_MODE_FACTORY_RESET) factoryReset();
 }
@@ -77,14 +77,14 @@ void IotsaModeMachine::allowRequestedConfigurationMode() {
 void IotsaModeMachine::endConfigurationMode() {
   IFDEBUG IotsaSerial.println("Configuration mode ended");
   _mode = IOTSA_MODE_NORMAL;
-  _modeEndTime = 0;
+  _modeDeadline.disarm();
   _clearPending();
 }
 
 void IotsaModeMachine::extendWindow() {
   if (_mode == IOTSA_MODE_NORMAL) return;   // no maintenance-mode window to extend
   IFDEBUG IotsaSerial.println("Configuration mode extended");
-  _modeEndTime = millis() + _windowMillis();
+  _modeDeadline.arm(_windowMillis());
 }
 
 const char *IotsaModeMachine::modeName(iotsa_mode mode) const {

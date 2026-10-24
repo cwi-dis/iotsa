@@ -10,26 +10,21 @@
 void IotsaSleepPolicy::noteActivity() {
   uint32_t grace = activityExtraWakeDuration;
   if (grace < ACTIVITY_FLOOR_MS) grace = ACTIVITY_FLOOR_MS;
-  uint32_t noSleepBefore = millis() + grace;
-  if (noSleepBefore > _postponeSleepMillis) _postponeSleepMillis = noSleepBefore;
+  _noSleepBefore.armAtLeast(grace);
 }
 
 void IotsaSleepPolicy::postponeSleep(uint32_t ms) {
-  uint32_t noSleepBefore = millis() + ms + activityExtraWakeDuration;
-  if (noSleepBefore > _postponeSleepMillis) _postponeSleepMillis = noSleepBefore;
+  _noSleepBefore.armAtLeast(ms + activityExtraWakeDuration);
 }
 
 uint32_t IotsaSleepPolicy::millisUntilSleepAllowed() {
-  if (millis() > _postponeSleepMillis) _postponeSleepMillis = 0;
-  int32_t rv = _postponeSleepMillis - millis();
-  if (rv < 2) rv = 0;
-  return rv;
+  uint32_t rv = _noSleepBefore.remainingMillis();
+  return rv < 2 ? 0 : rv;
 }
 
 bool IotsaSleepPolicy::canSleep() {
   if (_pauseSleepCount > 0) return false;
-  if (millis() > _postponeSleepMillis) _postponeSleepMillis = 0;
-  return _postponeSleepMillis == 0;
+  return !_noSleepBefore.pending();
 }
 
 // ---- wake-window + decision ----
@@ -49,7 +44,7 @@ IotsaSleepDecision IotsaSleepPolicy::decide(const IotsaSleepConfig& cfg, bool on
   uint32_t curWakeDuration = cfg.wakeDuration;
   if (!didWakeFromSleep) curWakeDuration += cfg.bootExtraWakeDuration;
   if (curWakeDuration == 0) return d;
-  if (millis() <= millisAtWakeup + curWakeDuration) return d;
+  if (millis() - millisAtWakeup <= curWakeDuration) return d;
   // Reasons not to sleep even though the wake window has elapsed. The caller has
   // already checked pinDisableSleep (hardware) and iotsaController.canSleep()
   // (inhibits + maintenance mode).

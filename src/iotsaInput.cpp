@@ -91,7 +91,6 @@ Button::Button(int _pin, bool _actOnPress, bool _actOnRelease, bool _wake)
   firstRepeat(0),
   minRepeat(0),
   curRepeat(0),
-  nextRepeat(0),
   boolVar(NULL),
   toggle(false)
 {
@@ -135,7 +134,7 @@ void Button::loop() {
     iotsaController.postponeSleep(DEBOUNCE_DELAY*2);
   }
   debounceState = state;
-  if (millis() > debounceTime + DEBOUNCE_DELAY && state != pressed) {
+  if (millis() - debounceTime > DEBOUNCE_DELAY && state != pressed) {
     iotsaController.noteActivity();
     // The touchpad or button has been in the new state for long enough for us to trust it.
     pressed = state;
@@ -157,13 +156,13 @@ void Button::loop() {
       // Setup for repeat, if wanted
       if (firstRepeat) {
         curRepeat = firstRepeat;
-        nextRepeat = millis() + curRepeat;
+        nextRepeat.arm(curRepeat);
       } else {
-        nextRepeat = 0;
+        nextRepeat.disarm();
       }
     } else {
       // Cancel any repeating
-      nextRepeat = 0;
+      nextRepeat.disarm();
     }
     bool doSend = (pressed && actOnPress) || (!pressed && actOnRelease);
     IFDEBUG IotsaSerial.printf("Button callback for button pin %d state %d\n", pin, state);
@@ -172,13 +171,13 @@ void Button::loop() {
     }
   }
   // See if we need to do any repeating
-  if (nextRepeat && millis() > nextRepeat) {
+  if (nextRepeat.expired()) {
     iotsaController.noteActivity();
     if (curRepeat > minRepeat) {
       curRepeat = curRepeat - minRepeat;
       if (curRepeat < minRepeat) curRepeat = minRepeat;
     }
-    nextRepeat = millis() + curRepeat;
+    nextRepeat.arm(curRepeat);
     repeatCount++;
     if (activationCallback) activationCallback();
   }

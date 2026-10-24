@@ -145,7 +145,7 @@ void IotsaStatus::printHeapSpace() {
 
 IotsaStatusSignal IotsaStatus::overrideSignal() const {
   IotsaStatusSignal sig;
-  if (millis() < _pulseExpiryMs) {
+  if (_pulseActive(millis())) {
     sig.colour = _pulseColour;
     sig.rhythm = (_pulseOffMs == 0) ? IotsaStatusRhythm::Solid : IotsaStatusRhythm::FastBlink;
     sig.reason = _pulseReason;
@@ -181,8 +181,8 @@ String IotsaStatus::statusText() const {
   iotsa_mode mode = iotsaController.currentMode();
   String s = iotsaController.modeName(mode);
   s += " mode";
-  if (mode != IOTSA_MODE_NORMAL && iotsaController.currentModeEndTime()) {
-    s += " (" + String((iotsaController.currentModeEndTime() - millis()) / 1000) + " s left)";
+  if (mode != IOTSA_MODE_NORMAL && iotsaController.currentModeRemainingMillis()) {
+    s += " (" + String(iotsaController.currentModeRemainingMillis() / 1000) + " s left)";
   }
   s += " - ";
 
@@ -248,12 +248,12 @@ void IotsaStatus::setStatusPulse(uint32_t colour, uint32_t onMs, uint32_t offMs,
   _pulseOnMs = onMs;
   _pulseOffMs = offMs;
   _pulseStartMs = millis();
-  _pulseExpiryMs = _pulseStartMs + durationMs;
+  _pulseDurationMs = durationMs;
   _pulseReason = reason;
 }
 
 void IotsaStatus::clearStatusPulse() {
-  _pulseExpiryMs = 0;
+  _pulseDurationMs = 0;
 }
 
 uint32_t IotsaStatus::statusColor() {
@@ -263,7 +263,7 @@ uint32_t IotsaStatus::statusColor() {
   // any pulse to Solid/FastBlink for non-LED renderers, which don't need
   // millisecond-exact timing).
   uint32_t now = millis();
-  if (now < _pulseExpiryMs) {
+  if (_pulseActive(now)) {
     if (_pulseOffMs == 0) return _pulseColour;  // solid
     uint32_t t = (now - _pulseStartMs) % (_pulseOnMs + _pulseOffMs);
     return (t < _pulseOnMs) ? _pulseColour : 0;

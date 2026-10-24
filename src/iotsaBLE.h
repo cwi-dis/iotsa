@@ -128,7 +128,7 @@ public:
   typedef void (*AdvertisingReconciler)(uint32_t durationMs);
   static void setAdvertisingReconciler(AdvertisingReconciler reconciler) { s_advertisingReconciler = reconciler; }
 private:
-  static uint32_t s_serverReservedUntilMillis;
+  static volatile uint32_t s_serverReservedUntilMillis;   // written by the NimBLE host task
   static bool s_holdOffNewBLEWork;
   static uint8_t s_advertisingPauseReasons;
   static AdvertisingReconciler s_advertisingReconciler;

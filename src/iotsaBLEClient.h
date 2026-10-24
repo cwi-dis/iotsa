@@ -79,7 +79,7 @@ public:
   // pointer) when a connect attempt fails and sets needsRescan. Pokes the
   // scan scheduler so loop() re-evaluates needsDiscovery() promptly, instead
   // of waiting for some unrelated event (a different device's advertisement,
-  // a user-requested scan, ...) to happen to touch shouldUpdateScanAtMillis
+  // a user-requested scan, ...) to happen to arm scanUpdate
   // -- otherwise a failed connect's needsRescan flag can go unnoticed
   // indefinitely, since nothing else schedules another look.
   void requestScanUpdate();
@@ -182,7 +182,7 @@ protected:
   uint32_t connectTimeoutMillis = 6000;
   // maxConnectionKeepOpen()'s fallback when there's no scheduled scan
   // deadline to respect -- how long a connection may be held open with
-  // nothing else pending. shouldUpdateScanAtMillis is 0 not just when idle,
+  // nothing else pending. scanUpdate is disarmed not just when idle,
   // but also while a scan is actively running (nothing reschedules it until
   // the scan stops), so this binds more often than "idle" alone would
   // suggest. Not REST/persisted-configurable like the fields above: this is
@@ -199,7 +199,7 @@ protected:
   bool scanOnlyForPendingWork = true;
   uint32_t scanStartedAtMillis = 0;
   uint32_t scanStoppedAtMillis = 0;   // 0: no scan has run yet
-  uint32_t shouldUpdateScanAtMillis = 0;
+  IotsaDeadline scanUpdate;   // when loop() next calls updateScanning(); arm(0): as soon as possible
   // Only loop() (and the functions it calls: startScanning/stopScanning) may
   // write this. Cross-task scan/connect exclusion no longer reads it (that's
   // IotsaBLERadioArbiter's activity now); volatile kept for isScanning().

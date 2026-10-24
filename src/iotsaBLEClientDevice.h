@@ -183,8 +183,8 @@ protected:
   static constexpr uint16_t LINK_SUPERVISION_TIMEOUT = 400;  // 4 s, in units of 10 ms
   volatile LinkState linkState = LinkState::Idle;
   volatile bool workPending = false;
-  uint32_t workDeadlineAtMillis = 0;
-  uint32_t lingerUntilMillis = 0;
+  IotsaDeadline workDeadline;   // give up on the pending work after this
+  IotsaDeadline lingerEnd;      // keep a link open after work until this
   uint32_t connectStartedAtMillis = 0;
   // Outcome of an asynchronous connect, set by ConnCallbacks on the NimBLE
   // host task, consumed by service(): 0 pending, 1 connected, -1 failed.
