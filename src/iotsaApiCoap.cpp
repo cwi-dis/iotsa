@@ -67,10 +67,6 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
         coap->sendResponse(ip, port, pkt.messageid, NULL, 0, COAP_INTERNAL_SERVER_ERROR, COAP_NONE, pkt.token, pkt.tokenlen);
         IotsaSerial.println("-> COAP sendResponse error");
     }
-#if 0
-    // xxxjack no idea why this was added:
-    delay(2000); // xxxjack
-#endif
 }
 
 class IotsaCoapServiceMod : public IotsaBaseModule, public IotsaSingletonModule<IotsaCoapServiceMod> {

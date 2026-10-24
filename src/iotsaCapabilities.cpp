@@ -6,27 +6,6 @@
 
 #define IFDEBUGX if(1)
 
-#if 0
-// Static method to check whether a string exactly matches a Json object,
-// or is included in the Json object if it is an array.
-static bool stringContainedIn(const char *wanted, JsonVariant& got) {
-  if (got.is<char*>()) {
-    return strcmp(wanted, got.as<const char *>()) == 0;
-  }
-  if (!got.is<JsonArray>()) {
-    return false;
-  }
-  JsonArray& gotArray = got.as<JsonArray>();
-  for(size_t i=0; i<gotArray.size(); i++) {
-    const char *gotItem = gotArray[i];
-    if (strcmp(gotItem, wanted) == 0) {
-      return true;
-    }
-  }
-  return false;
-}
-#endif
-
 // Get a scope indicator from a JSON variant
 static IotsaCapabilityObjectScope getRightFrom(const JsonVariant& arg) {
   if (!arg.is<const char*>()) return IOTSA_SCOPE_NONE;

@@ -76,12 +76,6 @@ public:
 #ifdef IOTSA_WITH_WEB
   String info() override;
 #endif
-#if 0
-  static void setAdvertisingInterval(uint16_t _adv_min, uint16_t _adv_max) {
-    adv_min = _adv_min;
-    adv_max = _adv_max;
-  }
-#endif
 
   // The single place that starts or stops advertising (cwi-dis/iotsa#263):
   // advertise iff BLE is enabled, iotsaController.bleRadioWanted(), and no

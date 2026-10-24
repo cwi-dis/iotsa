@@ -84,11 +84,6 @@ bool IotsaConfigFileLoad::get(String name, String &value, const char *def) {
   while (fp.available()) {
     String configName = fp.readStringUntil('=');
     String configValue = fp.readStringUntil('\n');
-#if 0
-	// Enabling this is a security risk, it allows obtaining passwords and such with physical access.
-    IFDEBUG IotsaSerial.print("cfload: found value ");
-    IFDEBUG IotsaSerial.println(configValue);
-#endif
     if (configName == name) {
       IFDEBUG IotsaSerial.print("cfload: found ");
       IFDEBUG IotsaSerial.println(name);

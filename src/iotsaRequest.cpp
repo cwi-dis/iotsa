@@ -102,16 +102,6 @@ bool IotsaRequest::send(const char *query, String *responseBody) {
       IFDEBUG IotsaSerial.print(code);
       IFDEBUG IotsaSerial.print(" FAIL GET ");
       IFDEBUG IotsaSerial.print(_url);
-#if 0
-      if (sslInfo != "") {
-#ifdef ESP32
-        IFDEBUG IotsaSerial.print(", RootCA ");
-#else
-        IFDEBUG IotsaSerial.print(", fingerprint ");
-#endif
-        IFDEBUG IotsaSerial.print(sslInfo);
-      }
-#endif
       IFDEBUG IotsaSerial.println();
 
       rv = false;
