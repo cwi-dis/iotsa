@@ -109,7 +109,8 @@ IotsaNothingMod nothingMod(application);
 
 // iotsaInput: a rotary encoder and a pushbutton (see examples/Input for pin meaning).
 // No encoder on the C3: it has no GPIO14.
-Button button(IOTSA_PIN_BUTTON, true, true, true);
+// On press only: each press makes one outgoing request (below).
+Button button(IOTSA_PIN_BUTTON, true, false, true);
 #ifdef CONFIG_IDF_TARGET_ESP32C3
 Input* inputs[] = { &button };
 #else
@@ -120,11 +121,16 @@ IotsaInputMod inputMod(application, inputs, sizeof(inputs)/sizeof(inputs[0]));
 
 // IotsaRequest: nothing else in examples/ or tests/ instantiates it (IotsaButtonMod,
 // its only other user, is excluded above) -- wire it to the button so pressing it
-// exercises the outbound-request code path, self-loopback GET against nothingMod's
-// own REST endpoint so it needs no external server to hit (see cwi-dis/iotsa#222).
+// exercises the outbound-request code path (see cwi-dis/iotsa#222). Another device:
+// a request to this device itself can't be answered, because send() blocks the
+// loop that would answer it (cwi-dis/iotsa#236). Set KITCHENSINK_REQUEST_URL for
+// your own network.
+#ifndef KITCHENSINK_REQUEST_URL
+#define KITCHENSINK_REQUEST_URL "http://neoclock.local/api/version"
+#endif
 static IotsaRequest buttonRequest;
 static bool kitchenSinkButtonPressed() {
-  buttonRequest.url = "http://" + WiFi.localIP().toString() + "/api/nothing";
+  buttonRequest.url = KITCHENSINK_REQUEST_URL;
   return buttonRequest.send();
 }
 
