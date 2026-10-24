@@ -148,6 +148,15 @@ bool IotsaWebContext::_parse(const String& s, float& v) {
   return s.length() > 0 && *end == '\0';
 }
 
+String IotsaWebContext::_format(float v) {
+  char buf[24];
+  for (int digits = 7; digits <= 9; digits++) {
+    snprintf(buf, sizeof(buf), "%.*g", digits, v);
+    if (strtof(buf, nullptr) == v) break;
+  }
+  return String(buf);
+}
+
 //
 // Objects inside a module
 //

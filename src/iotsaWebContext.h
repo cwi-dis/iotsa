@@ -145,7 +145,7 @@ public:
   void showField(const IotsaWebLabel& label, const char *name, unsigned int value, Persistence persistence, const char *hint = nullptr) { _field(label, name, String(value), "number", persistence, hint); }
   void showField(const IotsaWebLabel& label, const char *name, long value, Persistence persistence, const char *hint = nullptr) { _field(label, name, String(value), "number", persistence, hint); }
   void showField(const IotsaWebLabel& label, const char *name, unsigned long value, Persistence persistence, const char *hint = nullptr) { _field(label, name, String(value), "number", persistence, hint); }
-  void showField(const IotsaWebLabel& label, const char *name, float value, Persistence persistence, const char *hint = nullptr) { _field(label, name, String(value), "number' step='any", persistence, hint); }
+  void showField(const IotsaWebLabel& label, const char *name, float value, Persistence persistence, const char *hint = nullptr) { _field(label, name, _format(value), "number' step='any", persistence, hint); }
   void showField(const IotsaWebLabel& label, const char *name, bool value, Persistence persistence, const char *hint = nullptr) { showCheckbox(label, name, value, persistence, hint); }
   void showCheckbox(const IotsaWebLabel& label, const char *name, bool value, Persistence persistence, const char *hint = nullptr);
   // Never prefilled. clearable: with a "clear" checkbox (pass it only when
@@ -207,6 +207,9 @@ private:
   static bool _parse(const String& s, long& v);
   static bool _parse(const String& s, unsigned long& v);
   static bool _parse(const String& s, float& v);
+  // As few digits as read back to the same float (String(float) has 2
+  // decimals, and saving the form would write the rounded value back).
+  static String _format(float v);
 
   bool _includesEveryday = true;
   bool _includesSettings = true;
