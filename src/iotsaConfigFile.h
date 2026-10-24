@@ -36,6 +36,9 @@ public:
   void put(String name, float value);
   void put(String name, const String &value);
   void put(String name, const std::string &value);
+  // Without this, a const char * value goes to put(bool): pointer to bool is a
+  // built-in conversion, which beats the String constructor, so put("k", "abc") saved 1.
+  inline void put(String name, const char *value) {put(name, String(value)); }
 protected:
   File fp;
 };
