@@ -23,6 +23,7 @@
 #include "iotsaUser.h"
 #include "iotsaCapabilities.h"
 #include "iotsaBattery.h"
+#include "iotsaRunmode.h"
 #include "iotsaFiles.h"
 #include "iotsaFilesUpload.h"
 #include "iotsaFilesBackup.h"
@@ -81,6 +82,9 @@ IotsaCapabilityMod capabilityMod(application, userMod);
 #define authProvider (&capabilityMod)
 
 IotsaBatteryMod batteryMod(application);
+// The application creates one by itself; declared here because setup() tells
+// it things (the disable-sleep pin, the BLE confirm of a mode switch).
+IotsaRunmodeMod runmodeMod(application);
 IotsaFilesMod filesMod(application);
 IotsaFilesUploadMod filesUploadMod(application);
 IotsaFilesBackupMod filesBackupMod(application);
@@ -160,10 +164,13 @@ void setup(void) {
   batteryMod.setPinVUSB(IOTSA_PIN_VUSB);
 #endif
 #ifdef IOTSA_PIN_DISABLESLEEP
-  batteryMod.setPinDisableSleep(IOTSA_PIN_DISABLESLEEP);
+  runmodeMod.setPinDisableSleep(IOTSA_PIN_DISABLESLEEP);
 #endif
 #ifdef IOTSA_WITH_BLE
   IotsaBLEClientMod::coordinateWithServer = true;
+  // A pending mode switch can be confirmed over BLE (promoteMode), so a test
+  // flash doesn't need the reset button.
+  runmodeMod.allowBLEModeSwitch();
 #endif
   button.setCallback(kitchenSinkButtonPressed);
   application.setAuth(authProvider);  // every module, the standard ones included, uses this
