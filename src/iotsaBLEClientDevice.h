@@ -127,7 +127,8 @@ public:
   // "There is work for this device": connect when possible, then call
   // doWork(). Gives up (lastWorkStatus "gave up", workAbandoned()) if it
   // can't get connected within deadlineMs. A second request while one is
-  // pending just extends the deadline. Safe from any task.
+  // pending just extends the deadline. Loop task only, like all module
+  // code (cwi-dis/iotsa#236).
   void requestWork(uint32_t deadlineMs);
   bool hasPendingWork() { return workPending; }
   // Advances the state machine. Called only by IotsaBLEClientMod::loop() --
@@ -225,8 +226,7 @@ protected:
   // False from the moment disconnect() issues pClient->disconnect() until
   // ConnCallbacks::onDisconnect() confirms it actually completed. connect()
   // waits (bounded) on this before proceeding. volatile: written from the
-  // NimBLE host callback context, read from this device's own
-  // BLEDimmer::connectionTask().
+  // NimBLE host callback context, read from the loop task.
   volatile bool disconnectSettled = true;
   // millis() timestamp of the start of the most recent genuine connect
   // attempt -- i.e. NOT the connect()-while-already-connected fast path, so

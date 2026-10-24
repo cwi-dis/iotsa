@@ -61,10 +61,10 @@ public:
   // If a scan is currently running, request that it be stopped right away so
   // a caller that wants to connect doesn't have to wait for it to finish on
   // its own -- connecting and scanning are mutually exclusive on this stack
-  // (NimBLE rejects connect attempts outright while a scan is active). Safe
-  // to call from ANY task (e.g. a per-device BLEDimmer::connectionTask()) --
-  // this only sets a flag; the actual stopScanning() call is deferred to
-  // loop(), which is the only task allowed to touch scanner/scanningMod.
+  // (NimBLE rejects connect attempts outright while a scan is active). Called
+  // by IotsaBLEClientDevice::canConnect() from the connection state machine.
+  // This only sets a flag; loop() does the actual stopScanning() call, so
+  // scanner/scanningMod are written in one place only.
   void requestStopScanningForConnect();
   // Claim/release the device-wide outgoing-connect slot: thin wrappers around
   // IotsaBLERadioArbiter::tryBeginConnect()/endActivity() (cwi-dis/iotsa#263),
@@ -209,9 +209,8 @@ protected:
   // mutates scanner/scanningMod) must stay on the single main loop() task, or
   // it races with loop()'s own access to the same state.
   volatile bool scanHasEnded = false;
-  // Set from requestStopScanningForConnect(), which may be called from any
-  // task (e.g. a per-device BLEDimmer::connectionTask()). Same deferral
-  // pattern as scanHasEnded -- only loop() acts on it.
+  // Set from requestStopScanningForConnect(). Same deferral pattern as
+  // scanHasEnded -- only loop() acts on it.
   volatile bool scanStopRequested = false;
   BleDeviceFoundCallback knownDeviceCallback = NULL;
 };

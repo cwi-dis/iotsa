@@ -210,9 +210,8 @@ bool IotsaBLEClientMod::canConnect() {
 }
 
 void IotsaBLEClientMod::requestStopScanningForConnect() {
-  // May be called from any task (e.g. BLEDimmer::connectionTask()). Do not
-  // touch scanner/scanningMod here -- just flag it, loop() does the actual
-  // stopScanning() call, same pattern as onScanEnd()/scanHasEnded below.
+  // Do not touch scanner/scanningMod here -- just flag it, loop() does the
+  // actual stopScanning() call, same pattern as onScanEnd()/scanHasEnded below.
   scanStopRequested = true;
 }
 
@@ -248,9 +247,9 @@ void IotsaBLEClientMod::setKnownDeviceChangedCallback(BleDeviceFoundCallback _ca
 }
 
 void IotsaBLEClientMod::loop() {
-  // scanStopRequested and scanHasEnded may have been set by other tasks
-  // (BLEDimmer::connectionTask() and the NimBLE host task, respectively).
-  // Consume both here and perform at most one stopScanning() call -- this is
+  // scanStopRequested is set by a device's connection state machine,
+  // scanHasEnded by the NimBLE host task. Consume both here and perform at
+  // most one stopScanning() call -- this is
   // the only place scanner/scanningMod are ever written, so there is no
   // cross-task race on them.
   bool wantStop = scanStopRequested;
