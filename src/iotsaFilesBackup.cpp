@@ -16,24 +16,34 @@ struct tarHeader {
 	char pad[255];
 };
 
+// The full path of every file, also in subdirectories (/config/wifi.cfg).
+// The ESP32's File::name() is only the last part of the name; path() is the
+// full one (cwi-dis/iotsa#306).
 #ifdef ESP32
-// xxxjack: need to test whether this workaround is still needed (2022), I think the switch from spiffs to littlefs may have fixed it.
 static void addFilenames(std::vector<String>& fileList, String dirName) {
 	File root = IOTSA_FS.open(dirName);
 	while(1) {
 		File file = root.openNextFile();
 		if (!file) break;
-		String fileName(file.name());
-		fileList.push_back(fileName);
+		String fileName(file.path());
+		if (file.isDirectory()) {
+			addFilenames(fileList, fileName);
+		} else {
+			fileList.push_back(fileName);
+		}
 	}
 }
 #else
 static void addFilenames(std::vector<String>& fileList, String dirName) {
+  String prefix = dirName.endsWith("/") ? dirName : dirName + "/";
   Dir d = IOTSA_FS.openDir(dirName);
   while (d.next()) {
-  	// Get header information
-  	String fileName(d.fileName());
-	fileList.push_back(fileName);
+	String fileName = prefix + d.fileName();
+	if (d.isDirectory()) {
+		addFilenames(fileList, fileName);
+	} else {
+		fileList.push_back(fileName);
+	}
   }
 }
 #endif
@@ -65,8 +75,15 @@ static void checksum(struct tarHeader *h)
 void IotsaFilesBackupMod::setup() {
 }
 
+// The tar holds every secret on the device (WiFi password, user passwords,
+// the issuer key), which the API never returns. So, like changing those
+// settings, it needs configuration mode (cwi-dis/iotsa#300).
 void
 IotsaFilesBackupMod::handler() {
+  if (!iotsaController.inConfigurationMode()) {
+    app.server->send(409, "text/plain", "The backup can only be downloaded in configuration mode.\n");
+    return;
+  }
   IFDEBUG IotsaSerial.println("Creating backup");
 #ifdef CONTENT_LENGTH_UNKNOWN
   app.server->setContentLength(CONTENT_LENGTH_UNKNOWN);
@@ -79,7 +96,6 @@ IotsaFilesBackupMod::handler() {
   	IFDEBUG IotsaSerial.print("File ");
   	IFDEBUG IotsaSerial.println(fileName);
   	File fp = IOTSA_FS.open(fileName, "r");
-	// xxxjack should recursively go through directories for LittleFS?
   	if (!fp) {
 		  IotsaSerial.printf("Backup: cannot open %s\n", fileName.c_str());
 		continue;
@@ -138,7 +154,7 @@ void IotsaFilesBackupMod::lateSetup() {
 
 #ifdef IOTSA_WITH_WEB
 String IotsaFilesBackupMod::info() {
-  return "<p>Download <a href=\"/backup.tar\">/backup.tar</a> for a backup of all files.</p>";
+  return "<p>Download <a href=\"/backup.tar\">/backup.tar</a> for a backup of all files (in configuration mode).</p>";
 }
 #endif // IOTSA_WITH_WEB
 

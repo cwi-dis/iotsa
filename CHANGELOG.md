@@ -30,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `/backup.tar` was empty on ESP32 and left out subdirectories (`/config/`); the `/data` listing had broken links (#306)
+- `/backup.tar` holds every secret on the device, so it now needs configuration mode (#300)
 - `IotsaConfigFileSave::put()` saved a `const char *` value as `1` (it went to the `bool` overload)
 - Web pages showed float settings with 2 decimals, and saving the form wrote the rounded value back (#183)
 - Web pages are sent in pieces, so a page with a long list isn't in memory twice (cwi-dis/iotsaDoorOpener#1)

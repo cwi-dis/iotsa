@@ -22,10 +22,11 @@ IotsaFilesMod::_listDir(String& message, const char *name)
   message += "<ul>";
   File f = d.openNextFile();
   while (f) {
-      message += "<li><a href=\"" + htmlEncode(f.name()) + "\">" + htmlEncode(f.name()) + "</a>";
+      // name() is only the last part of the name, path() the full one (cwi-dis/iotsa#306)
+      message += "<li><a href=\"" + htmlEncode(f.path()) + "\">" + htmlEncode(f.name()) + "</a>";
       if (f.isDirectory()) {
       	message += ":";
-      	_listDir(message, f.name());
+      	_listDir(message, f.path());
       } else {
       	message += "(" + String(f.size()) + " bytes)";
       }
@@ -42,9 +43,19 @@ void
 IotsaFilesMod::_listDir(String& message, const char *name)
 {
   message += "<ul>";
+  String prefix = String(name) + "/";
   Dir d = IOTSA_FS.openDir(name);
   while (d.next()) {
-      message += "<li><a href=\"" + htmlEncode(d.fileName()) + "\">" + htmlEncode(d.fileName()) + "</a> (" + String(d.fileSize()) + " bytes)</li>";
+      // fileName() is relative to the directory (cwi-dis/iotsa#306)
+      String path = prefix + d.fileName();
+      message += "<li><a href=\"" + htmlEncode(path) + "\">" + htmlEncode(d.fileName()) + "</a>";
+      if (d.isDirectory()) {
+      	message += ":";
+      	_listDir(message, path.c_str());
+      } else {
+      	message += " (" + String(d.fileSize()) + " bytes)";
+      }
+      message += "</li>";
   }
   message += "</ul>";
 }
