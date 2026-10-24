@@ -14,12 +14,14 @@ void IotsaUser::configSave(IotsaConfigFileSave& cf, const String& f_name) {
   cf.put(f_name + ".rights", rights);
 }
 
-// The username isn't changed here: it addresses the user.
-// Inside the module's Change, so the right and the mode were checked before
-// the old password is compared.
+// The username is only set for a new user: it addresses the user.
+// Inside the collection's Change, so the right and the mode were checked
+// before the old password is compared.
 void IotsaUser::putHandler(IotsaApiContext& ctx) {
-  // A user with a password is only changed by whoever knows it.
-  if (password != "") {
+  if (username == "") ctx.arg("username", username, IotsaApiContext::SavedInConfigMode);
+  // A password is only changed by whoever knows the old one. Only then: a
+  // restore from a backup, which has no passwords, keeps them (cwi-dis/iotsa#309).
+  if (password != "" && !ctx.request()["password"].isNull()) {
     ctx.used("old_password");
     if (ctx.request()["old_password"].as<String>() != password) {
       ctx.error(403, "wrong old_password");
@@ -62,13 +64,11 @@ IotsaUserMod::IotsaUserMod(IotsaApplication &_app, const char *_defaultUsername,
 	configLoad();
 }
 
-#ifdef IOTSA_WITH_WEB
-bool IotsaUserList::accept(IotsaUser& user, IotsaWebContext& ctx) {
+bool IotsaUserList::accept(IotsaUser& user, IotsaContext& ctx) {
   const char *err = _mod._refuseUser(user);
-  if (err) ctx.error(err);
+  if (err) ctx.error(400, err);
   return err == nullptr;
 }
-#endif
 
 void IotsaUserMod::setup() {
   configLoad();
@@ -105,13 +105,6 @@ const char *IotsaUserMod::_refuseUser(const IotsaUser& newUser) {
   return nullptr;
 }
 
-int IotsaUserMod::_find(const String& username) {
-  for (int i = 0; i < (int)users.size(); i++) {
-    if (users[i].username == username) return i;
-  }
-  return -1;
-}
-
 void IotsaUserMod::configLoad() {
   IotsaConfigFileLoad cf("/config/users.cfg");
   users.clear();
@@ -141,64 +134,28 @@ void IotsaUserMod::configSave() {
   }
 }
 
-// Change one user, addressed by username, or remove it with "remove": true.
-// Change or remove the user named by username. A Change, as on the web page:
-// the right and configuration mode are checked before anything else.
+// The users as a collection (cwi-dis/iotsa#309): "users": [...] replaces all,
+// "users": {"jack": {...}} changes or adds jack, "jack": null removes him.
 void IotsaUserMod::putHandler(IotsaApiContext& ctx) {
   ctx.argsNeedRight("users");
-  IotsaApiContext::Change change(ctx, "username", IotsaApiContext::SavedInConfigMode);
-  if (!change) {
-    if (!ctx.failed()) ctx.error(400, "username missing");
-    return;
-  }
-  int idx = _find(ctx.request()["username"].as<String>());
-  if (idx < 0) {
-    ctx.error(404, "no such user");
-    return;
-  }
-  bool remove = false;
-  ctx.arg("remove", remove, IotsaApiContext::SavedInConfigMode);
-  if (!remove) users[idx].putHandler(ctx);
-  if (!change) return;
-  if (remove) users.erase(users.begin() + idx);
-  change.done();
+  userList.putHandler(ctx);
 }
 
-// Add a user.
-// Add a user.
+// "users": {...}: add one user.
 void IotsaUserMod::postHandler(IotsaApiContext& ctx) {
   ctx.argsNeedRight("users");
-  IotsaApiContext::Change change(ctx, "username", IotsaApiContext::SavedInConfigMode);
-  if (!change) {
-    if (!ctx.failed()) ctx.error(400, "username missing");
-    return;
-  }
-  IotsaUser newUser;
-  ctx.arg("username", newUser.username, IotsaApiContext::SavedInConfigMode);
-  newUser.putHandler(ctx);
-  if (!change) return;
-  const char *err = _refuseUser(newUser);
-  if (err) {
-    ctx.error(400, err);
-    return;
-  }
-  users.push_back(newUser);
-  change.done();
+  userList.postHandler(ctx);
 }
 
 void IotsaUserMod::getHandler(IotsaApiContext& ctx) {
-  JsonArray usersList = ctx.reply()["users"].to<JsonArray>();
-  for (auto& u: users) {
-    IotsaApiContext::Scope s(ctx, u.username, JsonObject(), usersList.add<JsonObject>());
-    u.getHandler(ctx);
-  }
+  userList.getHandler(ctx);
 }
 
 #ifdef IOTSA_WITH_WEB
 void IotsaUserMod::formHandler_args(IotsaWebContext& ctx) {
   ctx.argsNeedRight("users");
   IotsaWebContext::Scope s(ctx, "users");
-  webUsers.formHandler_args(ctx);
+  userList.formHandler_args(ctx);
 }
 
 void IotsaUserMod::formHandler_fields(IotsaWebContext& ctx) {
@@ -208,7 +165,7 @@ void IotsaUserMod::formHandler_fields(IotsaWebContext& ctx) {
     return;
   }
   IotsaWebContext::Scope s(ctx, "users");
-  webUsers.formHandler_fields(ctx);
+  userList.formHandler_fields(ctx);
 }
 
 String IotsaUserMod::info() {

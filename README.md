@@ -498,6 +498,8 @@ void postHandler(IotsaApiContext& ctx);
 
 The put side reads fields with `ctx.arg()` (and `ctx.argPassword()` for secrets), the get side writes them with `ctx.show()`. Changing and reading a field is open to everyone on the network, unless a right is named: `ctx.argsNeedRight("name")` for changes, `ctx.showsNeedRight("name")` for reads, or once for the whole module with `changesNeedRight()`/`readsNeedRight()` in `lateSetup()`. A field the caller may not read is listed in `iotsa_api_redacted`, or shown as "(hidden)" on a web page; without credentials, a web page asks for them. A write-only value, such as a password, is `ctx.showsNeedRight(IOTSA_RIGHT_NEVER)`. Objects inside a module (users, buttons) get the same handlers, called inside an `IotsaApiContext::Scope`. See `iotsaContext.h` and the Decided comment on cwi-dis/iotsa#296.
 
+A list of objects with Add and Remove (users, tokens) is a collection: subclass `IotsaVector<T>` around the `std::vector<T>`, and call its handlers from the module's. It gives the page a table or a section per element, and the API one shape under the collection's name ([#309](https://github.com/cwi-dis/iotsa/issues/309)): a GET returns `"users": [...]`; a PUT of an array replaces the whole list, so a restore sends back what a backup read; a PUT of an object keyed by name (or index) changes or adds elements, `null` removes one; a POST of `"tokens": {...}` adds one. This is iotsa's own rule, borrowed from JSON Merge Patch but not that. See `iotsaCollection.h`.
+
 The web page is `formHandler_args()` and `formHandler_fields()`, see [The web page](#the-web-page) above and `iotsaWebContext.h`. A trigger is `addTrigger()`, see [Triggers](#triggers).
 
 ### iotsaConfig.h
@@ -700,6 +702,10 @@ its set of rights.
 
 Accessing URL `/users` allows adding, changing and removing users, in configuration
 mode. A factory-installed device has no users, and allows all rights always.
+Over the API the users are a collection (see above): `PUT /api/users` with
+`{"users": {"jack": {"password": "...", "rights": "*"}}}` adds or changes jack,
+`{"users": {"jack": null}}` removes him. Changing a password needs the old one in
+`old_password`. A restore of a backup keeps the passwords, which a backup doesn't have.
 
 Add it as the application's authenticator: declare `IotsaUserMod userMod(application);`, and call `application.setAuth(&userMod)` in `setup()`. See the [HelloUser](examples/HelloUser/HelloUser.ino) example.
 

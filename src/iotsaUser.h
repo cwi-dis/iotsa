@@ -26,23 +26,22 @@ public:
 // Usernames, passwords and rights. No users means everything is allowed, as on a
 // factory-fresh device. A non-empty defaultPassword gives a device without stored
 // users the user defaultUsername, with all rights.
-#ifdef IOTSA_WITH_WEB
 class IotsaUserMod;
-// The users on the web page, keyed by username. A new user is checked by
-// the module, as over REST.
-class IotsaUserList : public IotsaWebVector<IotsaUser> {
+// The users, on the web page and in the API (cwi-dis/iotsa#309), keyed by
+// username. A new user is checked by the module.
+class IotsaUserList : public IotsaVector<IotsaUser> {
 public:
   IotsaUserList(IotsaUserMod& mod, std::vector<IotsaUser>& users)
-  : IotsaWebVector<IotsaUser>(users, Add | Remove, Sections, IotsaWebContext::SavedInConfigMode),
+  : IotsaVector<IotsaUser>("users", users, Add | Remove, Sections, IotsaContext::SavedInConfigMode),
     _mod(mod)
   {}
   String key(int i) override { return _v[i].username; }
+  const char *keyField() override { return "username"; }
 protected:
-  bool accept(IotsaUser& user, IotsaWebContext& ctx) override;
+  bool accept(IotsaUser& user, IotsaContext& ctx) override;
 private:
   IotsaUserMod& _mod;
 };
-#endif
 
 class IotsaUserMod : public IotsaAuthMod {
 public:
@@ -68,12 +67,9 @@ protected:
   std::vector<IotsaUser> users;
   String defaultUsername;
   String defaultPassword;
-#ifdef IOTSA_WITH_WEB
   friend class IotsaUserList;
-  IotsaUserList webUsers{*this, users};
-#endif
+  IotsaUserList userList{*this, users};
   // Why newUser can't be added, or nullptr.
   const char *_refuseUser(const IotsaUser& newUser);
-  int _find(const String& username);
 };
 #endif

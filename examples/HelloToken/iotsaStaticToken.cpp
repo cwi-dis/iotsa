@@ -13,10 +13,11 @@
 // Requests without a valid token are passed on to the next authenticator, the
 // users (see mainHelloToken.cpp). So people log in as before.
 //
-// The tokens are managed on the /tokens page. They are a list, so the page uses
-// IotsaStaticTokenList, a subclass of IotsaWebVector, which gives each token
-// its own row plus Add and Remove; the subclass only says which new tokens to
-// refuse.
+// The tokens are managed on the /tokens page and through /api/tokens. They are
+// a list, so the module uses IotsaStaticTokenList, a subclass of IotsaVector,
+// which gives each token its own row plus Add and Remove on the page, and the
+// collection's shape in the API (cwi-dis/iotsa#309); the subclass only says
+// which new tokens to refuse.
 
 //
 // One token.
@@ -73,24 +74,21 @@ IotsaStaticTokenMod::IotsaStaticTokenMod(IotsaApplication &_app, IotsaAuthentica
 {
 }
 
-#ifdef IOTSA_WITH_WEB
 // Refuse a new token that is empty.
-bool IotsaStaticTokenList::accept(IotsaStaticTokenObject& token, IotsaWebContext& ctx) {
+bool IotsaStaticTokenList::accept(IotsaStaticTokenObject& token, IotsaContext& ctx) {
   if (token.token == "") {
-    ctx.error("A new token can't be empty.");
+    ctx.error(400, "A new token can't be empty.");
     return false;
   }
   return true;
 }
-#endif
 
 void IotsaStaticTokenMod::setup() {
   configLoad();
 }
 
 void IotsaStaticTokenMod::lateSetup() {
-  // Only GET: the tokens are changed on the web page.
-  api.setup("tokens", true);
+  api.setup("tokens", true, true, true);
   name = "tokens";
 }
 
@@ -141,14 +139,22 @@ void IotsaStaticTokenMod::configSave() {
   }
 }
 
-// The tokens themselves are secrets: only their rights are sent.
+// The tokens as a collection (cwi-dis/iotsa#309). The tokens themselves are
+// secrets: only their rights are sent. "tokens": [...] replaces all,
+// "tokens": {"0": {...}} changes the first, "0": null removes it; a POST of
+// "tokens": {...} adds one. Changes need the right "tokens", as on the page.
 void IotsaStaticTokenMod::getHandler(IotsaApiContext& ctx) {
-  JsonArray list = ctx.reply()["tokens"].to<JsonArray>();
-  int i = 0;
-  for (auto& t : tokens) {
-    IotsaApiContext::Scope s(ctx, String(i++), JsonObject(), list.add<JsonObject>());
-    t.getHandler(ctx);
-  }
+  tokenList.getHandler(ctx);
+}
+
+void IotsaStaticTokenMod::putHandler(IotsaApiContext& ctx) {
+  ctx.argsNeedRight("tokens");
+  tokenList.putHandler(ctx);
+}
+
+void IotsaStaticTokenMod::postHandler(IotsaApiContext& ctx) {
+  ctx.argsNeedRight("tokens");
+  tokenList.postHandler(ctx);
 }
 
 #ifdef IOTSA_WITH_WEB
@@ -156,7 +162,7 @@ void IotsaStaticTokenMod::formHandler_args(IotsaWebContext& ctx) {
   // Changing the tokens needs the right "tokens".
   ctx.argsNeedRight("tokens");
   IotsaWebContext::Scope s(ctx, "tokens");
-  webTokens.formHandler_args(ctx);
+  tokenList.formHandler_args(ctx);
 }
 
 void IotsaStaticTokenMod::formHandler_fields(IotsaWebContext& ctx) {
@@ -164,7 +170,7 @@ void IotsaStaticTokenMod::formHandler_fields(IotsaWebContext& ctx) {
   // The tokens are configuration, there is no everyday part.
   if (!ctx.includesSettings()) return;
   IotsaWebContext::Scope s(ctx, "tokens");
-  webTokens.formHandler_fields(ctx);
+  tokenList.formHandler_fields(ctx);
 }
 
 String IotsaStaticTokenMod::info() {

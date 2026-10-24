@@ -28,19 +28,17 @@ public:
 
 // The authenticator: the list of tokens, and the users to ask when a request
 // has no valid token.
-#ifdef IOTSA_WITH_WEB
-// The tokens on the web page, as a table with Add and Remove. Keyed by
-// index (a token is a secret, not a name): the list's version makes a stale
-// Remove harmless.
-class IotsaStaticTokenList : public IotsaWebVector<IotsaStaticTokenObject> {
+// The tokens, as a table with Add and Remove on the web page, and in the API
+// (cwi-dis/iotsa#309). Keyed by index (a token is a secret, not a name): the
+// list's version makes a stale Remove on the page harmless.
+class IotsaStaticTokenList : public IotsaVector<IotsaStaticTokenObject> {
 public:
   IotsaStaticTokenList(std::vector<IotsaStaticTokenObject>& tokens)
-  : IotsaWebVector<IotsaStaticTokenObject>(tokens, Add | Remove, Table, IotsaWebContext::Saved)
+  : IotsaVector<IotsaStaticTokenObject>("tokens", tokens, Add | Remove, Table, IotsaContext::Saved)
   {}
 protected:
-  bool accept(IotsaStaticTokenObject& token, IotsaWebContext& ctx) override;
+  bool accept(IotsaStaticTokenObject& token, IotsaContext& ctx) override;
 };
-#endif
 
 class IotsaStaticTokenMod : public IotsaAuthMod {
 public:
@@ -56,6 +54,8 @@ protected:
   void configLoad() override;
   void configSave() override;
   void getHandler(IotsaApiContext& ctx) override;
+  void putHandler(IotsaApiContext& ctx) override;
+  void postHandler(IotsaApiContext& ctx) override;
 #ifdef IOTSA_WITH_WEB
   String webTitle() override { return "Tokens"; }
   void formHandler_args(IotsaWebContext& ctx) override;
@@ -64,9 +64,7 @@ protected:
 
   IotsaAuthenticationProvider &chain;
   std::vector<IotsaStaticTokenObject> tokens;
-#ifdef IOTSA_WITH_WEB
-  IotsaStaticTokenList webTokens{tokens};
-#endif
+  IotsaStaticTokenList tokenList{tokens};
 };
 
 #endif

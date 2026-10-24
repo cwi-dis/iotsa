@@ -181,7 +181,7 @@ public:
   String takeOutput();
 
 private:
-  friend class IotsaWebCollection;
+  friend class IotsaCollection;
   struct Group {
     String html;
     String submitLabel;
@@ -221,7 +221,7 @@ private:
   bool _hiddenForRight = false; // a value was hidden: a right to read it is missing
   String _prefix;
   String _formHidden;       // hidden fields for every form, see FormHidden
-  bool _headerRow = false;  // showCell() writes <th>, see IotsaWebCollection
+  bool _headerRow = false;  // showCell() writes <th>, see IotsaCollection
   String _output;
   std::vector<Group> _forms;
   struct Feedback {
@@ -229,75 +229,6 @@ private:
   };
   std::vector<Feedback> _feedback;
   String _ignoredNames;   // for the result line
-};
-
-//
-// A collection of objects on a web page (cwi-dis/iotsa#183): an interface on top
-// of the module's own container. The container answers a few questions, the
-// framework writes the table or the sections, the operation buttons and the add
-// form, and handles them. The module calls it inside a Scope, like any object.
-//
-// There is no Reorder on purpose: no collection has an order that means
-// something (cwi-dis/iotsa433#2), and a REST PUT of the whole list can reorder.
-//
-class IotsaWebCollection {
-public:
-  enum Ops { Add = 1, Remove = 2 };
-  enum Presentation { Table, Sections };
-  IotsaWebCollection(int ops, Presentation presentation, IotsaWebContext::Persistence persistence)
-  : _ops(ops), _presentation(presentation), _persistence(persistence) {}
-  virtual ~IotsaWebCollection() {}
-
-  // ---- the container answers these ----
-  virtual int size() = 0;
-  virtual IotsaModObject* at(int i) = 0;
-  // How an element is named in the page (and, cwi-dis/iotsa#217, in REST):
-  // its name where it has one, else its index.
-  virtual String key(int i) { return String(i); }
-  // Call fn with a new, empty element: for the table header and the add form.
-  virtual void withExample(std::function<void(IotsaModObject&)> fn) = 0;
-  // Add the filled-in example, or refuse with ctx.error().
-  virtual bool add(IotsaModObject& obj, IotsaWebContext& ctx) { return false; }
-  virtual bool remove(int i) { return false; }
-
-  // ---- written once, here ----
-  void formHandler_args(IotsaWebContext& ctx);
-  void formHandler_fields(IotsaWebContext& ctx);
-protected:
-  int _ops;
-  Presentation _presentation;
-  IotsaWebContext::Persistence _persistence;
-  // Bumped on every add and remove, and in every form of the collection, so a
-  // stale page (a reload, a bookmark, another browser) changes nothing.
-  // Random at boot, so a page from before a reboot is stale too.
-  uint32_t _version = 0;
-  uint32_t _currentVersion();
-};
-
-// The common case: a std::vector of values (users, tokens). A module
-// subclasses it and names it after its elements, "<Element>List"
-// (IotsaUserList), overriding only what differs: key() when the elements
-// have a name, accept() to check (and complete) a new element before it is
-// added. Not "Web" in the name: the same list is meant to serve the API too
-// one day (cwi-dis/iotsa#309).
-template<typename T> class IotsaWebVector : public IotsaWebCollection {
-public:
-  IotsaWebVector(std::vector<T>& v, int ops, Presentation presentation, IotsaWebContext::Persistence persistence)
-  : IotsaWebCollection(ops, presentation, persistence), _v(v) {}
-  int size() override { return _v.size(); }
-  IotsaModObject* at(int i) override { return &_v[i]; }
-  void withExample(std::function<void(IotsaModObject&)> fn) override { T example; fn(example); }
-  bool add(IotsaModObject& obj, IotsaWebContext& ctx) override {
-    T& t = static_cast<T&>(obj);
-    if (!accept(t, ctx)) return false;
-    _v.push_back(t);
-    return true;
-  }
-  bool remove(int i) override { _v.erase(_v.begin() + i); return true; }
-protected:
-  // A new element: refuse it with ctx.error() and false. Default: accepted.
-  virtual bool accept(T& t, IotsaWebContext& ctx) { return true; }
-  std::vector<T>& _v;
 };
 
 #endif // IOTSA_WITH_WEB

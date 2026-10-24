@@ -51,6 +51,7 @@ class IotsaApiServiceWeb;
 #include "iotsaApiWeb.h"
 #include "iotsaWebContext.h"
 #endif
+#include "iotsaCollection.h"
 
 //
 // Chains together whichever of the REST/CoAP/HPS/Web transport services are
