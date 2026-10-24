@@ -162,7 +162,13 @@ bool IotsaWifiDriver::startAP(const String &apName) {
   WiFiMode_t newMode = (WiFiMode_t)((int)WiFi.getMode() | (int)WIFI_AP);
   if (!WiFi.mode(newMode)) return false;
   _stackUp = true;
-  return WiFi.softAP(apName.c_str());
+  bool ok = WiFi.softAP(apName.c_str());
+#ifdef ESP32
+  // Also for the access point: on some C3 boards it can't be joined at full
+  // power, and it is how a fresh board gets configured (cwi-dis/iotsa#167).
+  if (_txPowerReduction) WiFi.setTxPower(WIFI_POWER_8_5dBm);
+#endif
+  return ok;
 }
 
 void IotsaWifiDriver::stopAP() {

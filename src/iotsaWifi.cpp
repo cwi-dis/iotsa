@@ -237,8 +237,10 @@ void IotsaWifiMod::configLoad() {
   cf.get("ssid", ssid, "");
   cf.get("ssidPassword", ssidPassword, "");
   iotsaStatus.wifiConfigured = ssid.length() > 0;
+  // On by default on the C3 (cwi-dis/iotsa#167). ESP32C3 is not defined by
+  // the core; CONFIG_IDF_TARGET_ESP32C3 is.
   cf.get("wifiPowerReduction", wifiPowerReduction,
-#ifdef ESP32C3
+#ifdef CONFIG_IDF_TARGET_ESP32C3
     true
 #else
     false
