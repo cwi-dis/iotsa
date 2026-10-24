@@ -42,8 +42,6 @@ void IotsaBatteryMod::_readVoltages() {
     float lvbFloat = (level * correctionVBat * 3.9)/ 4096.0;
     float charge = (lvbFloat - rangeVBatMin) / (rangeVBat - rangeVBatMin);
     levelVBat = charge <= 0 ? 0 : int(100*charge);
-    IFDEBUG IotsaSerial.print("VBat=");
-    IFDEBUG IotsaSerial.println(levelVBat);
   }
   if (pinVUSB >= 0) {
     int level = analogRead(pinVUSB);

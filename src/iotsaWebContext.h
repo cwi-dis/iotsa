@@ -24,7 +24,10 @@ public:
 
 class IotsaWebContext : public IotsaHttpContext {
 public:
+  // The constructor writes the request line, the destructor the result line
+  // (cwi-dis/iotsa#182).
   IotsaWebContext(IotsaBaseModule& mod, IotsaWebServer *server, const String& apiPath);
+  ~IotsaWebContext();
 
   // ---- put side ----
 
@@ -225,6 +228,7 @@ private:
     String text;
   };
   std::vector<Feedback> _feedback;
+  String _ignoredNames;   // for the result line
 };
 
 //

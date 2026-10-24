@@ -14,8 +14,7 @@
 #endif // IOTSA_WITH_HTTPS
 
 void IotsaConfigMod::setup() {
-  IFDEBUG IotsaSerial.print("boot reason: ");
-  IFDEBUG IotsaSerial.println(iotsaStatus.getBootReason());
+  IOTSA_LOG("iotsaConfig", "boot reason: %s", iotsaStatus.getBootReason());
   iotsaConfig.setDefaultCertificate();
   configLoad();
   // The pending-mode mailbox, the boot anti-tamper gate and the factory-reset
@@ -298,11 +297,11 @@ void IotsaConfigMod::configSave() {
 #ifdef IOTSA_WITH_HTTPS
   if (newKey && newCertificate) {
     iotsaConfigFileSaveBinary("/config/httpsKey.der", newKey, newKeyLength);
-    IFDEBUG IotsaSerial.println("saved /config/httpsKey.der");
+    IOTSA_LOG("iotsaConfig", "saved /config/httpsKey.der");
     iotsaConfigFileSaveBinary("/config/httpsCert.der", newCertificate, newCertificateLength);
-    IFDEBUG IotsaSerial.println("saved /config/httpsCert.der");
+    IOTSA_LOG("iotsaConfig", "saved /config/httpsCert.der");
   } else if (newKey || newCertificate) {
-    IFDEBUG IotsaSerial.println("Not saving key/cert unless both are set");
+    IOTSA_LOG("iotsaConfig", "not saving key/cert unless both are set");
   }
 #endif // IOTSA_WITH_HTTPS
 }

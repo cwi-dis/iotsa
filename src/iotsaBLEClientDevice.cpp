@@ -22,14 +22,14 @@ IotsaBLEClientDevice::IotsaBLEClientDevice(const std::string& _name, std::string
 }
 
 void IotsaBLEClientDevice::ConnCallbacks::onConnect(NimBLEClient* pClient) {
-  IFDEBUG IotsaSerial.printf("IotsaBLEClientDevice(%s): onConnect\n", owner ? owner->getName().c_str() : "?");
+  IOTSA_LOG_DEBUG("iotsaBLEClient", "device %s: onConnect", owner ? owner->getName().c_str() : "?");
   // Host task: only hand the outcome to service(). (Also fires for the
   // blocking connect() path, where linkState isn't Connecting -- ignored.)
   if (owner && owner->linkState == LinkState::Connecting) owner->asyncConnectResult = 1;
 }
 
 void IotsaBLEClientDevice::ConnCallbacks::onConnectFail(NimBLEClient* pClient, int reason) {
-  IFDEBUG IotsaSerial.printf("IotsaBLEClientDevice(%s): onConnectFail reason=%d (%s)\n",
+  IOTSA_LOG_DEBUG("iotsaBLEClient", "device %s: onConnectFail reason=%d (%s)",
     owner ? owner->getName().c_str() : "?", reason, NimBLEUtils::returnCodeToString(reason));
   if (owner && owner->linkState == LinkState::Connecting) {
     owner->asyncConnectFailReason = reason;
@@ -38,7 +38,7 @@ void IotsaBLEClientDevice::ConnCallbacks::onConnectFail(NimBLEClient* pClient, i
 }
 
 void IotsaBLEClientDevice::ConnCallbacks::onDisconnect(NimBLEClient* pClient, int reason) {
-  IFDEBUG IotsaSerial.printf("IotsaBLEClientDevice(%s): onDisconnect reason=%d (%s)\n",
+  IOTSA_LOG_DEBUG("iotsaBLEClient", "device %s: onDisconnect reason=%d (%s)",
     owner ? owner->getName().c_str() : "?", reason, NimBLEUtils::returnCodeToString(reason));
   if (owner) {
     // disconnectSettled is only ever set false by our own disconnect() call,
@@ -99,7 +99,7 @@ bool IotsaBLEClientDevice::receivedAdvertisement(const NimBLEAdvertisedDevice& _
 
 void IotsaBLEClientDevice::clearDevice() {
   if (xSemaphoreTake(bleAddressMutex, bleAddressMutexTimeout) != pdTRUE) {
-    IotsaSerial.println("IotsaBLEClientDevice::clearDevice: bleAddress mutex timeout, skipped");
+    IOTSA_LOG("iotsaBLEClient", "clearDevice: bleAddress mutex timeout, skipped");
   } else {
     bleAddressValid = false;
     xSemaphoreGive(bleAddressMutex);
@@ -109,7 +109,7 @@ void IotsaBLEClientDevice::clearDevice() {
 
 bool IotsaBLEClientDevice::available() {
   if (xSemaphoreTake(bleAddressMutex, bleAddressMutexTimeout) != pdTRUE) {
-    IotsaSerial.println("IotsaBLEClientDevice::available: bleAddress mutex timeout");
+    IOTSA_LOG("iotsaBLEClient", "available: bleAddress mutex timeout");
     return false;
   }
   bool rv = bleAddressValid;
@@ -130,7 +130,7 @@ bool IotsaBLEClientDevice::connect() {
   bool valid = false;
   NimBLEAddress addr("", 0);
   if (xSemaphoreTake(bleAddressMutex, bleAddressMutexTimeout) != pdTRUE) {
-    IotsaSerial.println("IotsaBLEClientDevice::connect: bleAddress mutex timeout, skipped");
+    IOTSA_LOG("iotsaBLEClient", "connect: bleAddress mutex timeout, skipped");
     return false;
   }
   valid = bleAddressValid;
@@ -152,7 +152,7 @@ bool IotsaBLEClientDevice::connect() {
       // with 5 dimmers and NIMBLE_MAX_CONNECTIONS=3, 2026-09-25).
       numConnectAttempts++;
       numConnectFailed++;
-      IotsaSerial.println("IotsaBLEClientDevice::connect: no free BLE client slot, will retry");
+      IOTSA_LOG("iotsaBLEClient", "connect: no free BLE client slot, will retry");
       needsRescan = true;
       if (owner) owner->requestScanUpdate();
       return false;
@@ -199,7 +199,7 @@ bool IotsaBLEClientDevice::connect() {
     _noteConnected();
   } else {
     numConnectFailed++;
-    IotsaSerial.printf("IotsaBLEClientDevice::connect(%s): failed after %ums, rc=%d (%s)\n",
+    IOTSA_LOG("iotsaBLEClient", "device %s: connect failed after %ums, rc=%d (%s)",
       addr.toString().c_str(), elapsedMs, pClient->getLastError(), NimBLEUtils::returnCodeToString(pClient->getLastError()));
     // Don't clearDevice() here: a failed connect doesn't mean the bleAddress is
     // wrong (e.g. a lightSleep device just happened to be asleep mid-attempt)
@@ -261,6 +261,9 @@ bool IotsaBLEClientDevice::isDisconnecting() {
 static const uint32_t ASYNC_CONNECT_BACKSTOP_MS = 2000;
 
 void IotsaBLEClientDevice::requestWork(uint32_t deadlineMs) {
+  // A request line (debug) and a result line per job, like incoming requests
+  // (cwi-dis/iotsa#182). A request while one is pending is the same job.
+  if (!workPending) IOTSA_LOG_DEBUG("iotsaBLEClient", "device %s: -> ...", bleName.c_str());
   workDeadline.arm(deadlineMs);
   workPending = true;
   // The address may need finding first.
@@ -280,7 +283,7 @@ void IotsaBLEClientDevice::service() {
       }
       uint32_t timeout = (owner ? owner->getConnectTimeoutMillis() : 6000) + ASYNC_CONNECT_BACKSTOP_MS;
       if (now - connectStartedAtMillis < timeout) return;
-      IotsaSerial.printf("IotsaBLEClientDevice(%s): no connect outcome after %ums, giving up\n", bleName.c_str(), (unsigned)(now - connectStartedAtMillis));
+      IOTSA_LOG_DEBUG("iotsaBLEClient", "device %s: no connect outcome after %ums, giving up", bleName.c_str(), (unsigned)(now - connectStartedAtMillis));
       if (owner) owner->releaseConnectSlot();
       _connectFailed(BLE_HS_ETIMEOUT);
       return;
@@ -312,7 +315,7 @@ void IotsaBLEClientDevice::service() {
     workPending = false;
     if (linkState == LinkState::WaitingForAddress) searchGaveUp = true;
     lastWorkStatus = "gave up: device not reachable";
-    IotsaSerial.printf("IotsaBLEClientDevice(%s): %s\n", bleName.c_str(), lastWorkStatus);
+    IOTSA_LOG("iotsaBLEClient", "device %s: -> gave up, not reachable", bleName.c_str());
     workAbandoned();
     if (linkState != LinkState::Lingering) linkState = LinkState::Idle;
     // A scan may have been running only for this work: let it stop now.
@@ -353,6 +356,7 @@ void IotsaBLEClientDevice::_runWork() {
   lastWorkMillis = millis() - t0;
   if (lastWorkMillis > maxWorkMillis) maxWorkMillis = lastWorkMillis;
   lastWorkStatus = ok ? "done" : "failed";
+  IOTSA_LOG("iotsaBLEClient", "device %s: -> %s", bleName.c_str(), lastWorkStatus);
   uint32_t keepOpen = keepOpenMillis;
   if (owner && keepOpen > owner->maxConnectionKeepOpen()) keepOpen = owner->maxConnectionKeepOpen();
   lingerEnd.arm(keepOpen);
@@ -395,7 +399,9 @@ bool IotsaBLEClientDevice::_startAsyncConnect() {
 
 void IotsaBLEClientDevice::_connectFailed(int rc) {
   numConnectFailed++;
-  IotsaSerial.printf("IotsaBLEClientDevice(%s): connect failed after %ums, rc=%d (%s)\n",
+  // Debug: the job is retried until its deadline, and its result line says
+  // whether it gave up.
+  IOTSA_LOG_DEBUG("iotsaBLEClient", "device %s: connect failed after %ums, rc=%d (%s)",
     bleName.c_str(), (unsigned)(millis() - connectStartedAtMillis), rc, NimBLEUtils::returnCodeToString(rc));
   // Same reasoning as in connect(): only rescan if we haven't seen the device
   // advertise lately, and give the client slot back.
@@ -643,7 +649,7 @@ static void _staticCallbackCaller(NimBLERemoteCharacteristic* pBLERemoteCharacte
 
 bool IotsaBLEClientDevice::getAsNotification(NimBLEUUID& serviceUUID, NimBLEUUID& charUUID, BleNotificationCallback callback) {
   if (_staticCallback != NULL) {
-    IotsaSerial.println("IotsaBLEClientDevice: only a single notification supported");
+    IOTSA_LOG("iotsaBLEClient", "only a single notification supported");
     return false;
   }
   NimBLERemoteCharacteristic *characteristic = _getCharacteristic(serviceUUID, charUUID);

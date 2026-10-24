@@ -99,7 +99,7 @@ void IotsaWifiController::_startStaAttempt() {
     bssid = _cache.bssid;
   }
   bool issued = _driver.startStation(_ssid, _psk, ch, bssid);
-  IOTSA_LOG("iotsaWifi", "startStation ssid='%s' targeted=%d issued=%d", _ssid.c_str(), (int)(bssid != nullptr), (int)issued);
+  IOTSA_LOG_DEBUG_WIFI("iotsaWifi", "startStation ssid='%s' targeted=%d issued=%d", _ssid.c_str(), (int)(bssid != nullptr), (int)issued);
   _staState = IotsaWifiStaState::Connecting;
 }
 

@@ -12,6 +12,33 @@
 IotsaWebContext::IotsaWebContext(IotsaBaseModule& mod, IotsaWebServer *server, const String& apiPath)
 : IotsaHttpContext(mod, server, apiPath)
 {
+  if (_server == nullptr) return;
+  // The names of the fields only: a value can be a password.
+  String names;
+  for (int i = 0; i < _server->args(); i++) {
+    String name = _server->argName(i);
+    if (name == "plain") continue;
+    if (names.length()) names += ",";
+    names += name;
+  }
+  iotsaApiLogRequest("web", iotsaWebMethod(_server), _server->uri().c_str(),
+    names.length() ? "(fields " + names + ")" : String());
+}
+
+IotsaWebContext::~IotsaWebContext() {
+  if (_server == nullptr) return;
+  String result;
+  if (failed()) {
+    result = String(errorStatus()) + " " + errorMessage();
+  } else if (_sentStatus != 0 && _sentStatus != 200) {
+    result = String(_sentStatus);
+    if (_sentMessage.length()) result += " " + _sentMessage;
+  } else {
+    result = "ok";
+    if (configChanged) result += ", saved";
+    if (_ignoredNames.length()) result += ", ignored " + _ignoredNames;
+  }
+  iotsaApiLogResult("web", iotsaWebMethod(_server), _server->uri().c_str(), result);
 }
 
 //
@@ -91,6 +118,7 @@ void IotsaWebContext::feedback(const String& text) {
 void IotsaWebContext::respond(int code, const char *type, const String& body) {
   _server->send(code, type, body);
   responded = true;
+  _sentStatus = code;
 }
 
 void IotsaWebContext::reportUnused() {
@@ -105,6 +133,7 @@ void IotsaWebContext::reportUnused() {
     names += name;
   }
   if (names.length()) feedback("Ignored: " + names + ".");
+  _ignoredNames = names;
 }
 
 bool IotsaWebContext::_parse(const String& s, bool& v) {

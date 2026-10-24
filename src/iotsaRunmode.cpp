@@ -28,7 +28,6 @@
 // IOTSA_HAS_SLEEP this module also owns the sleep executor + _sleepConfig
 // (persisted to sleep.cfg); IotsaSleepPolicy::decide() borrows it (cwi-dis/iotsa#106).
 
-#define SLEEP_DEBUG if(0)
 // The watchdog lives in IotsaController (cwi-dis/iotsa#106 step 5d, #244) --
 // it's a device-lifecycle concern, not sleep-coupled. _sleepTick() just brackets
 // the sleep with iotsaController.pause/resumeWatchdog().
@@ -103,7 +102,7 @@ void IotsaRunmodeMod::_doIdentify() {
   // cwi-dis/iotsa#133. Run from loop(), so an app handler that uses delay()-based
   // flashing doesn't block the BLE host task or the HTTP response.
   if (_identifyCallbacks.empty()) {
-    IFDEBUG IotsaSerial.println("runmode: identify (no handler registered)");
+    IOTSA_LOG_DEBUG("iotsaRunmode", "identify (no handler registered)");
     return;
   }
   for (auto& cb : _identifyCallbacks) cb();
@@ -464,7 +463,7 @@ void IotsaRunmodeMod::putHandler(IotsaApiContext& ctx) {
 #ifdef ESP32
   if (cpuChanged) {
     setCpuFrequencyMhz(cpuFrequency);
-    IFDEBUG IotsaSerial.printf("Set CPU frequency to %d MHz\n", cpuFrequency);
+    IOTSA_LOG_DEBUG("iotsaRunmode", "CPU frequency %d MHz", cpuFrequency);
   }
 #endif
   if (postponeChanged) iotsaController.postponeSleep(postponeSleep);
@@ -491,28 +490,28 @@ void IotsaRunmodeMod::allowBLEModeSwitch() {
 bool IotsaRunmodeMod::blePutHandler(UUIDstring charUUID) {
   if (charUUID == IotsaRunmodeBLE::requestedModeUUID) {
     _pendingBleMode = bleApi.getAsInt(IotsaRunmodeBLE::requestedModeUUID);
-    IFDEBUG IotsaSerial.printf("runmode: BLE requested mode %d\n", _pendingBleMode);
+    IOTSA_LOG_DEBUG("iotsaRunmode", "BLE: requested mode %d", _pendingBleMode);
     return true;
   }
   if (charUUID == IotsaRunmodeBLE::rebootUUID) {
     if (bleApi.getAsInt(IotsaRunmodeBLE::rebootUUID)) _pendingBleReboot = true;
-    IFDEBUG IotsaSerial.println("runmode: BLE reboot requested");
+    IOTSA_LOG_DEBUG("iotsaRunmode", "BLE: reboot requested");
     return true;
   }
   if (charUUID == IotsaRunmodeBLE::promoteModeUUID) {
     if (bleApi.getAsInt(IotsaRunmodeBLE::promoteModeUUID)) {
-      if (_bleAllowModeSwitch) {
-        _pendingBlePromoteMode = true;
-        IFDEBUG IotsaSerial.println("runmode: BLE promote-mode requested");
-      } else {
-        IFDEBUG IotsaSerial.println("runmode: BLE promote-mode requested but not allowed");
+      if (!_bleAllowModeSwitch) {
+        IOTSA_LOG_DEBUG("iotsaRunmode", "BLE: promote mode not allowed");
+        return false;
       }
+      _pendingBlePromoteMode = true;
+      IOTSA_LOG_DEBUG("iotsaRunmode", "BLE: promote mode requested");
     }
     return true;
   }
   if (charUUID == IotsaRunmodeBLE::wifiDisabledUUID) {
     _pendingBleWifiDisabled = bleApi.getAsInt(IotsaRunmodeBLE::wifiDisabledUUID) ? 1 : 0;
-    IFDEBUG IotsaSerial.printf("runmode: BLE wifiDisabled=%d\n", _pendingBleWifiDisabled);
+    IOTSA_LOG_DEBUG("iotsaRunmode", "BLE: wifiDisabled=%d", _pendingBleWifiDisabled);
     return true;
   }
   if (charUUID == IotsaRunmodeBLE::identifyUUID) {
@@ -564,7 +563,7 @@ void IotsaRunmodeMod::_sleepConfigLoad() {
   cf.get("cpuFrequencySleep", _cpuFrequencySleep, 0);
   if (_cpuFrequencyBoot > 0) {
     setCpuFrequencyMhz(_cpuFrequencyBoot);
-    IFDEBUG IotsaSerial.printf("Set CPU frequency to %d MHz on boot\n", _cpuFrequencyBoot);
+    IOTSA_LOG_DEBUG("iotsaRunmode", "CPU frequency %d MHz on boot", _cpuFrequencyBoot);
   }
 #endif
   // (millisAtWakeup is left alone -- _sleepTick() seeds it on its first run via
@@ -586,7 +585,7 @@ void IotsaRunmodeMod::_sleepConfigSave() {
   cf.put("cpuFrequencyBoot", _cpuFrequencyBoot);
   cf.put("cpuFrequencySleep", _cpuFrequencySleep);
 #endif
-  IFDEBUG IotsaSerial.println("Saved sleep.cfg");
+  IOTSA_LOG("iotsaRunmode", "saved sleep.cfg");
 }
 
 void IotsaRunmodeMod::_notifySleepWakeup(bool sleep) {
@@ -598,19 +597,19 @@ void IotsaRunmodeMod::_sleepTick() {
   IotsaSleepPolicy& sp = iotsaController.sleep();
   if (sp.millisAtWakeup == 0) {
     sp.noteAwake();
-    IFDEBUG IotsaSerial.printf("runmode: wakeup at %u", (unsigned)sp.millisAtWakeup);
 #ifdef ESP32
-    IFDEBUG IotsaSerial.printf(" reason %d", (int)esp_sleep_get_wakeup_cause());
+    IOTSA_LOG_DEBUG("iotsaRunmode", "wakeup at %u reason %d", (unsigned)sp.millisAtWakeup, (int)esp_sleep_get_wakeup_cause());
+#else
+    IOTSA_LOG_DEBUG("iotsaRunmode", "wakeup at %u", (unsigned)sp.millisAtWakeup);
 #endif
-    IFDEBUG IotsaSerial.println();
   }
   if (_sleepConfig.mode == IOTSA_SLEEP_NONE) return;
   if (_pinDisableSleep >= 0 && digitalRead(_pinDisableSleep) == LOW) {
-    SLEEP_DEBUG IotsaSerial.printf("runmode: no sleep, pinDisableSleep=%d LOW\n", _pinDisableSleep);
+    IOTSA_LOG_DEBUG_SLEEP("iotsaRunmode", "no sleep, pinDisableSleep=%d LOW", _pinDisableSleep);
     return;
   }
   if (!iotsaController.canSleep()) {
-    SLEEP_DEBUG IotsaSerial.println("runmode: no sleep, canSleep() false");
+    IOTSA_LOG_DEBUG_SLEEP("iotsaRunmode", "no sleep, canSleep() false");
     return;
   }
   IotsaSleepDecision d = sp.decide(_sleepConfig, iotsaStatus.onUsbPower);
@@ -620,14 +619,14 @@ void IotsaRunmodeMod::_sleepTick() {
   if (_sleepConfig.disableWiFiOnSleep && iotsaStatus.wifiEnabled) {
     static bool haveDisabledWiFi = false;
     if (!haveDisabledWiFi) {
-      IFDEBUG IotsaSerial.println("Will disable WiFi for sleep");
+      IOTSA_LOG_DEBUG("iotsaRunmode", "disabling WiFi for sleep");
       haveDisabledWiFi = true;
       iotsaController.setWifiRadioEnabled(false);
       iotsaController.postponeSleep(IotsaSleepPolicy::WIFI_SHUTDOWN_GRACE_MS);
       return;
     }
   }
-  IFDEBUG IotsaSerial.printf("Going to sleep at %u for %u mode %d\n", (unsigned)millis(), (unsigned)d.durationMs, (int)d.mode);
+  IOTSA_LOG_DEBUG("iotsaRunmode", "sleep at %u for %u ms, mode %d", (unsigned)millis(), (unsigned)d.durationMs, (int)d.mode);
   iotsaBreadcrumbs.setActivity(IOTSA_CRUMB_SLEEP, (uint8_t)d.mode);
   // Only now: the WiFi shutdown above returns to loop() first, and used to
   // leave the watchdog paused (cwi-dis/iotsa#244).
@@ -637,7 +636,7 @@ void IotsaRunmodeMod::_sleepTick() {
   if (_cpuFrequencySleep != 0) {
     static bool haveSetSleepFreq = false;
     if (!haveSetSleepFreq) {
-      IFDEBUG IotsaSerial.printf("Setting CPU frequency to %d MHz for sleep\n", _cpuFrequencySleep);
+      IOTSA_LOG_DEBUG("iotsaRunmode", "CPU frequency %d MHz for sleep", _cpuFrequencySleep);
       haveSetSleepFreq = true;
       setCpuFrequencyMhz(_cpuFrequencySleep);
     }
@@ -655,7 +654,7 @@ void IotsaRunmodeMod::_sleepTick() {
   }
 
 #ifdef ESP32
-  IFDEBUG delay(5); // flush serial
+  delay(5); // flush serial
   if (d.durationMs) esp_sleep_enable_timer_wakeup(d.durationMs * 1000LL);
 
   if (d.mode == IOTSA_SLEEP_LIGHT) {
@@ -665,7 +664,7 @@ void IotsaRunmodeMod::_sleepTick() {
 #endif
     esp_light_sleep_start();
     sp.noteWokeFromSleep();
-    IFDEBUG IotsaSerial.printf("light sleep wakeup at %u\n", (unsigned)sp.millisAtWakeup);
+    IOTSA_LOG_DEBUG("iotsaRunmode", "light sleep wakeup at %u", (unsigned)sp.millisAtWakeup);
 #ifdef IOTSA_WITH_BLE
     // Advertise for the wake window only -- and only if BLE is wanted at all
     // (this used to restart advertising regardless of policy).
@@ -689,7 +688,7 @@ void IotsaRunmodeMod::_sleepTick() {
 #endif
   }
   esp_deep_sleep_start();
-  IotsaSerial.println("esp_deep_sleep_start() failed?");
+  IOTSA_LOG("iotsaRunmode", "esp_deep_sleep_start() failed");
 #else
   // esp8266: only deep sleep, via a full reboot on wake.
   ESP.deepSleep(d.durationMs * 1000LL);

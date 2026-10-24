@@ -5,12 +5,6 @@
 #ifdef IOTSA_HAS_HPSSERVER
 #include "iotsaBLEServer.h"
 
-#ifdef IOTSA_DEBUG_BLE
-#define IFBLEDEBUG if(1)
-#else
-#define IFBLEDEBUG if(0)
-#endif
-
 
 class IotsaHpsServiceEntryPoint {
   public:
@@ -55,7 +49,7 @@ public:
   // that no longer exists, and BLE advertising ordering, now handled by
   // lateSetupDone()) turned out to no longer apply, see cwi-dis/iotsa#210.
   void lateSetup() override {
-    IFBLEDEBUG IotsaSerial.println("IotsaHpsServiceMod::lateSetup called");
+    IOTSA_LOG_DEBUG_BLE("iotsaApiHps", "lateSetup");
     // Not advertised (cwi-dis/iotsa#277): clients find iotsa devices by the
     // runmode service and reach HPS through GATT after connecting.
     bleApi.setup(IotsaApiServiceHps::serviceUUID, this, false);
@@ -94,12 +88,15 @@ protected:
   static std::list<IotsaHpsServiceEntryPoint*> putEntryPoints;
   static std::list<IotsaHpsServiceEntryPoint*> postEntryPoints;
 
+  // HPS requests get "hps" log lines of their own, not "ble" ones.
+  const char *bleLogName() override { return nullptr; }
+
   bool blePutHandler(UUIDstring charUUID) override {
     if (charUUID == IotsaApiServiceHps::controlPointUUID) {
       uint8_t raw = (uint8_t)bleApi.getAsInt(charUUID);
       bool chunking = (raw & HPSControlChunkingFlag) != 0;
       HPSControl command = (HPSControl)(raw & (uint8_t)~HPSControlChunkingFlag);
-      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: request command=0x%02x chunking=%d\n", (int)command, (int)chunking);
+      IOTSA_LOG_DEBUG_BLE("iotsaApiHps", "request command=0x%02x chunking=%d", (int)command, (int)chunking);
       curHttpStatus = _processRequest(command, chunking);
       return true;
     }
@@ -109,7 +106,7 @@ protected:
       // previous request (see bodyUUID handling below for the chunked-write scheme).
       curBody = "";
       lastBodyChunk = "";
-      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: request url=%s\n", curUrl.c_str());
+      IOTSA_LOG_DEBUG_BLE("iotsaApiHps", "request url=%s", curUrl.c_str());
       return true;
     }
     if (charUUID == IotsaApiServiceHps::bodyUUID) {
@@ -124,16 +121,16 @@ protected:
       std::string chunk = bleApi.getAsString(charUUID);
       lastBodyChunk = chunk;
       curBody += chunk;
-      IotsaSerial.printf("IotsaHpsServiceMod: request body chunk (%d bytes, total %d)\n", (int)chunk.size(), (int)curBody.size());
+      IOTSA_LOG_DEBUG_BLE("iotsaApiHps", "request body chunk (%d bytes, total %d)", (int)chunk.size(), (int)curBody.size());
       return true;
     }
     if (charUUID == IotsaApiServiceHps::headersUUID) {
       curHeaders = bleApi.getAsString(charUUID);
-      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: request headers=%s\n", curHeaders.c_str());
+      IOTSA_LOG_DEBUG_BLE("iotsaApiHps", "request headers=%s", curHeaders.c_str());
       return true;
     } 
 
-    IotsaSerial.printf("IotsaHpsServiceMod: ble: write unknown uuid %s\n", charUUID);
+    IOTSA_LOG("iotsaApiHps", "write of unknown uuid %s", charUUID);
     return false;
   }
 
@@ -148,10 +145,10 @@ protected:
   }
 
   bool bleGetHandler(UUIDstring charUUID) override {
-    IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: bleGetHandler(%s)\n", charUUID);
+    IOTSA_LOG_DEBUG_BLE("iotsaApiHps", "bleGetHandler(%s)", charUUID);
     if (charUUID == IotsaApiServiceHps::urlUUID) {
       std::string tmp = curUrl;
-      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: response url=%s\n", tmp.c_str());
+      IOTSA_LOG_DEBUG_BLE("iotsaApiHps", "response url=%s", tmp.c_str());
       bleApi.set(IotsaApiServiceHps::urlUUID, tmp);
       return true;
     }
@@ -171,23 +168,23 @@ protected:
       } else {
         tmp = curBody;
       }
-      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: response body=%s\n", tmp.c_str());
+      IOTSA_LOG_DEBUG_BLE("iotsaApiHps", "response body=%s", tmp.c_str());
       bleApi.set(IotsaApiServiceHps::bodyUUID, tmp);
       return true;
     }
     if (charUUID == IotsaApiServiceHps::headersUUID) {
       std::string tmp = curHeaders;
-      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: headers=%s\n", tmp.c_str());
+      IOTSA_LOG_DEBUG_BLE("iotsaApiHps", "headers=%s", tmp.c_str());
       bleApi.set(IotsaApiServiceHps::headersUUID, tmp);
       return true;
     } 
     if (charUUID == IotsaApiServiceHps::controlPointUUID) {
-      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: control point\n");
+      IOTSA_LOG_DEBUG_BLE("iotsaApiHps", "control point");
       bleApi.set(IotsaApiServiceHps::controlPointUUID, (uint8_t)HPSControl::NONE);
       return true;
     }
     if (charUUID == IotsaApiServiceHps::statusUUID) {
-      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: status\n");
+      IOTSA_LOG_DEBUG_BLE("iotsaApiHps", "status");
       uint8_t data[3];
       data[0] = curHttpStatus & 0xff;
       data[1] = (curHttpStatus >> 8) & 0xff;
@@ -196,12 +193,12 @@ protected:
       return true;
     }
     if (charUUID == IotsaApiServiceHps::securityUUID) {
-      IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: security\n");
+      IOTSA_LOG_DEBUG_BLE("iotsaApiHps", "security");
       bleApi.set(IotsaApiServiceHps::securityUUID, (uint8_t)0);
       return true;
     }
     
-    IotsaSerial.printf("IotsaHpsServiceMod: ble: read unknown uuid %s\n", charUUID);
+    IOTSA_LOG("iotsaApiHps", "read of unknown uuid %s", charUUID);
     return false;
   }
 
@@ -259,7 +256,7 @@ protected:
     {
       curDataStatus = HPSDataStatus::BodyReceived;
     }
-    IFBLEDEBUG IotsaSerial.printf("IotsaHpsServiceMod: reply(%d, status=0x%x): %s\n", curBody.size(), (int)curDataStatus, curBody.c_str());
+    IOTSA_LOG_DEBUG_BLE("iotsaApiHps", "reply(%d, status=0x%x): %s", (int)curBody.size(), (int)curDataStatus, curBody.c_str());
     // We don't do reply headers for now.
     // Set the statusUUID data. This will send a notification or indication if it was requested.
     curHttpStatus = status;
@@ -288,7 +285,7 @@ void IotsaApiServiceHps::ensureServiceMod(IotsaApplication &app) {
 }
   
 void IotsaApiServiceHps::setup(const char* path, bool get, bool put, bool post, bool webPage) {
-  IFBLEDEBUG IotsaSerial.printf("IotsaApiServiceHps: path=%s\n", path);
+  IOTSA_LOG_DEBUG_BLE("iotsaApiHps", "path=%s", path);
   // The IotsaHpsServiceEntryPoint are immutable so we can add it to multiple lists
   IotsaHpsServiceEntryPoint *entry = new IotsaHpsServiceEntryPoint();
   entry->api_path = String("/api/") + path;

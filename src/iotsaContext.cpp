@@ -171,10 +171,14 @@ String IotsaHttpContext::bearerToken() {
 
 void IotsaHttpContext::_challenge() {
   if (_server) _server->requestAuthentication();
+  _sentStatus = 401;
+  _sentMessage = "credentials needed";
 }
 
 void IotsaHttpContext::_forbid(const String& message) {
   if (_server) _server->send(403, "text/plain", message + "\n");
+  _sentStatus = 403;
+  _sentMessage = message;
 }
 #endif
 

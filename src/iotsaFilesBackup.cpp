@@ -84,7 +84,7 @@ IotsaFilesBackupMod::handler() {
     app.server->send(409, "text/plain", "The backup can only be downloaded in configuration mode.\n");
     return;
   }
-  IFDEBUG IotsaSerial.println("Creating backup");
+  IOTSA_LOG("iotsaFilesBackup", "creating backup");
 #ifdef CONTENT_LENGTH_UNKNOWN
   app.server->setContentLength(CONTENT_LENGTH_UNKNOWN);
 #endif
@@ -93,19 +93,16 @@ IotsaFilesBackupMod::handler() {
   addFilenames(fileNames, "/");
   for(std::vector<String>::iterator it=fileNames.begin(); it != fileNames.end(); it++) {
   	const String& fileName = *it;
-  	IFDEBUG IotsaSerial.print("File ");
-  	IFDEBUG IotsaSerial.println(fileName);
   	File fp = IOTSA_FS.open(fileName, "r");
   	if (!fp) {
-		  IotsaSerial.printf("Backup: cannot open %s\n", fileName.c_str());
+		  IOTSA_LOG("iotsaFilesBackup", "cannot open %s", fileName.c_str());
 		continue;
 	}
   	//fileName = fileName.substring(1);
   	size_t fileSize = fp.size();
   	size_t filePadding = 512 - (fileSize & 511);
   	if (filePadding == 512) filePadding = 0;
-  	IFDEBUG IotsaSerial.print("  size=");
-  	IFDEBUG IotsaSerial.println(fileSize);
+  	IOTSA_LOG_DEBUG("iotsaFilesBackup", "%s, %u bytes", fileName.c_str(), (unsigned)fileSize);
   	
   	// Write header
   	memset(buf, '\0', 512);
@@ -129,7 +126,7 @@ IotsaFilesBackupMod::handler() {
 	  		// Short read: previously this looped forever (curLen -1 grew fileSize)
 	  		// until the watchdog fired, see cwi-dis/iotsa#51. Zero-fill the rest
 	  		// so the tar stream stays aligned with the size in the header.
-	  		IotsaSerial.printf("Backup: short read on %s\n", fileName.c_str());
+	  		IOTSA_LOG("iotsaFilesBackup", "short read on %s", fileName.c_str());
 	  		memset(buf, '\0', 512);
 	  		curLen = fileSize < 512 ? fileSize : 512;
 	  	}

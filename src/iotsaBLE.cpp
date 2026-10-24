@@ -11,11 +11,11 @@ void iotsaBLE_ensureInitialized() {
 }
 
 void iotsaBLE_notifyAdvertisingStateChanged(bool active) {
-  IotsaSerial.printf("iotsaBLE: advertising %s\n", active ? "started" : "stopped");
+  IOTSA_LOG_DEBUG("iotsaBLE", "advertising %s", active ? "started" : "stopped");
 }
 
 void iotsaBLE_notifyScanningStateChanged(bool active) {
-  IotsaSerial.printf("iotsaBLE: scanning %s\n", active ? "started" : "stopped");
+  IOTSA_LOG_DEBUG("iotsaBLE", "scanning %s", active ? "started" : "stopped");
 }
 
 volatile uint32_t IotsaBLERadioArbiter::s_serverReservedUntilMillis = 0;
@@ -83,7 +83,7 @@ bool IotsaBLERadioArbiter::tryBeginConnect(uint32_t settleMs) {
 void IotsaBLERadioArbiter::endActivity(Activity activity) {
   uint8_t expected = activity;
   if (!s_activity.compare_exchange_strong(expected, ACTIVITY_NONE)) {
-    IotsaSerial.printf("IotsaBLERadioArbiter: endActivity(%d) but activity is %d\n", (int)activity, (int)expected);
+    IOTSA_LOG("iotsaBLE", "arbiter: endActivity(%d) but activity is %d", (int)activity, (int)expected);
     return;
   }
   if (activity == ACTIVITY_SCAN) s_scanEndedAtMillis = millis();

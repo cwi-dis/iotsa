@@ -23,17 +23,25 @@ static const char *_methodName(IotsaApiOperation verb) {
   return verb == IOTSA_API_GET ? "GET" : verb == IOTSA_API_PUT ? "PUT" : "POST";
 }
 
+void iotsaApiLogRequest(const char *transport, const char *method, const char *path, const String& detail) {
+  IOTSA_LOG_DEBUG("iotsaApi", "%s: %s %s%s%s -> ...", transport, method, path, detail.length() ? " " : "", detail.c_str());
+}
+
+void iotsaApiLogResult(const char *transport, const char *method, const char *path, const String& result) {
+  IOTSA_LOG("iotsaApi", "%s: %s %s -> %s", transport, method, path, result.c_str());
+}
+
 static int _errorReply(const char *transport, const char *method, const char *path, int status, const String& message, String& reply) {
   JsonDocument errorDocument;
   errorDocument["iotsa_api_error"] = message;
   reply = "";
   serializeJson(errorDocument, reply);
-  IOTSA_LOG("iotsaApi", "%s: %s %s -> %d %s", transport, method, path, status, message.c_str());
+  iotsaApiLogResult(transport, method, path, String(status) + " " + message);
   return status;
 }
 
 int iotsaApiRefusal(const char *transport, const char *method, const char *path, int status, const char *message, String& reply) {
-  IOTSA_LOG("iotsaApi", "%s: %s %s", transport, method, path);
+  iotsaApiLogRequest(transport, method, path, "");
   return _errorReply(transport, method, path, status, message, reply);
 }
 
@@ -52,7 +60,10 @@ void IotsaApiProvider::postHandler(IotsaApiContext& ctx) {
 
 int iotsaApiRequest(IotsaApiProvider *provider, const char *transport, IotsaApiOperation verb, const char *path, const char *body, bool http, String& reply, bool& responded) {
   const char *method = _methodName(verb);
-  IOTSA_LOG("iotsaApi", "%s: %s %s", transport, method, path);
+  // The size of the body only: it may hold a password. The body itself only
+  // with IOTSA_DEBUG_API.
+  iotsaApiLogRequest(transport, method, path, verb == IOTSA_API_GET ? String() : "(" + String((unsigned)(body ? strlen(body) : 0)) + " bytes)");
+  if (verb != IOTSA_API_GET) IOTSA_LOG_DEBUG_API("iotsaApi", "%s: request %s", transport, body ? body : "");
   responded = false;
   IotsaBaseModule *mod = provider->asModule();
   if (mod == nullptr) return _errorReply(transport, method, path, 500, "no module", reply);
@@ -91,7 +102,7 @@ int iotsaApiRequest(IotsaApiProvider *provider, const char *transport, IotsaApiO
   if (ctx.responded()) {
     // A 401 challenge, already sent.
     responded = true;
-    IOTSA_LOG("iotsaApi", "%s: %s %s -> %d %s", transport, method, path, ctx.errorStatus(), ctx.errorMessage().c_str());
+    iotsaApiLogResult(transport, method, path, String(ctx.errorStatus()) + " " + ctx.errorMessage());
     return ctx.errorStatus();
   }
   if (ctx.failed()) return _errorReply(transport, method, path, ctx.errorStatus(), ctx.errorMessage(), reply);
@@ -107,10 +118,10 @@ int iotsaApiRequest(IotsaApiProvider *provider, const char *transport, IotsaApiO
   }
   reply = "";
   serializeJson(replyDocument, reply);
-  if (ctx.ignored().empty()) {
-    IOTSA_LOG("iotsaApi", "%s: %s %s -> ok", transport, method, path);
-  } else {
-    IOTSA_LOG("iotsaApi", "%s: %s %s -> ok, ignored %s", transport, method, path, _joined(ctx.ignored()).c_str());
-  }
+  String result = "ok";
+  if (ctx.configChanged) result += ", saved";
+  if (!ctx.ignored().empty()) result += ", ignored " + _joined(ctx.ignored());
+  iotsaApiLogResult(transport, method, path, result);
+  IOTSA_LOG_DEBUG_API("iotsaApi", "%s: reply %s", transport, reply.c_str());
   return 200;
 }

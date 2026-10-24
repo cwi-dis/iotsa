@@ -27,15 +27,6 @@
 #include "iotsaDeadline.h"
 #include <ArduinoJson.h>
 
-//
-// Global defines, changes some behaviour in the whole library
-//
-#ifdef IOTSA_WITH_DEBUG
-#define IFDEBUG if(1)
-#else
-#define IFDEBUG if(0)
-#endif
-
 // IotsaSerial and the IOTSA_LOG* macros (cwi-dis/iotsa#182).
 #include "iotsaLog.h"
 
@@ -161,7 +152,7 @@ public:
 protected:
   static void claimSingleton(T *self) {
     if (_instance != nullptr && _instance != self) {
-      IotsaSerial.println("IOTSA: duplicate singleton module ignored, keeping the first");
+      IOTSA_LOG("iotsa", "duplicate singleton module ignored, keeping the first");
       return;
     }
     _instance = self;
@@ -210,6 +201,13 @@ int iotsaApiRequest(IotsaApiProvider *provider, const char *transport, IotsaApiO
 // A transport's own refusal (no such path, method not allowed), as the same
 // kind of error reply. Returns status.
 int iotsaApiRefusal(const char *transport, const char *method, const char *path, int status, const char *message, String& reply);
+// The log lines for one request, the same for every transport (cwi-dis/iotsa#182):
+// "iotsaApi: <transport>: <method> <path> ...". The request line is
+// debug, written when the request arrives, with detail like "(57 bytes)"; the
+// result line is always shown, written when the reply goes out, with the
+// result like "ok, saved" or "404 not found".
+void iotsaApiLogRequest(const char *transport, const char *method, const char *path, const String& detail);
+void iotsaApiLogResult(const char *transport, const char *method, const char *path, const String& result);
 
 //
 // REST/CoAP/HPS API provider interface. Every module implements this (with
@@ -254,6 +252,9 @@ public:
   // A write whose blePutHandler() was skipped because loop() didn't get to it in
   // time. Called on the NimBLE host task: only latch something.
   virtual void blePutTimedOut(UUIDstring charUUID) {}
+  // The name in the "iotsaApi: ble: ..." log lines (cwi-dis/iotsa#182), or
+  // nullptr for no lines (HPS, whose requests have lines of their own).
+  virtual const char *bleLogName() { return nullptr; }
 };
 
 // Base for every iotsa module -- deliberately lenient (setup()/loop() are the
@@ -281,6 +282,7 @@ class IotsaBaseModule : public IotsaApiProvider, public IotsaBLEProvider {
   friend class IotsaHttpServiceMod;
   friend class IotsaRunmodeMod;
 public:
+  const char *bleLogName() override { return name.c_str(); }
   IotsaBaseModule(IotsaApplication &_app, bool early=false)
   : app(_app),
     nextModule(NULL)

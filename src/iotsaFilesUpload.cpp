@@ -15,8 +15,7 @@ IotsaFilesUploadMod::uploadHandler() {
   _uploadOK = false;
   if(upload.status == UPLOAD_FILE_START){
     String _uploadfilename = "/data/" + upload.filename;
-    IFDEBUG IotsaSerial.print("Uploading ");
-    IFDEBUG IotsaSerial.println(_uploadfilename);
+    IOTSA_LOG("iotsaFilesUpload", "uploading %s", _uploadfilename.c_str());
     if(IOTSA_FS.exists(_uploadfilename)) IOTSA_FS.remove(_uploadfilename);
 #ifndef IOTSA_FS_OPEN_2_ARGS
     _uploadFile = IOTSA_FS.open(_uploadfilename, "w", true);
@@ -40,10 +39,10 @@ void
 IotsaFilesUploadMod::uploadOkHandler() {
   String message;
   if (_uploadOK) {
-    IFDEBUG IotsaSerial.println("upload ok");
+    IOTSA_LOG_DEBUG("iotsaFilesUpload", "upload ok");
     app.server->send(200, "text/plain", "OK");
   } else {
-    IFDEBUG IotsaSerial.println("upload failed");
+    IOTSA_LOG("iotsaFilesUpload", "upload failed");
     app.server->send(403, "text/plain", "FAIL");
   }
 }

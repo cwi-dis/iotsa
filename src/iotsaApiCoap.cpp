@@ -3,8 +3,6 @@
 #include <WiFiUdp.h>
 #include <coap-simple.h>
 
-#define COAP_PROTOCOL_DEBUG
-
 class CoapEndpoint {
 public:
   CoapEndpoint(IotsaApiProvider *_provider, const String &_path, bool _get, bool _put, bool _post)
@@ -36,15 +34,6 @@ CoapCallback CoapEndpoint::getCallback(Coap *_coap) {
 
 void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
     IotsaActivityScope activity(IOTSA_CRUMB_REQUEST, IOTSA_CRUMB_COAP);
-#ifdef COAP_PROTOCOL_DEBUG
-    IotsaSerial.print("COAP pkt recvd from "); IotsaSerial.print(ip); IotsaSerial.print(" port "); IotsaSerial.println(port);
-    IotsaSerial.print("type "); IotsaSerial.println(int(pkt.type));
-    IotsaSerial.print("code "); IotsaSerial.println(int(pkt.code));
-    IotsaSerial.print("tokenlen "); IotsaSerial.println(int(pkt.tokenlen));
-    IotsaSerial.print("payloadlen "); IotsaSerial.println(int(pkt.payloadlen));
-    IotsaSerial.print("messageid "); IotsaSerial.println(int(pkt.messageid));
-    IotsaSerial.print("optionnum "); IotsaSerial.println(int(pkt.optionnum));
-#endif
     // One request, the same as over REST and HPS (cwi-dis/iotsa#280).
     const char *method = pkt.code == COAP_GET ? "GET" : pkt.code == COAP_PUT ? "PUT" : pkt.code == COAP_POST ? "POST" : "?";
     String body;
@@ -65,7 +54,7 @@ void CoapEndpoint::callbackImpl(CoapPacket &pkt, IPAddress ip, int port) {
     COAP_RESPONSE_CODE code = status == 200 ? COAP_CONTENT : (COAP_RESPONSE_CODE)RESPONSE_CODE(status / 100, status % 100);
     if (!coap->sendResponse(ip, port, pkt.messageid, body.c_str(), body.length(), code, COAP_APPLICATION_JSON, pkt.token, pkt.tokenlen)) {
         coap->sendResponse(ip, port, pkt.messageid, NULL, 0, COAP_INTERNAL_SERVER_ERROR, COAP_NONE, pkt.token, pkt.tokenlen);
-        IotsaSerial.println("-> COAP sendResponse error");
+        IOTSA_LOG("iotsaApiCoap", "sendResponse error");
     }
 }
 
@@ -102,7 +91,7 @@ void IotsaCoapServiceMod::_startIfReady() {
     if (_started || !iotsaStatus.networkStackUp) return;
     coap.start();
     _started = true;
-    IFDEBUG IotsaSerial.println("CoAP server started");
+    IOTSA_LOG("iotsaApiCoap", "CoAP server started");
 }
 
 void IotsaCoapServiceMod::loop() {

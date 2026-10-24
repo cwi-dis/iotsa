@@ -42,7 +42,7 @@ IotsaConfigFileLoad::IotsaConfigFileLoad(String filename)
 IotsaConfigFileLoad::IotsaConfigFileLoad(const char *filename) {
   fp = IOTSA_FS.open(filename, "r");
   if (!fp) {
-    IotsaSerial.printf("IotsaConfigFileLoad: %s: file not found\n", filename);
+    IOTSA_LOG_DEBUG("iotsaConfigFile", "%s: file not found", filename);
   }
 }
 
@@ -115,14 +115,12 @@ bool IotsaConfigFileLoad::get(String name, String &value, const char *def) {
     String configName = fp.readStringUntil('=');
     String configValue = fp.readStringUntil('\n');
     if (configName == name) {
-      IFDEBUG IotsaSerial.print("cfload: found ");
-      IFDEBUG IotsaSerial.println(name);
+      IOTSA_LOG_DEBUG("iotsaConfigFile", "found %s", name.c_str());
       value = _unescape(configValue);
       return true;
     }
   }
-  IFDEBUG IotsaSerial.print("cfload: did not find ");
-  IFDEBUG IotsaSerial.println(name);
+  IOTSA_LOG_DEBUG("iotsaConfigFile", "did not find %s", name.c_str());
   value = String(def);
   return false;
 }
@@ -140,15 +138,14 @@ IotsaConfigFileSave::IotsaConfigFileSave(const char *filename) {
   fp = IOTSA_FS.open(filename, "w");
 #endif
   if (!fp) {
-    IotsaSerial.printf("IotsaConfigFileSave: %s not created\n", filename);
+    IOTSA_LOG("iotsaConfigFile", "%s: not created", filename);
   } else {
-    IFDEBUG IotsaSerial.printf("IotsaConfigFileSave: created %s\n", filename);
+    IOTSA_LOG_DEBUG("iotsaConfigFile", "%s: created", filename);
   }
 }
 
 IotsaConfigFileSave::~IotsaConfigFileSave() {
   fp.close();
-  IFDEBUG IotsaSerial.printf("IotsaConfigFileSave: closed\n");
 }
 
 void IotsaConfigFileSave::put(String name, int value) {
@@ -184,18 +181,18 @@ bool iotsaConfigFileLoadBinary(String filename, uint8_t **dataP, size_t *dataLen
   if (!fp) return false;
   size_t size = fp.size();
   if (size == 0) {
-    IFDEBUG IotsaSerial.println("iotsaConfigFileLoadBinary empty file");
+    IOTSA_LOG("iotsaConfigFile", "%s: empty file", filename.c_str());
     fp.close();
     return false;
   }
   uint8_t *buf = (uint8_t *)malloc(size);
   if (buf == NULL) {
-    IFDEBUG IotsaSerial.println("iotsaConfigFileLoadBinary malloc failed");
+    IOTSA_LOG("iotsaConfigFile", "%s: malloc failed", filename.c_str());
     fp.close();
     return false;
   }
   if (fp.readBytes((char *)buf, size) != size) {
-    IFDEBUG IotsaSerial.println("iotsaConfigFileLoadBinary read wrong size");
+    IOTSA_LOG("iotsaConfigFile", "%s: read wrong size", filename.c_str());
     fp.close();
     return false;
   }
@@ -208,7 +205,7 @@ bool iotsaConfigFileLoadBinary(String filename, uint8_t **dataP, size_t *dataLen
 void iotsaConfigFileSaveBinary(String filename, const uint8_t *data, size_t dataLen) {
   File fp = IOTSA_FS.open(filename, "w");
   if (fp.write(data, dataLen) != dataLen) {
-    IFDEBUG IotsaSerial.println("iotsaConfigFileSaveBinary write wrong size");    
+    IOTSA_LOG("iotsaConfigFile", "%s: write wrong size", filename.c_str());
   }
   fp.close();
 }

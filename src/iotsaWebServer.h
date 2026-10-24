@@ -49,6 +49,17 @@ inline void iotsaNoKeepAlive(IotsaWebServer *server) {
   server->sendHeader("Connection", "close");
 #endif
 }
+
+// For the request log lines (cwi-dis/iotsa#182). Templates: the redirecting
+// HTTP server can be another class than IotsaWebServer.
+template<class S> const char *iotsaWebMethod(S *server) {
+  switch (server->method()) {
+  case HTTP_GET: return "GET";
+  case HTTP_POST: return "POST";
+  case HTTP_PUT: return "PUT";
+  default: return "?";
+  }
+}
 #endif
 
 #endif

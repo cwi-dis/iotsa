@@ -27,13 +27,13 @@ void IotsaModeMachine::begin(bool hardwareReset) {
   // a software reboot / watchdog / crash, or a bug/attacker could walk the device
   // into a privileged mode. The reset-reason check is iotsaStatus.wasHardwareReset().
   if (!hardwareReset) {
-    IFDEBUG IotsaSerial.printf("iotsaModeMachine: pending mode %d not honoured (not a hardware reset)\n", (int)pending);
+    IOTSA_LOG("iotsaController", "pending mode %d not honoured (not a hardware reset)", (int)pending);
     return;
   }
 
   _mode = pending;
   _modeDeadline.arm(_windowMillis());
-  IFDEBUG IotsaSerial.printf("iotsaModeMachine: entering mode %d, timeout in %u ms\n", (int)_mode, (unsigned)_windowMillis());
+  IOTSA_LOG("iotsaController", "entering mode %d, timeout in %u ms", (int)_mode, (unsigned)_windowMillis());
   if (_mode == IOTSA_MODE_FACTORY_RESET) factoryReset();
 }
 
@@ -42,7 +42,7 @@ void IotsaModeMachine::tick() {
   // drop the request (+ its mailbox file); no mode was active to "end".
   if (_modeDeadline.fired()) endConfigurationMode();
   if (_nextModeDeadline.fired()) {
-    IFDEBUG IotsaSerial.println("Pending mode request timed out");
+    IOTSA_LOG("iotsaController", "pending mode request timed out");
     _clearPending();
   }
 }
@@ -66,8 +66,7 @@ void IotsaModeMachine::requestMode(iotsa_mode mode) {
 
 void IotsaModeMachine::allowRequestedConfigurationMode() {
   if (_nextMode == _mode) return;
-  IFDEBUG IotsaSerial.print("Switching configurationMode to ");
-  IFDEBUG IotsaSerial.println(_nextMode);
+  IOTSA_LOG("iotsaController", "switching to mode %d", (int)_nextMode);
   _mode = _nextMode;
   _modeDeadline.arm(_windowMillis());
   _clearPending();
@@ -75,7 +74,7 @@ void IotsaModeMachine::allowRequestedConfigurationMode() {
 }
 
 void IotsaModeMachine::endConfigurationMode() {
-  IFDEBUG IotsaSerial.println("Configuration mode ended");
+  IOTSA_LOG("iotsaController", "mode %d ended", (int)_mode);
   _mode = IOTSA_MODE_NORMAL;
   _modeDeadline.disarm();
   _clearPending();
@@ -83,7 +82,7 @@ void IotsaModeMachine::endConfigurationMode() {
 
 void IotsaModeMachine::extendWindow() {
   if (_mode == IOTSA_MODE_NORMAL) return;   // no maintenance-mode window to extend
-  IFDEBUG IotsaSerial.println("Configuration mode extended");
+  IOTSA_LOG_DEBUG("iotsaController", "mode %d extended", (int)_mode);
   _modeDeadline.arm(_windowMillis());
 }
 
@@ -97,13 +96,13 @@ const char *IotsaModeMachine::modeName(iotsa_mode mode) const {
 }
 
 void IotsaModeMachine::factoryReset() {
-  IFDEBUG IotsaSerial.println("configurationMode: Factory-reset");
+  IOTSA_LOG("iotsaController", "factory reset");
   iotsaBreadcrumbs.addBreadcrumb(IOTSA_CRUMB_FACTORY_RESET);
   iotsaController.pauseWatchdog();   // format() can take long, and we reboot anyway
   delay(1000);
-  IFDEBUG IotsaSerial.println("Formatting " IOTSA_FS_NAME "...");
+  IOTSA_LOG("iotsaController", "formatting " IOTSA_FS_NAME);
   IOTSA_FS.format();
-  IFDEBUG IotsaSerial.println("Format done, rebooting.");
+  IOTSA_LOG("iotsaController", "format done, rebooting");
   delay(2000);
   ESP.restart();
 }

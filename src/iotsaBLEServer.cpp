@@ -4,12 +4,6 @@
 #ifdef IOTSA_WITH_BLE
 //#include <BLE2902.h>
 
-#ifdef IOTSA_DEBUG_BLE
-#define IFBLEDEBUG if(1)
-#else
-#define IFBLEDEBUG if(0)
-#endif
-
 // Reboot delay after an isEnabled toggle: longer than the plain HTTP-response
 // delay because this reboot exists to re-init (or tear down) the whole NimBLE
 // stack. 4s is historical/precautionary, not measured.
@@ -24,13 +18,13 @@ static const uint32_t SERVER_CONNECTION_RESERVE_MS = 30000;
 
 class IotsaBLEServerCallbacks : public NimBLEServerCallbacks {
 	void onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) override {
-    IFBLEDEBUG IotsaSerial.printf("BLE connect\n");
+    IOTSA_LOG_DEBUG_BLE("iotsaBLEServer", "connect");
     iotsaController.pauseSleep();
     IotsaBLERadioArbiter::reserveConnectionForServer(SERVER_CONNECTION_RESERVE_MS);
     IotsaBLEServerMod::_notePeerConnected(connInfo.getConnHandle());
   }
 	void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override {
-    IFBLEDEBUG IotsaSerial.printf("BLE Disconnect reason %d\n", reason);
+    IOTSA_LOG_DEBUG_BLE("iotsaBLEServer", "disconnect reason %d", reason);
     iotsaController.resumeSleep();
     IotsaBLEServerMod::_notePeerDisconnected(connInfo.getConnHandle());
     // Re-arm rather than let the reservation end right at disconnect: a
@@ -59,32 +53,45 @@ public:
   static constexpr uint32_t HANDLER_TIMEOUT_MS = 3000;
 	void onRead(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override {
     IotsaActivityScope activity(IOTSA_CRUMB_BLE_CALLBACK, 1);
-    IFBLEDEBUG IotsaSerial.printf("BLE char onRead %s\n", pCharacteristic->getUUID().toString().c_str());
+    IOTSA_LOG_DEBUG_BLE("iotsaBLEServer", "char onRead %s", pCharacteristic->getUUID().toString().c_str());
     IotsaBLEServerMod::_notePeerActivity(connInfo.getConnHandle());
     bool ok = IotsaApplication::runInLoop([this]() {
       iotsaController.noteActivity();
-      api->bleGetHandler(charUUID);
+      bool handled = api->bleGetHandler(charUUID);
+      // Only debug: some clients read all the time (cwi-dis/iotsa#182).
+      const char *who = api->bleLogName();
+      if (who) IOTSA_LOG_DEBUG("iotsaApi", "ble: read %s %s -> %s", who, _shortUUID().c_str(), handled ? "ok" : "refused");
     }, HANDLER_TIMEOUT_MS);
-    if (!ok) IotsaSerial.printf("iotsaBLEServer: read of %s timed out\n", charUUID);
+    if (!ok) IOTSA_LOG("iotsaBLEServer", "read of %s timed out", charUUID);
   }
 	void onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override {
     IotsaActivityScope activity(IOTSA_CRUMB_BLE_CALLBACK, 2);
-    IFBLEDEBUG IotsaSerial.printf("BLE char onWrite %s\n", pCharacteristic->getUUID().toString().c_str());
+    IOTSA_LOG_DEBUG_BLE("iotsaBLEServer", "char onWrite %s", pCharacteristic->getUUID().toString().c_str());
     IotsaBLEServerMod::_notePeerActivity(connInfo.getConnHandle());
     bool ok = IotsaApplication::runInLoop([this]() {
       iotsaController.noteActivity();
-      api->blePutHandler(charUUID);
+      const char *who = api->bleLogName();
+      String what = who ? String(who) + " " + _shortUUID() : String();
+      if (who) iotsaApiLogRequest("ble", "write", what.c_str(), "");
+      bool handled = api->blePutHandler(charUUID);
+      if (who) iotsaApiLogResult("ble", "write", what.c_str(), handled ? "ok" : "refused");
     }, HANDLER_TIMEOUT_MS);
     if (!ok) {
-      IotsaSerial.printf("iotsaBLEServer: write of %s timed out, ignored\n", charUUID);
+      IOTSA_LOG("iotsaBLEServer", "write of %s timed out, ignored", charUUID);
       api->blePutTimedOut(charUUID);
     }
   }
 	void onStatus(NimBLECharacteristic* pCharacteristic, uint32_t code) {
     iotsaController.noteActivity();
-    IFBLEDEBUG IotsaSerial.printf("BLE char onStatus\n");
+    IOTSA_LOG_DEBUG_BLE("iotsaBLEServer", "char onStatus");
   }
 private:
+  // "6E5D0005" for "6E5D0005-...", a 16-bit UUID whole: short and cheap.
+  String _shortUUID() const {
+    String s(charUUID);
+    int dash = s.indexOf('-');
+    return dash > 0 ? s.substring(0, dash) : s;
+  }
   UUIDstring charUUID;
   IotsaBLEProvider *api;
 };
@@ -149,7 +156,7 @@ void IotsaBLEServerMod::_notePeerConnected(uint16_t connHandle) {
       return;
     }
   }
-  IotsaSerial.printf("IotsaBLEServerMod: no free peer slot for connection %d\n", connHandle);
+  IOTSA_LOG("iotsaBLEServer", "no free peer slot for connection %d", connHandle);
 }
 
 void IotsaBLEServerMod::_notePeerActivity(uint16_t connHandle) {
@@ -182,7 +189,7 @@ void IotsaBLEServerMod::_checkIdlePeers() {
     if (idle > (uint32_t)idle_timeout * 1000) {
       // Not debug-gated: a central holding a connection open without using it
       // is exactly the field problem this exists for (cwi-dis/iotsa#265).
-      IotsaSerial.printf("IotsaBLEServerMod: connection %d idle for %ds, disconnecting\n", h, (int)(idle / 1000));
+      IOTSA_LOG("iotsaBLEServer", "connection %d idle for %ds, disconnecting", h, (int)(idle / 1000));
       // Reset the timestamp so we don't re-issue every check while the
       // disconnect is in progress; onDisconnect() frees the slot.
       p.lastActivityMillis = now;
@@ -196,7 +203,7 @@ const uint32_t ADVERTISING_RETRY_MS = 2000; // How long to wait before retrying 
 void IotsaBLEServerMod::_applyTxPower() {
   if (tx_power_dbm != -1) {
     if (!NimBLEDevice::setPower((int8_t)tx_power_dbm)) {
-      IotsaSerial.printf("IotsaBLEServerMod: setPower(%d) failed (out of range for this chip?)\n", tx_power_dbm);
+      IOTSA_LOG("iotsaBLEServer", "setPower(%d) failed (out of range for this chip?)", tx_power_dbm);
     }
   }
   tx_power_dbm_actual = NimBLEDevice::getPower();
@@ -207,7 +214,7 @@ void IotsaBLEServerMod::_noteAdvertisingStartResult(bool ok, uint32_t duration) 
     advertisingRetry.disarm();
     return;
   }
-  IotsaSerial.println("IotsaBLEServerMod: pAdvertising->start() failed (connection pool full?), will retry");
+  IOTSA_LOG("iotsaBLEServer", "pAdvertising->start() failed (connection pool full?), will retry");
   advertisingRetryDuration = duration;
   advertisingRetry.arm(ADVERTISING_RETRY_MS);
 }
@@ -215,8 +222,7 @@ void IotsaBLEServerMod::_noteAdvertisingStartResult(bool ok, uint32_t duration) 
 void IotsaBLEServerMod::createServer() {
   if (s_server) return;
   iotsaConfig.ensureConfigLoaded();
-  IFBLEDEBUG IotsaSerial.print("BLE hostname: ");
-  IFBLEDEBUG IotsaSerial.println(iotsaConfig.hostName.c_str());
+  IOTSA_LOG_DEBUG_BLE("iotsaBLEServer", "hostname %s", iotsaConfig.hostName.c_str());
   iotsaBLE_ensureInitialized();
   NimBLEDevice::setMTU(BLE_ATT_MTU_MAX);
   _applyTxPower();
@@ -232,7 +238,7 @@ void IotsaBLEServerMod::createServer() {
   NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
   pAdvertising->enableScanResponse(true);
   if (!pAdvertising->setName(iotsaConfig.hostName.c_str())) {
-    IotsaSerial.printf("IotsaBLEServerMod: hostname \"%s\" too long to advertise\n", iotsaConfig.hostName.c_str());
+    IOTSA_LOG("iotsaBLEServer", "hostname \"%s\" too long to advertise", iotsaConfig.hostName.c_str());
   }
 }
 
@@ -245,7 +251,7 @@ void IotsaBLEServerMod::_reconcileAdvertising(uint32_t durationMs) {
   if (!want) {
     advertisingRetry.disarm(); // a pending retry must not undo this
     if (active) {
-      IFBLEDEBUG IotsaSerial.printf("BLE stop advertising (wanted=%d, pause reasons=0x%x)\n",
+      IOTSA_LOG_DEBUG_BLE("iotsaBLEServer", "stop advertising (wanted=%d, pause reasons=0x%x)",
         (int)iotsaController.bleRadioWanted(), IotsaBLERadioArbiter::advertisingPauseReasons());
       pAdvertising->stop();
       iotsaBLE_notifyAdvertisingStateChanged(false);
@@ -275,10 +281,10 @@ void IotsaBLEServerMod::_reconcileAdvertising(uint32_t durationMs) {
   }
   bool ok;
   if (durationMs == 0) {
-    IFBLEDEBUG IotsaSerial.println("BLE start advertising");
+    IOTSA_LOG_DEBUG_BLE("iotsaBLEServer", "start advertising");
     ok = pAdvertising->start();
   } else {
-    IFBLEDEBUG IotsaSerial.printf("BLE start advertising for %u ms\n", (unsigned)durationMs);
+    IOTSA_LOG_DEBUG_BLE("iotsaBLEServer", "start advertising for %u ms", (unsigned)durationMs);
     ok = pAdvertising->start(durationMs);
   }
   iotsaBLE_notifyAdvertisingStateChanged(ok);
@@ -291,7 +297,7 @@ void IotsaBLEServerMod::setup() {
   configLoad();   // sets isEnabled from bleserver.cfg (default true)
   s_enabled = isEnabled;
   if (!isEnabled) {
-    IFBLEDEBUG IotsaSerial.println("BLE deinit, not isEnabled");
+    IOTSA_LOG("iotsaBLEServer", "BLE disabled (isEnabled is off)");
     NimBLEDevice::deinit(false);
     esp_bt_mem_release(ESP_BT_MODE_BTDM);
     return;
@@ -341,6 +347,7 @@ void IotsaBLEServerMod::lateSetupDone() {
   // IotsaController policy (cwi-dis/iotsa#106), seeded from !bleDisabledOnBoot.
   _lastBleRadioWanted = iotsaController.bleRadioWanted();
   IotsaBLERadioArbiter::resumeAdvertising(IotsaBLERadioArbiter::PAUSE_GATT_BUILD);
+  if (s_enabled) IOTSA_LOG("iotsaBLEServer", "BLE server started, name %s, radio %s", iotsaConfig.hostName.c_str(), _lastBleRadioWanted ? "on" : "off for now");
 }
 
 void IotsaBLEServerMod::configLoad() {
@@ -356,7 +363,7 @@ void IotsaBLEServerMod::configLoad() {
   _applyTxPower();
 #ifdef IOTSA_DEBUG_BLE
   pAdvertising->setAdvertisingCompleteCallback([](NimBLEAdvertising* adv) {
-    IFBLEDEBUG IotsaSerial.println("BLE advertising complete callback");
+    IOTSA_LOG_DEBUG_BLE("iotsaBLEServer", "advertising complete callback");
   });
 #endif
 }
@@ -387,7 +394,7 @@ void IotsaBLEServerMod::loop() {
   // from the NimBLE host task (a peer disconnected), or a due retry.
   bool bleWanted = iotsaController.bleRadioWanted();
   if (bleWanted != _lastBleRadioWanted) {
-    IFBLEDEBUG IotsaSerial.printf("BLE radio %s by policy\n", bleWanted ? "wanted" : "not wanted");
+    IOTSA_LOG_DEBUG_BLE("iotsaBLEServer", "radio %s by policy", bleWanted ? "wanted" : "not wanted");
     _lastBleRadioWanted = bleWanted;
     _reconcileAdvertising();
   }
@@ -396,7 +403,7 @@ void IotsaBLEServerMod::loop() {
     _reconcileAdvertising();
   }
   if (advertisingRetry.fired()) {
-    IFBLEDEBUG IotsaSerial.println("BLE retry start advertising");
+    IOTSA_LOG_DEBUG_BLE("iotsaBLEServer", "retry start advertising");
     _reconcileAdvertising(advertisingRetryDuration);
   }
   _checkIdlePeers();
@@ -415,29 +422,29 @@ void IotsaBleApiService::setup(const char* serviceUUID, IotsaBLEProvider *_apiPr
   next = IotsaBLEServerMod::s_services;
   IotsaBLEServerMod::s_services = this;
   apiProvider = _apiProvider;
-  IFBLEDEBUG IotsaSerial.printf("IotsaBleApiService: create ble service %s to 0x%x\n", serviceUUID, (uint32_t)apiProvider);
+  IOTSA_LOG_DEBUG_BLE("iotsaBLEServer", "create ble service %s to 0x%x", serviceUUID, (uint32_t)apiProvider);
   bleService = IotsaBLEServerMod::s_server->createService(serviceUUID);
 
   if (advertise) {
     NimBLEUUID uuid(serviceUUID);
     if (uuid.bitSize() == 128 && ++s_advertised128 > 2) {
-      IotsaSerial.printf("IotsaBleApiService: more than two 128-bit services advertised, %s probably won't fit\n", serviceUUID);
+      IOTSA_LOG("iotsaBLEServer", "more than two 128-bit services advertised, %s probably won't fit", serviceUUID);
     }
     // NimBLE tries the advertisement, then the scan response; false means neither had room.
     NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
     if (!pAdvertising->addServiceUUID(uuid)) {
-      IotsaSerial.printf("IotsaBleApiService: no room to advertise service %s (still available after connecting)\n", serviceUUID);
+      IOTSA_LOG("iotsaBLEServer", "no room to advertise service %s (still available after connecting)", serviceUUID);
     }
   }
 }
 
 void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask, uint8_t d2904format, uint16_t d2904unit, const char *d2901descr) {
-  IFBLEDEBUG IotsaSerial.printf("IotsaBleApiService: add ble characteristic %s mask %d\n", charUUID, mask);
+  IOTSA_LOG_DEBUG_BLE("iotsaBLEServer", "add ble characteristic %s mask %d", charUUID, mask);
   nCharacteristic++;
   characteristicUUIDs = (UUIDstring *)realloc((void *)characteristicUUIDs, nCharacteristic*sizeof(UUIDstring));
   bleCharacteristics = (NimBLECharacteristic **)realloc((void *)bleCharacteristics, nCharacteristic*sizeof(NimBLECharacteristic *));
   if (characteristicUUIDs == NULL || bleCharacteristics == NULL) {
-    IotsaSerial.println("IotsaBleApiService: addCharacteristic out of memory");
+    IOTSA_LOG("iotsaBLEServer", "addCharacteristic out of memory");
     return;
   }
   NimBLECharacteristic *newChar = bleService->createCharacteristic(charUUID, mask);
@@ -453,29 +460,29 @@ void IotsaBleApiService::addCharacteristic(UUIDstring charUUID, int mask, uint8_
 }
 
 void IotsaBleApiService::set(UUIDstring charUUID, const uint8_t *data, size_t size) {
-  IFBLEDEBUG IotsaSerial.printf("IotsaBleApiService: set(%s) len=%d\n", charUUID, size);
+  IOTSA_LOG_DEBUG_BLE("iotsaBLEServer", "set(%s) len=%d", charUUID, size);
   for(int i=0; i<nCharacteristic; i++) {
     if (characteristicUUIDs[i] == charUUID) {
       NimBLECharacteristic* ch = bleCharacteristics[i];
       ch->setValue(NULL, 0);
       ch->setValue((uint8_t *)data, size);
       if (ch->getLength() != size) {
-        IotsaSerial.printf("IotsaBleApiService: set: size=%d expected %d\n", ch->getLength(), size);
+        IOTSA_LOG("iotsaBLEServer", "set: size=%d expected %d", ch->getLength(), size);
       }
       bool want_notify = ch->getProperties() & NIMBLE_PROPERTY::NOTIFY;
       bool want_indicate = ch->getProperties() & NIMBLE_PROPERTY::INDICATE;
       if(want_notify) {
-        IFBLEDEBUG IotsaSerial.printf("IotsaBleApiService: send notify %s len=%d\n", charUUID, size);
+        IOTSA_LOG_DEBUG_BLE("iotsaBLEServer", "send notify %s len=%d", charUUID, size);
         ch->notify((uint8_t *)data, size);
       }
       if (want_indicate) {
-        IFBLEDEBUG IotsaSerial.printf("IotsaBleApiService: send indicate %s len=%d\n", charUUID, size);
+        IOTSA_LOG_DEBUG_BLE("iotsaBLEServer", "send indicate %s len=%d", charUUID, size);
         ch->indicate((uint8_t *)data, size);
       }
       return;
     }
   }
-  IotsaSerial.printf("IotsaBleApiService: set: unknown characteristic %s\n", charUUID);
+  IOTSA_LOG("iotsaBLEServer", "set: unknown characteristic %s", charUUID);
 }
 
 void IotsaBleApiService::set(UUIDstring charUUID, uint8_t value) {
@@ -518,7 +525,7 @@ std::string IotsaBleApiService::getAsString(UUIDstring charUUID) {
       return std::string(value.c_str(), value.size());
     }
   }
-  IotsaSerial.println("IotsaBleApiService: get: unknown characteristic");
+  IOTSA_LOG("iotsaBLEServer", "get: unknown characteristic");
   return "";
 }
 

@@ -26,31 +26,31 @@ void IotsaInputMod::setup() {
 #if IOTSA_INPUT_CAN_WAKEUP
   esp_err_t err;
   if (bitmaskButtonWakeHigh && buttonWakeLow >= 0 && anyWakeOnTouch) {
-    IotsaSerial.println("IotsaInputMod: too many incompatible wakeup sources");
+    IOTSA_LOG("iotsaInput", "too many incompatible wakeup sources");
   }
   if (anyWakeOnTouch) {
-    IFDEBUG IotsaSerial.println("IotsaInputMod: enable wake on touch");
+    IOTSA_LOG_DEBUG("iotsaInput", "enable wake on touch");
     err = esp_sleep_enable_touchpad_wakeup();
-    if (err != ESP_OK) IotsaSerial.println("Error in touchpad_wakeup");
+    if (err != ESP_OK) IOTSA_LOG("iotsaInput", "error %d in touchpad_wakeup", (int)err);
   }
   if (bitmaskButtonWakeHigh) {
-    IFDEBUG IotsaSerial.println("IotsaInputMod: enable wake on some high pins");
+    IOTSA_LOG_DEBUG("iotsaInput", "enable wake on some high pins");
     err = esp_sleep_enable_ext1_wakeup(bitmaskButtonWakeHigh, ESP_EXT1_WAKEUP_ANY_HIGH);
-    if (err != ESP_OK) IotsaSerial.println("Error in ext1_wakeup HIGH");
+    if (err != ESP_OK) IOTSA_LOG("iotsaInput", "error %d in ext1_wakeup HIGH", (int)err);
   }
   if (buttonWakeLow >= 0) {
     if (!anyWakeOnTouch) {
-      IFDEBUG IotsaSerial.println("IotsaInputMod: enable wake on one low pins");
+      IOTSA_LOG_DEBUG("iotsaInput", "enable wake on one low pin");
       err = esp_sleep_enable_ext0_wakeup((gpio_num_t)buttonWakeLow, 0);
-      if (err != ESP_OK) IotsaSerial.println("Error in ext0_wakeup");
+      if (err != ESP_OK) IOTSA_LOG("iotsaInput", "error %d in ext0_wakeup", (int)err);
     } else {
       err = esp_sleep_enable_ext1_wakeup(1<<buttonWakeLow, ESP_EXT1_WAKEUP_ALL_LOW);
-      if (err != ESP_OK) IotsaSerial.println("Error in ext1_wakeup LOW");
+      if (err != ESP_OK) IOTSA_LOG("iotsaInput", "error %d in ext1_wakeup LOW", (int)err);
     }
   }
 #else
   if (anyWakeOnTouch || buttonWakeLow >= 0 || bitmaskButtonWakeHigh) {
-    IotsaSerial.println("Wake-from-sleep not implemented on esp8266 or esp32c3");
+    IOTSA_LOG("iotsaInput", "wake from sleep not implemented on esp8266 or esp32c3");
   }
 #endif
 }
@@ -112,7 +112,7 @@ void Button::setup() {
   if (wake) {
     // Buttons should be wired to GND. So press gives a low level.
     if (actOnPress) {
-      if (buttonWakeLow >= 0) IotsaSerial.println("Multiple low wake inputs");
+      if (buttonWakeLow >= 0) IOTSA_LOG("iotsaInput", "multiple low wake inputs");
       buttonWakeLow = pin;
     } else {
       bitmaskButtonWakeHigh |= 1LL << pin;
@@ -165,7 +165,7 @@ void Button::loop() {
       nextRepeat.disarm();
     }
     bool doSend = (pressed && actOnPress) || (!pressed && actOnRelease);
-    IFDEBUG IotsaSerial.printf("Button callback for button pin %d state %d\n", pin, state);
+    IOTSA_LOG_DEBUG_INPUT("iotsaInput", "Button: pin %d state %d", pin, state);
     if (doSend && activationCallback) {
       activationCallback();
     }
@@ -203,7 +203,7 @@ Touchpad::Touchpad(int _pin, bool _actOnPress, bool _actOnRelease, bool _wake)
 }
 
 void Touchpad::setup() {
-  IFDEBUG IotsaSerial.printf("touch(%d): threshold=%d\n", pin, threshold);
+  IOTSA_LOG_DEBUG("iotsaInput", "Touchpad: pin %d threshold %d", pin, threshold);
   if (wake) {
     anyWakeOnTouch = true;
     touchAttachInterrupt(pin, dummyTouchCallback, threshold);
@@ -252,7 +252,6 @@ void ValueInput::bindVar(float& _var, float _min, float _max, float _stepSize) {
 bool ValueInput::_changeValue(int steps) {
   bool reachedLimit = false;
   value += steps;
-  IFDEBUG IotsaSerial.printf("ValueInput callback increment %d value %d", steps, value);
   if (intVar) {
     *intVar += steps*intStep;
     if (*intVar < intMin) {
@@ -263,7 +262,6 @@ bool ValueInput::_changeValue(int steps) {
       *intVar = intMax;
       reachedLimit = true;
     }
-    IFDEBUG IotsaSerial.printf(" intVar %d", *intVar);
   }
   if (floatVar) {
     *floatVar += steps*floatStep;
@@ -275,9 +273,10 @@ bool ValueInput::_changeValue(int steps) {
       *floatVar = floatMax;
       reachedLimit = true;
     }
-    IFDEBUG IotsaSerial.printf(" floatVar %f", *floatVar);
   }
-  IFDEBUG IotsaSerial.println();
+  if (intVar) IOTSA_LOG_DEBUG_INPUT("iotsaInput", "ValueInput: step %d, value %d, intVar %d", steps, value, *intVar);
+  else if (floatVar) IOTSA_LOG_DEBUG_INPUT("iotsaInput", "ValueInput: step %d, value %d, floatVar %f", steps, value, *floatVar);
+  else IOTSA_LOG_DEBUG_INPUT("iotsaInput", "ValueInput: step %d, value %d", steps, value);
   if (activationCallback) {
     activationCallback();
   }
@@ -324,7 +323,7 @@ void RotaryEncoder::loop() {
   int64_t newCount = _encoder->getCount();
   if (newCount != oldCount) {
     iotsaController.noteActivity();
-    IotsaSerial.printf("RotaryEncoder %lld->%lld\n", oldCount, newCount);
+    IOTSA_LOG_DEBUG_INPUT("iotsaInput", "RotaryEncoder: %lld -> %lld", oldCount, newCount);
     int delta = (newCount-oldCount);
     oldCount = newCount;
     _changeValue(delta);
@@ -354,7 +353,7 @@ void RotaryEncoder::loop() {
         change += accelMillis / duration;
       }
     }
-    IotsaSerial.printf("RotaryEncoder pinA=%d pinB=%d increment=%d change=%d\n", pinAstate, pinBstate, increment, change);
+    IOTSA_LOG_DEBUG_INPUT("iotsaInput", "RotaryEncoder: pinA=%d pinB=%d increment=%d change=%d", pinAstate, pinBstate, increment, change);
     if (increment) {
       _changeValue(change);
     } else {
@@ -460,7 +459,7 @@ void CyclingButton::loop() {
 }
 
 bool CyclingButton::_pressedCallback() {
-  IotsaSerial.printf("CyclingButton callback for pressed %d repeat %d, state=%d\n", button.pressed, button.repeatCount, state);
+  IOTSA_LOG_DEBUG_INPUT("iotsaInput", "CyclingButton: pressed %d repeat %d, state=%d", button.pressed, button.repeatCount, state);
   if (button.pressed) {
     // We ignore the first press. We take action on repeat (turn on and increase level)
     // or release (toggle on/off).
@@ -472,14 +471,14 @@ bool CyclingButton::_pressedCallback() {
       if (stateCallback) stateCallback();
     }
     if (_changeValue(direction)) {
-      IotsaSerial.printf("CyclingButton reached limit, now dir=%d", direction);
+      IOTSA_LOG_DEBUG_INPUT("iotsaInput", "CyclingButton: reached limit, direction now %d", -direction);
       direction = -direction;
     }
   } else {
     // The button was released. If this was a short press we toggle on/off.
     if (button.repeatCount == 0) {
       state = !state;
-      IotsaSerial.printf("CyclingButton state=%d\n", state);
+      IOTSA_LOG_DEBUG_INPUT("iotsaInput", "CyclingButton: state=%d", state);
       if (stateVar) *stateVar = state;
       if (stateCallback) stateCallback();
     }

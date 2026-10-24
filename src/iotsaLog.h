@@ -34,8 +34,15 @@ extern Print *iotsaOverrideSerial;
 // code and strings are removed.
 //
 
-#define _IOTSA_LOG_ON(tag, fmt, ...) do { IotsaSerial.printf(tag ": " fmt "\n", ##__VA_ARGS__); } while (0)
-#define _IOTSA_LOG_OFF(tag, fmt, ...) do { if (0) IotsaSerial.printf(tag ": " fmt "\n", ##__VA_ARGS__); } while (0)
+// On ESP8266 a string literal is copied to RAM at boot, so the format string goes
+// through PSTR() and printf_P() to stay in flash. ESP32 keeps literals in flash anyway.
+#ifdef ESP8266
+#define _IOTSA_LOG_PRINTF(tag, fmt, ...) IotsaSerial.printf_P(PSTR(tag ": " fmt "\n"), ##__VA_ARGS__)
+#else
+#define _IOTSA_LOG_PRINTF(tag, fmt, ...) IotsaSerial.printf(tag ": " fmt "\n", ##__VA_ARGS__)
+#endif
+#define _IOTSA_LOG_ON(tag, fmt, ...) do { _IOTSA_LOG_PRINTF(tag, fmt, ##__VA_ARGS__); } while (0)
+#define _IOTSA_LOG_OFF(tag, fmt, ...) do { if (0) _IOTSA_LOG_PRINTF(tag, fmt, ##__VA_ARGS__); } while (0)
 
 #ifndef IOTSA_WITHOUT_LOG
 #define IOTSA_LOG(tag, fmt, ...) _IOTSA_LOG_ON(tag, fmt, ##__VA_ARGS__)
@@ -68,6 +75,21 @@ extern bool iotsaLogDebugEnabled;
 #define IOTSA_LOG_DEBUG_INPUT(tag, fmt, ...) IOTSA_LOG(tag, fmt, ##__VA_ARGS__)
 #else
 #define IOTSA_LOG_DEBUG_INPUT(tag, fmt, ...) _IOTSA_LOG_OFF(tag, fmt, ##__VA_ARGS__)
+#endif
+
+// The body of every API request and its reply. Compile-time only: a request body
+// can hold a password.
+#ifdef IOTSA_DEBUG_API
+#define IOTSA_LOG_DEBUG_API(tag, fmt, ...) IOTSA_LOG(tag, fmt, ##__VA_ARGS__)
+#else
+#define IOTSA_LOG_DEBUG_API(tag, fmt, ...) _IOTSA_LOG_OFF(tag, fmt, ##__VA_ARGS__)
+#endif
+
+// Why the device doesn't sleep, every loop() pass.
+#ifdef IOTSA_DEBUG_SLEEP
+#define IOTSA_LOG_DEBUG_SLEEP(tag, fmt, ...) IOTSA_LOG(tag, fmt, ##__VA_ARGS__)
+#else
+#define IOTSA_LOG_DEBUG_SLEEP(tag, fmt, ...) _IOTSA_LOG_OFF(tag, fmt, ##__VA_ARGS__)
 #endif
 
 #endif

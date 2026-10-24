@@ -4,8 +4,6 @@
 #include <cmArduinoJWT.h>
 #include <ArduinoJson.h>
 
-#define IFDEBUGX if(1)
-
 // Get a scope indicator from a JSON variant
 static IotsaCapabilityObjectScope getRightFrom(const JsonVariant& arg) {
   if (!arg.is<const char*>()) return IOTSA_SCOPE_NONE;
@@ -79,12 +77,10 @@ IotsaAccess IotsaCapabilityMod::allows(IotsaContext& ctx, const char *right) {
     if (capabilities) {
       const char *obj = ctx.apiPath().c_str();
       if (capabilities->allows(obj, ctx.verb())) {
-        IFDEBUGX IotsaSerial.print("Capability allows operation on ");
-        IFDEBUGX IotsaSerial.println(obj);
+        IOTSA_LOG_DEBUG("iotsaCapabilities", "allows operation on %s", obj);
         return IotsaAccess::Granted;
       }
-      IFDEBUGX IotsaSerial.print("Capability does NOT allow operation on ");
-      IFDEBUGX IotsaSerial.println(obj);
+      IOTSA_LOG("iotsaCapabilities", "does not allow operation on %s", obj);
     }
   }
   // Otherwise fall back to username/password authentication
@@ -104,7 +100,7 @@ void IotsaCapabilityMod::loadCapabilitiesFromRequest(IotsaContext& ctx) {
   // Load the bearer token from the request.
   String token = ctx.bearerToken();
   if (token == "") {
-    IFDEBUGX Serial.println("No bearer token in request");
+    IOTSA_LOG_DEBUG("iotsaCapabilities", "no bearer token in request");
     return;
   }
 
@@ -114,7 +110,7 @@ void IotsaCapabilityMod::loadCapabilitiesFromRequest(IotsaContext& ctx) {
   bool ok = decoder.decodeJWT(token, payload);
   // If decode returned false the token wasn't signed with the correct key.
   if (!ok) {
-    IFDEBUGX IotsaSerial.println("Did not decode correctly with key");
+    IOTSA_LOG("iotsaCapabilities", "token did not decode correctly with key");
     return;
   }
   JsonDocument jsonDocument;
@@ -124,10 +120,7 @@ void IotsaCapabilityMod::loadCapabilitiesFromRequest(IotsaContext& ctx) {
   // check that issuer matches
   String issuer = root["iss"];
   if (issuer != trustedIssuer) {
-    IFDEBUGX IotsaSerial.print("Issuer did not match, wtd=");
-    IFDEBUGX IotsaSerial.print(trustedIssuer);
-    IFDEBUGX IotsaSerial.print(", got=");
-    IFDEBUGX IotsaSerial.println(issuer);
+    IOTSA_LOG("iotsaCapabilities", "issuer did not match, wanted %s, got %s", trustedIssuer.c_str(), issuer.c_str());
     return;
   }
 
@@ -140,10 +133,7 @@ void IotsaCapabilityMod::loadCapabilitiesFromRequest(IotsaContext& ctx) {
     String myUrl = "http://" + myFullName;
 #endif
     if (audience != "*" && audience != myFullName && audience != myUrl) {
-      IFDEBUGX IotsaSerial.print("Audience did not match, wtd=");
-      IFDEBUGX IotsaSerial.print(myFullName);
-      IFDEBUGX IotsaSerial.print(", got=");
-      IFDEBUGX IotsaSerial.println(audience);
+      IOTSA_LOG("iotsaCapabilities", "audience did not match, wanted %s, got %s", myFullName.c_str(), audience.c_str());
       return;
     }
   }
@@ -151,15 +141,7 @@ void IotsaCapabilityMod::loadCapabilitiesFromRequest(IotsaContext& ctx) {
   IotsaCapabilityObjectScope get = getRightFrom(root["get"]);
   IotsaCapabilityObjectScope put = getRightFrom(root["put"]);
   IotsaCapabilityObjectScope post = getRightFrom(root["post"]);
-  IFDEBUGX IotsaSerial.print("capability for ");
-  IFDEBUGX IotsaSerial.print(obj);
-  IFDEBUGX IotsaSerial.print(", get=");
-  IFDEBUGX IotsaSerial.print(int(get));
-  IFDEBUGX IotsaSerial.print(", put=");
-  IFDEBUGX IotsaSerial.print(int(put));
-  IFDEBUGX IotsaSerial.print(", post=");
-  IFDEBUGX IotsaSerial.print(int(post));
-  IFDEBUGX IotsaSerial.println(" loaded");
+  IOTSA_LOG_DEBUG("iotsaCapabilities", "capability for %s loaded, get=%d, put=%d, post=%d", obj, int(get), int(put), int(post));
   capabilities = new IotsaCapability(obj, get, put, post);
 }
 
@@ -173,10 +155,7 @@ void IotsaCapabilityMod::configSave() {
   IotsaConfigFileSave cf("/config/capabilities.cfg");
   cf.put("issuer", trustedIssuer);
   cf.put("key", issuerKey);
-  IotsaSerial.print("Saved capabilities.cfg, issuer=");
-  IotsaSerial.print(trustedIssuer);
-  IotsaSerial.print(", key length=");
-  IotsaSerial.println(issuerKey.length());
+  IOTSA_LOG("iotsaCapabilities", "saved capabilities.cfg, issuer=%s, key length=%u", trustedIssuer.c_str(), (unsigned)issuerKey.length());
 }
 
 void IotsaCapabilityMod::putHandler(IotsaApiContext& ctx) {

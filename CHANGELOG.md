@@ -103,6 +103,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `IotsaBLEClientCollectionMod` is now `IotsaBLEClientManagerMod` (`iotsaBLEClientManager.h`), the example `BLEController` is now `BLEManager`; the device registry no longer creates or owns devices (#286)
 - `IotsaApiModObject` handlers have the module handlers' shape: `bool getHandler(reply)`, `bool putHandler(request, reply, bool *changed = nullptr)`; module `put`/`postHandler` also get the optional `changed` output (hard break) (#280)
 - `IOTSA_WIFI_DEBUG` is now `IOTSA_DEBUG_WIFI` (#182)
+- One log line per request, the same for REST, web pages, CoAP, HPS and BLE writes (`iotsaApi: rest: PUT /api/runmode -> ok, saved`), and for outgoing HTTP requests and BLE client jobs; `IOTSA_DEBUG_API` shows request and reply bodies (#182)
+- All of iotsa logs through `iotsaLog.h`: one line per event, tagged with the source file (`iotsaRunmode: ...`); `IOTSA_BLE_DEBUG` is now `IOTSA_DEBUG_BLE`, new `IOTSA_DEBUG_SLEEP`; on ESP8266 log strings stay in flash (#182)
 - The status LED is created automatically from the board definition (`IOTSA_PIN_LED`, `IOTSA_LED_NEOPIXEL`, `IOTSA_LED_ACTIVE_LOW`, replacing `IOTSA_PIN_NEOPIXEL`), and can be a plain LED; `-DIOTSA_WITHOUT_STATUS_LED` opts out (#272)
 - The WiFi and OTA modules are created automatically; sketches no longer need to declare them. `-DIOTSA_WITHOUT_OTA` leaves OTA out (#85)
 - **Breaking:** modules no longer take an authenticator argument; an application sets one with `application.setAuth()`, used by every module (#284)
@@ -134,6 +136,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `IotsaRtcMod::localSeconds/Minutes/Hours/Hours12/IsPM()`: they returned UTC; use `IotsaNtpMod` for local time (#104)
 - `IotsaStatusInterface` / `IotsaApplication::status` (push-based status notification) -- `IotsaLedMod` now polls `iotsaStatus.statusColor()` every `loop()` instead. Breaking for any other implementor (e.g. iotsaNeoClock) (#176)
 - `IotsaLedMod::set()`/`showStatus()` and its pattern-in-flight state -- an app-level side-channel that predates and bypassed the status-pulse precedence chain. Anything that wants to override the pixel temporarily (the default `identify()` handler, `examples/Led`'s `IotsaLedControlMod`) now calls `iotsaStatus.setStatusPulse()` like any other transient signal. Breaking for any downstream app calling `ledMod.set()`/`showStatus()` directly -- use `iotsaStatus.setStatusPulse(rgb, onDuration, offDuration, durationMs, reason)` instead (#256)
+- `IFDEBUG`/`IFDEBUGX`: use `IOTSA_LOG_DEBUG` (#182)
+- `IOTSA_DEBUG_BLE_PRINT_ALL_CLIENTS` (#182)
 - `IotsaBatteryMod::setPinDisableSleep()`/`allowBLEConfigModeSwitch()`: use `IotsaRunmodeMod`'s `setPinDisableSleep()`/`allowBLEModeSwitch()` (#106)
 
 ## [3.0a2] - 2026-08-31

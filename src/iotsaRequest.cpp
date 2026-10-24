@@ -50,6 +50,8 @@ bool IotsaRequest::send(const char *query, String *responseBody) {
         _url = _url + "?" + query;
       }
     }
+    // A request line (debug) and a result line, like incoming requests (cwi-dis/iotsa#182).
+    IOTSA_LOG_DEBUG("iotsaRequest", "GET %s -> ...", _url.c_str());
     if (_url.startsWith("https:")) {
 #ifdef ESP32
       secureClient.setCACert(sslInfo.c_str());
@@ -74,6 +76,7 @@ bool IotsaRequest::send(const char *query, String *responseBody) {
       rv = http.begin(client, _url);  
     }
     if (!rv) {
+      IOTSA_LOG("iotsaRequest", "GET %s -> begin failed", _url.c_str());
 #ifndef ESP32
       if (secureClientPtr) delete secureClientPtr;
       if (trustAnchorPtr) delete trustAnchorPtr;
@@ -91,19 +94,17 @@ bool IotsaRequest::send(const char *query, String *responseBody) {
       http.addHeader("Authorization", "Basic " + cred64);
     }
     int code = http.GET();
+    if (code < 0) {
+      // No HTTP status: the connection failed ("connection refused").
+      IOTSA_LOG("iotsaRequest", "GET %s -> %s", _url.c_str(), HTTPClient::errorToString(code).c_str());
+    } else {
+      IOTSA_LOG("iotsaRequest", "GET %s -> %d", _url.c_str(), code);
+    }
     if (code >= 200 && code <= 299) {
-      IFDEBUG IotsaSerial.print(code);
-      IFDEBUG IotsaSerial.print(" OK GET ");
-      IFDEBUG IotsaSerial.println(_url);
       if (responseBody != NULL) {
         *responseBody = http.getString();
       }
     } else {
-      IFDEBUG IotsaSerial.print(code);
-      IFDEBUG IotsaSerial.print(" FAIL GET ");
-      IFDEBUG IotsaSerial.print(_url);
-      IFDEBUG IotsaSerial.println();
-
       rv = false;
     }
     http.end();

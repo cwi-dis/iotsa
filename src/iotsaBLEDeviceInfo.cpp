@@ -22,7 +22,7 @@ IotsaBLEDeviceInfo::~IotsaBLEDeviceInfo() {
 void IotsaBLEDeviceInfo::setKnownAddress(const std::string& _bleAddress) {
   if (_bleAddress == "") return;
   if (xSemaphoreTake(bleAddressMutex, bleAddressMutexTimeout) != pdTRUE) {
-    IotsaSerial.println("IotsaBLEDeviceInfo::setKnownAddress: bleAddress mutex timeout, skipped");
+    IOTSA_LOG("iotsaBLEClient", "setKnownAddress: bleAddress mutex timeout, skipped");
     return;
   }
   if (!(bleAddressValid && bleAddress.toString() == _bleAddress)) {
@@ -35,7 +35,7 @@ void IotsaBLEDeviceInfo::setKnownAddress(const std::string& _bleAddress) {
 std::string IotsaBLEDeviceInfo::getAddress() {
   std::string rv = "";
   if (xSemaphoreTake(bleAddressMutex, bleAddressMutexTimeout) != pdTRUE) {
-    IotsaSerial.println("IotsaBLEDeviceInfo::getAddress: bleAddress mutex timeout");
+    IOTSA_LOG("iotsaBLEClient", "getAddress: bleAddress mutex timeout");
     return rv;
   }
   bool valid = bleAddressValid;
@@ -48,7 +48,7 @@ bool IotsaBLEDeviceInfo::receivedAdvertisement(const NimBLEAdvertisedDevice& _de
   lastSeenAtMillis = millis();
   rssi = _device.getRSSI();
   if (xSemaphoreTake(bleAddressMutex, bleAddressMutexTimeout) != pdTRUE) {
-    IotsaSerial.println("IotsaBLEDeviceInfo::receivedAdvertisement: bleAddress mutex timeout, skipped");
+    IOTSA_LOG("iotsaBLEClient", "receivedAdvertisement: bleAddress mutex timeout, skipped");
     return false;
   }
   // Check whether the bleAddress is the same, then we don't have to add anything.

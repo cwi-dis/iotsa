@@ -181,10 +181,16 @@ public:
   bool hasBasicAuth(const char *user, const char *password) override;
   String bearerToken() override;
   bool carriesCredentials() const override { return _server != nullptr; }
+  // What this context sent itself (a challenge, a refusal), for the log line:
+  // 0 if nothing.
+  int sentStatus() const { return _sentStatus; }
+  const String& sentMessage() const { return _sentMessage; }
 protected:
   void _challenge() override;
   void _forbid(const String& message) override;
   IotsaWebServer *_server;
+  int _sentStatus = 0;
+  String _sentMessage;
 };
 typedef IotsaHttpContext IotsaApiContextBase;
 #else

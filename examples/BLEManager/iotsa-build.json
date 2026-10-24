@@ -41,7 +41,7 @@
       "label": "debug",
       "build_flags": [
         "-DIOTSA_WITH_BLE",
-        "-DIOTSA_DEBUG_BLE_PRINT_ALL_CLIENTS",
+        "-DIOTSA_DEBUG_BLE",
         "-DCONFIG_NIMBLE_CPP_ENABLE_RETURN_CODE_TEXT"
       ],
       "ci": {

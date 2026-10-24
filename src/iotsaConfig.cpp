@@ -37,10 +37,7 @@ void IotsaConfig::setDefaultCertificate() {
   httpsCertificateLength = sizeof(defaultHttpsCertificate);
   httpsKey = defaultHttpsKey;
   httpsKeyLength = sizeof(defaultHttpsKey);
-  IFDEBUG IotsaSerial.print("Default https key len=");
-  IFDEBUG IotsaSerial.print(httpsKeyLength);
-  IFDEBUG IotsaSerial.print(", cert len=");
-  IFDEBUG IotsaSerial.println(httpsCertificateLength);
+  IOTSA_LOG_DEBUG("iotsaConfig", "default https key len=%u, cert len=%u", (unsigned)httpsKeyLength, (unsigned)httpsCertificateLength);
 #endif // IOTSA_WITH_HTTPS
 }
 
@@ -80,11 +77,11 @@ void IotsaConfig::configLoad() {
   if (iotsaConfigFileExists("/config/httpsKey.der") && iotsaConfigFileExists("/config/httpsCert.der")) {
     bool ok = iotsaConfigFileLoadBinary("/config/httpsKey.der", (uint8_t **)&iotsaConfig.httpsKey, &iotsaConfig.httpsKeyLength);
     if (ok) {
-      IFDEBUG IotsaSerial.println("Loaded /config/httpsKey.der");
+      IOTSA_LOG_DEBUG("iotsaConfig", "loaded /config/httpsKey.der");
     }
     ok = iotsaConfigFileLoadBinary("/config/httpsCert.der", (uint8_t **)&iotsaConfig.httpsCertificate, &iotsaConfig.httpsCertificateLength);
     if (ok) {
-      IFDEBUG IotsaSerial.println("Loaded /config/httpsCert.der");
+      IOTSA_LOG_DEBUG("iotsaConfig", "loaded /config/httpsCert.der");
     }
   }
 #endif // IOTSA_WITH_HTTPS
@@ -100,7 +97,7 @@ void IotsaConfig::configSave() {
   cf.put("bleDisabledOnBoot", iotsaConfig.bleDisabledOnBoot);
 #endif
   // Key/cert are saved in iotsaConfigMod
-  IFDEBUG IotsaSerial.println("Saved config.cfg");
+  IOTSA_LOG("iotsaConfig", "saved config.cfg");
 }
 void IotsaConfig::ensureConfigLoaded() { 
   if (!configWasLoaded) configLoad(); 

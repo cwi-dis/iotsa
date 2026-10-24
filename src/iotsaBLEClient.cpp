@@ -42,10 +42,10 @@ void IotsaBLEClientMod::clientConfigSave(IotsaConfigFileSave& cf) {
 }
 
 void IotsaBLEClientMod::setup() {
-  IFDEBUG IotsaSerial.println("BLEClientmod::setup()");
   loadClientConfig();
   iotsaBLE_ensureInitialized();
   setupScanner();
+  IOTSA_LOG("iotsaBLEClient", "BLE client started");
 }
 
 void IotsaBLEClientMod::setupScanner() {
@@ -131,23 +131,21 @@ void IotsaBLEClientMod::updateScanning() {
     return;
   }
   if (!needsDiscovery()) return;
-  IFDEBUG {
-    IotsaSerial.print("BLE scan for: ");
-    for (auto it: devices) {
-      if (!it.second->available() || it.second->needsRescan) {
-        IotsaSerial.printf("%s ", it.second->getName().c_str());
-      }
+  String wanted;
+  for (auto it: devices) {
+    if (!it.second->available() || it.second->needsRescan) {
+      wanted += " ";
+      wanted += it.second->getName().c_str();
     }
-    const char *other = otherDiscoveryReason();
-    if (other) IotsaSerial.printf("(%s)", other);
-    IotsaSerial.println();
   }
+  const char *other = otherDiscoveryReason();
+  IOTSA_LOG_DEBUG("iotsaBLEClient", "scan for%s%s%s%s", wanted.c_str(), other ? " (" : "", other ? other : "", other ? ")" : "");
   startScanning();
 }
 
 void IotsaBLEClientMod::startScanning() {
   if (isScanning()) {
-    IotsaSerial.println("IotsaBLEClientMod.startScanning: already scanning...");
+    IOTSA_LOG_DEBUG("iotsaBLEClient", "startScanning: already scanning");
     return;
   }
   if (!IotsaBLERadioArbiter::tryBeginScan()) {
@@ -155,7 +153,7 @@ void IotsaBLEClientMod::startScanning() {
     scanUpdate.arm(SCAN_START_RETRY_MS);
     return;
   }
-  IFDEBUG IotsaSerial.println("IotsaBLEClientMod: BLE scan start");
+  IOTSA_LOG_DEBUG("iotsaBLEClient", "scan start");
   if (coordinateWithServer) {
     IotsaBLERadioArbiter::pauseAdvertising(IotsaBLERadioArbiter::PAUSE_SCAN);
   }
@@ -175,7 +173,7 @@ void IotsaBLEClientMod::startScanning() {
     if (coordinateWithServer) {
       IotsaBLERadioArbiter::resumeAdvertising(IotsaBLERadioArbiter::PAUSE_SCAN);
     }
-    IFDEBUG IotsaSerial.println("NimBLEClient: cannot start scan, retry in 1s");
+    IOTSA_LOG_DEBUG("iotsaBLEClient", "cannot start scan, retry in 1s");
     scanUpdate.arm(SCAN_START_RETRY_MS);
     return;
   }
@@ -184,9 +182,9 @@ void IotsaBLEClientMod::startScanning() {
 
 void IotsaBLEClientMod::stopScanning() {
   if (scanner == nullptr) {
-    IFDEBUG IotsaSerial.println("IotsaBLEClientMod.stopScanning: not scanning...");
+    IOTSA_LOG_DEBUG("iotsaBLEClient", "stopScanning: not scanning");
   } else {
-    IFDEBUG IotsaSerial.println("IotsaBLEClientMod.stopScanning: BLE scan stop");
+    IOTSA_LOG_DEBUG("iotsaBLEClient", "scan stop");
     scanner->stop();
     scanStoppedAtMillis = millis();
     scanner = NULL;
@@ -233,7 +231,7 @@ void IotsaBLEClientMod::onScanEnd(const NimBLEScanResults& scanResults, int reas
     // Called on the NimBLE host task, not the main loop() task. Do not touch
     // scanner/scanningMod or anything else non-trivial here -- just flag it
     // and let loop() (single-threaded) do the actual work.
-    IFDEBUG IotsaSerial.printf("IotsaBLEClientMod: BLE scan complete, reason=%d\n", reason);
+    IOTSA_LOG_DEBUG("iotsaBLEClient", "scan complete, reason=%d", reason);
     scanHasEnded = true;
 }
 
@@ -279,7 +277,7 @@ void IotsaBLEClientMod::loop() {
   if (someoneWaitsForLink && !mayOpenLink()) {
     for (auto it: devices) {
       if (it.second->getLinkState() == IotsaBLEClientDevice::LinkState::Lingering && !it.second->hasPendingWork()) {
-        IFDEBUG IotsaSerial.printf("IotsaBLEClientMod: closing lingering link to %s, another device needs the radio\n", it.second->getName().c_str());
+        IOTSA_LOG_DEBUG("iotsaBLEClient", "closing lingering link to %s, another device needs the radio", it.second->getName().c_str());
         it.second->endLinger();
         break;
       }
@@ -296,9 +294,6 @@ void IotsaBLEClientMod::onResult(const NimBLEAdvertisedDevice *advertisedDevice)
 }
 
 void IotsaBLEClientMod::_handleAdvertisement(const NimBLEAdvertisedDevice *advertisedDevice) {
-#ifdef IOTSA_DEBUG_BLE_PRINT_ALL_CLIENTS
-  IotsaSerial.printf("BLEClientMod::onResult(%s, RSSI: %d)\n", advertisedDevice->toString().c_str(), advertisedDevice->getRSSI());
-#endif
   // Is this an advertisement for a device we know, either by name or by address?
   // (NimBLE-Arduino 2.1.0 stopped advertising the device name by default, so a
   // known device may well show up with no name at all -- the address match below
@@ -314,13 +309,13 @@ void IotsaBLEClientMod::_handleAdvertisement(const NimBLEAdvertisedDevice *adver
     if (it != devices.end()) {
       auto dev = it->second;
       if (dev == nullptr) {
-        IotsaSerial.printf("BLEClientMod: device byName \"%s\" is NULL\n", deviceName.c_str());
+        IOTSA_LOG("iotsaBLEClient", "device byName \"%s\" is NULL", deviceName.c_str());
         return;
       }
       bool changed = dev->receivedAdvertisement(*advertisedDevice);
       if (changed) {
         devicesByAddress[advertisedDevice->getAddress().toString()] = dev;
-        IFDEBUG IotsaSerial.printf("BLEClientMod: advertisement update byname for %s\n", deviceName.c_str());
+        IOTSA_LOG_DEBUG("iotsaBLEClient", "advertisement update byname for %s", deviceName.c_str());
         onDeviceAddressChanged(dev);
         if (knownDeviceCallback) knownDeviceCallback(*advertisedDevice);
       }
@@ -333,13 +328,13 @@ void IotsaBLEClientMod::_handleAdvertisement(const NimBLEAdvertisedDevice *adver
   if (it2 != devicesByAddress.end()) {
     auto dev = it2->second;
     if (dev == nullptr) {
-      IotsaSerial.printf("BLEClientMod: device byAddress \"%s\" is NULL\n", addr.c_str());
+      IOTSA_LOG("iotsaBLEClient", "device byAddress \"%s\" is NULL", addr.c_str());
       return;
     }
     bool changed = dev->receivedAdvertisement(*advertisedDevice);
     if (changed) {
       devicesByAddress[advertisedDevice->getAddress().toString()] = dev;
-      IFDEBUG IotsaSerial.printf("BLEClientMod: advertisement update byaddress for %s\n", addr.c_str());
+      IOTSA_LOG_DEBUG("iotsaBLEClient", "advertisement update byaddress for %s", addr.c_str());
       if (knownDeviceCallback) knownDeviceCallback(*advertisedDevice);
     }
     scanUpdate.arm(0); // We may have found what we were looking for

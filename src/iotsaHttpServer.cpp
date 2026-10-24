@@ -33,8 +33,8 @@ public:
       newLoc += urlEncode(server.arg(i));
       sep = '&';
     }
-    IFDEBUG IotsaSerial.print("HTTP 301 to ");
-    IFDEBUG IotsaSerial.println(newLoc);
+    // Not the new location: it has the arguments, which can be a password.
+    iotsaApiLogResult("web", iotsaWebMethod(&server), server.uri().c_str(), "301 to https");
     server.sendHeader("Location", newLoc);
     server.send(301, "", "");
   }
@@ -100,10 +100,7 @@ IotsaHttpServiceMod::_startIfReady() {
 #endif // defined(IOTSA_HAS_FORWARDING_WEBSERVER)
 
 #ifdef IOTSA_WITH_HTTPS
-  IFDEBUG IotsaSerial.print("Using https key len=");
-  IFDEBUG IotsaSerial.print(iotsaConfig.httpsKeyLength);
-  IFDEBUG IotsaSerial.print(", cert len=");
-  IFDEBUG IotsaSerial.println(iotsaConfig.httpsCertificateLength);
+  IOTSA_LOG_DEBUG("iotsaHttpServer", "https key len=%u, cert len=%u", (unsigned)iotsaConfig.httpsKeyLength, (unsigned)iotsaConfig.httpsCertificateLength);
 #if !defined(ESP32) && defined(IOTSA_WITH_HTTPS)
   // BearSSL's ESP8266WebServerSecure is the only implementation exposing setRSACert()
   // -- everyone else (both ESP32 implementations, and plain non-HTTPS ESP8266) uses
@@ -111,7 +108,7 @@ IotsaHttpServiceMod::_startIfReady() {
   X509List *chain = new X509List(iotsaConfig.httpsCertificate, iotsaConfig.httpsCertificateLength);
   PrivateKey *sk = new PrivateKey(iotsaConfig.httpsKey, iotsaConfig.httpsKeyLength);
   if (!chain || !sk) {
-    IotsaSerial.print("ssl: out of memory");
+    IOTSA_LOG("iotsaHttpServer", "ssl: out of memory");
   } else {
     server->getServer().setRSACert(chain, sk);
   }
@@ -126,7 +123,7 @@ IotsaHttpServiceMod::_startIfReady() {
 #endif
   server->begin();
   _started = true;
-  IFDEBUG IotsaSerial.println("Web server started");
+  IOTSA_LOG("iotsaHttpServer", "web server started");
 }
 
 void
@@ -155,6 +152,7 @@ IotsaHttpServiceMod::webServerNotFoundHandler() {
     message += " " + server->argName(i) + ": " + server->arg(i) + "\n";
   }
   server->send(404, "text/plain", message);
+  iotsaApiLogResult("web", iotsaWebMethod(server), server->uri().c_str(), "404 not found");
 }
 #else // IOTSA_HAS_WEBSERVER
 void IotsaHttpServiceMod::lateSetup() {}
@@ -176,5 +174,6 @@ IotsaHttpServiceMod::webServerRootHandler() {
   }
   message += "</body></html>";
   server->send(200, "text/html", message);
+  iotsaApiLogResult("web", iotsaWebMethod(server), server->uri().c_str(), "ok");
 }
 #endif // IOTSA_WITH_WEB

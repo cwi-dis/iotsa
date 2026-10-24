@@ -107,7 +107,7 @@ void IotsaWifiMod::_publishControllerState() {
   // path isn't the problem -- the live WiFi.softAPgetStationNum() poll itself is.
   const bool apInUse = (apSt == IotsaWifiApState::InUse);
   if (apInUse != _lastApInUse) {
-    IOTSA_LOG("iotsaWifi", "AP client %s (count=%d)", apInUse ? "joined" : "left/idle", WiFi.softAPgetStationNum());
+    IOTSA_LOG_DEBUG_WIFI("iotsaWifi", "AP client %s (count=%d)", apInUse ? "joined" : "left/idle", WiFi.softAPgetStationNum());
     _lastApInUse = apInUse;
   }
   if ((staConn && !_lastStaConnected) || (apAct && !_lastApActive)) {

@@ -71,48 +71,45 @@ IotsaApplication::addModEarly(IotsaBaseModule *mod) {
 void
 IotsaApplication::setup() {
   // xxxjack Unsure about this. We always open the Serial port,
-  // so log messages that aren't flagged with IFDEBUG always work.
+  // so IOTSA_LOG messages always work.
   // But this means the serial port cannot be used for other things.
   Serial.begin(IOTSA_SERIAL_SPEED);
   iotsaBreadcrumbs.begin();
 #ifdef ESP32
   s_loopTask = xTaskGetCurrentTaskHandle();
 #endif
-  IFDEBUG IotsaSerial.println("Serial opened");
-  // Always shown, not IFDEBUG-gated: "which firmware is this, exactly" is the first
-  // thing you want on a cold boot, not something to enable after the fact.
-  IotsaSerial.print("iotsa ");
-  IotsaSerial.print(IOTSA_FULL_VERSION);
+  // The boot banner is direct, without a tag and not debug: "which firmware is
+  // this, exactly" is the first thing you want on a cold boot, not something to
+  // enable after the fact.
 #ifdef IOTSA_CONFIG_PROGRAM_NAME
-  IotsaSerial.print(" / ");
-  IotsaSerial.print(IOTSA_CONFIG_PROGRAM_NAME);
+#define _IOTSA_BANNER_NAME " / " IOTSA_CONFIG_PROGRAM_NAME
+#else
+#define _IOTSA_BANNER_NAME ""
 #endif
 #ifdef IOTSA_CONFIG_PROGRAM_VERSION
-  IotsaSerial.print(" ");
-  IotsaSerial.print(IOTSA_CONFIG_PROGRAM_VERSION);
+#define _IOTSA_BANNER_VERSION " " IOTSA_CONFIG_PROGRAM_VERSION
+#else
+#define _IOTSA_BANNER_VERSION ""
 #endif
-  IotsaSerial.println();
+  IotsaSerial.printf("iotsa " IOTSA_FULL_VERSION _IOTSA_BANNER_NAME _IOTSA_BANNER_VERSION "\n");
 #ifdef IOTSA_DELAY_ON_BOOT
-  IFDEBUG IotsaSerial.printf("Delaying %d seconds on boot...\n", IOTSA_DELAY_ON_BOOT);
+  IOTSA_LOG_DEBUG("iotsa", "delaying %d seconds on boot", IOTSA_DELAY_ON_BOOT);
   delay(IOTSA_DELAY_ON_BOOT*1000);
-  IFDEBUG IotsaSerial.printf("Delayed %d seconds on boot...\n", IOTSA_DELAY_ON_BOOT);
 #endif
-  IFDEBUG IotsaSerial.print("Opening " IOTSA_FS_NAME " (may take long)...");
+  IOTSA_LOG_DEBUG("iotsa", "mounting " IOTSA_FS_NAME " (may take long)");
   bool ok = IOTSA_FS.begin();
-  IFDEBUG IotsaSerial.println(" done.");
   if (!ok) {
-    IFDEBUG IotsaSerial.println("IOTSA_FS.begin() failed, formatting");
-
+    IOTSA_LOG("iotsa", IOTSA_FS_NAME ".begin() failed, formatting");
     ok = IOTSA_FS.format();
     if (!ok) {
-      IFDEBUG IotsaSerial.println(IOTSA_FS_NAME ".format() failed");
+      IOTSA_LOG("iotsa", IOTSA_FS_NAME ".format() failed");
     }
     ok = IOTSA_FS.begin();
     if (!ok) {
-      IFDEBUG IotsaSerial.println(IOTSA_FS_NAME ".begin() after format failed");
+      IOTSA_LOG("iotsa", IOTSA_FS_NAME ".begin() after format failed");
     }
   } else {
-    IFDEBUG IotsaSerial.println(IOTSA_FS_NAME " mounted");
+    IOTSA_LOG_DEBUG("iotsa", IOTSA_FS_NAME " mounted");
   }
   iotsaConfig.ensureConfigLoaded();
   // Consume the pending-mode mailbox and run the boot anti-tamper gate before any
@@ -171,13 +168,12 @@ IotsaApplication::setup() {
   for (m=firstModule; m; m=m->nextModule) {
   	m->setup();
   }
-  IFDEBUG IotsaSerial.print("hostname: ");
-  IFDEBUG IotsaSerial.println(iotsaConfig.hostName);
+  IOTSA_LOG("iotsa", "hostname %s", iotsaConfig.hostName.c_str());
   // Easy mistake when converting an old sketch (cwi-dis/iotsa#284): removing the
   // auth argument from the module constructors without adding setAuth() leaves
   // everything unprotected.
   if (_haveAuthModule && _auth == nullptr) {
-    IotsaSerial.println("IOTSA: WARNING: authentication module present, but application.setAuth() not called: nothing is protected");
+    IOTSA_LOG("iotsa", "WARNING: authentication module present, but application.setAuth() not called: nothing is protected");
   }
 }
 
@@ -431,9 +427,18 @@ void IotsaBaseModule::percentDecode(const String &src, String &dst) {
 }
 
 #ifdef IOTSA_HAS_WEBSERVER
+// A raw handler sends its reply itself, so its status is unknown here: its
+// result line is written before the call, with "???" (cwi-dis/iotsa#182).
+static void _logRawWebRequest(IotsaWebServer *server) {
+  iotsaApiLogResult("web", iotsaWebMethod(server), server->uri().c_str(), "???");
+}
+
 bool IotsaBaseModule::_webRefused(const char *right) {
   IotsaHttpContext ctx(*this, app.server, "");
-  return ctx._refuse(right);
+  if (!ctx._refuse(right)) return false;
+  iotsaApiLogResult("web", iotsaWebMethod(app.server), app.server->uri().c_str(),
+    String(ctx.sentStatus()) + " " + ctx.sentMessage());
+  return true;
 }
 
 void IotsaBaseModule::addWebHandler(const char *path, WebHandler handler, const char *right, bool getOnly) {
@@ -441,6 +446,7 @@ void IotsaBaseModule::addWebHandler(const char *path, WebHandler handler, const 
   auto wrapper = [this, server, handler, right]() {
     iotsaNoKeepAlive(server);  // cwi-dis/iotsa#293
     if (_webRefused(right)) return;
+    _logRawWebRequest(server);
     handler();
   };
   // Both explicitly: the HTTPS server's on(path, handler) registers GET only.
@@ -453,6 +459,7 @@ void IotsaBaseModule::addWebHandler(const char *path, WebHandler done, WebHandle
   auto doneWrapper = [this, server, done, right]() {
     iotsaNoKeepAlive(server);  // cwi-dis/iotsa#293
     if (_webRefused(right)) return;
+    _logRawWebRequest(server);
     done();
   };
   // Only asks: the refusal is answered once, by doneWrapper.
@@ -483,10 +490,12 @@ void IotsaBaseModule::addWebPrefixHandler(const char *prefix, WebHandler handler
         }
       }
       server->send(404, "text/plain", "Not found: " + uri + "\n");
+      iotsaApiLogResult("web", iotsaWebMethod(server), uri.c_str(), "404 not found");
     });
   }
   iotsaWebPrefixHandlers.push_back({prefix, [this, handler, right]() {
     if (_webRefused(right)) return;
+    _logRawWebRequest(app.server);
     handler();
   }});
 }
