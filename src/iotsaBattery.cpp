@@ -2,11 +2,10 @@
 #include "iotsaBattery.h"
 #include "iotsaConfigFile.h"
 #include "iotsaBLEServer.h"
-#include "iotsaRunmode.h"   // setPinDisableSleep() / allowBLEConfigModeSwitch() forward here (cwi-dis/iotsa#106)
 
 // IotsaBatteryMod is battery *hardware* only now: VBat / VUSB ADC sensing and the
 // 180F BLE service. Sleep/wake moved to IotsaSleepPolicy + IotsaRunmodeMod
-// (cwi-dis/iotsa#106). The doSoftReboot BLE gesture still lives here.
+// (cwi-dis/iotsa#106), and so did the BLE mode-promote gesture.
 
 // How often loop() re-samples the ADCs so iotsaStatus.onUsbPower (read by the
 // sleep policy) doesn't go stale between REST/BLE queries.
@@ -33,23 +32,6 @@ void IotsaBatteryMod::loop() {
     _lastVoltageReadMillis = millis();
     _readVoltages();
   }
-}
-
-void IotsaBatteryMod::setPinDisableSleep(int pin) {
-#ifdef IOTSA_HAS_SLEEP
-  if (IotsaRunmodeMod::instance()) IotsaRunmodeMod::instance()->setPinDisableSleep(pin);
-#else
-  (void)pin;
-  IFDEBUG IotsaSerial.println("iotsaBattery: setPinDisableSleep ignored, built without IOTSA_HAS_SLEEP");
-#endif
-}
-
-void IotsaBatteryMod::allowBLEConfigModeSwitch() {
-  // The BLE mode-promote gesture moved to IotsaRunmodeMod's control service
-  // (cwi-dis/iotsa#106). Transitional forwarder for the ~4 downstream callers.
-#ifdef IOTSA_WITH_BLE
-  if (IotsaRunmodeMod::instance()) IotsaRunmodeMod::instance()->allowBLEModeSwitch();
-#endif
 }
 
 void IotsaBatteryMod::_readVoltages() {

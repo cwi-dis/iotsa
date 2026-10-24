@@ -8,8 +8,8 @@
 // 180F BLE battery service (cwi-dis/iotsa#106). The sleep/wake config + decision
 // moved to IotsaController's IotsaSleepPolicy and the executor to IotsaRunmodeMod
 // (which owns IOTSA_HAS_SLEEP). This module publishes iotsaStatus.onUsbPower for
-// the sleep policy to read. The doSoftReboot / allowBLEConfigModeSwitch BLE
-// gesture still lives here for now.
+// the sleep policy to read. pinDisableSleep and the BLE mode-promote gesture are
+// IotsaRunmodeMod's (setPinDisableSleep(), allowBLEModeSwitch()).
 
 class IotsaBatteryMod : public IotsaModule {
 public:
@@ -23,11 +23,6 @@ public:
 #endif
   void setPinVUSB(int pin, float range=2.5) { pinVUSB = pin; rangeVUSB = range; }
   void setPinVBat(int pin, float range=3.6, float minRange=0) { pinVBat = pin; rangeVBat = range; rangeVBatMin = minRange; }
-  // Transitional forwarders to IotsaRunmodeMod, now the home for pinDisableSleep
-  // and the BLE mode-promote gesture (cwi-dis/iotsa#106). Kept so the handful of
-  // downstream callers keep compiling until the #106 sweep.
-  void setPinDisableSleep(int pin);
-  void allowBLEConfigModeSwitch();
 protected:
   void configLoad() override;
   void configSave() override;

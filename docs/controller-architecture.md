@@ -144,9 +144,9 @@ controller.
 - **`IotsaBatteryMod`** -- pure battery *hardware*: `pinVBat` / `pinVUSB` ADC sensing,
   `correctionVBat`, the `180F` BLE service. Publishes `iotsaStatus.onUsbPower` for the
   sleep policy; no longer hosts the sleep state machine, the sleep config, the watchdog,
-  the `doSoftReboot` gesture, or the `extendCurrentModeCallback`.
-  `setPinDisableSleep()` / `allowBLEConfigModeSwitch()` remain as transitional
-  forwarders to `IotsaRunmodeMod` until the #106 downstream sweep.
+  the `doSoftReboot` gesture, or the `extendCurrentModeCallback`. Its transitional
+  `setPinDisableSleep()` / `allowBLEConfigModeSwitch()` forwarders were removed in
+  3.0: call `IotsaRunmodeMod`'s `setPinDisableSleep()` / `allowBLEModeSwitch()`.
 - **`IotsaWifiMod`** -- unchanged from the `wifi-controller-design.md` outcome: thin
   glue over `IotsaWifiDriver` + `IotsaWifiController`.
 
