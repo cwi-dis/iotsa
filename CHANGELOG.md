@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Config values with a newline (a PEM root CA) were cut off at the first newline; values are now escaped in the file. An existing value with a literal `\\` or `\n` reads back changed once (#197)
 - Web page forms are always POST: over HTTPS a form with more than a few fields failed with 431 (#305)
 - ESP32-C3: reduced WiFi TX power is now really the default, and applies to the configuration access point too (#167)
 - `/backup.tar` was empty on ESP32 and left out subdirectories (`/config/`); the `/data` listing had broken links (#306)

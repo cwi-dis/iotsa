@@ -4,6 +4,36 @@
 
 #include <string>
 
+// A value is one line in the file, so newlines are escaped (and the escape
+// character itself): \\ \n \r. On reading, a backslash before any other
+// character is kept as it is (cwi-dis/iotsa#197).
+static String _escape(const char *value) {
+  String out;
+  for (const char *p = value; *p; p++) {
+    if (*p == '\\') out += "\\\\";
+    else if (*p == '\n') out += "\\n";
+    else if (*p == '\r') out += "\\r";
+    else out += *p;
+  }
+  return out;
+}
+
+static String _unescape(const String& value) {
+  if (value.indexOf('\\') < 0) return value;
+  String out;
+  for (unsigned int i = 0; i < value.length(); i++) {
+    char c = value[i];
+    if (c == '\\' && i + 1 < value.length()) {
+      char n = value[i+1];
+      if (n == '\\') { out += '\\'; i++; continue; }
+      if (n == 'n') { out += '\n'; i++; continue; }
+      if (n == 'r') { out += '\r'; i++; continue; }
+    }
+    out += c;
+  }
+  return out;
+}
+
 IotsaConfigFileLoad::IotsaConfigFileLoad(String filename)
 : IotsaConfigFileLoad(filename.c_str())
 {
@@ -87,7 +117,7 @@ bool IotsaConfigFileLoad::get(String name, String &value, const char *def) {
     if (configName == name) {
       IFDEBUG IotsaSerial.print("cfload: found ");
       IFDEBUG IotsaSerial.println(name);
-      value = configValue;
+      value = _unescape(configValue);
       return true;
     }
   }
@@ -134,14 +164,14 @@ void IotsaConfigFileSave::put(String name, float value) {
 void IotsaConfigFileSave::put(String name, const String &value) {
   fp.print(name);
   fp.print('=');
-  fp.print(value);
+  fp.print(_escape(value.c_str()));
   fp.print('\n');
 }
 
 void IotsaConfigFileSave::put(String name, const std::string &value) {
   fp.print(name);
   fp.print('=');
-  fp.print(value.c_str());
+  fp.print(_escape(value.c_str()));
   fp.print('\n');
 }
 
