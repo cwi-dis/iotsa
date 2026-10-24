@@ -38,7 +38,12 @@
 #include "iotsaBLEClientManager.h"
 
 #ifndef IOTSA_PIN_BUTTON
-#define IOTSA_PIN_BUTTON 0 // GPIO0 is the "Boot" pin, wired to a pushbutton on most dev boards.
+// The "Boot" pushbutton on most dev boards: GPIO9 on the ESP32-C3, GPIO0 elsewhere.
+#ifdef CONFIG_IDF_TARGET_ESP32C3
+#define IOTSA_PIN_BUTTON 9
+#else
+#define IOTSA_PIN_BUTTON 0
+#endif
 #endif
 #ifndef IOTSA_PIN_ENCODER_A
 #define IOTSA_PIN_ENCODER_A 14
