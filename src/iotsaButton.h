@@ -21,6 +21,9 @@ typedef std::function<void(void)> callback;
 
 class IotsaButtonMod : IotsaModule {
 public:
+  // The constructor, not the class, is deprecated: that way only code that
+  // uses the module gets the warning, not every build that compiles iotsaButton.cpp.
+  [[deprecated("IotsaButtonMod will be merged into IotsaInputMod and removed, see cwi-dis/iotsa#160")]]
   IotsaButtonMod(IotsaApplication &_app, Button* _buttons, int _nButton, callback _successCallback=NULL, callback _failureCallback=NULL)
   : IotsaModule(_app),
     buttons(_buttons),

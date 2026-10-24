@@ -109,6 +109,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `/api/status` is now grouped by subject (`system`, `mode`, `wifi`, `fs`) and gains `wifi.apInUse`, `wifi.hunting`, `system.onUsbPower`, `mode.currentName` and a nullable `notice` (why the status LED is overriding its normal display). Breaking for any reader of the old flat keys; `/api/runmode` is unchanged (#176)
 - Web home page starts with a one-line `Status:` summary (mode and time left, station and config-network state, pending request or current notice); the raw WiFi enum line and the mDNS note are gone from the WiFi module's info (#176)
 
+### Deprecated
+
+- `IotsaButtonMod`: will be merged into `IotsaInputMod` and removed (#160)
+
 ### Removed
 
 - `IotsaModObject`: the old String-based `formHandler_fields()`, `formHandler_TD()` and `formHandler_args()`; objects use the request-context versions (#183)
