@@ -204,13 +204,12 @@ IotsaWebContext& IotsaWebContext::operator<<(const String& html) {
   return *this;
 }
 
-void IotsaWebContext::_markEditable(bool post, bool field) {
+void IotsaWebContext::_markEditable(bool field) {
   // An editable field makes the outermost form, which is the one that is
   // written as a <form>, editable too.
   for (auto& f : _forms) {
     f.editable = true;
     if (field) f.hasFields = true;
-    if (post) f.post = true;
   }
 }
 
@@ -258,7 +257,7 @@ void IotsaWebContext::_closeForm() {
     _out() += g.html + "</fieldset>\n";
   } else {
     if (heading.length()) _out() += "<h3>" + heading + "</h3>\n";
-    _out() += String("<form method='") + (g.post ? "post" : "get") + "'>" + _formHidden + "\n";
+    _out() += "<form method='post'>" + _formHidden + "\n";
     _out() += g.html;
     if (g.hasFields) {
       _out() += "<button type='submit'";
@@ -292,7 +291,7 @@ void IotsaWebContext::_field(const IotsaWebLabel& label, const char *name, const
     showStatus(label, name, value);
     return;
   }
-  _markEditable(false);
+  _markEditable();
   String line = "<div><label>" + IotsaBaseModule::htmlEncode(label.text) + ": ";
   line += String("<input type='") + type + "' name='" + _scoped(name) + "' value='" + IotsaBaseModule::htmlEncode(value) + "'>";
   if (hint) line += String(" <small>(") + IotsaBaseModule::htmlEncode(hint) + ")</small>";
@@ -305,7 +304,7 @@ void IotsaWebContext::showCheckbox(const IotsaWebLabel& label, const char *name,
     showStatus(label, name, value ? "yes" : "no");
     return;
   }
-  _markEditable(false);
+  _markEditable();
   String scoped = _scoped(name);
   // The hidden 0 comes after the checkbox: the servers return the first value,
   // so an unchecked box still sends a 0.
@@ -323,7 +322,7 @@ String IotsaWebContext::_clearBox(const char *name) {
 
 void IotsaWebContext::showPassword(const IotsaWebLabel& label, const char *name, Persistence persistence, const char *hint, bool clearable) {
   if (!editable(persistence)) return;
-  _markEditable(true);
+  _markEditable();
   String line = "<div><label>" + IotsaBaseModule::htmlEncode(label.text) + ": ";
   line += "<input type='password' name='" + _scoped(name) + "' value=''>";
   if (hint) line += String(" <small>(") + IotsaBaseModule::htmlEncode(hint) + ")</small>";
@@ -334,7 +333,7 @@ void IotsaWebContext::showPassword(const IotsaWebLabel& label, const char *name,
 
 void IotsaWebContext::showTextarea(const IotsaWebLabel& label, const char *name, Persistence persistence, const char *hint, bool clearable) {
   if (!editable(persistence)) return;
-  _markEditable(true);
+  _markEditable();
   String line = "<div><label>" + IotsaBaseModule::htmlEncode(label.text) + ":";
   if (hint) line += String(" <small>(") + IotsaBaseModule::htmlEncode(hint) + ")</small>";
   line += "<br><textarea name='" + _scoped(name) + "' rows='6' cols='64'></textarea></label></div>\n";
@@ -347,7 +346,7 @@ void IotsaWebContext::showChoice(const IotsaWebLabel& label, const char *name, i
     showStatus(label, name, (value >= 0 && value < count) ? options[value] : String(value));
     return;
   }
-  _markEditable(false);
+  _markEditable();
   String line = "<div><label>" + IotsaBaseModule::htmlEncode(label.text) + ": <select name='" + _scoped(name) + "'>";
   for (int i = 0; i < count; i++) {
     line += "<option value='" + String(i) + "'" + (i == value ? " selected" : "") + ">" + IotsaBaseModule::htmlEncode(options[i]) + "</option>";
@@ -362,7 +361,7 @@ void IotsaWebContext::showButton(const char *name, const IotsaWebLabel& label, P
   if (_forms.empty()) {
     _out() += "<form method='post' class='button'>" + _formHidden + html + "</form>\n";
   } else {
-    _markEditable(true, false);
+    _markEditable(false);
     _out() += html + "\n";
   }
 }
@@ -374,7 +373,7 @@ void IotsaWebContext::showConfirmedButton(const char *name, const IotsaWebLabel&
   if (_forms.empty()) {
     _out() += "<form method='post' class='button'>" + _formHidden + html + "</form>\n";
   } else {
-    _markEditable(true, false);
+    _markEditable(false);
     _out() += html + "\n";
   }
 }

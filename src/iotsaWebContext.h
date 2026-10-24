@@ -108,9 +108,10 @@ public:
 
   // A group of fields that wants to be a form, with a submit button. Written as
   // a <form> unless a form is already open, then as a <fieldset> inside it. No
-  // form and no button when nothing in it is editable. POST when it contains a
-  // password (cwi-dis/iotsa#183) or a button (an action is not idempotent, a
-  // reload shouldn't repeat it), otherwise GET. The submit button is only
+  // form and no button when nothing in it is editable. Always POST: a GET puts
+  // the fields in the request line, which the ESP32 HTTPS server limits to 128
+  // bytes (cwi-dis/iotsa#305), and it keeps passwords out of the URL
+  // (cwi-dis/iotsa#183). The submit button is only
   // there when the group has fields. The heading becomes an <h3> (or the
   // fieldset's legend).
   class Form {
@@ -151,7 +152,7 @@ public:
   // Never prefilled. clearable: with a "clear" checkbox (pass it only when
   // there is something to clear).
   void showPassword(const IotsaWebLabel& label, const char *name, Persistence persistence, const char *hint = nullptr, bool clearable = false);
-  // A multi-line text field (a PEM key), never prefilled; makes the form POST.
+  // A multi-line text field (a PEM key), never prefilled.
   // Read it with argPassword() on the put side.
   void showTextarea(const IotsaWebLabel& label, const char *name, Persistence persistence, const char *hint = nullptr, bool clearable = false);
   // A <select> of count options; value is the index.
@@ -185,7 +186,6 @@ private:
     String heading;
     bool editable = false;   // something can be submitted: write a form
     bool hasFields = false;  // ... and it needs a submit button
-    bool post = false;
   };
   bool _present(const char *name, String& value);
   bool _hasArg(const char *name) override { String value; return _present(name, value); }
@@ -196,7 +196,7 @@ private:
   // a line saying some values are hidden.
   bool _readable(bool empty);
   String& _out();
-  void _markEditable(bool post, bool field = true);
+  void _markEditable(bool field = true);
   void _closeForm();
   String _clearBox(const char *name);
 

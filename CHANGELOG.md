@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Web page forms are always POST: over HTTPS a form with more than a few fields failed with 431 (#305)
 - `/backup.tar` was empty on ESP32 and left out subdirectories (`/config/`); the `/data` listing had broken links (#306)
 - `/backup.tar` holds every secret on the device, so it now needs configuration mode (#300)
 - `IotsaConfigFileSave::put()` saved a `const char *` value as `1` (it went to the `bool` overload)
