@@ -111,6 +111,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- `IotsaModObject`: the old String-based `formHandler_fields()`, `formHandler_TD()` and `formHandler_args()`; objects use the request-context versions (#183)
 - `/configupload`: `iotsa certificate` sends key and certificate in one PUT on `/api/config` (#296)
 - Skeleton, DateTime and FileShare examples: HelloIotsa is the starting point, and the README lists the standard modules you can add (#183)
 - The Log example: using the logger is one line, see the README; an example comes with the new logger (#183, #294)
