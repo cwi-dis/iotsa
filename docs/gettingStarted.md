@@ -17,7 +17,7 @@ The first time you power the iotsa board it will create a WiFi network with a na
 
 Go to the [/config](http://192.168.4.1/config) page and fill in the name you want to use for your iotsa. Use only normal _internet host name_ characters: letters, digits, hyphen. For example, if you enter _rgbled_ here the device will have the internet address of <http://rgbled.local/>. (Note that if your computer is an older Windows computer you may need to install _mDns_ software to be able to use the _rgbled.local_ address). Changing the name reboots the device; connect to its network again afterwards.
 
-Then go to the [/wificonfig](http://192.168.4.1/wificonfig) page and fill in the name and password of your WiFi network. After you press _Submit_ the device connects to your WiFi network, and you can browse to it at <http://rgbled.local/>. With the _LED Server_ you can make the LED flash in a color you specify in hexadecimal (_ff0000_ for red, _00ff00_ for green, etc) over its REST API, `/api/led`. If you have the _Hello World Server_ there is no LED to flash, but you can go to _/hello_ and enter your name, the device will then greet you by name on the homepage.
+Then go to the [/wificonfig](http://192.168.4.1/wificonfig) page and fill in the name and password of your WiFi network. After you press _Submit_ the device connects to your WiFi network, and you can browse to it at <http://rgbled.local/>. With the _LED Server_, on the _/led_ page you can make the LED flash in a color you specify in hexadecimal (_ff0000_ for red, _00ff00_ for green, etc). If you have the _Hello World Server_ there is no LED to flash, but you can go to _/hello_ and enter your name, the device will then greet you by name on the homepage.
 
 ## Status LED
 

@@ -31,8 +31,9 @@ void IotsaLedControlMod::setup() {
 
 void IotsaLedControlMod::lateSetup() {
   IotsaLedMod::lateSetup();
-  // PUT only: there is nothing to GET.
-  api.setup("led", false, true);
+  // GET as well, because that is what gives the module its page, /led. The
+  // API has nothing to GET: /api/led returns {}.
+  api.setup("led", true, true);
 }
 
 // No loop() of our own: we don't replace it, so IotsaLedMod::loop() is used
