@@ -223,7 +223,7 @@ After building and flashing your software for the first time you should create a
 - `extras/make-csr-step{1,2,3}.sh` these create a key and self-signed or CA-signed certificate that can be uploaded to the iotsa device using `iotsa`.
 - `extras/make-igor-signed-cert.sh` creates a key and certificate signed by your [Igor](https://github.com/cwi-dis/igor) CA and uploads it to your device.
 
-These scripts are from before iotsa 3.0: the upload commands still use the old name of the command line tool, `iotsaControl`, which is now `iotsa`.
+These scripts are from before iotsa 3.0 and don't work with it: they call the command line tool by its old name, `iotsaControl`, and send the key and certificate in a format the device no longer accepts (it wants PEM). Until they are rewritten ([#320](https://github.com/cwi-dis/iotsa/issues/320)), paste the PEM key and certificate on the `/config` page in configuration mode.
 
 Note that HTTPS support here refers to iotsa as a server only, HTTPS client support (for the _iotsaButton_ and _iotsaRequest_ modules) is completely independent.
 
