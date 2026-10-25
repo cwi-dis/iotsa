@@ -7,8 +7,8 @@
 
 > See _More projects using iotsa_ section, below, for more build status indicators.
 
-This library contains a framework to easily create esp8266-based or esp32-based web servers that can interface to all sorts of sensors and actuators. The servers can be REST-compatible, and COAP-compatible, including
-seamless integration with the [Igor home automation server](https://github.com/cwi-dis/igor). 
+This library contains a framework to easily create esp8266-based or esp32-based web servers that can interface to all sorts of sensors and actuators. The servers have web pages for people and an API for programs: REST, and on the ESP32 Bluetooth LE (CoAP too, but that doesn't work in 3.0), including
+integration with the [Igor home automation server](https://github.com/cwi-dis/igor). 
 
 
 Home page is <https://github.com/cwi-dis/iotsa>. 
@@ -62,7 +62,7 @@ If you need a version that hasn't been released yet, download the zipfile (via <
 
 Build the _Hello_ example (_File -> Examples -> iotsa -> Hello_) and flash it onto an ESP32-based board (or an ESP8266/ESP-12 board, such as the iotsa board -- see [Choosing hardware](#choosing-hardware) above).
 
-**Note:** the structure of the iotsa examples may be slightly different than what you are used to for Arduino examples: the `Hello.ino` file is basically empty, and the code is contained in the `mainHello.cpp` file, which is in a separate tab in the Arduino IDE.
+**Note:** most iotsa examples are structured differently from what you are used to for Arduino examples: the `.ino` file is basically empty, and the code is in `main<Name>.cpp` and the module's own `.h`/`.cpp` files, each in a separate tab in the Arduino IDE. _Hello_ is the exception: a single file.
 
 Using the `arduino-cli` tool is supported too.
 
@@ -70,14 +70,14 @@ Using the `arduino-cli` tool is supported too.
 
 The _iotsa_ library is known to the PlatformIO library manager, so simply adding it to your _platformio.ini_ file should do the trick for adding the iotsa framework to your project..
 
-To build an example against your local (possibly uncommitted) changes to the iotsa library itself, open the `iotsa` source directory in _VSCode_ or _Atom_ and look for the `[env:HelloIotsa-example-iotsa_v4]` section (these `[env:...]` sections are generated from `examples/*/iotsa-build.json` and `tests/*/iotsa-build.json` into `generated_envs.ini` -- see `extras/python/gen_build_matrix.py`). Replace the references to _HelloIotsa_ with the name of the example you want to build.
+To build an example against your local (possibly uncommitted) changes to the iotsa library itself, open the `iotsa` source directory in _VSCode_ and look for the `[env:HelloIotsa-example-iotsa_v4]` section (these `[env:...]` sections are generated from `examples/*/iotsa-build.json` and `tests/*/iotsa-build.json` into `generated_envs.ini` -- see `extras/python/gen_build_matrix.py`). Replace the references to _HelloIotsa_ with the name of the example you want to build.
 
-But: each example in the _examples_ folder also has its own _platformio.ini_ file, generated the same way, for building it standalone (pulling iotsa from GitHub rather than your local checkout). So you can also open `iotsa/examples/Hello` in _VSCode_ or _Atom_ and build it, or use the command line:
+But: each example in the _examples_ folder (except _Hello_, which is for the Arduino IDE only) also has its own _platformio.ini_ file, generated the same way, for building it standalone (pulling iotsa from GitHub rather than your local checkout). So you can also open `iotsa/examples/HelloIotsa` in _VSCode_ and build it, or use the command line:
 
 ```
-$ cd iotsa/examples/Hello
-$ platformio run --target build
-$ platformio run --target upload
+$ cd iotsa/examples/HelloIotsa
+$ pio run
+$ pio run --target upload
 ```
 
 ### Supporting a new board
@@ -162,17 +162,11 @@ but skip the `iotsa-build.json` step -- that is what keeps it out of
 single-example recipe, then commit the `iotsa-board.json` entry and the regenerated
 files.
 
-Worth knowing either way: `iotsa-board-traits.ini`/`iotsa-board-defs.ini` (pulled into the toplevel
-`platformio.ini` via `extra_configs`) only govern building *iotsa's own* examples/tests
-as a project. Downstream application repos (`iotsaNeoClock`, the `lissabon` apps, etc.)
-never reference these sections -- they pull in iotsa only as a `lib_deps` library, and
-each app repo defines its own board section(s) from scratch in its own `platformio.ini`
-(see e.g. `iotsaNeoClock`'s `[esp32c3]`/`[env:crowpanel128]`). So a tier-2 or tier-3
-board here is not automatically "used" by an app; it exists as the canonical, working
-reference an app author copies pin/flag choices from, and as what keeps iotsa's own
-example/test builds honest for that board. (Sharing `iotsa-board-traits.ini`/`iotsa-board-defs.ini`
-with those repos directly, instead of copying choices out of them by hand, is still an
-open idea -- see #222.)
+Worth knowing either way: `iotsa-board-traits.ini`/`iotsa-board-defs.ini` are pulled into the toplevel
+`platformio.ini` via `extra_configs`. Application repos (`iotsaNeoClock`, the `lissabon` apps, etc.)
+keep a copy of both files and pull them in the same way, and their envs extend the board sections
+(`extends = iotsa_v4`, [#224](https://github.com/cwi-dis/iotsa/issues/224)). The copy is not
+updated by itself: when these files change in iotsa, copy them into the application repos again.
 
 **Careful with `pio pkg install`/`pio pkg update -l <library>`** (in iotsa and in
 downstream repos alike). Unless you add `--no-save`, PlatformIO saves the library into
@@ -186,9 +180,9 @@ for modified `platformio.ini` files.
 
 ### Both Arduino IDE and PlatformIO
 
-On reboot, the board will first initialize the LittleFS flash filesystem (if needed) and then create a WiFi network with a name similar to _config-iotsa1234_. Connect a device to that network and visit <http://192.168.4.1>. Configure your device name (at <http://192.168.4.1/config>) and WiFi name and password (at <http://192.168.4.1/wificonfig>), and after reboot the iotsa board should connect to your network and be visible as <http://yourdevicename.local>.
+On reboot, the board will first initialize the LittleFS flash filesystem (if needed) and then create a WiFi network with a name similar to _config-iotsa1234_. Connect a device to that network and visit <http://192.168.4.1>. Configure your WiFi name and password (at <http://192.168.4.1/wificonfig>) and your device name (at <http://192.168.4.1/config>; changing it reboots the device). The iotsa board then connects to your network and is visible as <http://yourdevicename.local>.
 
-When the device is running normally you can visit <http://yourdevicename.local/runmode> and request the device to go into configuration mode, or to do a factory reset. After requesting this you have a few minutes to power cycle the device to make it go into configuration mode again (see previous paragraph) or do a complete factory reset. When in configuration mode you have a few minutes to change the configuration (device name, WiFi name, password, maybe other parameters) before the device reverts to normal operation. The idea behind this sequence (_request configuration mode_, then _power cycle_, then _change parameters_) is that you need both network acccess and physical access before you can do a disruptive operation on the device.
+When the device is running normally you can visit <http://yourdevicename.local/runmode> and request the device to go into configuration mode, or to do a factory reset. After requesting this you have a few minutes to power cycle the device (or confirm in another way the program allows) to make it go into configuration mode again (see previous paragraph) or do a complete factory reset. When in configuration mode you have a few minutes to change the configuration (device name, WiFi name, password, maybe other parameters) before the device reverts to normal operation. The idea behind this sequence (_request configuration mode_, then _power cycle_, then _change parameters_) is that you need both network access and physical access before you can do a disruptive operation on the device.
 
 ### Build time options
 
@@ -229,6 +223,8 @@ After building and flashing your software for the first time you should create a
 - `extras/make-csr-step{1,2,3}.sh` these create a key and self-signed or CA-signed certificate that can be uploaded to the iotsa device using `iotsa`.
 - `extras/make-igor-signed-cert.sh` creates a key and certificate signed by your [Igor](https://github.com/cwi-dis/igor) CA and uploads it to your device.
 
+These scripts are from before iotsa 3.0: the upload commands still use the old name of the command line tool, `iotsaControl`, which is now `iotsa`.
+
 Note that HTTPS support here refers to iotsa as a server only, HTTPS client support (for the _iotsaButton_ and _iotsaRequest_ modules) is completely independent.
 
 **HTTPS on ESP8266 is not recommended.** BearSSL on that chip's limited RAM/CPU has proven unreliable in practice: ordinary API requests can take up to a minute, and the device can crash under the memory/CPU pressure (see [#159](https://github.com/cwi-dis/iotsa/issues/159)). Building with `IOTSA_WITH_HTTPS` on ESP8266 now emits a compile-time `#warning`. Prefer HTTP-only on ESP8266; HTTPS remains solid on ESP32.
@@ -247,8 +243,6 @@ source .venv/bin/activate
 pip install -e extras/python/
 ```
 
-(If instructions in this repo's parent directory cover venv setup, those take precedence over the steps above.)
-
 Then use `iotsa --help` for a list of all options and commands.
 
 Whenever you made significant changes to your source tree (and committed them) you may want to rerun `pip install -e extras/python` to refresh the version string.
@@ -256,7 +250,7 @@ Whenever you made significant changes to your source tree (and committed them) y
 
 ### OTA programming
 
-If you have enabled over-the-air programming <http://yourdevicename.local/runmode> will also allow you to request the device to go into programmable mode. Again, you have a few minutes to power cycle and then a few minutes to reprogram:
+Over-the-air programming is on by default (when WiFi is). <http://yourdevicename.local/runmode> allows you to request the device to go into OTA mode. Again, you have a few minutes to power cycle and then a few minutes to reprogram:
 
 - _For Arduino IDE_: 
   - In _Tools_ -> _Port_ -> _Network Port_ select your device.
@@ -275,7 +269,7 @@ If you have enabled over-the-air programming <http://yourdevicename.local/runmod
   - Use the normal _Upload_ command to flash your new program.
 - _For PlatformIO_: 
   - Visit <http://yourdevicename.local> and note the IP address.
-  - Edit `platform.ini` and add the `upload_port` setting with the correct host name or IP address,
+  - Edit `platformio.ini` and add the `upload_port` setting with the correct host name or IP address,
   - or upload with the following command line:
   ```
   platformio run -t upload --upload-port yourdevicename.local
@@ -303,7 +297,7 @@ The rest of this section follows the `Hello` examples. The [sample programs](#sa
 
 ### Do-nothing application
 
-You create a global variable `application` of type `IotsaApplication`. The WiFi module (so the end user can configure the WiFi network to join and such) and the OTA module are created automatically:
+You create a global variable `application` of type `IotsaApplication`. The standard modules (WiFi, so the end user can configure the WiFi network to join, OTA, configuration and so on) are created automatically:
 
 ```
 IotsaApplication application("Iotsa Hello World Server");
@@ -696,6 +690,19 @@ A plain LED shows the rhythms and pulses as brightness; only the colour is lost.
 
 The module is created automatically when the board definition describes a status LED: `IOTSA_PIN_LED=<pin>`, plus `IOTSA_LED_NEOPIXEL` for a NeoPixel, or `IOTSA_LED_ACTIVE_LOW` for a plain LED that lights when the pin is low (see [docs/boards.md](docs/boards.md) for which boards have one). Build with `-DIOTSA_WITHOUT_STATUS_LED` if your program uses that pin for something else. You can still declare it yourself, e.g. for a NeoPixel on another pin: `IotsaLedMod ledMod(application, pin)`; that one is then used instead.
 
+What the status LED shows (a mode and the WiFi state, when both have something to show, take turns):
+
+| LED | Meaning |
+|---|---|
+| dark | normal operation, connected |
+| amber, slow blink | can't reach the WiFi network, retrying |
+| amber, breathing | its own configuration network (`config-<hostname>`) is up |
+| amber, steady | someone is connected to that network |
+| magenta / cyan / white, fast blink | configuration mode / OTA mode / factory reset requested, waiting for confirmation (power cycle) |
+| magenta, breathing | configuration mode |
+| cyan, breathing | OTA mode; steady cyan while a new program is being received |
+| red, green | the application's own |
+
 The module does not provide a user-visible endpoint or REST api, but can be used as a base class for this. See [examples/Led](examples/Led) for an example of triggering a pulse over the web/REST/BLE API.
 
 ### iotsaLogger.h
@@ -801,7 +808,7 @@ Modules that read or drive hardware, and devices that talk to each other:
 - [Temperature](examples/Temperature/Temperature.ino) measures temperature and humidity with a DHT21, through an external library (Adafruit's DHT sensor library): how to use a sensor library in an iotsa module.
 - [Input](examples/Input/Input.ino) is a dimmer set by hand: a button and a rotary encoder, read by the _iotsaInput_ module, dim an LED, and a web page shows the values.
 - [Led](examples/Led/Led.ino) lets the outside world flash the LED (colour, on/off times,
-  duration) over the web, REST, CoAP and a BLE service of its own. Shows how to extend a
+  duration) over REST, CoAP and a BLE service of its own. Shows how to extend a
   standard module (_iotsaLed_), and a module that only makes something happen.
 - [LedBattery](examples/LedBattery/LedBattery.ino) is _Led_ on a battery-powered device:
   _iotsaBattery_ measures the battery and USB voltages, the device can sleep, and a BLE
@@ -814,7 +821,7 @@ Board/feature build coverage (not tutorial material) lives separately, under `te
 
 ## more projects using iotsa
 
-Here are some projects that use iotsa, and that can also be used as further examples (_Note that as of this writing not all projects may be publicly accessible yet_):
+Here are some projects that use iotsa, and that can also be used as further examples:
 
 ### [lissabon](http://github.com/cwi-dis/lissabon)
 
@@ -876,14 +883,14 @@ Reads electricity and gas usage of a dutch Smart Meter through the standardised 
 ![build-platformio](https://github.com/cwi-dis/iotsaDoorbellButton/workflows/build-platformio/badge.svg)
 ![build-arduino](https://github.com/cwi-dis/iotsaDoorbellButton/workflows/build-arduino/badge.svg)
 
-Very simple server that emits a GET request when a button is pressed. Uses capabilities.
+Very simple server that emits a GET request when a button is pressed. Uses capabilities, which don't work in iotsa 3.0 ([#304](https://github.com/cwi-dis/iotsa/issues/304)).
 
 ### [iotsaDoorbellRinger](http://github.com/cwi-dis/iotsaDoorbellRinger)
 
 ![build-platformio](https://github.com/cwi-dis/iotsaDoorbellRinger/workflows/build-platformio/badge.svg)
 ![build-arduino](https://github.com/cwi-dis/iotsaDoorbellRinger/workflows/build-arduino/badge.svg)
 
-Very simple server that sounds a buzzer when a GET request is received. Uses capabilities. 
+Very simple server that sounds a buzzer when a GET request is received. Uses capabilities, which don't work in iotsa 3.0 ([#304](https://github.com/cwi-dis/iotsa/issues/304)).
 
 ### [iotsaDMXLedstrip](http://github.com/cwi-dis/iotsaDMXLedstrip)
 
@@ -919,7 +926,7 @@ Server to receive and transmit 433 MHz home automation signals (the cheap wirele
 ![build-arduino](https://github.com/cwi-dis/iotsaDataLogger/workflows/build-arduino/badge.svg)
 
 Read an analog sensor at an interval that can be specified. Sensor readings are saved to flash memory, together with the timestamp of reading.
-A realtime clock (RTC) can be used to keep time, which will sync with NTP whever WiFi is available. The program can hibernate (using micro-amperes) between readings.
+A realtime clock (RTC) can be used to keep time, which will sync with NTP whenever WiFi is available. The program can hibernate (using micro-amperes) between readings.
 This program is intended to take a few measurements per day over long periods of time (months).
 
 ### [iotsaRGBWSensor](http://github.com/cwi-dis/iotsaRGBWSensor)
@@ -957,7 +964,7 @@ ways to adjust the design (to add extra holes, or determine thickness of
 the box, or make the box fit a iotsa board with some of the experimental area rows
 removed.
 
-The 3D-printable case for a iotsa board is also available at Thingyverse: <http://www.thingiverse.com/thing:2303793>.
+The 3D-printable case for a iotsa board is also available at Thingiverse: <http://www.thingiverse.com/thing:2303793>.
 
 ## Creating a new release
 

@@ -3,6 +3,11 @@
 Analysis of the external interfaces exposed by each iotsa module, and known inconsistencies.
 Last reviewed: 2026-07-27.
 
+**Out of date:** this is a snapshot from before the iotsa 3.0 interfaces (request contexts,
+web contexts, collections, the controller: #183, #296, #309, #106). Class names, the matrix
+and the inconsistencies it lists no longer match the code. For the current picture see
+[architecture.md](architecture.md) and the README's module sections.
+
 ## Infrastructural vs use-case modules
 
 Every module in the interface matrix below falls into one of two categories:

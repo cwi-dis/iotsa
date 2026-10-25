@@ -15,22 +15,13 @@ You need a power supply, 5V 350mA, with + on the inside and - on the outside, co
 
 The first time you power the iotsa board it will create a WiFi network with a name similar to _config-iotsa1234_. Connect a computer (or smartphone) to that network and visit <http://192.168.4.1>. You will see a web page titled **Iotsa LED Server** (or, possibly, **Iotsa Hello World Server** if you have a iotsa without the NeoPixel).
 
-Go to the [/wificonfig](http://192.168.4.1/wificonfig) page and fill in the name of your Wifi network, the password of your WiFi network and the name you want to use for your iotsa. For the latter use only normal _internet host name_ characters: letters, digits, hyphen, underscore. For example, if you enter _rgbled_ here the device will have the internet address of <http://rgbled.local/>. (Note that if your computer is an older Windows computer you may need to install _mDns_ software to be able to use the _rgbled.local_ address).
+Go to the [/config](http://192.168.4.1/config) page and fill in the name you want to use for your iotsa. Use only normal _internet host name_ characters: letters, digits, hyphen. For example, if you enter _rgbled_ here the device will have the internet address of <http://rgbled.local/>. (Note that if your computer is an older Windows computer you may need to install _mDns_ software to be able to use the _rgbled.local_ address). Changing the name reboots the device; connect to its network again afterwards.
 
-After filling in the details press _Submit_ and the device will reboot. It should now connect to your Wifi network and you can browse to it at <http://rgbled.local/>. If you visit the _/led_ page you can make the LED blink or light up in a color you specify in hexadecimal (_ff0000_ for red, _00ff00_ for green, etc). If you have the _Hello World Server_ there is no LED to flash, but you can go to _/hello_ and enter your name, the device will then greet you by name on the homepage).
+Then go to the [/wificonfig](http://192.168.4.1/wificonfig) page and fill in the name and password of your WiFi network. After you press _Submit_ the device connects to your WiFi network, and you can browse to it at <http://rgbled.local/>. With the _LED Server_ you can make the LED flash in a color you specify in hexadecimal (_ff0000_ for red, _00ff00_ for green, etc) over its REST API, `/api/led`. If you have the _Hello World Server_ there is no LED to flash, but you can go to _/hello_ and enter your name, the device will then greet you by name on the homepage.
 
 ## Status LED
 
-If your iotsa board has the NeoPixel LED the board will communicate exception status conditions (during normal operation the LED will be off, unless programmed differently). The following patterns have the following meaning:
-
-- _Orange_: the board is trying to connect to the configured WiFi network.
-- _Yellow (flashing)_: the board is in configuration mode (at address `192.168.4.1` on its private WiFi network) because it has not been configured yet or because its configured WiFi network is unavailable.* Use the normal _Upload_ command to flash your new program.
-* Use the normal _Upload_ command to flash your new program.
-
-- _Magenta (flashing)_: the board is in configuration mode (at address `192.168.4.1` on its private WiFi network) because you asked it to go to configuration mode.
-- _Cyan (flashing)_: the board is in OTA-programming mode.
-- _Cyan_: the board is in OTA-programming mode and new software is being uploaded.
-- _Red_: the board is doing a factory reset.
+If your iotsa board has the NeoPixel LED the board shows its status with it: dark during normal operation, colours and rhythms for WiFi problems and for the maintenance modes. The meanings are listed with the status LED module in the [README](../README.md#iotsaledh).
 
 ## Programming
 To do fun things with the iotsa board you will need to do some programming, and probably some hardware construction:
@@ -39,16 +30,15 @@ To do fun things with the iotsa board you will need to do some programming, and 
 * You also need to install the [ESP8266 support for the Arduino IDE](https://github.com/esp8266/Arduino), <https://github.com/esp8266/Arduino> additions. And again that website has documentation on all the extra features (such as WiFi) that esp8266 devices (such as your iotsa board) give you access to.
 * You need to install the [iotsa library](https://github.com/cwi-dis/iotsa), <https://github.com/cwi-dis/iotsa>.
 
-> It is also possible to use _PlatformIO_ in stead of the _Arduino IDE_ to program your iotsa board. View the [readme file](../readme.md) for details.
+> It is also possible to use _PlatformIO_ in stead of the _Arduino IDE_ to program your iotsa board. View the [readme file](../README.md) for details.
 
-After you have installed all this, in the Arduino IDE you use the menu to select your board: _Tools_ -> _Board_ -> _ESP8266 Modules_ ->  _ESP-12E_, which corresponds to the hardware on your iotsa.
+After you have installed all this, in the Arduino IDE you use the menu to select your board: _Tools_ -> _Board_ -> _ESP8266 Boards_ -> _NodeMCU 1.0 (ESP-12E Module)_, which corresponds to the hardware on your iotsa.
 
 Now you can select a iotsa example program, for example _File_ -> _Examples_ -> _Examples from custom libraries_ -> _iotsa_ -> _Led_. Make some minimal changes if you want (for example changing the title from _Iotsa LED Server_ to _My First RGB Server_). Check that the program compiles with _Sketch_ -> _Verify/Compile_.
 
 To download your new program to the device:
 
-* Use a web browser to visit _/wificonfig_ on your device.
-* On the **WiFi configuration** page, select the _Enable over-the-air update after next reboot_ option and press _Submit_.
+* Use a web browser to visit _/runmode_ on your device, and request OTA mode.
 * Now you need to either press the _Reset_ button on the iotsa, or remove power, wait a few seconds and reconnect power. You should do this within a few minutes (if you are too late you simply start at the top of this list again).
 * In the Arduino IDE, with menu _Tools_ -> _Port_ -> _Network Port_ select your device.
 	* Sometimes ota-programmable devices are slow to appear because of mDNS issues. On a Mac, run the following command in a _Terminal_ window to speed up discovery:
