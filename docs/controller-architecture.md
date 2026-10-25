@@ -1,6 +1,7 @@
 # Controller architecture (the `IotsaConfig` de-tangle)
 
-**Status:** design, not yet implemented. Branch `106-runmode-module`. Part of
+**Status:** implemented in iotsa 3.0. This is the design as it was written before the
+implementation; where the code differs, the code is right. Part of
 [cwi-dis/iotsa#106](https://github.com/cwi-dis/iotsa/issues/106), sibling to
 [`wifi-controller-design.md`](wifi-controller-design.md).
 

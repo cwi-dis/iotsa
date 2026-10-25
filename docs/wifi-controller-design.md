@@ -1,6 +1,7 @@
 # WiFi controller redesign
 
-**Status:** design, not yet implemented. Branch `106-runmode-module`.
+**Status:** implemented in iotsa 3.0. This is the design as it was written before the
+implementation; where the code differs, the code is right.
 
 This is step 1 of the real work behind [cwi-dis/iotsa#106](https://github.com/cwi-dis/iotsa/issues/106).
 The `IotsaBatteryMod` -> `IotsaRunmodeMod` rename is window-dressing; the substance is

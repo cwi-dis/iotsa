@@ -91,6 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rights: a change that names no right is open to everyone on the network, the REST rule and the right `api` are gone; a module can name rights for all its reads and changes (`readsNeedRight()`, `changesNeedRight()`), and web pages hide what the caller may not read, or ask for a login; BLE client management, the remote runmode commands and the buttons need `bleclient` and `buttons`, the BLE server and battery settings `config` (#183)
 - API handlers get a request context, shared with web pages: the same rights per field on every transport, reads open, secrets write-only (`iotsa_api_redacted`), the first error stops the request (#296)
 - README: the design and API sections describe the current interfaces (`IotsaModule`, `api.setup()`, web pages, triggers); the examples come in two strands; how to add a standard module (#183)
+- README: module categories and the module sections checked against the code, with controller, logging and run mode added; `docs/architecture.md` describes the layers (#209)
 - Input example is now a dimmer: a button and a rotary encoder dim an LED through `bindVar()`, shown on `/dimmer`; pins per chip (#183)
 - BLEButton, BLERinger and BLEManager examples: modules in their own files; the button calls its module directly, and `/ring` rings like the button (#183)
 - Ringer example: PUT `/api/alarm` takes only `{"alarm": n}`, no bare number; the pin comes from the main file (#183)

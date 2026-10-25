@@ -206,17 +206,18 @@ When using Platformio you can also use the `build_flags` in _platformio.ini_. Fo
 
 The following features are defined:
 
-- `DEBUG` Enables logging and debugging messages to the serial line. Default on.
-- `WIFI` Enables the WiFi network interface. Default on.
-- `HTTP` Enables the web server infrastructure. Default on.
-- `HTTPS` Enables the secure web server infrastructure. Default off. Exclusive with `HTTP`.
-- `WEB` Enables the user-oriented web interfaces. Default on. Requires `HTTP` or `HTTPS`.
-- `API` Enables the application-oriented interfaces. Default on. Requires `REST` or `COAP`.
-- `REST` Enables the http(s) based REST application interfaces. Default on. Requires `HTTP` or `HTTPS`.
-- `COAP` Enables the udp-based COAP application interfaces. Default off.
-- `BLE` Enables Bluetooth LE application interface (esp32 only). Default off.
+- `DEBUG` The debug log lines (`IOTSA_LOG_DEBUG`, see [iotsaLog.h](#iotsalogh)). Default on. A device can also switch them off at runtime.
+- `WIFI` The WiFi network interface. Default on.
+- `OTA` Over-the-air updates. Default on when `WIFI` is.
+- `HTTP` The web server. Default on.
+- `HTTPS` The secure web server. Default off. If `HTTP` is on as well, plain http requests are redirected to https.
+- `WEB` The web pages for people. Default on. Requires `HTTP` or `HTTPS`.
+- `REST` The REST API over http(s). Default on. Requires `HTTP` or `HTTPS`.
+- `COAP` The CoAP API over UDP. Default off. Known not to work in 3.0 ([#215](https://github.com/cwi-dis/iotsa/issues/215)).
+- `BLE` Bluetooth LE, ESP32 only: the BLE server, and the API over BLE (HPS; `IOTSA_WITHOUT_HPS` leaves that out). Default off.
+- `SLEEP` Sleep and wake. Default on when `BLE` is, off otherwise.
 
-There are a few more that are not very important, please inspect `iotsaBuildOptions.h`.
+There is no `API` option any more: the API handlers are always compiled, and the transports above decide how they can be reached. `IOTSA_WITHOUT_STATUS_LED` leaves out the status LED on a board that has one. The debug subsystems (`IOTSA_DEBUG_WIFI` and so on) are listed in `iotsaLog.h`. There are a few more options, see `iotsaBuildOptions.h`.
 
 ## HTTPS support
 
@@ -291,10 +292,10 @@ Unlike most Arduino libraries and frameworks Iotsa does expose some of its C++ i
 
 Iotsa has two main types of objects:
 
-* `IotsaApplication`, of which there is only one, which is the web server and the container for the modules.
+* `IotsaApplication`, of which there is only one: the container for the modules.
 * `IotsaModule`, of which there can be many. A module provides some functionality, plus a way for the outside world to see and change it: a web page, a REST (or CoAP) API, sometimes a BLE service. You subclass `IotsaModule` for your own functionality.
 
-  The standard modules for WiFi, over-the-air updates, configuration and the run mode are created automatically. Your program only declares its own modules, plus any optional standard modules it wants (see [available standard modules](#available-standard-modules)).
+  The standard modules for configuration, the run mode, WiFi, over-the-air updates and the web server (and the BLE server, when BLE is built in) are created automatically, see [module categories](#module-categories). Your program only declares its own modules, plus any optional standard modules it wants (see [available standard modules](#available-standard-modules)).
 
   For the very simplest case there is `IotsaSimpleMod`, which turns two functions into a module.
 
@@ -476,19 +477,21 @@ void setup() {
 }
 ```
 
-With a stack of authenticators (e.g. `IotsaCapabilityMod` on top of `IotsaUserMod`) pass the top one. Without `setAuth()` everything is allowed.
+With a stack of authenticators (e.g. `IotsaCapabilityMod` on top of `IotsaUserMod`, although capabilities don't work in 3.0, see [iotsaCapabilities.h](#iotsacapabilitiesh)) pass the top one. Without `setAuth()` everything is allowed.
 
-The optional `early` argument signifies that the module should be initialized early, this is generally used only by the WiFi module.
+The optional `early` argument makes the module set up before the others. Standard modules that the others depend on use it (configuration, run mode, WiFi, the web server, the logger, the status LED, battery); an application module normally doesn't need it.
+
+`application.setup()` mounts the LittleFS filesystem first, and formats it if it can't be mounted.
 
 ### iotsaApi.h
 
 Contains `IotsaModule`, the base class for a module with an API and a web page. Register your endpoint in `lateSetup()`:
 
 ```
-api.setup(const char* path, bool get=false, bool put=false, bool post=false);
+api.setup(const char* path, bool get=false, bool put=false, bool post=false, bool webPage=true);
 ```
 
-This registers `/api/<path>` for REST (and CoAP, and BLE/HPS when built in), and, when `get` is true, the web page `/<path>`. Call it several times if your module has several endpoints (`ctx.path()` says which). Then implement the handlers for the methods you passed `true` for:
+This registers `/api/<path>` for REST (and CoAP, and BLE/HPS when built in), and, when `get` and `webPage` are true, the web page `/<path>`. Call it several times if your module has several endpoints (`ctx.path()` says which). Then implement the handlers for the methods you passed `true` for:
 
 ```
 void getHandler(IotsaApiContext& ctx);
@@ -504,25 +507,55 @@ The web page is `formHandler_args()` and `formHandler_fields()`, see [The web pa
 
 ### iotsaConfig.h
 
-Handles the `iotsaConfig` object, which is a singleton object that contains all
-configuration information, such as hostname and which mode we are running in. You normally don't include this file, it is included through `iotsa.h`.
+The `iotsaConfig` object holds the device's own settings: the hostname, how long a maintenance mode lasts, and the HTTPS certificate. It doesn't hold the mode the device is in; that is `iotsaController`'s. You normally don't include this file, it is included through `iotsa.h`.
+
+### iotsaController.h and iotsaStatus.h
+
+`iotsaController` decides the device's mode (normal, configuration, OTA, factory reset), when it may sleep, which radios are on, and when it reboots. What an application module typically calls:
+
+```
+iotsaController.inConfigurationMode();
+iotsaController.extendCurrentMode();               // there was activity, keep the mode open
+iotsaController.allowRequestedConfigurationMode(); // the user confirmed a requested mode, e.g. with button taps
+iotsaController.allowRCMDescription("tap the button 3 times"); // how, for the web page
+iotsaController.postponeSleep(ms);
+iotsaController.pauseSleep(); iotsaController.resumeSleep();
+iotsaController.requestReboot(ms);
+```
+
+`iotsaStatus` is the board where the controllers publish the device's state, for reading: `networkIsUp()`, `onUsbPower`, `statusColor()` (what the status LED shows). `iotsaStatus.setStatusPulse(rgb, onMs, offMs, durationMs, reason)` shows a pulse of your own on the status LED, see [iotsaLed.h](#iotsaledh). See [docs/controller-architecture.md](docs/controller-architecture.md) for the design.
+
+### iotsaLog.h
+
+Log output, through three macros, included by `iotsa.h`. Each writes one line `tag: ...` to the serial port (and to the [logger](#iotsaloggerh) if there is one):
+
+```
+IOTSA_LOG("myApp", "door opened by %s", name);  // always: state changes, errors, refused requests
+IOTSA_LOG_DEBUG("myApp", "step %d", n);         // debug: on by default, switchable per device
+IOTSA_LOG_DEBUG_WIFI("iotsaWifi", "...");       // a subsystem: only with -DIOTSA_DEBUG_WIFI
+```
+
+The debug lines are switched at runtime by `debugLog` on `/runmode` and `/api/runmode`, and left out of the build with `-DIOTSA_WITHOUT_DEBUG`. `tag` and the format must be string literals, and need no trailing newline. Every API request gets one line with its result, from iotsa itself. The subsystems are listed in `iotsaLog.h`. `IotsaSerial` is still there for output that isn't a log line.
 
 ### iotsaConfigMod.h
 
-Handles control over the `iotsaConfig` object and general configuration such as factory reset and (if enabled) over-the-air programming.
-This is technically a module, but unlike other modules it is not really optional (unless
-your iotsa board is running with WiFi disabled). It should _not_ be instantiated in your
-program, this happens automatically. This module also opens and/or initializes the LittleFS filesystem.
+The configuration module: `/config` and `/api/config`, for the hostname, how long a maintenance mode lasts, whether WiFi and BLE are off at boot, and the HTTPS certificate. Most of these can only be changed in configuration mode. `/api/version` says which program and iotsa version the device runs. Created automatically, also without WiFi; don't declare it.
 
-If the iotsa server is operating in normal (production) mode a user can access URL `/runmode` (the run mode module, also created automatically) to request configuration mode, factory reset or ota-programming mode. The user must then _demonstrate physical access_ within a few minutes to switch the iotsa server to its new mode, for another few minutes. If nothing happens during this period the server reverts to normal mode.
+`/api/config` still accepts the mode and reboot fields that moved to `/api/runmode`, for older scripts.
 
-> The intention of _demonstrating physical access_ is that any "dangerous" operation requires both network access (to request the operation) and physical access. The user can always turn power on and off to demonstrate physical access, but a iotsa program can allow different methods (such as pressing a certain button a number of times in quick succession).
+### iotsaRunmode.h
+
+The run mode module: `/runmode` and `/api/runmode`. Created automatically; don't declare it.
+
+A user can request configuration mode, OTA mode or a factory reset here. The user must then _demonstrate physical access_ within a few minutes to switch the device to its new mode, which lasts for a few minutes (the configuration module's timeout), longer while it is being used. If nothing happens, the device stays in normal mode.
+
+> The intention of _demonstrating physical access_ is that any "dangerous" operation requires both network access (to request the operation) and physical access. The user can always turn power off and on to demonstrate physical access. A program can allow its own way (`iotsaController.allowRequestedConfigurationMode()`, for example after a number of quick button presses), and over BLE a confirmation is allowed unless the BLE server's `promoteAllowed` setting is off.
 
 On a factory reset all configuration information (literally: _all_) is forgotten and the iotsa device is completely new again.
 
-In ota-programming mode the device functions normally, but can also be reprogrammed using the Arduino IDE and its OTA facilities.
+In OTA mode the device works normally, but can also be reprogrammed over the network, see [OTA programming](#ota-programming).
 
-The module also provides a REST api on `/api/config` (and this api depends on whether in configuration mode or not).
+The module can also reboot the device, switch WiFi and BLE off and on at runtime, and switch the debug log lines (`debugLog`). With sleep built in (`SLEEP`) it holds the sleep settings (`sleepMode`, `sleepDuration`, `wakeDuration` and more); `setPinDisableSleep(pin)` names a pin that, held low, keeps the device awake. `/api/status` (read only) has the mode, the WiFi state, the boot cause, the uptime and how full the filesystem is.
 
 ### iotsaWifi.h
 
@@ -532,15 +565,11 @@ Created automatically whenever WiFi is compiled in; you don't need to declare it
 A iotsa device can join an existing WiFi network (normal WiFi mode) or create a temporary network as an Access Point (private WiFi mode). 
 In private mode the device does not connect to a WiFi network, but in stead creates its own network (as a base station) with a name starting with "_config-_". The user can now connect a device to this network and visit `http://192.168.4.1/wificonfig`. Here it is possible to set the normal WiFi network to connect to and the password.
 
-If a device is new (it has no WiFi network name) it will enter private mode automatically. If a device cannot find its configured WiFi network it will enter private mode for 5 minutes and then reboot and retry joining the configured network.
-
-If a device has a WiFi network configured but it cannot join this network after trying for 5 minutes it will also enable private network mode.
+If a device is new (it has no WiFi network name) it will enter private mode automatically. If a device can't reach its configured network for 10 seconds, it alternates: 10 seconds looking for the network, then 30 seconds of private mode, so a user can join and fix the settings. While someone is connected to the private network, it doesn't go looking. As soon as it joins its network it is back in normal mode.
 
 If a device is in normal WiFi mode the WiFi parameters can only be changed if the device is in configuration mode.
 
 The module also provides a REST api on `/api/wificonfig` (and this api depends on whether in configuration mode or not).
-
-The module can be disabled by building with _IOTSA\_WITHOUT\_WIFI_).
 
 ### iotsaSimple.h
 
@@ -556,7 +585,7 @@ The general paradigm is that in your `setup()` function you create a local (stac
 ```
 IotsaConfigFileLoad cf("/config/filename.cfg");
 ```
-and then repeatedly call `cf.get("name", variable, default)` for each configuration variable. Variables can be of type `int`, `float` or `String`.
+and then repeatedly call `cf.get("name", variable, default)` for each configuration variable. Variables can be of type `int` (and the unsigned types), `bool`, `float`, `String` or `std::string`.
 
 To save configuration values you call
 
@@ -571,14 +600,31 @@ and then repeatedly call `cf.put("name", variable)`.
 
 ### Module categories
 
-The module breakdown that used to live here was inaccurate and incomplete, and has
-been removed rather than left to mislead. A full current-state-plus-target-architecture
-breakdown is being worked out; see
-[cwi-dis/iotsa#209](https://github.com/cwi-dis/iotsa/issues/209) for the current
-picture, and [cwi-dis/iotsa#204](https://github.com/cwi-dis/iotsa/issues/204) for the
-reasoning behind it. This section will be rewritten once that work lands.
+How a module gets into your program, and what it is for. For how the parts fit together inside iotsa, see [docs/architecture.md](docs/architecture.md).
 
-Note: `iotsaConfigMod.h`, `iotsaWifi.h`, and `iotsaSimple.h` are described in the framework section above; all others are described alphabetically below.
+**Automatic modules.** `application.setup()` creates these itself, unless your program declares one (to pass arguments, for instance):
+
+- configuration (`iotsaConfigMod.h`) and run mode (`iotsaRunmode.h`): always.
+- WiFi (`iotsaWifi.h`): unless `-DIOTSA_WITHOUT_WIFI`.
+- OTA (`iotsaOta.h`): when WiFi is in, unless `-DIOTSA_WITHOUT_OTA`.
+- the web server (`iotsaHttpServer.h`): unless `-DIOTSA_WITHOUT_HTTP` and no `-DIOTSA_WITH_HTTPS`. It serves the web pages and the REST API.
+- the CoAP server: with `-DIOTSA_WITH_COAP`.
+- the BLE server (`iotsaBLEServer.h`) and the API over BLE (HPS): with `-DIOTSA_WITH_BLE`.
+- the status LED (`iotsaLed.h`): when the board definition has one, unless `-DIOTSA_WITHOUT_STATUS_LED`.
+
+**Optional standard modules.** Declare them in your program, see [Adding a standard module](#adding-a-standard-module):
+
+- access control: `iotsaUser.h`, `iotsaCapabilities.h` (doesn't work in 3.0).
+- time: `iotsaNtp.h`, `iotsaRtc.h`.
+- power: `iotsaBattery.h` (sleep itself is the run mode module's).
+- maintenance: `iotsaLogger.h`, `iotsaFiles.h`, `iotsaFilesUpload.h`, `iotsaFilesBackup.h`.
+- input hardware: `iotsaInput.h`, and `iotsaButton.h` (deprecated).
+- this device as a BLE client: `iotsaBLEClient.h`, `iotsaBLEClientManager.h`.
+- for development: `iotsaSimple.h` (a module from two functions), `iotsaNothing.h` (a test fixture).
+
+**Building blocks.** Not modules, but classes your own module uses: `iotsaApi.h` and `iotsaContext.h` (the API and its handlers), `iotsaWebContext.h` (the web page), `iotsaCollection.h` (a list of objects), `iotsaConfigFile.h` (saving settings), `iotsaLog.h` (log lines), `iotsaDeadline.h` (timers), `iotsaRequest.h` (sending http(s) requests).
+
+`iotsaConfigMod.h`, `iotsaRunmode.h`, `iotsaWifi.h`, `iotsaSimple.h` and the building blocks are described in the [Core API](#core-api) section above (as far as they are described at all); the other modules alphabetically below.
 
 ### Adding a standard module
 
@@ -593,18 +639,23 @@ That's all: its web page and API appear by themselves. Some modules need more (p
 
 ### iotsaBattery.h
 
-Allows sleeping, hibernating and shutting down WiFi of your iotsa device to conserve battery power, and measures the battery and USB voltages. See the [LedBattery](examples/LedBattery/LedBattery.ino) example.
+Measures the battery and USB voltages (`setPinVBat()`, `setPinVUSB()`), shows them on `/battery` and `/api/battery`, and offers the standard BLE battery service. Whether the device is on USB power goes to `iotsaStatus.onUsbPower`, which the sleep settings can use. Sleep itself is the [run mode module](#iotsarunmodeh)'s. See the [LedBattery](examples/LedBattery/LedBattery.ino) example.
 
 ### iotsaBLEServer.h
 
-Allows a iotsa device to export an API as a Bluetooth LE service. ESP32 only.
-Can be used with the module (which allows setting some BLE parameters such as
-advertising interval through the web or REST interface) or without it.
+The device as a Bluetooth LE peripheral. ESP32 only, with `-DIOTSA_WITH_BLE`; created automatically then. Every module's API is reachable over BLE through HPS. A module can also have a BLE service of its own: an `IotsaBleApiService` member, its characteristics added in `setup()`, and `bleGetHandler()`/`blePutHandler()` (from `IotsaBLEProvider`, which every module has) to answer them. See the [Led](examples/Led) example.
 
-*Note*: the current Bluetooth LE implementation uses a _lot_ of RAM, about 160KB. Therefore when you use Bluetooth you are probably not able
-to use OTA, HTTPS and various other features. This is expected to be addressed in a future version of the ESP32 Arduino framework.
+`/bleserver` and `/api/bleserver` hold its settings: on or off (`isEnabled`), the advertising interval (`adv_min`, `adv_max`), the transmit power (`tx_power_dbm`), how long an idle connection stays (`idle_timeout`), and whether a mode switch may be confirmed over BLE (`promoteAllowed`, default on).
 
-Note that this file can be included if BLE is not supported (such as on an esp8266), in which case it will only declare an empty class `iotsaBLEApiProvider`. This helps a bit with `#ifdef`.
+BLE takes a lot of flash, about 160KB; see _Flash size and OTA_ under [Choosing hardware](#choosing-hardware).
+
+### iotsaBLEClient.h
+
+The device as a Bluetooth LE central: it scans, and connects to other BLE devices to read and write their characteristics, one connection at a time. `/bleclient` and `/api/bleclient` hold the scan settings. A program names the devices it talks to itself. See the [BLEButton](examples/BLEButton) example. There is no generic "send a command to that device" yet, like `iotsaRequest.h` has for http ([#208](https://github.com/cwi-dis/iotsa/issues/208)).
+
+### iotsaBLEClientManager.h
+
+`iotsaBLEClient.h`, plus a list of known devices that users can change: on the page and the API they can add, rename and remove devices, and see which unknown devices are nearby. The devices are saved. Subclass it for a device that manages others, see the [BLEManager](examples/BLEManager) example.
 
 ### iotsaButton.h
 
@@ -631,7 +682,7 @@ Allows write access to files stored in `/data` on the LittleFS filesystem (where
 
 Creates a backup of the complete LittleFS filesystem (including `/data` and `/config`) as a tarfile when you access URL `/backup.tar`. Can be used to clone iotsa devices. Requires _IOTSA\_WITH\_WEB_.
 
-**Careful:** the backup includes the WiFi password, the users' passwords and other secrets, in plain text, and anyone with the right `backupfiles` (anyone at all, without an authenticator) can download it ([#300](https://github.com/cwi-dis/iotsa/issues/300)).
+**Careful:** the backup includes the WiFi password, the users' passwords and other secrets, in plain text: without them it couldn't restore a device. It can only be downloaded in configuration mode, by anyone with the right `backupfiles` (anyone at all, without an authenticator) ([#300](https://github.com/cwi-dis/iotsa/issues/300)).
 
 ### iotsaInput.h
 
@@ -649,9 +700,9 @@ The module does not provide a user-visible endpoint or REST api, but can be used
 
 ### iotsaLogger.h
 
-Replaces the standard `Serial` object by an object that stores data in a memory buffer, and allows access to that memory buffer through the URL `/logger`. The buffer is tiny, 4Kb, but this allows some limited debugging over WiFi. Requires _IOTSA\_WITH\_HTTP_ or _IOTSA\_WITH\_HTTPS_.
+Keeps the log output in a memory buffer too, and shows it at the URL `/logger`. The buffer is small, 4KB (`IOTSA_LOGGER_BUFFER_SIZE`), but this allows some debugging over WiFi. Requires _IOTSA\_WITH\_HTTP_ or _IOTSA\_WITH\_HTTPS_.
 
-To use it, add `IotsaLoggerMod loggerMod(application);` next to your application, and print with `IotsaSerial` instead of `Serial`: `IotsaSerial` goes to the serial port and into the log, `Serial` only to the serial port.
+To use it, add `IotsaLoggerMod loggerMod(application);` next to your application. The [log macros](#iotsalogh) and `IotsaSerial` go to the serial port and into the buffer, `Serial` only to the serial port.
 
 ### iotsaNothing.h
 
@@ -687,7 +738,7 @@ Add it with the chip's three pins: `IotsaRtcMod rtcMod(application, PIN_ENA, PIN
 
 ### iotsaOta.h
 
-Allows Over-the-air reprogramming of a iotsa server. Created automatically whenever WiFi is compiled in; build with `-DIOTSA_WITHOUT_OTA` to leave it out (saves flash). After ota-programming has been enabled the device will show up (for a few minutes) in the Arduino IDE, menu _Tools_ -> _Port_, under the _Network Ports_ section. Select it, and press the checkmark on your sketch to upload. Requires _IOTSA\_WITH\_HTTP_ or _IOTSA\_WITH\_HTTPS_.
+Allows over-the-air reprogramming of a iotsa server. Created automatically whenever WiFi is compiled in; build with `-DIOTSA_WITHOUT_OTA` to leave it out (saves flash). In OTA mode (requested through the [run mode module](#iotsarunmodeh)) the device accepts a new program for a few minutes, from the `iotsa` command line tool (see [OTA programming](#ota-programming)) or from the Arduino IDE, where it shows up under menu _Tools_ -> _Port_, _Network Ports_.
 
 ### iotsaRequest.h
 
@@ -704,7 +755,7 @@ Accessing URL `/users` allows adding, changing and removing users, in configurat
 mode. A factory-installed device has no users, and allows all rights always.
 Over the API the users are a collection (see above): `PUT /api/users` with
 `{"users": {"jack": {"password": "...", "rights": "*"}}}` adds or changes jack,
-`{"users": {"jack": null}}` removes him. Changing a password needs the old one in
+`{"users": {"jack": null}}` removes that user. Changing a password needs the old one in
 `old_password`. A restore of a backup keeps the passwords, which a backup doesn't have.
 
 Add it as the application's authenticator: declare `IotsaUserMod userMod(application);`, and call `application.setAuth(&userMod)` in `setup()`. See the [HelloUser](examples/HelloUser/HelloUser.ino) example.
